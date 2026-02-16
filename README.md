@@ -87,11 +87,7 @@ The files with the most Jinja2 are the most security-critical — they contain d
 - [streisand-vpn/streisand](https://github.com/streisand-vpn/streisand)
 - [algo-vpn/algo](https://github.com/algo-vpn/algo)
 - [leucos/ansible-tuto](https://github.com/leucos/ansible-tuto)
-
-## Tool
-
-Tool set created with AI-powered scanners. Coming soon.
-
+.
 .axyproject/ansible-galaxy)
 - [openstack/openstack-ansible](https://github.com/openstack/openstack-ansible)
 - [streisand-vpn/streisand](https://github.com/streisand-vpn/streisand)
