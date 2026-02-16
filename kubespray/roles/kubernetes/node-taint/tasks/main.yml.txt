@@ -1,0 +1,19 @@
+[0].name = Set role and inventory node taint to empty list
+[1].name = Node taint for nvidia GPU nodes
+[1].set_fact.role_node_taints = {{ role_node_taints + ['nvidia.com/gpu=:NoSchedule'] }}
+[1].when[0] = nvidia_gpu_nodes is defined
+[1].when[1] = nvidia_accelerator_enabled | bool
+[1].when[2] = inventory_hostname in nvidia_gpu_nodes
+[2].name = Populate inventory node taint
+[2].set_fact.inventory_node_taints = {{ inventory_node_taints + node_taints }}
+[2].when[0] = node_taints is defined
+[2].when[1] = node_taints is not string
+[2].when[2] = node_taints is not mapping
+[2].when[3] = node_taints is iterable
+[3].debug.var = role_node_taints
+[4].debug.var = inventory_node_taints
+[5].name = Set taint to node
+[5].command = {{ kubectl }} taint node {{ kube_override_hostname | default(inventory_hostname) }} {{ (role_node_taints + inventory_node_taints) | join(' ') }} --overwrite=true
+[5].delegate_to = {{ groups['kube_control_plane'][0] }}
+[5].changed_when = false
+[5].when[0] = (role_node_taints + inventory_node_taints) | length > 0

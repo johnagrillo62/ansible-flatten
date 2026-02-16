@@ -1,0 +1,8 @@
+[0].hosts = all
+[0].remote_user = root
+[0].tasks[0].name = Create database user
+[0].tasks[0].mysql_user = user=bob password=12345 priv=*.*:ALL state=present
+[0].tasks[1].name = Create database
+[0].tasks[1].mysql_db = db=bobdata state=present
+[0].tasks[2].name = Ensure no user named 'sally' exists and delete if found.
+[0].tasks[2].mysql_user = user=sally state=absent

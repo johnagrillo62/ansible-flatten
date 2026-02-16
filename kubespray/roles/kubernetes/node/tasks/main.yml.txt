@@ -1,0 +1,105 @@
+[0].name = Fetch facts
+[0].import_tasks = facts.yml
+[0].tags[0] = facts
+[0].tags[1] = kubelet
+[1].name = Ensure /var/lib/cni exists
+[1].file.path = /var/lib/cni
+[1].file.state = directory
+[1].file.mode = 0755
+[2].name = Install kubelet binary
+[2].import_tasks = install.yml
+[2].tags[0] = kubelet
+[3].name = Install kube-vip
+[3].import_tasks = loadbalancer/kube-vip.yml
+[3].when[0] = ('kube_control_plane' in group_names)
+[3].when[1] = kube_vip_enabled
+[3].tags[0] = kube-vip
+[4].name = Install nginx-proxy
+[4].import_tasks = loadbalancer/nginx-proxy.yml
+[4].when[0] = ('kube_control_plane' not in group_names) or (kube_apiserver_bind_address != '::')
+[4].when[1] = loadbalancer_apiserver_localhost
+[4].when[2] = loadbalancer_apiserver_type == 'nginx'
+[4].tags[0] = nginx
+[5].name = Install haproxy
+[5].import_tasks = loadbalancer/haproxy.yml
+[5].when[0] = ('kube_control_plane' not in group_names) or (kube_apiserver_bind_address != '::')
+[5].when[1] = loadbalancer_apiserver_localhost
+[5].when[2] = loadbalancer_apiserver_type == 'haproxy'
+[5].tags[0] = haproxy
+[6].name = Ensure nodePort range is reserved
+[6]["ansible.posix.sysctl"].name = net.ipv4.ip_local_reserved_ports
+[6]["ansible.posix.sysctl"].value = {{ kube_apiserver_node_port_range }}
+[6]["ansible.posix.sysctl"].sysctl_set = true
+[6]["ansible.posix.sysctl"].sysctl_file = {{ sysctl_file_path }}
+[6]["ansible.posix.sysctl"].state = present
+[6]["ansible.posix.sysctl"].reload = true
+[6]["ansible.posix.sysctl"].ignoreerrors = {{ sysctl_ignore_unknown_keys }}
+[6].when = kube_apiserver_node_port_range is defined
+[6].tags[0] = kube-proxy
+[7].name = Verify if br_netfilter module exists
+[7].command = modinfo br_netfilter
+[7].environment.PATH = {{ ansible_env.PATH }}:/sbin
+[7].register = modinfo_br_netfilter
+[7].failed_when = modinfo_br_netfilter.rc not in [0, 1]
+[7].changed_when = false
+[7].check_mode = false
+[8].name = Verify br_netfilter module path exists
+[8].file.path = {{ item }}
+[8].file.state = directory
+[8].file.mode = 0755
+[8].loop[0] = /etc/modules-load.d
+[8].loop[1] = /etc/modprobe.d
+[9].name = Enable br_netfilter module
+[9]["community.general.modprobe"].name = br_netfilter
+[9]["community.general.modprobe"].state = present
+[9].when = modinfo_br_netfilter.rc == 0
+[10].name = Persist br_netfilter module
+[10].copy.dest = /etc/modules-load.d/kubespray-br_netfilter.conf
+[10].copy.content = br_netfilter
+[10].copy.mode = 0644
+[10].when = modinfo_br_netfilter.rc == 0
+[11].name = Check if bridge-nf-call-iptables key exists
+[11].command = sysctl net.bridge.bridge-nf-call-iptables
+[11].failed_when = false
+[11].changed_when = false
+[11].check_mode = false
+[11].register = sysctl_bridge_nf_call_iptables
+[12].name = Enable bridge-nf-call tables
+[12]["ansible.posix.sysctl"].name = {{ item }}
+[12]["ansible.posix.sysctl"].state = present
+[12]["ansible.posix.sysctl"].sysctl_file = {{ sysctl_file_path }}
+[12]["ansible.posix.sysctl"].value = 1
+[12]["ansible.posix.sysctl"].reload = true
+[12]["ansible.posix.sysctl"].ignoreerrors = {{ sysctl_ignore_unknown_keys }}
+[12].when = sysctl_bridge_nf_call_iptables.rc == 0
+[12].with_items[0] = net.bridge.bridge-nf-call-iptables
+[12].with_items[1] = net.bridge.bridge-nf-call-arptables
+[12].with_items[2] = net.bridge.bridge-nf-call-ip6tables
+[13].name = Modprobe Kernel Module for IPVS
+[13]["community.general.modprobe"].name = {{ item }}
+[13]["community.general.modprobe"].state = present
+[13]["community.general.modprobe"].persistent = present
+[13].loop = {{ kube_proxy_ipvs_modules }}
+[13].when = kube_proxy_mode == 'ipvs'
+[13].tags[0] = kube-proxy
+[14].name = Modprobe conntrack module
+[14]["community.general.modprobe"].name = {{ item }}
+[14]["community.general.modprobe"].state = present
+[14]["community.general.modprobe"].persistent = present
+[14].register = modprobe_conntrack_module
+[14].ignore_errors = true
+[14].loop[0] = nf_conntrack
+[14].loop[1] = nf_conntrack_ipv4
+[14].when[0] = kube_proxy_mode == 'ipvs'
+[14].when[1] = modprobe_conntrack_module is not defined or modprobe_conntrack_module is ansible.builtin.failed
+[14].tags[0] = kube-proxy
+[15].name = Modprobe Kernel Module for nftables
+[15]["community.general.modprobe"].name = nf_tables
+[15]["community.general.modprobe"].state = present
+[15]["community.general.modprobe"].persistent = present
+[15].when = kube_proxy_mode == 'nftables'
+[15].tags[0] = kube-proxy
+[16].name = Install kubelet
+[16].import_tasks = kubelet.yml
+[16].tags[0] = kubelet
+[16].tags[1] = kubeadm

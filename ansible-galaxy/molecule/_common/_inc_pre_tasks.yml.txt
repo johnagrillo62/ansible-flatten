@@ -1,0 +1,29 @@
+~d0.name = Install dependencies (yum)
+~d1.yum = 
+~d2.name = [sudo, make, bzip2]
+~d1.when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", "<")
+~d0.name = Install dependencies (dnf)
+~d1.dnf = 
+~d2.name = [sudo, git, make, bzip2]
+~d1.when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", ">=")
+~d0.name = Install dependencies (apt)
+~d1.apt = 
+~d2.name = 
+~d1.when = ansible_os_family == "Debian"
+~d0.name = Check whether server dir exists
+~d1.stat = 
+~d2.path = "{{ galaxy_root }}/server"
+~d1.register = __molecule_dir_check
+~d0.name = Collect current commit id
+~d1.git = 
+~d2.clone = false
+~d2.depth = "{{ galaxy_clone_depth }}"
+~d2.dest = "{{ galaxy_root }}/server"
+~d2.repo = https://github.com/galaxyproject/galaxy.git
+~d1.changed_when = false
+~d1.become = "{{ __molecule_dir_check.stat.exists }}"
+~d1.become_user = "{{ galaxy_privsep_user }}"
+~d1.register = __molecule_git_check
+~d0.name = Set galaxy_commit_id
+~d1.set_fact = 
+~d2.galaxy_commit_id = "{{ __molecule_git_check.before or ((__galaxy_version == 'dev') | ternary('dev', 'release_' ~ __galaxy_version)) }}"

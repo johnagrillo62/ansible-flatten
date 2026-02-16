@@ -1,0 +1,34 @@
+kodi__base_packages[0] = kodi
+kodi__base_packages[1] = xorg
+kodi__base_packages[2] = xserver-xorg
+kodi__base_packages[3] = dbus-x11
+kodi__base_packages[4] = xinit
+kodi__base_packages[5] = xserver-xorg-legacy
+kodi__base_packages[6] = python-dbus
+kodi__base_packages[7] = python3-dbus
+kodi__base_packages[8] = accountsservice
+kodi__base_packages[9] = pulseaudio
+kodi__base_packages[10] = libasound2-plugins
+kodi__base_packages[11] = alsa-utils
+kodi__base_packages[12] = libfftw3-bin
+kodi__base_packages[13] = libfftw3-dev
+kodi__base_packages[14] = glew-utils
+kodi__base_packages[15] = opus-tools
+kodi__base_packages[16] = speex
+kodi__base_packages[17] = {{ ["policykit-1"]
+        if (kodi__polkit_action | d())
+        else [] }}
+
+kodi__deploy_state = present
+kodi__user = kodi
+kodi__group = kodi
+kodi__groups[0] = cdrom
+kodi__groups[1] = floppy
+kodi__groups[2] = audio
+kodi__groups[3] = video
+kodi__groups[4] = plugdev
+kodi__home_path = {{ (ansible_local.fhs.home | d("/var/local"))
+                     + "/" + kodi__user }} 
+kodi__gecos = kodi.org
+kodi__shell = /usr/sbin/nologin
+kodi__polkit_action = org.freedesktop.login1.*

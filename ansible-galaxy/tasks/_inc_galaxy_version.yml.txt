@@ -1,0 +1,9 @@
+[0].name = Collect Galaxy version file
+[0].slurp.src = {{ galaxy_server_dir }}/lib/galaxy/version.py
+[0].register = __galaxy_version_file
+[1].name = Determine Galaxy version
+[1].set_fact.__galaxy_major_version = {{
+    (__galaxy_version_file['content'] | b64decode).splitlines()
+        | select('match', 'VERSION_MAJOR\s*=.*') | first
+        | regex_replace('^[^\d]+([.\d]+).*', '\1')
+}}

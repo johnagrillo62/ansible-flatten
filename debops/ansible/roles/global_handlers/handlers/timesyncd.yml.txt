@@ -1,0 +1,4 @@
+[0].name = Restart systemd-timesyncd service
+[0]["ansible.builtin.systemd"].name = systemd-timesyncd.service
+[0]["ansible.builtin.systemd"].state = restarted
+[0].when = ansible_service_mgr == 'systemd'

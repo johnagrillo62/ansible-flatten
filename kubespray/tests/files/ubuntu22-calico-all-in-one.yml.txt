@@ -1,0 +1,17 @@
+cloud_image = ubuntu-2204
+mode = all-in-one
+vm_memory = 1800
+auto_renew_certificates = true
+kube_proxy_mode = iptables
+enable_nodelocaldns = false
+containerd_registries_mirrors[0].prefix = docker.io
+containerd_registries_mirrors[0].mirrors[0].host = https://mirror.gcr.io
+containerd_registries_mirrors[0].mirrors[0].capabilities[0] = pull
+containerd_registries_mirrors[0].mirrors[0].capabilities[1] = resolve
+containerd_registries_mirrors[0].mirrors[0].skip_verify = false
+containerd_registries_mirrors[1].prefix = 172.19.16.11:5000
+containerd_registries_mirrors[1].mirrors[0].host = http://172.19.16.11:5000
+containerd_registries_mirrors[1].mirrors[0].capabilities[0] = pull
+containerd_registries_mirrors[1].mirrors[0].capabilities[1] = resolve
+containerd_registries_mirrors[1].mirrors[0].capabilities[2] = push
+containerd_registries_mirrors[1].mirrors[0].skip_verify = true

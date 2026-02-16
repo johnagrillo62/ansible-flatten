@@ -1,0 +1,13 @@
+~d0.name = Check samba config
+~d1.ansible.builtin.command = testparm -s
+~d1.register = global_handlers__samba_register_test_config
+~d1.changed_when = global_handlers__samba_register_test_config.changed | bool
+~d1.notify = [ 'Reload nmbd', 'Reload smbd' ]
+~d0.name = Reload nmbd
+~d1.ansible.builtin.service = 
+~d2.name = 'nmbd'
+~d2.state = 'restarted'
+~d0.name = Reload smbd
+~d1.ansible.builtin.service = 
+~d2.name = 'smbd'
+~d2.state = 'reloaded'

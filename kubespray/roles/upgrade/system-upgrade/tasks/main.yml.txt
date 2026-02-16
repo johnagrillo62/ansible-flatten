@@ -1,0 +1,11 @@
+[0].name = APT upgrade
+[0].when[0] = system_upgrade
+[0].when[1] = ansible_os_family == "Debian"
+[0].include_tasks = apt.yml
+[0].tags[0] = system-upgrade-apt
+[1].name = YUM upgrade
+[1].when[0] = system_upgrade
+[1].when[1] = ansible_os_family == "RedHat"
+[1].when[2] = not is_fedora_coreos
+[1].include_tasks = yum.yml
+[1].tags[0] = system-upgrade-yum

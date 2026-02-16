@@ -1,0 +1,5 @@
+~d0.cloud_image = fedora-41
+~d0.auto_renew_certificates = true
+~d0.preinstall_selinux_state = enforcing
+~d0.kubelet_fail_swap_on = false
+~d0.kube_feature_gates = 

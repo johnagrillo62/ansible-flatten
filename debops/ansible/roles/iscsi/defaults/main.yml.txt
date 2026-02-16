@@ -1,0 +1,29 @@
+iscsi__packages[0] = open-iscsi
+iscsi__packages[1] = lvm2
+iscsi__iqn_date = {{ ansible_date_time.year + "-" + ansible_date_time.month }}
+iscsi__iqn_authority = {{ ansible_domain }}
+iscsi__iqn = {{ (ansible_local.iscsi.iqn
+                 if (ansible_local.iscsi.iqn | d())
+                 else ("iqn." + iscsi__iqn_date + "." +
+                       iscsi__iqn_authority.split(".")[::-1] | join("."))) }}
+
+iscsi__hostname = {{ ansible_hostname }}
+iscsi__initiator_name = {{ iscsi__iqn + ":" + iscsi__hostname }}
+iscsi__enabled = True
+iscsi__node_startup = automatic
+iscsi__discovery_auth = True
+iscsi__discovery_auth_username = {{ lookup("password", secret + "/iscsi/credentials/discovery/username") }}
+iscsi__discovery_auth_password = {{ lookup("password", secret + "/iscsi/credentials/discovery/password") }}
+iscsi__session_auth = True
+iscsi__session_auth_username = {{ lookup("password", secret + "/iscsi/credentials/session/username") }}
+iscsi__session_auth_password = {{ lookup("password", secret + "/iscsi/credentials/session/password") }}
+iscsi__default_options["node.startup"] = {{ iscsi__node_startup }}
+iscsi__default_options["discovery.sendtargets.auth.authmethod"] = {{ "CHAP" if (iscsi__discovery_auth | d(False)) else "None" }}
+iscsi__default_options["discovery.sendtargets.auth.username"] = {{ iscsi__discovery_auth_username }}
+iscsi__default_options["discovery.sendtargets.auth.password"] = {{ iscsi__discovery_auth_password }}
+iscsi__default_options["node.session.auth.authmethod"] = {{ "CHAP" if (iscsi__session_auth | d(False)) else "None" }}
+iscsi__default_options["node.session.auth.username"] = {{ iscsi__session_auth_username }}
+iscsi__default_options["node.session.auth.password"] = {{ iscsi__session_auth_password }}
+iscsi__default_fs_type = ext4
+iscsi__default_mount_options = defaults,_netdev
+iscsi__unattended_upgrades__dependent_blacklist[0] = open-iscsi

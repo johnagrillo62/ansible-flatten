@@ -1,0 +1,63 @@
+[0].name = Stop if any host not in '--limit' does not have a fact cache
+[0].vars.uncached_hosts = {{ hostvars | dict2items | selectattr('value.ansible_default_ipv6', 'undefined') | selectattr('value.ansible_default_ipv4', 'undefined') | map(attribute='key') }}
+[0].vars.excluded_hosts = {{ groups['k8s_cluster'] | difference(query('inventory_hostnames', ansible_limit)) }}
+[0].assert.that = uncached_hosts | intersect(excluded_hosts) == []
+[0].assert.fail_msg = Kubespray does not support '--limit' without a populated facts cache for the excluded hosts.
+Please run the facts.yml playbook first without '--limit'.
+The following excluded hosts are not cached: {{ uncached_hosts | intersect(excluded_hosts) }}
+
+[0].run_once = true
+[0].when[0] = ansible_limit is defined
+[0].when[1] = not ignore_assert_errors
+[1].name = Stop if non systemd OS type
+[1].assert.that = ansible_service_mgr == "systemd"
+[1].when = not ignore_assert_errors
+[2].name = Stop if the os does not support
+[2].assert.that = (allow_unsupported_distribution_setup | default(false)) or ansible_distribution in supported_os_distributions
+[2].assert.msg = {{ ansible_distribution }} is not a known OS
+[2].when = not ignore_assert_errors
+[3].name = Stop if memory is too small for control plane nodes
+[3].assert.that = ansible_memtotal_mb >= minimal_master_memory_mb
+[3].when[0] = not ignore_assert_errors
+[3].when[1] = ('kube_control_plane' in group_names)
+[4].name = Stop if memory is too small for nodes
+[4].assert.that = ansible_memtotal_mb >= minimal_node_memory_mb
+[4].when[0] = not ignore_assert_errors
+[4].when[1] = ('kube_node' in group_names)
+[5].name = Stop if cgroups are not enabled on nodes
+[5].command = stat -fc %T /sys/fs/cgroup/
+[5].changed_when = false
+[5].when = not ignore_assert_errors
+[6].name = Stop if ip var does not match local ips
+[6].assert.that = (ip in ansible_all_ipv4_addresses) or (ip in ansible_all_ipv6_addresses)
+[6].assert.msg = IPv4: '{{ ansible_all_ipv4_addresses }}' and IPv6: '{{ ansible_all_ipv6_addresses }}' do not contain '{{ ip }}'
+[6].when[0] = not ignore_assert_errors
+[6].when[1] = ip is defined
+[7].name = Stop if access_ip is not pingable
+[7].command = ping -c1 {{ main_access_ip }}
+[7].when[0] = main_access_ip is defined
+[7].when[1] = not ignore_assert_errors
+[7].when[2] = ping_access_ip
+[7].changed_when = false
+[8].name = Stop if kernel version is too low for cilium
+[8].assert.that = ansible_kernel.split('-')[0] is version('4.9.17', '>=')
+[8].when[0] = kube_network_plugin == 'cilium' or cilium_deploy_additionally
+[8].when[1] = not ignore_assert_errors
+[9].name = Stop if kernel version is too low for nftables
+[9].assert.that = ansible_kernel.split('-')[0] is version('5.13', '>=')
+[9].when[0] = kube_proxy_mode == 'nftables'
+[9].when[1] = not ignore_assert_errors
+[10].name = Stop if bad hostname
+[10].assert.that = inventory_hostname is match("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
+[10].assert.msg = Hostname must consist of lower case alphanumeric characters, '.' or '-', and must start and end with an alphanumeric character
+[10].when = not ignore_assert_errors
+[11].name = Stop if /etc/resolv.conf has no configured nameservers
+[11].assert.that = configured_nameservers | length>0
+[11].assert.fail_msg = nameserver should not be empty in /etc/resolv.conf
+[11].when[0] = upstream_dns_servers | length == 0
+[11].when[1] = not disable_host_nameservers
+[11].when[2] = dns_mode in ['coredns', 'coredns_dual']
+[12].name = Stop if download_localhost is enabled for Flatcar Container Linux
+[12].assert.that = ansible_os_family not in ["Flatcar", "Flatcar Container Linux by Kinvolk"]
+[12].assert.msg = download_run_once not supported for Flatcar Container Linux
+[12].when = download_run_once or download_force_cache

@@ -1,0 +1,8 @@
+~d0.redis_server__configuration = 
+~d1.name = 'main'
+~d2.options = 
+~d3.appendonly = False
+~d3.'auto-aof-rewrite-percentage' = 100
+~d3.'auto-aof-rewrite-min-size' = '64mb'
+~d3.name = 'rename-command'
+~d4.value = 

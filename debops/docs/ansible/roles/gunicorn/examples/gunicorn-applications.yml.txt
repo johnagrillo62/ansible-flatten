@@ -1,0 +1,17 @@
+~d0.gunicorn__applications = 
+~d1.name = 'system-app'
+~d2.working_dir = '/path/to/deploy/dir'
+~d2.binary = 'gunicorn3'
+~d2.user = 'worker-user'
+~d2.group = 'worker-group'
+~d2.args = [ '--bind=0.0.0.0:8000',
+~d1.name = 'virtualenv-app'
+~d2.comment = 'This application is deployed in a virtualenv'
+~d2.working_dir = '/path/to/virtualenv/app/src'
+~d2.python = '/path/to/virtualenv/bin/python'
+~d2.mode = 'wsgi'
+~d2.user = 'custom-user'
+~d2.group = 'custom-group'
+~d2.args = [ '--bind=unix:/run/gunicorn/virtualenv-app.sock',
+~d1.name = 'old-app'
+~d2.state = 'absent'

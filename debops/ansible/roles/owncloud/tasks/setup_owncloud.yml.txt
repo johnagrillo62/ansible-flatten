@@ -1,0 +1,123 @@
+[0].name = Enable required Apache modules
+[0]["community.general.apache2_module"].name = php5
+[0]["community.general.apache2_module"].state = present
+[0].when = owncloud__webserver == "apache"
+[0].loop = {{ q("flattened", owncloud__apache_modules) }}
+[1].name = Ensure restrictive permissions are set for the data directory
+[1]["ansible.builtin.file"].path = {{ owncloud__data_path }}
+[1]["ansible.builtin.file"].state = directory
+[1]["ansible.builtin.file"].owner = {{ owncloud__app_user }}
+[1]["ansible.builtin.file"].group = {{ owncloud__app_group }}
+[1]["ansible.builtin.file"].mode = 0770
+[2].name = Install ownCloud config file
+[2]["ansible.builtin.template"].src = srv/www/sites/config/debops.config.php.j2
+[2]["ansible.builtin.template"].dest = {{ owncloud__deploy_path }}/config/debops.config.php
+[2]["ansible.builtin.template"].owner = {{ owncloud__app_user }}
+[2]["ansible.builtin.template"].group = {{ owncloud__app_group }}
+[2]["ansible.builtin.template"].mode = 0640
+[2]["ansible.builtin.template"].validate = php -f %s
+[3].name = Install ownCloud mail config file
+[3]["ansible.builtin.template"].src = srv/www/sites/config/mail.config.php.j2
+[3]["ansible.builtin.template"].dest = {{ owncloud__deploy_path }}/config/mail.config.php
+[3]["ansible.builtin.template"].owner = {{ owncloud__app_user }}
+[3]["ansible.builtin.template"].group = {{ owncloud__app_group }}
+[3]["ansible.builtin.template"].mode = 0640
+[3]["ansible.builtin.template"].validate = php -f %s
+[3].when = ((owncloud__mail_conf_map.keys() | length) >= 1)
+[3].tags[0] = role::owncloud:mail
+[4].name = Ensure the ownCloud mail config file is absent
+[4]["ansible.builtin.file"].path = {{ owncloud__deploy_path }}/config/mail.config.php
+[4]["ansible.builtin.file"].state = absent
+[4].when = ((owncloud__mail_conf_map.keys() | length) == 0)
+[5].name = Ensure deprecated configuration files are absent
+[5]["ansible.builtin.file"].path = {{ item }}
+[5]["ansible.builtin.file"].state = absent
+[5].loop[0] = {{ owncloud__deploy_path }}/config/custom.config.php
+[6].name = Remove legacy files
+[6]["ansible.builtin.file"].state = absent
+[6]["ansible.builtin.file"].path = {{ ansible_local.php.etc_base | d("/etc/php") + "/cli/conf.d/enable_apc.ini" }}
+[6].tags[0] = role::owncloud:occ
+[7].name = Setup shortcut for the occ command
+[7]["ansible.builtin.template"].src = usr/local/bin/occ.j2
+[7]["ansible.builtin.template"].dest = {{ owncloud__occ_bin_file_path }}
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = {{ owncloud__app_group }}
+[7]["ansible.builtin.template"].mode = 0755
+[7].tags[0] = role::owncloud:occ
+[8].name = Get ownCloud setup status
+[8]["ansible.builtin.command"] = {{ owncloud__occ_bin_file_path | quote }} check
+[8].register = owncloud__register_occ_check
+[8].changed_when = False
+[9].name = Determine if ownCloud autosetup should be done
+[9]["ansible.builtin.set_fact"].owncloud__do_autosetup = {{ (owncloud__autosetup and
+                                 owncloud__admin_username | d() and
+                                 (owncloud__register_occ_check is not skipped) and
+                                 (("is not installed" in owncloud__register_occ_check.stdout) or
+                                  ("is not installed" in owncloud__register_occ_check.stderr))) }}
+
+[10].name = Automatically finish setup via the occ tool
+[10]["ansible.builtin.command"] = {{ owncloud__occ_bin_file_path | quote }} maintenance:install
+'--data-dir={{ owncloud__data_path }}'
+'--database={{ owncloud__database_map[owncloud__database].dbtype }}'
+'--database-name={{ owncloud__database_map[owncloud__database].dbname }}'
+'--database-host={{ owncloud__database_map[owncloud__database].dbhost }}'
+'--database-user={{ owncloud__database_map[owncloud__database].dbuser }}'
+'--database-pass={{ owncloud__database_map[owncloud__database].dbpass }}'
+{% if owncloud__admin_username %}
+'--admin-user={{ owncloud__admin_username }}'
+'--admin-pass={{ owncloud__admin_password }}'
+{% endif %}
+
+[10].register = owncloud__register_occ_install
+[10].changed_when = owncloud__register_occ_install.changed | bool
+[10].when = owncloud__do_autosetup | bool
+[11].name = Get current ownCloud configuration via occ config:list
+[11]["ansible.builtin.include_tasks"] = run_occ.yml
+[11].loop_control.loop_var = owncloud__occ_item
+[11].tags[0] = role::owncloud:occ_config
+[11].when = (owncloud__apps_config_combined is mapping and owncloud__apps_config_combined.keys() | length)
+[11].loop[0].command = config:list
+[11].loop[0].get_output = True
+[12].name = Capture occ output in variable
+[12]["ansible.builtin.set_fact"].owncloud__occ_config_current = {{ owncloud__occ_run_output }}
+[12].when = (owncloud__do_autosetup | bool and owncloud__apps_config_combined is mapping and owncloud__apps_config_combined.keys() | length and (not ansible_check_mode))
+[12].tags[0] = role::owncloud:occ_config
+[13].name = Set ownCloud apps configuration for each app
+[13]["ansible.builtin.include_tasks"] = run_occ_app_set.yml
+[13].loop_control.loop_var = owncloud__apps_item
+[13].with_dict = {{ owncloud__apps_config_combined | d({}) }}
+[13].when = (owncloud__do_autosetup | d() | bool and not ansible_check_mode)
+[13].tags[0] = role::owncloud:occ_config
+[14].name = Run occ commands as specified in the inventory
+[14]["ansible.builtin.include_tasks"] = run_occ.yml
+[14].loop_control.loop_var = owncloud__occ_item
+[14].tags[0] = role::owncloud:occ
+[14].loop = {{ q("flattened", owncloud__role_occ_cmd_list
+                           + owncloud__occ_cmd_list
+                           + owncloud__group_occ_cmd_list
+                           + owncloud__host_occ_cmd_list
+                           + owncloud__dependent_occ_cmd_list) }}
+
+[15].name = Setup cron service (nextcloud)
+[15]["ansible.builtin.cron"].name = ownCloud Background Jobs
+[15]["ansible.builtin.cron"].minute = {{ owncloud__cron_minute }}
+[15]["ansible.builtin.cron"].user = {{ owncloud__app_user }}
+[15]["ansible.builtin.cron"].job = test -x /usr/bin/php && test -e {{ (owncloud__deploy_path + "/cron.php") | quote }} && /usr/bin/php -f {{ (owncloud__deploy_path + "/cron.php") | quote }}
+[15]["ansible.builtin.cron"].cron_file = owncloud
+[15].when = owncloud__variant == "nextcloud"
+[16].name = Setup cron service (owncloud)
+[16]["ansible.builtin.cron"].name = ownCloud Background Jobs
+[16]["ansible.builtin.cron"].minute = {{ owncloud__cron_minute }}
+[16]["ansible.builtin.cron"].user = {{ owncloud__app_user }}
+[16]["ansible.builtin.cron"].job = test -x /usr/bin/php && test -e {{ (owncloud__deploy_path + "/occ") | quote }} && /usr/bin/php {{ (owncloud__deploy_path + "/occ") | quote }} system:cron
+[16]["ansible.builtin.cron"].cron_file = owncloud
+[16].when = owncloud__variant == "owncloud"
+[17].name = Disable the package manager hook script for ownCloud
+[17]["ansible.builtin.file"].path = /etc/apt/apt.conf.d/80owncloud-dpkg-hook
+[17]["ansible.builtin.file"].state = absent
+[18].name = Check ownCloud core integrity
+[18]["ansible.builtin.command"] = {{ owncloud__occ_bin_file_path | quote }} integrity:check-core
+[18].register = owncloud__register_occ_integrity_check_core
+[18].failed_when = (owncloud__register_occ_integrity_check_core.rc != 0 or owncloud__register_occ_integrity_check_core.stdout_lines | length != 0)
+[18].changed_when = False
+[18].when = owncloud__do_autosetup | bool

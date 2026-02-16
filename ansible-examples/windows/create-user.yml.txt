@@ -1,0 +1,7 @@
+[0].name = Add a user
+[0].hosts = all
+[0].gather_facts = false
+[0].tasks[0].name = Add User
+[0].tasks[0].win_user.name = ansible
+[0].tasks[0].win_user.password = @ns1bl3
+[0].tasks[0].win_user.state = present

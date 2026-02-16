@@ -1,0 +1,88 @@
+~d0.name = Import DebOps global handlers
+~d1.ansible.builtin.import_role = 
+~d2.name = 'global_handlers'
+~d0.name = Import DebOps secret role
+~d1.ansible.builtin.import_role = 
+~d2.name = 'secret'
+~d0.name = Install required packages
+~d1.ansible.builtin.package = 
+~d2.name = '{{ q("flattened", (nullmailer__base_packages
+~d2.state = 'present'
+~d1.register = nullmailer__register_packages
+~d1.until = nullmailer__register_packages is succeeded
+~d1.when = nullmailer__deploy_state | d('present') != 'absent'
+~d0.name = Purge other SMTP servers
+~d1.ansible.builtin.apt = 
+~d2.name = '{{ nullmailer__purge_mta_packages | flatten }}'
+~d2.state = 'absent'
+~d2.purge = True
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and
+~d0.name = Generate configuration files
+~d1.ansible.builtin.copy = 
+~d2.dest = '{{ item.dest }}'
+~d2.content = "{{ (item.content + '\n') if item.content | d() else ('' if item.content is defined else omit) }}"
+~d2.src = '{{ item.src | d(omit) }}'
+~d2.owner = '{{ item.owner | d(omit) }}'
+~d2.group = '{{ item.group | d(omit) }}'
+~d2.mode = '{{ item.mode | d(omit) }}'
+~d1.loop = '{{ q("flattened", nullmailer__configuration_files) }}'
+~d1.notify = [ 'Restart nullmailer' ]
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and
+~d0.name = Generate private configuration files
+~d1.ansible.builtin.copy = 
+~d2.dest = '{{ item.dest }}'
+~d2.content = "{{ (item.content + '\n') if item.content | d() else omit }}"
+~d2.src = '{{ item.src | d(omit) }}'
+~d2.owner = '{{ item.owner | d(omit) }}'
+~d2.group = '{{ item.group | d(omit) }}'
+~d2.mode = '{{ item.mode | d(omit) }}'
+~d1.loop = '{{ q("flattened", nullmailer__private_configuration_files) }}'
+~d1.notify = [ 'Restart nullmailer' ]
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and
+~d1.no_log = '{{ debops__no_log | d(True) }}'
+~d0.name = Remove configuration files if requested
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item.dest }}'
+~d2.state = 'absent'
+~d1.loop = '{{ q("flattened", nullmailer__configuration_files) }}'
+~d1.notify = [ 'Restart nullmailer' ]
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and
+~d0.name = Remove private configuration files if requested
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item.dest }}'
+~d2.state = 'absent'
+~d1.loop = '{{ q("flattened", nullmailer__private_configuration_files) }}'
+~d1.notify = [ 'Restart nullmailer' ]
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and
+~d1.no_log = '{{ debops__no_log | d(True) }}'
+~d0.name = Configure nullmailer services in xinetd
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/xinetd.d/{{ item }}.j2'
+~d2.dest = '/etc/xinetd.d/{{ item }}'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.loop = 
+~d1.notify = [ 'Reload xinetd' ]
+~d1.when = (nullmailer__deploy_state | d('present') != 'absent' and nullmailer__smtpd | bool)
+~d0.name = Disable nullmailer-smtpd service in xinetd
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/xinetd.d/{{ item }}'
+~d2.state = 'absent'
+~d1.loop = 
+~d1.notify = [ 'Reload xinetd' ]
+~d1.when = ((nullmailer__deploy_state | d() and nullmailer__deploy_state == 'absent') or
+~d0.name = Remove old dpkg cleanup hook and script
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item }}'
+~d2.state = 'absent'
+~d1.loop = 
+~d1.when = nullmailer__deploy_state | d('present') != 'absent'
+~d0.name = Prepare cleanup during package removal
+~d1.ansible.builtin.import_role = 
+~d2.name = 'dpkg_cleanup'
+~d1.vars = 
+~d2.dpkg_cleanup__dependent_packages = 
+~d1.when = nullmailer__deploy_state | d('present') != 'absent'
+~d1.tags = [ 'role::dpkg_cleanup', 'skip::dpkg_cleanup',
+~d5.'role = :nullmailer:dpkg_cleanup' ]

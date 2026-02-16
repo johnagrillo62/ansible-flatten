@@ -1,0 +1,52 @@
+[0].name = Sanity assertions, that some variables have a non-blank value
+[0].assert.that[0] = collection_version is defined and collection_version | length > 0
+[0].assert.that[1] = collection_package is defined and collection_package | length > 0
+[0].assert.that[2] = collection_path is defined and collection_path | length > 0
+[1].name = Set the collection version in the controller_api.py file
+[1].replace.path = {{ collection_path }}/plugins/module_utils/controller_api.py
+[1].replace.regexp = ^    _COLLECTION_VERSION = "0.0.1-devel"
+[1].replace.replace =     _COLLECTION_VERSION = "{{ collection_version }}"
+[1].when[0] = awx_template_version | default(True)
+[2].name = Set the collection type in the controller_api.py file
+[2].replace.path = {{ collection_path }}/plugins/module_utils/controller_api.py
+[2].replace.regexp = ^    _COLLECTION_TYPE = "awx"
+[2].replace.replace =     _COLLECTION_TYPE = "{{ collection_package }}"
+[3].name = Do file content replacements for non-default namespace or package name
+[3].block[0].name = Change module doc_fragments to support desired namespace and package names
+[3].block[0].replace.path = {{ item }}
+[3].block[0].replace.regexp = ^extends_documentation_fragment: awx.awx.auth([a-zA-Z0-9_]*)$
+[3].block[0].replace.replace = extends_documentation_fragment: {{ collection_namespace }}.{{ collection_package }}.auth\1
+[3].block[0].with_fileglob[0] = {{ collection_path }}/plugins/inventory/*.py
+[3].block[0].with_fileglob[1] = {{ collection_path }}/plugins/lookup/*.py
+[3].block[0].with_fileglob[2] = {{ collection_path }}/plugins/modules/*.py
+[3].block[0].loop_control.label = {{ item | basename }}
+[3].block[1].name = Change inventory file to support desired namespace and package names
+[3].block[1].replace.path = {{ collection_path }}/plugins/inventory/controller.py
+[3].block[1].replace.regexp = ^    NAME = 'awx.awx.controller'  # REPLACE$
+[3].block[1].replace.replace =     NAME = '{{ collection_namespace }}.{{ collection_package }}.controller'  # REPLACE
+[3].block[2].name = Change runtime.yml redirect destinations
+[3].block[2].replace.path = {{ collection_path }}/meta/runtime.yml
+[3].block[2].replace.regexp = awx.awx.
+[3].block[2].replace.replace = {{ collection_namespace }}.{{ collection_package }}.
+[3].block[3].name = get list of test files
+[3].block[3].find.paths = {{ collection_path }}/tests/integration/targets/
+[3].block[3].find.recurse = true
+[3].block[3].register = test_files
+[3].block[4].name = Change lookup plugin fqcn usage in tests
+[3].block[4].replace.path = {{ item.path }}
+[3].block[4].replace.regexp = awx.awx
+[3].block[4].replace.replace = {{ collection_namespace }}.{{ collection_package }}
+[3].block[4].loop = {{ test_files.files }}
+[3].block[5].name = Get sanity tests to work with non-default name
+[3].block[5].lineinfile.path = {{ collection_path }}/tests/sanity/ignore-2.10.txt
+[3].block[5].lineinfile.state = absent
+[3].block[5].lineinfile.regexp =  pylint:wrong-collection-deprecated-version-tag$
+[3].when[0] = (collection_package != 'awx') or (collection_namespace != 'awx')
+[4].name = Template the galaxy.yml file
+[4].template.src = {{ collection_path }}/tools/roles/template_galaxy/templates/galaxy.yml.j2
+[4].template.dest = {{ collection_path }}/galaxy.yml
+[4].template.force = true
+[5].name = Template the README.md file
+[5].template.src = {{ collection_path }}/tools/roles/template_galaxy/templates/README.md.j2
+[5].template.dest = {{ collection_path }}/README.md
+[5].template.force = true

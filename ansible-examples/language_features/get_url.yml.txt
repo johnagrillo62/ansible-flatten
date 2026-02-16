@@ -1,0 +1,10 @@
+[0].hosts = webservers
+[0].vars[0].jquery_directory = /var/www/html/javascript
+[0].vars[1].person = Susie%20Smith
+[0].tasks[0].name = Create directory for jQuery
+[0].tasks[0].file = dest={{jquery_directory}} state=directory mode=0755
+[0].tasks[1].name = Grab a bunch of jQuery stuff
+[0].tasks[1].get_url = url=http://code.jquery.com/{{item}}  dest={{jquery_directory}} mode=0444
+[0].tasks[1].with_items[0] = jquery.min.js
+[0].tasks[1].with_items[1] = mobile/latest/jquery.mobile.min.js
+[0].tasks[1].with_items[2] = ui/jquery-ui-git.css

@@ -1,0 +1,4 @@
+~d0.name = Restart saslauthd
+~d1.ansible.builtin.service = 
+~d2.name = 'saslauthd'
+~d2.state = 'restarted'

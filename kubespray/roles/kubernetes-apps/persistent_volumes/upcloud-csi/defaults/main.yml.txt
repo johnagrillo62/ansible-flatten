@@ -1,0 +1,8 @@
+storage_classes[0].name = standard
+storage_classes[0].is_default = true
+storage_classes[0].expand_persistent_volumes = true
+storage_classes[0].parameters.tier = maxiops
+storage_classes[1].name = hdd
+storage_classes[1].is_default = false
+storage_classes[1].expand_persistent_volumes = true
+storage_classes[1].parameters.tier = hdd

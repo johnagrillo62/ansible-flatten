@@ -1,0 +1,28 @@
+[0].name = Include layout vars
+[0].include_vars = layout-{{ galaxy_layout | default('legacy') }}.yml
+[1].name = Set any unset variables from layout defaults
+[1].set_fact["{{ item }}"] = {{ lookup('vars', '__' ~ item) }}
+[1].when = item not in vars
+[1].with_items[0] = galaxy_venv_dir
+[1].with_items[1] = galaxy_server_dir
+[1].with_items[2] = galaxy_config_dir
+[1].with_items[3] = galaxy_mutable_data_dir
+[1].with_items[4] = galaxy_mutable_config_dir
+[1].with_items[5] = galaxy_shed_tools_dir
+[1].with_items[6] = galaxy_cache_dir
+[1].with_items[7] = galaxy_local_tools_dir
+[1].with_items[8] = galaxy_tool_data_path
+[2].name = Check that any explicitly set Galaxy config options match the values of explicitly set variables
+[2].assert.that[0] = lookup('vars', 'galaxy_' ~ item) == galaxy_config[galaxy_app_config_section][item]
+[2].assert.msg = Value of '{{ 'galaxy_' ~ item }}' does not match value of '{{ item }}' in galaxy_config: {{ lookup('vars', 'galaxy_' ~ item) }} != {{ galaxy_config[galaxy_app_config_section][item] }}
+[2].when = 'galaxy_' ~ item in vars and item in ((galaxy_config | default({}))[galaxy_app_config_section] | default({}))
+[2].with_items[0] = tool_dependency_dir
+[2].with_items[1] = file_path
+[2].with_items[2] = job_working_directory
+[2].with_items[3] = shed_tool_config_file
+[3].name = Set any unset variables corresponding to Galaxy config options from galaxy_config or layout defaults
+[3].set_fact["{{ 'galaxy_' ~ item }}"] = {{ ((galaxy_config | default({}))[galaxy_app_config_section] | default({}))[item] | default(lookup('vars', '__galaxy_' ~ item)) }}
+[3].when = 'galaxy_' ~ item not in vars
+[3].with_items[0] = tool_dependency_dir
+[3].with_items[1] = file_path
+[3].with_items[2] = job_working_directory

@@ -1,0 +1,56 @@
+argument_specs.main.short_description = Install a list of Helm charts.
+argument_specs.main.options.releases.type = list
+argument_specs.main.options.releases.elements = dict
+argument_specs.main.options.releases.required = true
+argument_specs.main.options.releases.description = List of dictionaries passed as arguments to kubernetes.core.helm.
+Arguments passed here will override  those in `helm_settings`.  For
+structure of the dictionary, see the documentation for
+kubernetes.core.helm ansible module.
+
+argument_specs.main.options.releases.options.chart_ref.type = path
+argument_specs.main.options.releases.options.chart_ref.required = true
+argument_specs.main.options.releases.options.chart_version.type = str
+argument_specs.main.options.releases.options.name.type = str
+argument_specs.main.options.releases.options.name.required = true
+argument_specs.main.options.releases.options.namespace.type = str
+argument_specs.main.options.releases.options.namespace.required = true
+argument_specs.main.options.releases.options.values.type = dict
+argument_specs.main.options.releases.options.create_namespace.type = bool
+argument_specs.main.options.releases.options.chart_repo_url.type = str
+argument_specs.main.options.releases.options.disable_hook.type = bool
+argument_specs.main.options.releases.options.history_max.type = int
+argument_specs.main.options.releases.options.purge.type = bool
+argument_specs.main.options.releases.options.replace.type = bool
+argument_specs.main.options.releases.options.skip_crds.type = bool
+argument_specs.main.options.releases.options.wait.type = bool
+argument_specs.main.options.releases.options.wait.default = true
+argument_specs.main.options.releases.options.wait_timeout.type = str
+argument_specs.main.options.releases.options.atomic.type = bool
+argument_specs.main.options.releases.options.atomic.default = true
+argument_specs.main.options.repositories.type = list
+argument_specs.main.options.repositories.elements = dict
+argument_specs.main.options.repositories.description = List of dictionaries passed as arguments to
+kubernetes.core.helm_repository.
+
+argument_specs.main.options.repositories.options.name.type = str
+argument_specs.main.options.repositories.options.name.required = true
+argument_specs.main.options.repositories.options.password.type = str
+argument_specs.main.options.repositories.options.username.type = str
+argument_specs.main.options.repositories.options.url.type = str
+argument_specs.main.options.release_common_opts.type = dict
+argument_specs.main.options.release_common_opts.description = Common arguments for every helm invocation.
+
+argument_specs.main.options.release_common_opts.options.create_namespace.type = bool
+argument_specs.main.options.release_common_opts.options.create_namespace.default = true
+argument_specs.main.options.release_common_opts.options.chart_repo_url.type = str
+argument_specs.main.options.release_common_opts.options.disable_hook.type = bool
+argument_specs.main.options.release_common_opts.options.history_max.type = int
+argument_specs.main.options.release_common_opts.options.purge.type = bool
+argument_specs.main.options.release_common_opts.options.replace.type = bool
+argument_specs.main.options.release_common_opts.options.skip_crds.type = bool
+argument_specs.main.options.release_common_opts.options.wait.type = bool
+argument_specs.main.options.release_common_opts.options.wait.default = true
+argument_specs.main.options.release_common_opts.options.wait_timeout.type = str
+argument_specs.main.options.release_common_opts.options.wait_timeout.default = 5m
+argument_specs.main.options.release_common_opts.options.atomic.type = bool
+argument_specs.main.options.release_common_opts.options.atomic.default = true

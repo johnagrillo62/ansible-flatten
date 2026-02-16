@@ -1,0 +1,30 @@
+[0].name = Configure dhclient to supersede search/domain/nameservers
+[0].blockinfile.block = {% for key, val in dhclient_supersede.items() | rejectattr(1, '==', []) -%}
+{% if key == "domain-name-servers" -%}
+supersede {{ key }} {{ val | join(',') }};
+{% else -%}
+supersede {{ key }} "{{ val | join('","') }}";
+{% endif -%}
+{% endfor %}
+[0].blockinfile.path = {{ dhclientconffile }}
+[0].blockinfile.create = true
+[0].blockinfile.state = present
+[0].blockinfile.insertbefore = BOF
+[0].blockinfile.backup = {{ leave_etc_backup_files }}
+[0].blockinfile.marker = # Ansible entries {mark}
+[0].blockinfile.mode = 0644
+[0].notify = Preinstall | propagate resolvconf to k8s components
+[1].name = Configure dhclient hooks for resolv.conf (non-RH)
+[1].template.src = dhclient_dnsupdate.sh.j2
+[1].template.dest = {{ dhclienthookfile }}
+[1].template.owner = root
+[1].template.mode = 0755
+[1].notify = Preinstall | propagate resolvconf to k8s components
+[1].when = ansible_os_family not in [ "RedHat", "Suse" ]
+[2].name = Configure dhclient hooks for resolv.conf (RH-only)
+[2].template.src = dhclient_dnsupdate_rh.sh.j2
+[2].template.dest = {{ dhclienthookfile }}
+[2].template.owner = root
+[2].template.mode = 0755
+[2].notify = Preinstall | propagate resolvconf to k8s components
+[2].when = ansible_os_family == "RedHat"

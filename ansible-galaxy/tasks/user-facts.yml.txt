@@ -1,0 +1,23 @@
+~d0.name = Get group IDs for Galaxy users
+~d1.getent = 
+~d2.database = passwd
+~d2.key = "{{ item }}"
+~d1.with_items = 
+~d1.when = galaxy_group is not defined
+~d1.register = __galaxy_passwd_result
+~d0.name = Get group names for Galaxy users
+~d1.getent = 
+~d2.database = group
+~d2.key = "{{ item.ansible_facts.getent_passwd[item.invocation.module_args.key][2] }}"
+~d1.with_items = "{{ __galaxy_passwd_result.results }}"
+~d1.loop_control = 
+~d2.label = "{{ item.item }}"
+~d1.when = galaxy_group is not defined
+~d1.register = __galaxy_group_result
+~d0.name = Set Galaxy user facts
+~d1.set_fact = 
+~d2.__galaxy_user_group = "{{ ((galaxy_group | default({})).name | default(galaxy_group)) if galaxy_group is defined else (__galaxy_group_result.results[0].ansible_facts.getent_group.keys() | first) }}"
+~d2.__galaxy_privsep_user_group = "{{ ((galaxy_group | default({})).name | default(galaxy_group)) if galaxy_group is defined else (__galaxy_group_result.results[1].ansible_facts.getent_group.keys() | first) }}"
+~d0.name = Determine whether to restrict to group permissions
+~d1.set_fact = 
+~d2.__galaxy_dir_perms = "{{ '0750' if __galaxy_user_group == __galaxy_privsep_user_group else '0755' }}"

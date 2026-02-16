@@ -1,0 +1,2 @@
+[0].name = role_requirement
+[0].src = git+file:///tmp/live_tests/role_requirement

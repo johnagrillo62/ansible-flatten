@@ -1,0 +1,21 @@
+[0].name = Download | Prepare working directories and variables
+[0].import_tasks = prep_download.yml
+[0].when[0] = not skip_downloads | default(false)
+[0].tags[0] = download
+[0].tags[1] = upload
+[1].name = Download | Get kubeadm binary and list of required images
+[1].include_tasks = prep_kubeadm_images.yml
+[1].when[0] = not skip_downloads | default(false)
+[1].when[1] = ('kube_control_plane' in group_names)
+[1].tags[0] = download
+[1].tags[1] = upload
+[2].name = Download | Download files / images
+[2].include_tasks = {{ include_file }}
+[2].loop = {{ downloads | combine(kubeadm_images) | dict2items }}
+[2].vars.download = {{ download_defaults | combine(item.value) }}
+[2].vars.include_file = download_{% if download.container %}container{% else %}file{% endif %}.yml
+[2].when[0] = not skip_downloads | default(false)
+[2].when[1] = download.enabled
+[2].when[2] = item.value.enabled
+[2].when[3] = (not (item.value.container | default(false))) or (item.value.container and download_container)
+[2].when[4] = (download_run_once and inventory_hostname == download_delegate) or (group_names | intersect(download.groups) | length)

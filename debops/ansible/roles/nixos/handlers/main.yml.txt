@@ -1,0 +1,5 @@
+[0].name = Rebuild NixOS system
+[0]["ansible.builtin.command"] = {{ nixos__rebuild_command }}
+[0].register = nixos__register_rebuild_command
+[0].changed_when = nixos__register_rebuild_command.stdout != ''
+[0].when = nixos__rebuild | bool and not ansible_check_mode | bool

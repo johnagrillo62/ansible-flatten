@@ -1,0 +1,10 @@
+[0].hosts = lamp_varnish
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.repo-epel
+[0].roles[2] = geerlingguy.varnish
+[0].tasks[0].name = Copy Varnish default.vcl.
+[0].tasks[0].template.src = templates/default.vcl.j2
+[0].tasks[0].template.dest = /etc/varnish/default.vcl
+[0].tasks[0].notify = restart varnish

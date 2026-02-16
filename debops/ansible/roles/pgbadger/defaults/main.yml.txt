@@ -1,0 +1,45 @@
+pgbadger__base_packages[0] = pgbadger
+pgbadger__user = pgbadger
+pgbadger__group = pgbadger
+pgbadger__additional_groups[0] = adm
+pgbadger__home = {{ (ansible_local.fhs.www | d("/srv/www")) + "/" + pgbadger__user }}
+pgbadger__comment = pgBadger
+pgbadger__ssh_accounts_enabled = True
+pgbadger__ssh_inventory_group = debops_service_postgresql_server
+pgbadger__ssh_user = pgbadger
+pgbadger__ssh_group = pgbadger
+pgbadger__ssh_additional_groups[0] = {{ (ansible_local.system_groups.local_prefix | d("")) + "sshusers" }}
+pgbadger__ssh_additional_groups[1] = adm
+pgbadger__ssh_home = {{ (ansible_local.fhs.home | d("/var/local")) + "/" + pgbadger__user }}
+pgbadger__ssh_public_key_file = {{ pgbadger__home + "/.ssh/id_rsa.pub" }}
+pgbadger__fqdn = {{ "pgbadger." + ansible_domain }}
+pgbadger__www_root = {{ pgbadger__home + "/sites/" + pgbadger__fqdn + "/public" }}
+pgbadger__nginx_access_policy = 
+pgbadger__nginx_auth_realm = pgBadger access is restricted
+pgbadger__scripts_path = {{ pgbadger__home + "/scripts" }}
+pgbadger__scripts_command = pgbadger --quiet --start-monday
+pgbadger__cron_deploy_state = present
+pgbadger__cron_interval = daily
+pgbadger__default_instances[0].name = local
+pgbadger__default_instances[0].output = local.html
+pgbadger__default_instances[0].host = localhost
+pgbadger__default_instances[0].state = {{ "present"
+               if (inventory_hostname in (groups[pgbadger__ssh_inventory_group] | d([])))
+               else "absent" }}
+
+pgbadger__combined_instances = {{ pgbadger__default_instances
+                                  + pgbadger__instances
+                                  + pgbadger__group_instances
+                                  + pgbadger__host_instances }}
+
+pgbadger__nginx__dependent_servers[0].name = {{ pgbadger__fqdn }}
+pgbadger__nginx__dependent_servers[0].filename = debops.pgbadger
+pgbadger__nginx__dependent_servers[0].root = {{ pgbadger__www_root }}
+pgbadger__nginx__dependent_servers[0].webroot_create = False
+pgbadger__nginx__dependent_servers[0].access_policy = {{ pgbadger__nginx_access_policy }}
+pgbadger__nginx__dependent_servers[0].auth_basic_realm = {{ pgbadger__nginx_auth_realm }}
+pgbadger__nginx__dependent_servers[0].location_list[0].pattern = /
+pgbadger__nginx__dependent_servers[0].location_list[0].options = try_files $uri $uri/ $uri.html $uri.htm $uri/index.html =404;
+autoindex on;
+
+pgbadger__nginx__dependent_servers[0].state = present

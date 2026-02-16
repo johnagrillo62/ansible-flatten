@@ -1,0 +1,16 @@
+[0].name = Install httpd and php
+[0].yum = name={{ item }} state=present
+[0].with_items[0] = httpd
+[0].with_items[1] = php
+[0].with_items[2] = php-mysql
+[1].name = Install web role specific dependencies
+[1].yum = name={{ item }} state=installed
+[1].with_items[0] = git
+[2].name = Start firewalld
+[2].service = name=firewalld state=started enabled=yes
+[3].name = insert firewalld rule for httpd
+[3].firewalld = port={{ httpd_port }}/tcp permanent=true state=enabled immediate=yes
+[4].name = http service state
+[4].service = name=httpd state=started enabled=yes
+[5].name = Configure SELinux to allow httpd to connect to remote database
+[5].seboolean = name=httpd_can_network_connect_db state=true persistent=yes

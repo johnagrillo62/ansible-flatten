@@ -1,0 +1,2 @@
+[0].name = Install Kubernetes
+[0]["ansible.builtin.import_playbook"] = playbooks/cluster.yml

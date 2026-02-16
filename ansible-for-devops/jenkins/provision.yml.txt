@@ -1,0 +1,13 @@
+[0].hosts = all
+[0].vars.ansible_install_method = pip
+[0].vars.firewall_allowed_tcp_ports[0] = 22
+[0].vars.firewall_allowed_tcp_ports[1] = 8080
+[0].vars.jenkins_plugins[0] = ansicolor
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt.update_cache = true
+[0].pre_tasks[0].apt.cache_valid_time = 3600
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.pip
+[0].roles[2] = geerlingguy.ansible
+[0].roles[3] = geerlingguy.java
+[0].roles[4] = geerlingguy.jenkins

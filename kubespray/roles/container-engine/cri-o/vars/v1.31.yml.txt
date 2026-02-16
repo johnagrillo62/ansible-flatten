@@ -1,0 +1,9 @@
+crio_conmon = {{ crio_libexec_dir }}/conmon
+crio_runtime_bin_dir = {{ crio_libexec_dir }}
+crio_bin_files[0] = crio
+crio_bin_files[1] = pinns
+crio_libexec_files[0] = conmon
+crio_libexec_files[1] = conmonrs
+crio_libexec_files[2] = crun
+crio_libexec_files[3] = runc
+crio_status_command = crio status

@@ -1,0 +1,162 @@
+[0].name = Check package availability for {{ build.name }}
+[0]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && apt-cache madison \ {{ ([build.apt_packages] if build.apt_packages is string else build.apt_packages) | join(' ') }} \ | awk '{print $1}' | sort | uniq
+[0].args.executable = /bin/bash
+[0].register = golang__register_build_apt_packages
+[0].when = build.apt_packages | d()
+[0].changed_when = False
+[0].check_mode = False
+[1].name = Install packages for {{ build.name }}
+[1]["ansible.builtin.package"].name = {{ build.apt_packages }}
+[1]["ansible.builtin.package"].state = present
+[1].register = golang__register_install_apt_packages
+[1].until = golang__register_install_apt_packages is succeeded
+[1].when = (not (build.upstream | d()) | bool and (build.apt_packages is defined and (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines))))
+[2].name = Prepare Go UNIX environment
+[2].when = ((build.git | d() or build.url | d()) and ((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines))))))
+[2].block[0].name = Ensure that the UNIX group for Go environment exists
+[2].block[0]["ansible.builtin.group"].name = {{ golang__group }}
+[2].block[0]["ansible.builtin.group"].state = present
+[2].block[0]["ansible.builtin.group"].system = True
+[2].block[1].name = Ensure that the UNIX account for Go environment exists
+[2].block[1]["ansible.builtin.user"].name = {{ golang__user }}
+[2].block[1]["ansible.builtin.user"].group = {{ golang__group }}
+[2].block[1]["ansible.builtin.user"].home = {{ golang__home }}
+[2].block[1]["ansible.builtin.user"].comment = {{ golang__comment }}
+[2].block[1]["ansible.builtin.user"].shell = {{ golang__shell }}
+[2].block[1]["ansible.builtin.user"].state = present
+[2].block[1]["ansible.builtin.user"].system = True
+[3].name = Install required packages for {{ build.name }}
+[3]["ansible.builtin.package"].name = {{ q("flattened", (build.apt_required_packages | d([]))) }}
+[3]["ansible.builtin.package"].state = present
+[3].register = golang__register_install_apt_required_packages
+[3].until = golang__register_install_apt_required_packages is succeeded
+[3].when = (build.url | d() and build.upstream_type | d('git') == 'url' and (((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines)))))))
+[4].name = Download Go binaries directly
+[4].when = (build.url | d() and build.upstream_type | d('git') == 'url' and ((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines))))))
+[4].become = True
+[4].become_user = {{ golang__user }}
+[4].block[0].name = Create the required directories for {{ build.name }}
+[4].block[0]["ansible.builtin.file"].dest = {{ (golang__gosrc + "/" + url_item.dest) | dirname }}
+[4].block[0]["ansible.builtin.file"].state = directory
+[4].block[0]["ansible.builtin.file"].mode = 0755
+[4].block[0].loop = {{ build.url }}
+[4].block[0].loop_control.loop_var = url_item
+[4].block[1].name = Download files for {{ build.name }}
+[4].block[1]["ansible.builtin.get_url"].url = {{ url_item.src }}
+[4].block[1]["ansible.builtin.get_url"].dest = {{ golang__gosrc + "/" + url_item.dest }}
+[4].block[1]["ansible.builtin.get_url"].checksum = {{ url_item.checksum | d(omit) }}
+[4].block[1]["ansible.builtin.get_url"].mode = 0644
+[4].block[1].loop = {{ build.url }}
+[4].block[1].loop_control.loop_var = url_item
+[4].block[1].register = golang__register_get_url
+[4].block[1].until = golang__register_get_url is succeeded
+[4].block[2].name = Extract archive for {{ build.name }}
+[4].block[2]["ansible.builtin.unarchive"].src = {{ golang__gosrc + "/" + url_item.dest }}
+[4].block[2]["ansible.builtin.unarchive"].dest = {{ golang__gosrc + "/" + (url_item.unarchive_dest | d(url_item.dest | dirname)) }}
+[4].block[2]["ansible.builtin.unarchive"].remote_src = True
+[4].block[2]["ansible.builtin.unarchive"].creates = {{ golang__gosrc + "/" + url_item.unarchive_creates }}
+[4].block[2]["ansible.builtin.unarchive"].mode = u=rwX,g=rwX,o=rX
+[4].block[2].loop = {{ build.url }}
+[4].block[2].loop_control.loop_var = url_item
+[4].block[2].when = (url_item.unarchive | d()) | bool
+[4].block[3].name = Verify files for {{ build.name }}
+[4].block[3]["ansible.builtin.command"] = gpg --verify {{ golang__gosrc + "/" + url_item.dest }}
+[4].block[3].args.chdir = {{ (golang__gosrc + "/" + url_item.dest) | dirname }}
+[4].block[3].loop = {{ build.url }}
+[4].block[3].loop_control.loop_var = url_item
+[4].block[3].register = golang__register_verify
+[4].block[3].changed_when = False
+[4].block[3].failed_when = golang__register_verify.rc != 0
+[4].block[3].when = (url_item.gpg_verify | d()) | bool
+[5].name = Install binaries for {{ build.name }}
+[5]["ansible.builtin.copy"].src = {{ (""
+              if ((binary_item.src | d(binary_item)).startswith("/"))
+              else (golang__gosrc + "/"))
+             + (binary_item.src | d(binary_item)) }}
+
+[5]["ansible.builtin.copy"].dest = {{ ((binary_item.dest | dirname)
+               if (binary_item.dest | d() and "/" in binary_item.dest)
+               else "/usr/local/bin") + "/"
+              + ((binary_item.dest | d(binary_item.src | d(binary_item))) | basename) }}
+
+[5]["ansible.builtin.copy"].remote_src = True
+[5]["ansible.builtin.copy"].mode = {{ binary_item.mode | d("0755") }}
+[5].register = golang__register_download_install
+[5].notify = {{ binary_item.notify if binary_item.notify | d() else omit }}
+[5].loop = {{ build.url_binaries | d([]) }}
+[5].loop_control.loop_var = binary_item
+[5].when = (build.url_binaries | d() and build.upstream_type | d('git') == 'url' and ((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines))))))
+[6].name = Install dev packages for {{ build.name }}
+[6]["ansible.builtin.package"].name = {{ q("flattened", (golang__apt_dev_packages + (build.apt_dev_packages | d([])))) }}
+[6]["ansible.builtin.package"].state = present
+[6].register = golang__register_install_apt_dev_packages
+[6].until = golang__register_install_apt_dev_packages is succeeded
+[6].when = (build.git | d() and build.upstream_type | d('git') == 'git' and (((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines)))))))
+[7].name = Build Go applications from source
+[7].when = (build.git | d() and build.upstream_type | d('git') == 'git' and (((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines)))))))
+[7].become = True
+[7].become_user = {{ golang__user }}
+[7].block[0].name = Clone repo for {{ build.name }}
+[7].block[0]["ansible.builtin.git"].repo = {{ git_item.repo }}
+[7].block[0]["ansible.builtin.git"].dest = {{ golang__gosrc + "/" + (git_item.dest | d(git_item.repo.split("://")[1])) }}
+[7].block[0]["ansible.builtin.git"].version = {{ git_item.version | d(git_item.branch | d(omit)) }}
+[7].block[0]["ansible.builtin.git"].depth = {{ git_item.depth | d(golang__git_depth | d(omit)) }}
+[7].block[0]["ansible.builtin.git"].verify_commit = {{ True if build.gpg | d() else omit }}
+[7].block[0].loop = {{ build.git }}
+[7].block[0].loop_control.loop_var = git_item
+[7].block[0].register = golang__register_build_source
+[7].block[1].name = Build binaries for {{ build.name }}
+[7].block[1].environment.GOPATH = {{ golang__env_gopath }}
+[7].block[1].environment.GOCACHE = {{ golang__env_gocache }}
+[7].block[1].environment.PATH = {{ golang__env_path }}
+[7].block[1]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && {{ git_item.build_script }}
+[7].block[1].args.executable = /bin/bash
+[7].block[1].args.chdir = {{ golang__gosrc + "/" + (git_item.dest | d(git_item.repo.split("://")[1])) }}
+[7].block[1].loop = {{ build.git }}
+[7].block[1].loop_control.loop_var = git_item
+[7].block[1].when = git_item.build_script | d() and golang__register_build_source is changed
+[7].block[1].register = golang__register_build
+[7].block[1].changed_when = golang__register_build.changed | bool
+[8].name = Install binaries for {{ build.name }}
+[8]["ansible.builtin.copy"].src = {{ (""
+              if ((binary_item.src | d(binary_item)).startswith("/"))
+              else (golang__gosrc + "/"))
+             + (binary_item.src | d(binary_item)) }}
+
+[8]["ansible.builtin.copy"].dest = {{ ((binary_item.dest | dirname)
+               if (binary_item.dest | d() and "/" in binary_item.dest)
+               else "/usr/local/bin") + "/"
+              + ((binary_item.dest | d(binary_item.src | d(binary_item))) | basename) }}
+
+[8]["ansible.builtin.copy"].remote_src = True
+[8]["ansible.builtin.copy"].mode = {{ binary_item.mode | d("0755") }}
+[8].register = golang__register_build_install
+[8].notify = {{ binary_item.notify if binary_item.notify | d() else omit }}
+[8].loop = {{ build.git_binaries | d([]) }}
+[8].loop_control.loop_var = binary_item
+[8].when = (build.git_binaries | d() and build.upstream_type | d('git') == 'git' and ((build.upstream | d()) | bool or (build.apt_packages is undefined or (not (([build.apt_packages] if (build.apt_packages is string) else build.apt_packages) | intersect(golang__register_build_apt_packages.stdout_lines))))))
+[9].name = Create the initial Go binaries database file
+[9]["ansible.builtin.copy"].content = # This is a database of the applications installed by the 'debops.golang'
+# Ansible role and used by the '/etc/ansible/facts.d/golang.fact' script
+# to provide paths to the correct binaries.
+
+[9]["ansible.builtin.copy"].dest = {{ golang__bin_database }}
+[9]["ansible.builtin.copy"].mode = 0644
+[9]["ansible.builtin.copy"].force = False
+[9].when = build.url_binaries | d() or build.git_binaries | d()
+[10].name = Register binaries for {{ build.name }}
+[10]["ansible.builtin.lineinfile"].path = {{ golang__bin_database }}
+[10]["ansible.builtin.lineinfile"].regexp = {{ '^' + (((binary_item.dest | d(binary_item.src | d(binary_item))) | basename)
+                       | regex_replace('-', '\\-')
+                       | regex_replace('\\.', '\\\\.')) + '$' }}
+
+[10]["ansible.builtin.lineinfile"].line = {{ (binary_item.dest | d(binary_item.src | d(binary_item))) | basename }}
+[10]["ansible.builtin.lineinfile"].state = present
+[10]["ansible.builtin.lineinfile"].mode = 0644
+[10].loop = {{ build.url_binaries | d([]) + build.git_binaries | d([]) }}
+[10].loop_control.loop_var = binary_item
+[10].register = golang__register_build_database
+[10].when = build.url_binaries | d() or build.git_binaries | d()
+[11].name = Update Ansible local facts if they were modified
+[11]["ansible.builtin.setup"] = null
+[11].when = (ansible_local | d() and ansible_local.golang | d() and (ansible_local.golang.configured | d()) | bool and (golang__register_build_database is changed or golang__register_download_install is changed or golang__register_build_install is changed))

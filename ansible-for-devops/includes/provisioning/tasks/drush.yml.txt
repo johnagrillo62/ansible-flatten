@@ -1,0 +1,11 @@
+[0].name = Check out drush 8.x branch.
+[0].git.repo = https://github.com/drush-ops/drush.git
+[0].git.version = 8.x
+[0].git.dest = /opt/drush
+[1].name = Install Drush dependencies with Composer.
+[1].command = /usr/local/bin/composer install chdir=/opt/drush creates=/opt/drush/vendor/autoload.php
+
+[2].name = Create drush bin symlink.
+[2].file.src = /opt/drush/drush
+[2].file.dest = /usr/local/bin/drush
+[2].file.state = link

@@ -1,0 +1,39 @@
+[0].name = Create image directory
+[0].file.state = directory
+[0].file.path = {{ images_dir }}
+[0].file.mode = 0755
+[1].name = Download images files
+[1].get_url.url = {{ item.value.url }}
+[1].get_url.dest = {{ images_dir }}/{{ item.value.filename }}
+[1].get_url.checksum = {{ item.value.checksum }}
+[1].get_url.mode = 0644
+[1].loop = {{ images | dict2items }}
+[2].name = Unxz compressed images
+[2].command = unxz --force {{ images_dir }}/{{ item.value.filename }}
+[2].loop = {{ images | dict2items }}
+[2].when[0] = item.value.filename.endswith('.xz')
+[3].name = Convert images which is not in qcow2 format
+[3].command = qemu-img convert -O qcow2 {{ images_dir }}/{{ item.value.filename.rstrip('.xz') }} {{ images_dir }}/{{ item.key }}.qcow2
+[3].loop = {{ images | dict2items }}
+[3].when[0] = not (item.value.converted | bool)
+[4].name = Make sure all images are ending with qcow2
+[4].command = cp {{ images_dir }}/{{ item.value.filename.rstrip('.xz') }} {{ images_dir }}/{{ item.key }}.qcow2
+[4].loop = {{ images | dict2items }}
+[4].when[0] = item.value.converted | bool
+[5].name = Resize images
+[5].command = qemu-img resize {{ images_dir }}/{{ item.key }}.qcow2 +8G
+[5].loop = {{ images | dict2items }}
+[6].name = Template default Dockerfile
+[6].template.src = Dockerfile
+[6].template.dest = {{ images_dir }}/Dockerfile
+[6].template.mode = 0644
+[7].name = Create docker images for each OS
+[7].command = docker build -t {{ registry }}/vm-{{ item.key }}:{{ item.value.tag }} --build-arg cloud_image="{{ item.key }}.qcow2" {{ images_dir }}
+[7].loop = {{ images | dict2items }}
+[8].name = Docker login
+[8].command = docker login -u="{{ docker_user }}" -p="{{ docker_password }}" "{{ docker_host }}"
+[9].name = Docker push image
+[9].command = docker push {{ registry }}/vm-{{ item.key }}:{{ item.value.tag }}
+[9].loop = {{ images | dict2items }}
+[10].name = Docker logout
+[10].command = docker logout -u="{{ docker_user }}" "{{ docker_host }}"

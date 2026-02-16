@@ -1,0 +1,5 @@
+namespace = local
+name = colors
+version = 1.0.0
+readme = README.md
+authors[0] = your name <example@domain.com>

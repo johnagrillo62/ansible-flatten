@@ -1,0 +1,45 @@
+golang__user = _golang
+golang__group = _golang
+golang__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                  + "/" + golang__user }} 
+golang__shell = /usr/sbin/nologin
+golang__comment = Go build environment
+golang__apt_dev_packages[0] = golang-go
+golang__apt_dev_packages[1] = make
+golang__env_gopath = {{ golang__home + "/go" }}:/usr/share/gocode
+golang__env_gocache = {{ golang__home + "/.cache/go" }}
+golang__env_path = {{ golang__home + "/go/bin:" + ansible_env.PATH }}
+golang__gosrc = {{ golang__home + "/go/src" }}
+golang__git_depth = 0
+golang__bin_database = /usr/local/etc/golang-binaries
+golang__default_packages[0].name = golang-go
+golang__default_packages[0].apt_packages = golang-go
+golang__default_packages[0].state = {{ "ignore" if golang__dependent_packages | d() else "present" }}
+golang__combined_packages = {{ golang__default_packages
+                               + golang__dependent_packages
+                               + golang__packages
+                               + golang__group_packages
+                               + golang__host_packages }}
+
+golang__keyring__dependent_gpg_user = {{ golang__user }}
+golang__keyring__dependent_gpg_keys[0].user = {{ golang__user }}
+golang__keyring__dependent_gpg_keys[0].group = {{ golang__group }}
+golang__keyring__dependent_gpg_keys[0].home = {{ golang__home }}
+golang__keyring__dependent_gpg_keys[0].state = {{ "present"
+               if (q("flattened", golang__combined_packages) | debops.debops.parse_kv_items
+                   | selectattr("gpg", "defined") | selectattr("state", "equalto", "present")
+                   | map(attribute="gpg") | list)
+               else "absent" }}
+
+golang__keyring__dependent_gpg_keys[1] = {{ q("flattened", golang__combined_packages) | debops.debops.parse_kv_items
+        | selectattr("gpg", "defined") | selectattr("state", "equalto", "present")
+        | map(attribute="gpg") | list }}
+
+golang__apt_preferences__dependent_list[0].packages[0] = golang
+golang__apt_preferences__dependent_list[0].packages[1] = golang-*
+golang__apt_preferences__dependent_list[0].packages[2] = dh-golang
+golang__apt_preferences__dependent_list[0].backports[0] = stretch
+golang__apt_preferences__dependent_list[0].backports[1] = buster
+golang__apt_preferences__dependent_list[0].backports[2] = trusty
+golang__apt_preferences__dependent_list[0].reason = Closer feature parity with upstream
+golang__apt_preferences__dependent_list[0].by_role = debops.golang

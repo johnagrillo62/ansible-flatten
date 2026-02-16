@@ -1,0 +1,2 @@
+roles[0].name = geerlingguy.firewall
+roles[1].name = geerlingguy.glusterfs

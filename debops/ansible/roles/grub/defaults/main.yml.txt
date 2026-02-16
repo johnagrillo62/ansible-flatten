@@ -1,0 +1,114 @@
+grub__original_configuration[0].name = default
+grub__original_configuration[0].value = 0
+grub__original_configuration[0].quote = False
+grub__original_configuration[1].name = hidden_timeout
+grub__original_configuration[1].value = 0
+grub__original_configuration[1].state = {{ "present" if (ansible_distribution == "Ubuntu") else "ignore" }}
+grub__original_configuration[2].name = hidden_timeout_quiet
+grub__original_configuration[2].value = True
+grub__original_configuration[2].state = {{ "present" if (ansible_distribution == "Ubuntu") else "ignore" }}
+grub__original_configuration[3].name = timeout
+grub__original_configuration[3].value = 5
+grub__original_configuration[3].quote = False
+grub__original_configuration[4].name = distributor
+grub__original_configuration[4].value = `lsb_release -i -s 2> /dev/null || echo Debian`
+grub__original_configuration[4].quote = False
+grub__original_configuration[5].name = cmdline_linux_default
+grub__original_configuration[5].original = True
+grub__original_configuration[6].name = cmdline_linux
+grub__original_configuration[6].original = True
+grub__original_configuration[7].name = badram
+grub__original_configuration[7].comment = Uncomment to enable BadRAM filtering, modify to suit your needs
+This works with Linux (no patch required) and with any kernel that obtains
+the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+
+grub__original_configuration[7].value = 0x01234567,0xfefefefe,0x89abcdef,0xefefefef
+grub__original_configuration[7].state = comment
+grub__original_configuration[8].name = terminal
+grub__original_configuration[8].comment = Uncomment to disable graphical terminal (grub-pc only)
+grub__original_configuration[8].value = console
+grub__original_configuration[8].state = comment
+grub__original_configuration[8].quote = False
+grub__original_configuration[9].name = gfxmode
+grub__original_configuration[9].comment = The resolution used on graphical terminal
+note that you can use only modes which your graphic card supports via VBE
+you can see them in real GRUB with the command `vbeinfo'
+
+grub__original_configuration[9].value = 640x480
+grub__original_configuration[9].state = comment
+grub__original_configuration[9].quote = False
+grub__original_configuration[10].name = disable_linux_uuid
+grub__original_configuration[10].comment = Uncomment if you don't want GRUB to pass "root=UUID=xxx" parameter to Linux
+grub__original_configuration[10].value = True
+grub__original_configuration[10].state = comment
+grub__original_configuration[10].quote = False
+grub__original_configuration[11].name = disable_recovery
+grub__original_configuration[11].comment = Uncomment to disable generation of recovery mode menu entries
+grub__original_configuration[11].value = True
+grub__original_configuration[11].state = comment
+grub__original_configuration[12].name = init_tune
+grub__original_configuration[12].comment = Uncomment to get a beep at grub start
+grub__original_configuration[12].value = 480 440 1
+grub__original_configuration[12].state = comment
+grub__fact_configuration[0].name = default
+grub__fact_configuration[0].value = {{ ansible_local.grub.default | d("0") }}
+grub__fact_configuration[1].name = cmdline_linux_default
+grub__fact_configuration[1].value = {{ ansible_local.grub.cmdline_default | d([]) }}
+grub__fact_configuration[2].name = cmdline_linux
+grub__fact_configuration[2].value = {{ ansible_local.grub.cmdline | d([]) }}
+grub__default_configuration[0].name = timeout
+grub__default_configuration[0].value = {{ grub__timeout_hardware
+               if (ansible_virtualization_role is undefined or
+                   ansible_virtualization_role not in ["guest"])
+               else grub__timeout_virtual }}
+
+grub__default_configuration[1].name = cmdline_linux_default
+grub__default_configuration[1].value[0] = cgroup_enable=memory
+grub__default_configuration[1].value[1] = swapaccount=1
+grub__default_configuration[2].name = cmdline_linux_default
+grub__default_configuration[2].value[0] = elevator=noop
+grub__default_configuration[2].state = {{ "present" if (ansible_virtualization_role | d() == "guest") else "ignore" }}
+grub__default_configuration[3].name = terminal
+grub__default_configuration[3].comment = Uncomment to disable graphical terminal (grub-pc only)
+grub__default_configuration[3].value = console serial
+grub__default_configuration[3].quote = True
+grub__default_configuration[3].state = {{ "present" if grub__serial_console | bool else "ignore" }}
+grub__default_configuration[4].name = serial_command
+grub__default_configuration[4].value = serial --unit={{ grub__serial_console_unit }} --speed={{ grub__serial_console_speed }} --word=8 --parity=no --stop=1
+grub__default_configuration[4].state = {{ "present" if grub__serial_console | bool else "ignore" }}
+grub__default_configuration[5].name = cmdline_linux_default
+grub__default_configuration[5].value[0] = {{ "console=ttyS{},{}n8".format(grub__serial_console_unit, grub__serial_console_speed) }}
+grub__default_configuration[5].value[1] = console=tty0
+grub__default_configuration[5].state = {{ "present" if grub__serial_console | bool else "ignore" }}
+grub__default_configuration[6].name = linux_menuentry_class_additional
+grub__default_configuration[6].comment = Needs to be exported until it is patched upstream.
+FIXME: Remove `export` when patched upstream has reached Debian stable.
+Currently unlikely because the patch was not accepted upstream.
+
+grub__default_configuration[6].value = {{ grub__menuentry_access }}
+grub__default_configuration[6].state = {{ "present"
+               if (grub__combined_users | length > 0 and
+                   grub__menuentry_access is string)
+               else "absent" }}
+
+grub__default_configuration[6].export = True
+grub__combined_configuration = {{ grub__original_configuration
+                                  + grub__fact_configuration
+                                  + grub__default_configuration
+                                  + lookup("flattened",
+                                           grub__dependent_configuration,
+                                           wantlist=True)
+                                  + grub__configuration
+                                  + grub__group_configuration
+                                  + grub__host_configuration }}
+
+grub__serial_console = True
+grub__serial_console_unit = 0
+grub__serial_console_speed = 115200
+grub__timeout_hardware = 5
+grub__timeout_virtual = 1
+grub__combined_users = {{ grub__users + grub__group_users + grub__host_users }}
+grub__menuentry_access = --unrestricted
+grub__iter_time = default
+grub__salt_length = default
+grub__hash_length = default

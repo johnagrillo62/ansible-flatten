@@ -1,0 +1,4 @@
+~d0.name = Disable firewalld/ufw
+~d1.hosts = all
+~d1.roles = 
+~d2.{ role = prepare }

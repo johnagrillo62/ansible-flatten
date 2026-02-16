@@ -1,0 +1,15 @@
+[0].name = Containerd | Stop containerd service
+[0].service.name = containerd
+[0].service.daemon_reload = true
+[0].service.enabled = false
+[0].service.state = stopped
+[0].tags[0] = reset_containerd
+[1].name = Containerd | Remove configuration files
+[1].file.path = {{ item }}
+[1].file.state = absent
+[1].loop[0] = /etc/systemd/system/containerd.service
+[1].loop[1] = {{ containerd_systemd_dir }}
+[1].loop[2] = {{ containerd_cfg_dir }}
+[1].loop[3] = {{ containerd_storage_dir }}
+[1].loop[4] = {{ containerd_state_dir }}
+[1].tags[0] = reset_containerd

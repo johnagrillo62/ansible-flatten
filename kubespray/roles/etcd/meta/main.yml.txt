@@ -1,0 +1,7 @@
+dependencies[0].role = adduser
+dependencies[0].user = {{ addusers.etcd }}
+dependencies[0].when = not (ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk", "ClearLinux"] or is_fedora_coreos)
+dependencies[1].role = adduser
+dependencies[1].user = {{ addusers.kube }}
+dependencies[1].when = not (ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk", "ClearLinux"] or is_fedora_coreos)
+dependencies[2].role = etcd_defaults

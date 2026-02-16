@@ -1,0 +1,4 @@
+snapshot_classes[0].name = cinder-csi-snapshot
+snapshot_classes[0].is_default = false
+snapshot_classes[0].force_create = true
+snapshot_classes[0].deletionPolicy = Delete

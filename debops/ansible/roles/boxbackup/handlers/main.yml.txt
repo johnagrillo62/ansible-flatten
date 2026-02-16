@@ -1,0 +1,8 @@
+~d0.name = Restart boxbackup-server
+~d1.ansible.builtin.service = 
+~d2.name = 'boxbackup-server'
+~d2.state = 'restarted'
+~d0.name = Restart boxbackup-client
+~d1.ansible.builtin.service = 
+~d2.name = 'boxbackup-client'
+~d2.state = 'restarted'

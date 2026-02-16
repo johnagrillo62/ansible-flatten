@@ -1,0 +1,96 @@
+---
+# tasks/SmartOS/dashboard.yml: Deployment of the Uchiwa dashboard
+# Specific to Joyent SmartOS
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: dashboard
+
+- name: Ensure Uchiwa (dashboard) dependencies are installed
+  tags: dashboard
+  pkgin: name=go state=present
+
+- name: Ensure Uchiwa directory exists
+  tags: dashboard
+  file:
+    dest: "{{ sensu_uchiwa_path }}"
+    state: directory
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+    recurse: true
+
+- name: Ensure Uchiwa Go/config directory exists
+  tags: dashboard
+  file:
+    dest: "{{ sensu_uchiwa_path }}/{{ item }}"
+    state: directory
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+    recurse: true
+  loop:
+    - etc
+    - go
+
+- name: Ensure Uchiwa GOPATH exists
+  tags: dashboard
+  file:
+    dest: "{{ sensu_uchiwa_path }}/go/{{ item }}"
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+    state: directory
+    recurse: true
+  loop:
+    - bin
+    - pkg
+    - src
+
+- name: Fetch Uchiwa from GitHub
+  tags: dashboard
+  command: go get github.com/sensu/uchiwa
+  environment:
+    GOPATH: "{{ sensu_uchiwa_path }}/go"
+  args:
+    creates: "{{ sensu_uchiwa_path }}/go/src/github.com/sensu/uchiwa"
+  notify: Build and deploy Uchiwa
+  become: true
+  become_user: "{{ sensu_user_name }}"
+
+- meta: flush_handlers
+  tags: dashboard
+
+- name: Deploy Uchiwa config
+  tags: dashboard
+  template:
+    src: uchiwa_config.json.j2
+    dest: "{{ sensu_uchiwa_path }}/etc/config.json"
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  notify: restart uchiwa service
+
+- name: Deploy Uchiwa service script
+  tags: dashboard
+  template:
+    src: uchiwa.sh.j2
+    dest: /opt/local/lib/svc/method/uchiwa
+    owner: root
+    group: root
+    mode: 0755
+  notify: restart uchiwa service
+
+- name: Deploy Uchiwa service manifest
+  tags: dashboard
+  template:
+    dest: /opt/local/lib/svc/manifest/uchiwa.xml
+    src: uchiwa.smartos_smf_manifest.xml.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify: import uchiwa service
+
+- meta: flush_handlers
+  tags: dashboard
+
+- name: Ensure Uchiwa server service is running
+  service: name=uchiwa state=started enabled=yes
+  tags: dashboard

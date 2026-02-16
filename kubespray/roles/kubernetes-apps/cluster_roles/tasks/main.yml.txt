@@ -1,0 +1,62 @@
+[0].name = Kubernetes Apps | Wait for kube-apiserver
+[0].uri.url = {{ kube_apiserver_endpoint }}/healthz
+[0].uri.validate_certs = false
+[0].uri.client_cert = {{ kube_apiserver_client_cert }}
+[0].uri.client_key = {{ kube_apiserver_client_key }}
+[0].register = result
+[0].until = result.status == 200
+[0].retries = 10
+[0].delay = 6
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Kubernetes Apps | Add ClusterRoleBinding to admit nodes
+[1].template.src = node-crb.yml.j2
+[1].template.dest = {{ kube_config_dir }}/node-crb.yml
+[1].template.mode = 0640
+[1].register = node_crb_manifest
+[1].when[0] = rbac_enabled
+[1].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = Apply workaround to allow all nodes with cert O=system:nodes to register
+[2].kube.name = kubespray:system:node
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.resource = clusterrolebinding
+[2].kube.filename = {{ kube_config_dir }}/node-crb.yml
+[2].kube.state = latest
+[2].register = result
+[2].until = result is succeeded
+[2].retries = 10
+[2].delay = 6
+[2].when[0] = rbac_enabled
+[2].when[1] = node_crb_manifest.changed
+[2].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = Kubernetes Apps | Remove old webhook ClusterRole
+[3].kube.name = system:node-webhook
+[3].kube.kubectl = {{ bin_dir }}/kubectl
+[3].kube.resource = clusterrole
+[3].kube.state = absent
+[3].when[0] = rbac_enabled
+[3].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+[3].tags = node-webhook
+[4].name = Kubernetes Apps | Remove old webhook ClusterRoleBinding
+[4].kube.name = system:node-webhook
+[4].kube.kubectl = {{ bin_dir }}/kubectl
+[4].kube.resource = clusterrolebinding
+[4].kube.state = absent
+[4].when[0] = rbac_enabled
+[4].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+[4].tags = node-webhook
+[5].name = PriorityClass | Copy k8s-cluster-critical-pc.yml file
+[5].copy.src = k8s-cluster-critical-pc.yml
+[5].copy.dest = {{ kube_config_dir }}/k8s-cluster-critical-pc.yml
+[5].copy.mode = 0640
+[5].when = inventory_hostname == groups['kube_control_plane'] | last
+[6].name = PriorityClass | Create k8s-cluster-critical
+[6].kube.name = k8s-cluster-critical
+[6].kube.kubectl = {{ bin_dir }}/kubectl
+[6].kube.resource = PriorityClass
+[6].kube.filename = {{ kube_config_dir }}/k8s-cluster-critical-pc.yml
+[6].kube.state = latest
+[6].register = result
+[6].until = result is succeeded
+[6].retries = 10
+[6].delay = 6
+[6].when = inventory_hostname == groups['kube_control_plane'] | last

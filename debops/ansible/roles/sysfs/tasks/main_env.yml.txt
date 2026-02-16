@@ -1,0 +1,3 @@
+[0].name = Prepare sysfs environment
+[0]["ansible.builtin.set_fact"].sysfs__secret__directories = {{ lookup("template", "lookup/sysfs__secret__directories.j2") | from_yaml }}
+[0].when = sysfs__enabled | bool

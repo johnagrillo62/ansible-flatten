@@ -1,0 +1,7 @@
+dependencies[0].role = kubernetes-apps/snapshots/snapshot-controller
+dependencies[0].when[0] = cinder_csi_enabled or csi_snapshot_controller_enabled
+dependencies[0].tags[0] = snapshot-controller
+dependencies[1].role = kubernetes-apps/snapshots/cinder-csi
+dependencies[1].when[0] = cinder_csi_enabled
+dependencies[1].tags[0] = snapshot
+dependencies[1].tags[1] = cinder-csi-driver

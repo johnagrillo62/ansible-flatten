@@ -1,0 +1,6 @@
+doc[0][0].hosts = all
+doc[0][0].gather_facts = no
+doc[0][0].tasks[0].file = dest=/etc/fooapp state=directory
+doc[0][0].tasks[1].copy = src={{ item }} dest=/etc/fooapp/ owner=root mode=600
+doc[0][0].tasks[1].with_fileglob = /playbooks/files/fooapp/*
+doc[1] = 

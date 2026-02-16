@@ -1,0 +1,8 @@
+environment__enabled = {{ lookup("template", "lookup/environment__enabled.j2")
+                          | from_yaml | bool }} 
+environment__file = /etc/environment
+environment__case = preserve
+environment__placement = before
+environment__default_variables[0] = {{ inventory__environment | d({}) }}
+environment__default_variables[1] = {{ inventory__group_environment | d({}) }}
+environment__default_variables[2] = {{ inventory__host_environment | d({}) }}

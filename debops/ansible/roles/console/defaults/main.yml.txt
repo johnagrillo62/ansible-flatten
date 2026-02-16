@@ -1,0 +1,15 @@
+console_serial = False
+console_serial_port = ttyS0
+console_serial_baud = 115200
+console_serial_term = xterm
+console_serial_inittab = S0:2345:respawn:/sbin/getty -L {{ console_serial_port }} {{ console_serial_baud }} {{ console_serial_term }}
+console_base_packages[0] = locales
+console_conditional_packages[0][0] = {{ "nfs-common"
+          if (console_mounts_nfs | d() or
+              console_group_mounts_nfs | d() or
+              console_host_mounts_nfs | d())
+          else [] }}
+
+console_fsckfix = yes
+console_fsckfix_releases[0] = trusty
+console_fsckfix_releases[1] = xenial

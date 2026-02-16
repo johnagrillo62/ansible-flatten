@@ -1,0 +1,4 @@
+~d0.name = Manage regular Tinc VPN installation
+~d1.import_playbook = 'tinc-plain.yml'
+~d0.name = Manage Tinc VPN installation on QubesOS
+~d1.import_playbook = 'tinc-persistent_paths.yml'

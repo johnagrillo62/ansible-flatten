@@ -1,0 +1,17 @@
+~d0.name = Disable firewalld and ufw
+~d1.when = 
+~d1.block = 
+~d1.name = List services
+~d2.service_facts = 
+~d1.name = Disable service firewalld
+~d2.systemd_service = 
+~d3.name = firewalld
+~d3.state = stopped
+~d3.enabled = false
+~d2.when = 
+~d1.name = Disable service ufw
+~d2.systemd_service = 
+~d3.name = ufw
+~d3.state = stopped
+~d3.enabled = false
+~d2.when = 

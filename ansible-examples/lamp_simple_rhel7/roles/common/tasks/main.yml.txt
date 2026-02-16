@@ -1,0 +1,15 @@
+[0].name = Install ntp
+[0].yum = name=ntp state=present
+[0].tags = ntp
+[1].name = Install common dependencies
+[1].yum = name={{ item }} state=installed
+[1].with_items[0] = libselinux-python
+[1].with_items[1] = libsemanage-python
+[1].with_items[2] = firewalld
+[2].name = Configure ntp file
+[2].template = src=ntp.conf.j2 dest=/etc/ntp.conf
+[2].tags = ntp
+[2].notify = restart ntp
+[3].name = Start the ntp service
+[3].service = name=ntpd state=started enabled=yes
+[3].tags = ntp

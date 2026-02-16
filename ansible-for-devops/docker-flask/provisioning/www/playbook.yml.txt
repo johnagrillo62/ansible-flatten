@@ -1,0 +1,16 @@
+[0].hosts = localhost
+[0].become = true
+[0].tasks[0].name = Get host IP address.
+[0].tasks[0].shell = /sbin/ip route | awk '/default/ { print $3 }'
+[0].tasks[0].register = host_ip
+[0].tasks[0].changed_when = false
+[0].tasks[1].name = Set host_ip_address variable.
+[0].tasks[1].set_fact.host_ip_address = {{ host_ip.stdout }}
+[0].tasks[2].name = Copy Flask app into place.
+[0].tasks[2].template.src = /etc/ansible/index.py.j2
+[0].tasks[2].template.dest = /opt/www/index.py
+[0].tasks[2].template.mode = 0755
+[0].tasks[3].name = Copy Flask templates into place.
+[0].tasks[3].copy.src = /etc/ansible/templates
+[0].tasks[3].copy.dest = /opt/www
+[0].tasks[3].copy.mode = 0755

@@ -1,0 +1,21 @@
+[0].name = Skopeo | check if fedora coreos
+[0].stat.path = /run/ostree-booted
+[0].stat.get_attributes = false
+[0].stat.get_checksum = false
+[0].stat.get_mime = false
+[0].register = ostree
+[1].name = Skopeo | set is_ostree
+[1].set_fact.is_ostree = {{ ostree.stat.exists }}
+[2].name = Skopeo | Uninstall skopeo package managed by package manager
+[2].package.name = skopeo
+[2].package.state = absent
+[2].when[0] = not (is_ostree or (ansible_distribution == "Flatcar Container Linux by Kinvolk") or (ansible_distribution == "Flatcar"))
+[2].ignore_errors = true
+[3].name = Skopeo | Download skopeo binary
+[3].include_tasks = ../../../download/tasks/download_file.yml
+[3].vars.download = {{ download_defaults | combine(downloads.skopeo) }}
+[4].name = Copy skopeo binary from download dir
+[4].copy.src = {{ downloads.skopeo.dest }}
+[4].copy.dest = {{ bin_dir }}/skopeo
+[4].copy.mode = 0755
+[4].copy.remote_src = true

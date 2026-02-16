@@ -1,0 +1,33 @@
+[0].block[0].debug.msg = Running openshift_node_pre_cordon_hook {{ openshift_node_pre_cordon_hook }}
+[0].block[1].include_tasks = {{ openshift_node_pre_cordon_hook }}
+[0].when = openshift_node_pre_cordon_hook is defined
+[1].name = Cordon node prior to upgrade
+[1].command = oc adm cordon {{ ansible_nodename | lower }} --kubeconfig={{ openshift_node_kubeconfig_path }}
+
+[1].delegate_to = localhost
+[2].name = Drain node prior to upgrade
+[2].command = oc adm drain {{ ansible_nodename | lower }} --kubeconfig={{ openshift_node_kubeconfig_path }} --force --delete-emptydir-data --ignore-daemonsets
+
+[2].delegate_to = localhost
+[3].block[0].debug.msg = Running node openshift_node_pre_upgrade_hook {{ openshift_node_pre_upgrade_hook }}
+[3].block[1].include_tasks = {{ openshift_node_pre_upgrade_hook }}
+[3].when = openshift_node_pre_upgrade_hook is defined
+[4].name = Gather the package facts
+[4]["ansible.builtin.package_facts"].manager = auto
+[5].name = Remove conflicts from openshift-hyperkube
+[5].dnf.name = openshift-hyperkube
+[5].dnf.state = absent
+[5].when[0] = 'openshift-hyperkube' in ansible_facts.packages
+[6].import_tasks = install.yml
+[7].import_tasks = apply_machine_config.yml
+[8].block[0].debug.msg = Running openshift_node_pre_uncordon_hook {{ openshift_node_pre_uncordon_hook }}
+[8].block[1].include_tasks = {{ openshift_node_pre_uncordon_hook }}
+[8].when = openshift_node_pre_uncordon_hook is defined
+[9].name = Uncordon node after upgrade
+[9].command = oc adm uncordon {{ ansible_nodename | lower }} --kubeconfig={{ openshift_node_kubeconfig_path }}
+
+[9].delegate_to = localhost
+[10].block[0].debug.msg = Running node openshift_node_post_upgrade_hook {{ openshift_node_post_upgrade_hook }}
+[10].block[1].include_tasks = {{ openshift_node_post_upgrade_hook }}
+[10].when = openshift_node_post_upgrade_hook is defined
+[11].import_tasks = selinux.yml

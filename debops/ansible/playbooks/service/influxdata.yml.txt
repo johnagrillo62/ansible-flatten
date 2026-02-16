@@ -1,0 +1,11 @@
+~d0.name = Manage InfluxData APT repositories
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_influxdata' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = keyring
+~d3.tags = [ 'role::keyring', 'skip::keyring', 'role::influxdata' ]
+~d3.keyring__dependent_apt_keys = 
+~d2.role = influxdata
+~d3.tags = [ 'role::influxdata', 'skip::influxdata' ]

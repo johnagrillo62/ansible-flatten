@@ -1,0 +1,31 @@
+[0].name = Get our collection package
+[0]["awx.awx.controller_meta"] = null
+[0].register = controller_meta
+[1].name = Generate the name of our plugin
+[1]["ansible.builtin.set_fact"].plugin_name = {{ controller_meta.prefix }}.schedule_rrule
+[2].name = Lookup with too many parameters (should fail)
+[2]["ansible.builtin.set_fact"]._rrule = {{ query(plugin_name, days_of_week=[1, 2], days_of_month=[15]) }}
+[2].register = result_too_many_params
+[2].ignore_errors = true
+[3].name = Assert proper error is reported for too many parameters
+[3]["ansible.builtin.assert"].that[0] = result_too_many_params.failed
+[3]["ansible.builtin.assert"].that[1] = 'You may only pass one schedule type in at a time' in result_too_many_params.msg
+[4].name = Attempt invalid schedule_rrule lookup with bad frequency
+[4]["ansible.builtin.debug"].msg = {{ lookup(plugin_name, 'john', start_date='2020-04-16 03:45:07') }}
+[4].register = result_bad_freq
+[4].ignore_errors = true
+[5].name = Assert proper error is reported for bad frequency
+[5]["ansible.builtin.assert"].that[0] = result_bad_freq.failed
+[5]["ansible.builtin.assert"].that[1] = 'Frequency of john is invalid' in result_bad_freq.msg | default('')
+[6].name = Test an invalid start date
+[6]["ansible.builtin.debug"].msg = {{ lookup(plugin_name, 'none', start_date='invalid') }}
+[6].register = result_bad_date
+[6].ignore_errors = true
+[7].name = Assert plugin error message for invalid start date
+[7]["ansible.builtin.assert"].that[0] = result_bad_date.failed
+[7]["ansible.builtin.assert"].that[1] = 'Parameter start_date must be in the format YYYY-MM-DD' in result_bad_date.msg | default('')
+[8].name = Test end_on as count (generic success case)
+[8]["ansible.builtin.debug"].msg = {{ lookup(plugin_name, 'minute', start_date='2020-4-16 03:45:07', end_on='2') }}
+[8].register = result_success
+[9].name = Assert successful rrule generation
+[9]["ansible.builtin.assert"].that[0] = result_success.msg == 'DTSTART;TZID=America/New_York:20200416T034507 RRULE:FREQ=MINUTELY;COUNT=2;INTERVAL=1'

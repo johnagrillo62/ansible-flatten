@@ -1,0 +1,17 @@
+[0].hosts = pull_mode_hosts
+[0].remote_user = root
+[0].vars.schedule = */15 * * * *
+[0].vars.cron_user = root
+[0].vars.logfile = /var/log/ansible-pull.log
+[0].vars.workdir = /var/lib/ansible/local
+[0].vars.repo_url = SUPPLY_YOUR_OWN_GIT_URL_HERE
+[0].tasks[0].name = Install ansible
+[0].tasks[0].yum = pkg=ansible state=installed
+[0].tasks[1].name = Create local directory to work from
+[0].tasks[1].file = path={{workdir}} state=directory owner=root group=root mode=0751
+[0].tasks[2].name = Copy ansible inventory file to client
+[0].tasks[2].copy = src=/etc/ansible/hosts dest=/etc/ansible/hosts owner=root group=root mode=0644
+[0].tasks[3].name = Create crontab entry to clone/pull git repository
+[0].tasks[3].template = src=templates/etc_cron.d_ansible-pull.j2 dest=/etc/cron.d/ansible-pull owner=root group=root mode=0644
+[0].tasks[4].name = Create logrotate entry for ansible-pull.log
+[0].tasks[4].template = src=templates/etc_logrotate.d_ansible-pull.j2 dest=/etc/logrotate.d/ansible-pull owner=root group=root mode=0644

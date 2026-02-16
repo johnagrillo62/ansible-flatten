@@ -1,0 +1,21 @@
+[0].hosts = all
+[0].become = true
+[0].vars_files[0] = vars.yml
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt = update_cache=true cache_valid_time=3600
+[0].tasks[0].name = Install Java.
+[0].tasks[0].apt = name=openjdk-11-jdk state=present
+[0].tasks[1].name = Download Solr.
+[0].tasks[1].get_url.url = https://archive.apache.org/dist/lucene/solr/{{ solr_version }}/solr-{{ solr_version }}.tgz
+[0].tasks[1].get_url.dest = {{ download_dir }}/solr-{{ solr_version }}.tgz
+[0].tasks[1].get_url.checksum = {{ solr_checksum }}
+[0].tasks[2].name = Expand Solr.
+[0].tasks[2].unarchive.src = {{ download_dir }}/solr-{{ solr_version }}.tgz
+[0].tasks[2].unarchive.dest = {{ download_dir }}
+[0].tasks[2].unarchive.remote_src = true
+[0].tasks[2].unarchive.creates = {{ download_dir }}/solr-{{ solr_version }}/README.txt
+[0].tasks[3].name = Run Solr installation script.
+[0].tasks[3].command = {{ download_dir }}/solr-{{ solr_version }}/bin/install_solr_service.sh {{ download_dir }}/solr-{{ solr_version }}.tgz -i /opt -d /var/solr -u solr -s solr -p 8983 creates={{ solr_dir }}/bin/solr
+
+[0].tasks[4].name = Ensure solr is started and enabled on boot.
+[0].tasks[4].service = name=solr state=started enabled=yes

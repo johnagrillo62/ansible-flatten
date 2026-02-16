@@ -1,0 +1,6 @@
+[0].name = Converge
+[0].hosts = all
+[0].become = true
+[0].gather_facts = false
+[0].roles[0].role = adduser
+[0].vars.user.name = foo

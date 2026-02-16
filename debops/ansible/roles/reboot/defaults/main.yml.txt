@@ -1,0 +1,7 @@
+reboot__boot_time_command = uptime
+reboot__force = False
+reboot__default_search_paths[0] = /lib/molly-guard
+reboot__default_search_paths[1] = /sbin
+reboot__default_search_paths[2] = /usr/sbin
+reboot__default_search_paths[3] = /usr/local/sbin
+reboot__timeout = 600

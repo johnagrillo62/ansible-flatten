@@ -1,0 +1,2 @@
+[0].name = Upgrade cluster
+[0]["ansible.builtin.import_playbook"] = playbooks/upgrade_cluster.yml

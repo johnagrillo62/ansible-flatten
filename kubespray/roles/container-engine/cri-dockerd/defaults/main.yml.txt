@@ -1,0 +1,1 @@
+~d0.cri_dockerd_log_level = "info"

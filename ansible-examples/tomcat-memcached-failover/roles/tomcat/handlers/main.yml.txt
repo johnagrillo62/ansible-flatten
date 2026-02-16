@@ -1,0 +1,2 @@
+[0].name = restart tomcat
+[0].service = name=tomcat state=restarted

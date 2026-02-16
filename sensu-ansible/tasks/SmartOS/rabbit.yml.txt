@@ -1,0 +1,8 @@
+[0].name = Ensure RabbitMQ is installed
+[0].tags = rabbitmq
+[0].pkgin = name=rabbitmq state=present
+[1].name = Ensure EPMD is running
+[1].tags = rabbitmq
+[1].service.name = epmd
+[1].service.state = started
+[1].service.enabled = true

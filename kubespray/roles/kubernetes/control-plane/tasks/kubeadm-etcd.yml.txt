@@ -1,0 +1,19 @@
+[0].name = Calculate etcd cert serial
+[0].command = openssl x509 -in {{ kube_cert_dir }}/apiserver-etcd-client.crt -noout -serial
+[0].register = etcd_client_cert_serial_result
+[0].changed_when = false
+[0].tags[0] = network
+[1].name = Set etcd_client_cert_serial
+[1].set_fact.etcd_client_cert_serial = {{ etcd_client_cert_serial_result.stdout.split('=')[1] }}
+[1].tags[0] = network
+[2].name = Ensure etcdctl and etcdutl script is installed
+[2].import_role.name = etcdctl_etcdutl
+[2].when = etcd_deployment_type == "kubeadm"
+[2].tags[0] = etcdctl
+[2].tags[1] = etcdutl
+[3].name = Set ownership for etcd data directory
+[3].file.path = {{ etcd_data_dir }}
+[3].file.owner = {{ etcd_owner }}
+[3].file.group = {{ etcd_owner }}
+[3].file.mode = 0700
+[3].when = etcd_deployment_type == "kubeadm"

@@ -1,0 +1,8 @@
+[0].name = Test apache and reload
+[0]["ansible.builtin.command"] = apache2ctl configtest
+[0].register = apache__register_reload
+[0].changed_when = apache__register_reload.changed | bool
+[0].notify[0] = Reload apache
+[1].name = Reload apache
+[1]["ansible.builtin.service"].name = {{ apache__service_name }}
+[1]["ansible.builtin.service"].state = reloaded

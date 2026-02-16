@@ -1,0 +1,83 @@
+unbound__base_packages[0] = unbound
+unbound__default_server[0].name = localhost-allow_snoop
+unbound__default_server[0].option = access-control
+unbound__default_server[0].comment = By default unbound blocks non-recursive queries to prevent abuse; this
+prevents commands like 'dig +trace' from working correctly. Since query
+tracing is a useful debugging and diagnostic tool, non-recursive queries
+will be allowed when the host is managed locally with assumption that
+this is an administrator's machine.
+
+unbound__default_server[0].value[0].name = 127.0.0.0/8
+unbound__default_server[0].value[0].args = allow_snoop
+unbound__default_server[0].value[1].name = ::1/128
+unbound__default_server[0].value[1].args = allow_snoop
+unbound__default_server[0].state = {{ "present"
+               if (unbound__fact_ansible_connection == "local")
+               else "ignore" }}
+
+unbound__combined_server = {{ unbound__default_server
+                              + unbound__server
+                              + unbound__group_server
+                              + unbound__host_server }}
+
+unbound__default_remote_control[0].name = control-enable
+unbound__default_remote_control[0].comment = Enable remote control of the 'unbound' daemon by default. This is needed
+for the 'systemctl reload unbound.service' command to work correctly.
+
+unbound__default_remote_control[0].value = True
+unbound__combined_remote_control = {{ unbound__default_remote_control
+                                      + unbound__remote_control
+                                      + unbound__group_remote_control
+                                      + unbound__host_remote_control }}
+
+unbound__default_zones[0].name = block-dns-over-https
+unbound__default_zones[0].comment = Blocking the 'use-application-dns.net' domain instructs the applications
+that support DNS over HTTPS to not use it and rely on the system resolver
+instead. This might be required for certain applications to support
+access to internal services, resolve split-DNS correctly, etc.
+
+Ref: https://support.mozilla.org/en-US/kb/canary-domain-use-application-dnsnet
+
+unbound__default_zones[0].zone = use-application-dns.net.
+unbound__default_zones[0].type = local
+unbound__default_zones[0].local_zone_type = always_nxdomain
+unbound__default_zones[1].name = lxc-net
+unbound__default_zones[1].comment = Support for resolving LXC container hosts that use the 'lxc-net' bridge
+configuration
+
+unbound__default_zones[1].zone = {{ (ansible_local.lxc.net_domain + ".")
+              if (ansible_local.lxc.net_domain | d())
+              else "" }}
+
+unbound__default_zones[1].revdns = {{ ansible_local.lxc.net_subnet | d("") }}
+unbound__default_zones[1].nameserver = {{ ansible_local.lxc.net_address | d("") }}
+unbound__default_zones[1].state = {{ "present"
+               if (ansible_local.lxc.net_domain | d())
+               else "absent" }}
+
+unbound__default_zones[2].name = consul
+unbound__default_zones[2].comment = Support for Consul Agent DNS service on localhost
+Ref: https://www.consul.io/docs/agent/dns.html
+
+unbound__default_zones[2].zone = consul.
+unbound__default_zones[2].type = stub
+unbound__default_zones[2].options[0].stub-addr = 127.0.0.1@8600
+unbound__default_zones[2].server_options[0].do-not-query-localhost = False
+unbound__default_zones[2].server_options[1].domain-insecure = consul.
+unbound__default_zones[2].state = {{ "present"
+               if (ansible_local | d() and ansible_local.consul | d() and
+                   (ansible_local.consul.installed | d()) | bool)
+               else "absent" }}
+
+unbound__combined_zones = {{ unbound__default_zones
+                             + unbound__zones
+                             + unbound__group_zones
+                             + unbound__host_zones }}
+
+unbound__parsed_zones = {{ unbound__combined_zones
+                                | debops.debops.parse_kv_items(merge_keys=["server_options"]) }} 
+unbound__python__dependent_packages3[0] = python3-unbound
+unbound__python__dependent_packages2[0] = python-unbound
+unbound__etc_services__dependent_list[0].name = unbound-ctrl
+unbound__etc_services__dependent_list[0].port = 8953
+unbound__etc_services__dependent_list[0].comment = Unbound control service

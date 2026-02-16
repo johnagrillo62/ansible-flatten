@@ -1,0 +1,15 @@
+~d0.name = Make sure conf override dir exists
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/systemd/timesyncd.conf.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d0.name = Configure systemd-timesyncd
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/systemd/timesyncd.conf.d/ansible.conf.j2'
+~d2.dest = '/etc/systemd/timesyncd.conf.d/ansible.conf'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.notify = [ 'Restart systemd-timesyncd' ]

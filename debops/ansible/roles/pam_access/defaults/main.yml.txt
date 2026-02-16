@@ -1,0 +1,11 @@
+pam_access__enabled = True
+pam_access__default_rules[0].name = global
+pam_access__default_rules[0].filename = access.conf
+pam_access__default_rules[0].divert = True
+pam_access__default_rules[0].state = init
+pam_access__combined_rules = {{ q("flattened", (pam_access__default_rules
+                                                + pam_access__dependent_rules
+                                                + pam_access__rules
+                                                + pam_access__group_rules
+                                                + pam_access__host_rules)) }}
+

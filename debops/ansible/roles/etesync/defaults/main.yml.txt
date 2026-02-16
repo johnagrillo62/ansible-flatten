@@ -1,0 +1,144 @@
+etesync__domain = {{ ansible_domain }}
+etesync__fqdn = etesync.{{ etesync__domain }}
+etesync__base_packages[0] = git
+etesync__user = etesync
+etesync__group = etesync
+etesync__gecos = EteSync
+etesync__shell = /usr/sbin/nologin
+etesync__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                   + "/" + etesync__user }} 
+etesync__etc = /etc/etesync-server
+etesync__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                  + "/" + etesync__user }} 
+etesync__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
+                  + "/" + etesync__user }} 
+etesync__data = {{ (ansible_local.fhs.data | d("/srv"))
+                   + "/" + etesync__user }} 
+etesync__git_gpg_key_id = 9E21 F091 FC39 5F36 6A47  43E2 D2E5 84C3 7C47 7933
+etesync__git_repo = https://github.com/etesync/server.git
+etesync__git_version = b026643cceae07b039942bf0c990ccf917eb072a
+etesync__git_dest = {{ etesync__src + "/" + etesync__git_repo.split("://")[1] }}
+etesync__git_checkout = {{ etesync__lib + "/app" }}
+etesync__virtualenv = {{ etesync__lib + "/virtualenv" }}
+etesync__config_allowed_hosts[0] = {{ ansible_hostname }}
+etesync__config_allowed_hosts[1] = {{ ansible_fqdn }}
+etesync__config_allowed_hosts[2] = {{ etesync__fqdn }}
+etesync__config_allowed_hosts[3] = localhost
+etesync__config_allowed_hosts[4] = [::1]
+etesync__config_allowed_hosts[5] = 127.0.0.1
+etesync__config_secret_key = {{ lookup("password", secret + "/etesync/" +
+                                etesync__domain + "/config/secret_key length=64") }} 
+etesync__config_secret_key_filepath = {{ etesync__etc + "/secret.txt" }}
+etesync__superuser_name = {{ ansible_local.core.admin_users[0]
+                             if (ansible_local.core.admin_users | d())
+                             else "admin" }}
+
+etesync__superuser_email = {{ ansible_local.core.admin_private_email[0]
+                              if (ansible_local.core.admin_private_email | d())
+                              else ("root@" + etesync__domain) }}
+
+etesync__superuser_password = {{ lookup("password", secret + "/etesync/" +
+                                 inventory_hostname + "/superuser/" +
+                                 etesync__superuser_name + "/password") }}
+
+etesync__app_name = {{ etesync__user }}
+etesync__app_runtime_dir = {{ "gunicorn"
+                              if (ansible_distribution_release in
+                                  ["trusty", "xenial"])
+                              else "gunicorn-etesync" }}
+
+etesync__app_bind = unix:/run/{{ etesync__app_runtime_dir }}/etesync.sock
+etesync__app_workers = {{ ansible_processor_vcpus | int + 1 }}
+etesync__app_timeout = 900
+etesync__app_params[0] = --name={{ etesync__app_name }}
+etesync__app_params[1] = --bind={{ etesync__app_bind }}
+etesync__app_params[2] = --workers={{ etesync__app_workers }}
+etesync__app_params[3] = --timeout={{ etesync__app_timeout }}
+etesync__app_params[4] = etesync_server.wsgi
+etesync__max_file_size = 5
+etesync__python_version = {{ ansible_local.python.version3 | d("3.x") }}
+etesync__http_psk_subpath_enabled = False
+etesync__http_psk_subpath = {{ lookup("password", secret + "/etesync/" +
+                                 inventory_hostname + "/config/subpath chars=ascii_letters,digits length=23")
+                               if etesync__http_psk_subpath_enabled | bool
+                               else "" }}
+
+etesync__url = {{ "https://" + etesync__fqdn + "/" + etesync__http_psk_subpath }}
+etesync__admin_auth_basic_realm = Access to EteSync admin interface is restricted
+etesync__admin_auth_basic_filename = 
+etesync__mail_to[0] = root@{{ ansible_domain }}
+etesync__mail_subject = PSK subpath URL to EteSync on {{ ansible_fqdn }}
+etesync__mail_body = EteSync has been deployed for the first time on {{ ansible_fqdn }}.
+You have chosen to deploy the service on a random subpath thus the URL is
+needed to access the service.
+
+URL: {{ etesync__url }}
+
+You can continue the user setup in the Django administration interface of EteSync over at:
+{{ etesync__url }}/admin
+
+Have a nice day :)
+
+etesync__keyring__dependent_gpg_keys[0].user = {{ etesync__user }}
+etesync__keyring__dependent_gpg_keys[0].group = {{ etesync__group }}
+etesync__keyring__dependent_gpg_keys[0].home = {{ etesync__home }}
+etesync__keyring__dependent_gpg_keys[0].id = {{ etesync__git_gpg_key_id }}
+etesync__python__dependent_packages3[0] = python3-setproctitle
+etesync__python__dependent_packages3[1] = python3-dev
+etesync__python__dependent_packages3[2] = python3-tz
+etesync__gunicorn__dependent_applications[0].name = etesync
+etesync__gunicorn__dependent_applications[0].mode = wsgi
+etesync__gunicorn__dependent_applications[0].working_dir = {{ etesync__git_checkout }}
+etesync__gunicorn__dependent_applications[0].python = {{ etesync__virtualenv + "/bin/python3" }}
+etesync__gunicorn__dependent_applications[0].user = {{ etesync__user }}
+etesync__gunicorn__dependent_applications[0].group = {{ etesync__group }}
+etesync__gunicorn__dependent_applications[0].home = {{ etesync__home }}
+etesync__gunicorn__dependent_applications[0].system = True
+etesync__gunicorn__dependent_applications[0].timeout = {{ etesync__app_timeout }}
+etesync__gunicorn__dependent_applications[0].workers = {{ etesync__app_workers }}
+etesync__gunicorn__dependent_applications[0].args = {{ etesync__app_params }}
+etesync__nginx__dependent_upstreams[0].name = etesync
+etesync__nginx__dependent_upstreams[0].server = {{ etesync__app_bind }}
+etesync__nginx__dependent_servers[0].name = {{ etesync__fqdn }}
+etesync__nginx__dependent_servers[0].by_role = debops.etesync
+etesync__nginx__dependent_servers[0].filename = debops.etesync
+etesync__nginx__dependent_servers[0].favicon = False
+etesync__nginx__dependent_servers[0].http_referrer_policy = same-origin
+etesync__nginx__dependent_servers[0].options = client_max_body_size {{ etesync__max_file_size }}M;
+
+etesync__nginx__dependent_servers[0].location_list[0].pattern = /
+etesync__nginx__dependent_servers[0].location_list[0].options = deny all;
+etesync__nginx__dependent_servers[0].location_list[0].enabled = {{ etesync__http_psk_subpath_enabled | bool }}
+etesync__nginx__dependent_servers[0].location_list[1].pattern = /static/admin/
+etesync__nginx__dependent_servers[0].location_list[1].options = alias {{ etesync__virtualenv + "/lib/python" + (etesync__python_version.split('.')[:2] | join('.')) }}/site-packages/django/contrib/admin/static/admin/;
+etesync__nginx__dependent_servers[0].location_list[2].pattern = /static/rest_framework/
+etesync__nginx__dependent_servers[0].location_list[2].options = alias {{ etesync__virtualenv + "/lib/python" + (etesync__python_version.split('.')[:2] | join('.')) }}/site-packages/rest_framework/static/rest_framework/;
+etesync__nginx__dependent_servers[0].location_list[3].pattern = /{{ etesync__http_psk_subpath }}
+etesync__nginx__dependent_servers[0].location_list[3].options = proxy_pass http://etesync;
+proxy_set_header X-Forwarded-Host $server_name;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-Proto $scheme;
+{% if etesync__http_psk_subpath %}
+proxy_set_header SCRIPT_NAME /{{ etesync__http_psk_subpath }};
+{% endif %}
+proxy_connect_timeout {{ etesync__app_timeout }};
+proxy_send_timeout {{ etesync__app_timeout }};
+proxy_read_timeout {{ etesync__app_timeout }};
+etesync__nginx__dependent_servers[0].location_list[4].pattern = {{ (("/" + etesync__http_psk_subpath)
+                      if (etesync__http_psk_subpath_enabled | bool)
+                      else "") + "/admin" }}
+
+etesync__nginx__dependent_servers[0].location_list[4].options = proxy_pass http://etesync;
+proxy_set_header X-Forwarded-Host $server_name;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-Proto $scheme;
+{% if etesync__http_psk_subpath_enabled | bool %}
+proxy_set_header SCRIPT_NAME /{{ etesync__http_psk_subpath }};
+{% endif %}
+proxy_connect_timeout {{ etesync__app_timeout }};
+proxy_send_timeout {{ etesync__app_timeout }};
+proxy_read_timeout {{ etesync__app_timeout }};
+
+auth_basic "{{ etesync__admin_auth_basic_realm }}";
+auth_basic_user_file {{ etesync__admin_auth_basic_filename }};
+etesync__nginx__dependent_servers[0].location_list[4].enabled = {{ True if (etesync__admin_auth_basic_filename != "") else False }}

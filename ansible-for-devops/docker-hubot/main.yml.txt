@@ -1,0 +1,30 @@
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = false
+[0].vars.base_image = node:14
+[0].vars.container_name = hubot_slack
+[0].vars.image_namespace = a4d
+[0].vars.image_name = hubot-slack
+[0].pre_tasks[0].name = Make the latest version of the base image available locally.
+[0].pre_tasks[0].docker_image.name = {{ base_image }}
+[0].pre_tasks[0].docker_image.source = pull
+[0].pre_tasks[0].docker_image.force_source = true
+[0].pre_tasks[1].name = Create the Docker container.
+[0].pre_tasks[1].docker_container.image = {{ base_image }}
+[0].pre_tasks[1].docker_container.name = {{ container_name }}
+[0].pre_tasks[1].docker_container.command = sleep infinity
+[0].pre_tasks[2].name = Add the newly created container to the inventory.
+[0].pre_tasks[2].add_host.hostname = {{ container_name }}
+[0].pre_tasks[2].add_host.ansible_connection = docker
+[0].roles[0].name = hubot-slack
+[0].roles[0].delegate_to = {{ container_name }}
+[0].post_tasks[0].name = Clean up the container.
+[0].post_tasks[0].shell = apt-get remove --purge -y python && rm -rf /var/lib/apt/lists/*
+
+[0].post_tasks[0].delegate_to = {{ container_name }}
+[0].post_tasks[1].name = Commit the container.
+[0].post_tasks[1].command = docker commit -c 'USER hubot' -c 'WORKDIR "/home/hubot"' -c 'CMD ["bin/hubot", "--adapter", "slack"]' -c 'VOLUME ["/home/hubot/scripts"]' {{ container_name }} {{ image_namespace }}/{{ image_name }}:latest
+
+[0].post_tasks[2].name = Remove the container.
+[0].post_tasks[2].docker_container.name = {{ container_name }}
+[0].post_tasks[2].docker_container.state = absent

@@ -1,0 +1,7 @@
+[0].name = Kubeadm | reload systemd
+[0].systemd_service.daemon_reload = true
+[0].listen = Kubeadm | restart kubelet
+[1].name = Kubeadm | reload kubelet
+[1].service.name = kubelet
+[1].service.state = restarted
+[1].listen = Kubeadm | restart kubelet

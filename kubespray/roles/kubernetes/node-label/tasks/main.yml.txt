@@ -1,0 +1,30 @@
+doc[0][0].name = Kubernetes Apps | Wait for kube-apiserver
+doc[0][0].uri.url = {{ kube_apiserver_endpoint }}/healthz
+doc[0][0].uri.validate_certs = false
+doc[0][0].uri.client_cert = {{ kube_apiserver_client_cert }}
+doc[0][0].uri.client_key = {{ kube_apiserver_client_key }}
+doc[0][0].register = result
+doc[0][0].until = result.status == 200
+doc[0][0].retries = 10
+doc[0][0].delay = 6
+doc[0][0].when = inventory_hostname == groups['kube_control_plane'][0]
+doc[0][1].name = Set role node label to empty list
+doc[0][2].name = Node label for nvidia GPU nodes
+doc[0][2].set_fact.role_node_labels = {{ role_node_labels + ['nvidia.com/gpu=true'] }}
+doc[0][2].when[0] = nvidia_gpu_nodes is defined
+doc[0][2].when[1] = nvidia_accelerator_enabled | bool
+doc[0][2].when[2] = inventory_hostname in nvidia_gpu_nodes
+doc[0][3].name = Set inventory node label to empty list
+doc[0][4].name = Populate inventory node label
+doc[0][4].set_fact.inventory_node_labels = {{ inventory_node_labels + ['%s=%s' | format(item.key, item.value)] }}
+doc[0][4].loop = {{ node_labels | d({}) | dict2items }}
+doc[0][4].when[0] = node_labels is defined
+doc[0][4].when[1] = node_labels is mapping
+doc[0][5].debug.var = role_node_labels
+doc[0][6].debug.var = inventory_node_labels
+doc[0][7].name = Set label to node
+doc[0][7].command = {{ kubectl }} label node {% if kube_override_hostname %}{{ kube_override_hostname }}{% else %}{{ inventory_hostname }}{% endif %} {{ item }} --overwrite=true
+doc[0][7].loop = {{ role_node_labels + inventory_node_labels }}
+doc[0][7].delegate_to = {{ groups['kube_control_plane'][0] }}
+doc[0][7].changed_when = false
+doc[1] = ...

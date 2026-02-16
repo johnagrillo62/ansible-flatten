@@ -1,0 +1,14 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = client
+[1].name = Deploy Sensu client service manifest
+[1].tags = client
+[1].template.dest = /opt/local/lib/svc/manifest/sensu-client.xml
+[1].template.src = sensu-client.smartos_smf_manifest.xml.j2
+[1].template.owner = root
+[1].template.group = root
+[1].template.mode = 0644
+[1].notify[0] = import sensu-client service
+[1].notify[1] = restart sensu-client service
+[2].meta = flush_handlers
+[2].tags = client

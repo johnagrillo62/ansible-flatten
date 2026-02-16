@@ -1,0 +1,80 @@
+opensearch__version = 2.2.0
+opensearch__tarball = opensearch-{{ opensearch__version }}-linux-x64.tar.gz
+opensearch__installation_directory = /usr/local/share/opensearch
+opensearch__user = opensearch
+opensearch__group = opensearch
+opensearch__http_port = 9200
+opensearch__transport_tcp_port = 9300
+opensearch__memory_lock = {{ True
+                                if (not (ansible_system_capabilities_enforced | d()) | bool or
+                                    ((ansible_system_capabilities_enforced | d()) | bool and
+                                     "cap_ipc_lock" in (ansible_system_capabilities | d([]))))
+                                else False }}
+
+opensearch__jvm_memory_heap_size_multiplier = {{ "0.2"
+                                                    if (ansible_memtotal_mb | int / 2 <= 2048)
+                                                    else "0.45" }}
+
+opensearch__jvm_memory_min_heap_size = {{ (((ansible_memtotal_mb | int
+                                               * opensearch__jvm_memory_heap_size_multiplier | float)
+                                               | round | int) | string + "m")
+                                             if (ansible_memtotal_mb | int / 2 <= 32768)
+                                             else "32600m" }}
+
+opensearch__jvm_memory_max_heap_size = {{ opensearch__jvm_memory_min_heap_size }}
+opensearch__default_configuration[0].name = cluster.name
+opensearch__default_configuration[0].comment = Use a descriptive name for your cluster
+opensearch__default_configuration[0].value = {{ ansible_domain | replace(".", "-") }}
+opensearch__default_configuration[1].name = node.name
+opensearch__default_configuration[1].comment = Use a descriptive name for the node
+opensearch__default_configuration[1].value = {{ ansible_hostname }}
+opensearch__default_configuration[2].name = path.data
+opensearch__default_configuration[2].comment = Path to directory where to store the data (separate multiple locations by
+comma)
+
+opensearch__default_configuration[2].value = /var/local/opensearch
+opensearch__default_configuration[3].name = path.logs
+opensearch__default_configuration[3].comment = Path to log files
+opensearch__default_configuration[3].value = /var/log/opensearch
+opensearch__default_configuration[4].name = plugins.security.disabled
+opensearch__default_configuration[4].comment = Disable TLS support
+opensearch__default_configuration[4].value = True
+opensearch__default_configuration[5].name = bootstrap.memory_lock
+opensearch__default_configuration[5].comment = Lock the memory on startup
+opensearch__default_configuration[5].value = {{ True if opensearch__memory_lock | bool else False }}
+opensearch__default_configuration[6].name = cluster.initial_master_nodes
+opensearch__default_configuration[6].comment = Bootstrap the cluster using an initial set of master-eligible nodes
+
+opensearch__default_configuration[6].value[0] = {{ ansible_hostname }}
+opensearch__combined_configuration = {{ opensearch__default_configuration
+                                        + opensearch__configuration
+                                        + opensearch__group_configuration
+                                        + opensearch__host_configuration }}
+
+opensearch__etc_services__dependent_list[0].name = opensearch-http
+opensearch__etc_services__dependent_list[0].port = {{ opensearch__http_port }}
+opensearch__etc_services__dependent_list[1].name = opensearch-tcp
+opensearch__etc_services__dependent_list[1].port = {{ opensearch__transport_tcp_port }}
+opensearch__keyring__dependent_gpg_keys[0].id = C5B7 4989 65EF D1C2 924B  A9D5 39D3 1987 9310 D3FC
+opensearch__keyring__dependent_gpg_keys[0].url = https://artifacts.opensearch.org/publickeys/opensearch.pgp
+opensearch__keyring__dependent_gpg_keys[0].user = {{ opensearch__user }}
+opensearch__keyring__dependent_gpg_keys[0].group = {{ opensearch__group }}
+opensearch__keyring__dependent_gpg_keys[0].home = /var/local/opensearch
+opensearch__sysctl__dependent_parameters[0].name = opensearch
+opensearch__sysctl__dependent_parameters[0].weight = 80
+opensearch__sysctl__dependent_parameters[0].options[0].name = vm.max_map_count
+opensearch__sysctl__dependent_parameters[0].options[0].comment = The OpenSearch documentation recommends setting this as the minimum
+for production workloads, see
+https://opensearch.org/docs/latest/opensearch/install/important-settings/
+
+opensearch__sysctl__dependent_parameters[0].options[0].value = 262144
+opensearch__ferm__dependent_rules[0].name = opensearch_http
+opensearch__ferm__dependent_rules[0].type = accept
+opensearch__ferm__dependent_rules[0].dport = {{ opensearch__http_port }}
+opensearch__ferm__dependent_rules[0].saddr = {{ opensearch__allow_http }}
+opensearch__ferm__dependent_rules[0].accept_any = False
+opensearch__ferm__dependent_rules[1].name = opensearch_tcp
+opensearch__ferm__dependent_rules[1].type = accept
+opensearch__ferm__dependent_rules[1].dport = {{ opensearch__transport_tcp_port }}
+opensearch__ferm__dependent_rules[1].saddr = {{ opensearch__allow_tcp }}
+opensearch__ferm__dependent_rules[1].accept_any = False

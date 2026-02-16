@@ -1,0 +1,183 @@
+sysctl__enabled = True
+sysctl__writable = {{ ansible_local.sysctl.writable | d([]) }}
+sysctl__shared_memory_base = {{ ((ansible_memtotal_mb | int * 1024 * 1024) - 8192) }}
+sysctl__shared_memory_shmall_limiter = {{ 0.8
+                                          if (ansible_memtotal_mb | int >= 4096)
+                                          else 0.5 }}
+
+sysctl__shared_memory_shmall = {{ ((sysctl__shared_memory_base | int *
+                                    sysctl__shared_memory_shmall_limiter | float) / 4096)
+                                  | round | int }}
+
+sysctl__shared_memory_max_limiter = {{ 0.5
+                                       if (ansible_memtotal_mb | int >= 4096)
+                                       else 0.2 }}
+
+sysctl__shared_memory_shmmax = {{ (sysctl__shared_memory_base | int *
+                                   sysctl__shared_memory_max_limiter | float)
+                                   | round | int }}
+
+sysctl__hardening_enabled = True
+sysctl__system_ip_forwarding_enabled = {{ True
+                                          if ansible_local.docker_server.installed | d(False)
+                                          else False }}
+
+sysctl__hardening_ipv6_disabled = False
+sysctl__hardening_experimental_enabled = False
+sysctl__tcp_performance_enabled = False
+sysctl__default_parameters[0].name = memory
+sysctl__default_parameters[0].weight = 10
+sysctl__default_parameters[0].options[0].name = kernel.shmmax
+sysctl__default_parameters[0].options[0].value = {{ sysctl__shared_memory_shmmax }}
+sysctl__default_parameters[0].options[1].name = kernel.shmall
+sysctl__default_parameters[0].options[1].value = {{ sysctl__shared_memory_shmall }}
+sysctl__default_parameters[0].options[2].name = vm.swappiness
+sysctl__default_parameters[0].options[2].comment = How aggressively the kernel swaps out anonymous memory relative to
+pagecache and other caches. Increasing the value increases the amount
+of swapping. Can be set to values between 0 and 100 inclusive.
+
+sysctl__default_parameters[0].options[2].value = 60
+sysctl__default_parameters[0].options[3].name = vm.vfs_cache_pressure
+sysctl__default_parameters[0].options[3].comment = Tendency of the kernel to reclaim the memory which is used for caching of VFS
+caches, versus pagecache and swap. Increasing this value increases the rate
+at which VFS caches are reclaimed.
+
+sysctl__default_parameters[0].options[3].value = 100
+sysctl__default_parameters[1].name = network
+sysctl__default_parameters[1].weight = 20
+sysctl__default_parameters[1].options[0].name = net.ipv4.ip_forward
+sysctl__default_parameters[1].options[0].value = {{ sysctl__system_ip_forwarding_enabled | bool | ternary(1, 0) }}
+sysctl__default_parameters[1].options[0].comment = Enable or disable IPv4 traffic forwarding
+sysctl__default_parameters[1].options[0].state = present
+sysctl__default_parameters[1].options[1].name = net.ipv6.conf.all.forwarding
+sysctl__default_parameters[1].options[1].value = {{ sysctl__system_ip_forwarding_enabled | bool | ternary(1, 0) }}
+sysctl__default_parameters[1].options[1].comment = Enable or disable IPv6 traffic forwarding
+sysctl__default_parameters[1].options[1].state = present
+sysctl__default_parameters[1].options[2].name = net.ipv6.conf.all.accept_ra
+sysctl__default_parameters[1].options[2].value = 0
+sysctl__default_parameters[1].options[2].comment = Ignore IPv6 RAs.
+sysctl__default_parameters[1].options[2].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[3].name = net.ipv6.conf.default.accept_ra
+sysctl__default_parameters[1].options[3].value = 0
+sysctl__default_parameters[1].options[3].comment = Ignore IPv6 RAs.
+sysctl__default_parameters[1].options[3].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[4].name = net.ipv4.conf.all.rp_filter
+sysctl__default_parameters[1].options[4].value = 1
+sysctl__default_parameters[1].options[4].comment = Enable RFC-recommended source validation feature.
+sysctl__default_parameters[1].options[4].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[5].name = net.ipv4.conf.default.rp_filter
+sysctl__default_parameters[1].options[5].value = 1
+sysctl__default_parameters[1].options[5].comment = Enable RFC-recommended source validation feature.
+sysctl__default_parameters[1].options[5].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[6].name = net.ipv4.icmp_echo_ignore_broadcasts
+sysctl__default_parameters[1].options[6].value = 1
+sysctl__default_parameters[1].options[6].comment = Reduce the surface on SMURF attacks.
+Make sure to ignore ECHO broadcasts, which are only required in broad
+network analysis.
+
+sysctl__default_parameters[1].options[6].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[7].name = net.ipv4.icmp_ignore_bogus_error_responses
+sysctl__default_parameters[1].options[7].value = 1
+sysctl__default_parameters[1].options[7].comment = Do not log bogus ICMP error responses.
+Nobody would want to accept bogus error responses, so we can safely
+ignore them.
+
+sysctl__default_parameters[1].options[7].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[8].name = net.ipv4.icmp_ratelimit
+sysctl__default_parameters[1].options[8].value = 100
+sysctl__default_parameters[1].options[8].comment = Limit the amount of traffic the system uses for ICMP.
+sysctl__default_parameters[1].options[8].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[9].name = net.ipv4.icmp_ratemask
+sysctl__default_parameters[1].options[9].value = 88089
+sysctl__default_parameters[1].options[9].comment = Adjust the ICMP ratelimit to include ping, dst unreachable,
+source quench, ime exceed, param problem, timestamp reply,
+information reply
+
+sysctl__default_parameters[1].options[9].state = {{ sysctl__hardening_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[10].name = net.ipv6.conf.all.disable_ipv6
+sysctl__default_parameters[1].options[10].value = 1
+sysctl__default_parameters[1].options[10].comment = Disable IPv6.
+sysctl__default_parameters[1].options[10].state = {{ sysctl__hardening_ipv6_disabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[11].name = net.ipv4.tcp_timestamps
+sysctl__default_parameters[1].options[11].value = 0
+sysctl__default_parameters[1].options[11].comment = Protect against wrapping sequence numbers at gigabit speeds.
+sysctl__default_parameters[1].options[11].state = {{ (sysctl__hardening_enabled | bool and
+                    not (ansible_virtualization_role == "guest" and ansible_virtualization_type == "openvz"))
+                  | ternary("present", "absent") }}
+
+sysctl__default_parameters[1].options[12].name = net.ipv4.conf.all.arp_ignore
+sysctl__default_parameters[1].options[12].value = 1
+sysctl__default_parameters[1].options[12].comment = Define restriction level for announcing the local source IP.
+sysctl__default_parameters[1].options[12].state = {{ sysctl__hardening_experimental_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[13].name = net.ipv4.conf.all.arp_announce
+sysctl__default_parameters[1].options[13].value = 2
+sysctl__default_parameters[1].options[13].comment = Define mode for sending replies in response to received ARP requests
+that resolve local target IP addresses
+
+sysctl__default_parameters[1].options[13].state = {{ sysctl__hardening_experimental_enabled | bool | ternary("present", "absent") }}
+sysctl__default_parameters[1].options[14].name = net.ipv4.tcp_rfc1337
+sysctl__default_parameters[1].options[14].value = 1
+sysctl__default_parameters[1].options[14].comment = RFC 1337 fix F1.
+sysctl__default_parameters[1].options[14].state = {{ (sysctl__hardening_enabled | bool and
+                    not (ansible_virtualization_role == "guest" and
+                         ansible_virtualization_type == "openvz"))
+                  | ternary("present", "absent") }}
+
+sysctl__default_parameters[1].options[15].name = net.ipv4.tcp_slow_start_after_idle
+sysctl__default_parameters[1].options[15].value = {{ sysctl__tcp_performance_enabled | bool | ternary(0, 1) }}
+sysctl__default_parameters[1].options[15].comment = If set, provide RFC2861 behavior and time out the congestion window
+after an idle period. An idle period is defined at the current RTO.
+If unset, the congestion window will not be timed out after an idle
+period.
+
+sysctl__default_parameters[1].options[15].state = present
+sysctl__default_parameters[2].name = protect-links
+sysctl__default_parameters[2].filename = {{ "protect-links.conf"
+                  if (ansible_distribution_release in ["stretch", "buster", "bullseye"])
+                  else "99-protect-links.conf" }}
+
+sysctl__default_parameters[2].divert = True
+sysctl__default_parameters[2].comment = Protected links
+
+Protects against creating or following links under certain conditions
+Debian kernels have both set to 1 (restricted)
+See https://www.kernel.org/doc/Documentation/sysctl/fs.txt
+
+sysctl__default_parameters[2].options[0].name = fs.protected_fifos
+sysctl__default_parameters[2].options[0].value = 1
+sysctl__default_parameters[2].options[1].name = fs.protected_hardlinks
+sysctl__default_parameters[2].options[1].value = 1
+sysctl__default_parameters[2].options[2].name = fs.protected_regular
+sysctl__default_parameters[2].options[2].value = 2
+sysctl__default_parameters[2].options[3].name = fs.protected_symlinks
+sysctl__default_parameters[2].options[3].value = 1
+sysctl__default_parameters[3].name = pid-max
+sysctl__default_parameters[3].filename = 50-pid-max.conf
+sysctl__default_parameters[3].comment = This file is part of systemd.
+
+systemd is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or
+(at your option) any later version.
+
+See sysctl.d(5) and core(5) for documentation.
+
+To override settings in this file, create a local file in /etc
+(e.g. /etc/sysctl.d/90-override.conf), and put any assignments
+there.
+
+sysctl__default_parameters[3].state = {{ "present"
+               if ((ansible_local.core.is_64bits | d(True)) | bool)
+               else "absent" }}
+
+sysctl__default_parameters[3].options[0].name = kernel.pid_max
+sysctl__default_parameters[3].options[0].comment = Bump the numeric PID range to its maximum of 2^22 (from the in-kernel default
+of 2^16), to make PID collisions less likely.
+
+sysctl__default_parameters[3].options[0].value = 4194304
+sysctl__combined_parameters = {{ sysctl__default_parameters
+                                 + lookup("flattened", sysctl__dependent_parameters, wantlist=True)
+                                 + sysctl__parameters
+                                 + sysctl__group_parameters
+                                 + sysctl__host_parameters }}
+

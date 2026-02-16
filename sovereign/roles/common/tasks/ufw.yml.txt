@@ -1,0 +1,27 @@
+[0].name = Install ufw
+[0].apt = pkg=ufw state=present
+[0].tags[0] = dependencies
+[0].tags[1] = ufw
+[1].name = Deny everything
+[1].ufw = policy=deny
+[1].tags = ufw
+[2].name = Set firewall rule for DNS
+[2].ufw = rule=allow port=domain
+[2].tags = ufw
+[3].name = Set firewall rule for mosh
+[3].ufw = rule=allow port=60000:61000 proto=udp
+[3].tags = ufw
+[4].name = Set firewall rules for web traffic and SSH
+[4].ufw = rule=allow port={{ item }} proto=tcp
+[4].with_items[0] = http
+[4].with_items[1] = https
+[4].with_items[2] = ssh
+[4].tags = ufw
+[5].name = Enable UFW
+[5].ufw = state=enabled
+[5].tags = ufw
+[6].name = Check config of ufw
+[6].command = cat /etc/ufw/ufw.conf
+[6].register = ufw_config
+[6].changed_when = False
+[6].tags = ufw

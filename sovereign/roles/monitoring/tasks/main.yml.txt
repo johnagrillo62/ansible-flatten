@@ -1,0 +1,6 @@
+[0].import_tasks = monit.yml
+[0].tags = monit
+[1].import_tasks = logwatch.yml
+[1].tags = logwatch
+[2].import_tasks = collectd.yml
+[2].tags = collectd

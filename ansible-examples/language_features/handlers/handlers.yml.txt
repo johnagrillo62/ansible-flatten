@@ -1,0 +1,4 @@
+[0].name = restart apache
+[0].service = name=httpd state=restarted
+[1].name = restart memcached
+[1].service = name=memcached state=restarted

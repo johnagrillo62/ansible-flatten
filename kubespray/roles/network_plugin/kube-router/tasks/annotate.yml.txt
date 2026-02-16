@@ -1,0 +1,15 @@
+[0].name = Kube-router | Add annotations on kube_control_plane
+[0].command = {{ kubectl }} annotate --overwrite node {{ ansible_hostname }} {{ item }}
+[0].with_items[0] = {{ kube_router_annotations_master }}
+[0].delegate_to = {{ groups['kube_control_plane'][0] }}
+[0].when = kube_router_annotations_master is defined and 'kube_control_plane' in group_names
+[1].name = Kube-router | Add annotations on kube_node
+[1].command = {{ kubectl }} annotate --overwrite node {{ ansible_hostname }} {{ item }}
+[1].with_items[0] = {{ kube_router_annotations_node }}
+[1].delegate_to = {{ groups['kube_control_plane'][0] }}
+[1].when = kube_router_annotations_node is defined and 'kube_node' in group_names
+[2].name = Kube-router | Add common annotations on all servers
+[2].command = {{ kubectl }} annotate --overwrite node {{ ansible_hostname }} {{ item }}
+[2].with_items[0] = {{ kube_router_annotations_all }}
+[2].delegate_to = {{ groups['kube_control_plane'][0] }}
+[2].when = kube_router_annotations_all is defined and 'k8s_cluster' in group_names

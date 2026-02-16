@@ -1,0 +1,41 @@
+[0].name = Container Engine Acceleration Nvidia GPU | gather os specific variables
+[0].include_vars = {{ item }}
+[0].with_first_found[0].files[0] = {{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower | replace('/', '_') }}.yml
+[0].with_first_found[0].files[1] = {{ ansible_distribution | lower }}-{{ ansible_distribution_release }}.yml
+[0].with_first_found[0].files[2] = {{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower | replace('/', '_') }}.yml
+[0].with_first_found[0].files[3] = {{ ansible_distribution | lower }}.yml
+[0].with_first_found[0].files[4] = {{ ansible_os_family | lower }}.yml
+[0].with_first_found[0].skip = true
+[1].name = Container Engine Acceleration Nvidia GPU | Set fact of download url Tesla
+[1].set_fact.nvidia_driver_download_url_default = {{ nvidia_gpu_tesla_base_url }}{{ nvidia_url_end }}
+[1].when = nvidia_gpu_flavor | lower == "tesla"
+[2].name = Container Engine Acceleration Nvidia GPU | Set fact of download url GTX
+[2].set_fact.nvidia_driver_download_url_default = {{ nvidia_gpu_gtx_base_url }}{{ nvidia_url_end }}
+[2].when = nvidia_gpu_flavor | lower == "gtx"
+[3].name = Container Engine Acceleration Nvidia GPU | Create addon dir
+[3].file.path = {{ kube_config_dir }}/addons/container_engine_accelerator
+[3].file.owner = root
+[3].file.group = root
+[3].file.mode = 0755
+[3].file.recurse = true
+[4].name = Container Engine Acceleration Nvidia GPU | Create manifests for nvidia accelerators
+[4].template.src = {{ item.file }}.j2
+[4].template.dest = {{ kube_config_dir }}/addons/container_engine_accelerator/{{ item.file }}
+[4].template.mode = 0644
+[4].with_items[0].name = nvidia-driver-install-daemonset
+[4].with_items[0].file = nvidia-driver-install-daemonset.yml
+[4].with_items[0].type = daemonset
+[4].with_items[1].name = k8s-device-plugin-nvidia-daemonset
+[4].with_items[1].file = k8s-device-plugin-nvidia-daemonset.yml
+[4].with_items[1].type = daemonset
+[4].register = container_engine_accelerator_manifests
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0] and nvidia_driver_install_container
+[5].name = Container Engine Acceleration Nvidia GPU | Apply manifests for nvidia accelerators
+[5].kube.name = {{ item.item.name }}
+[5].kube.namespace = kube-system
+[5].kube.kubectl = {{ bin_dir }}/kubectl
+[5].kube.resource = {{ item.item.type }}
+[5].kube.filename = {{ kube_config_dir }}/addons/container_engine_accelerator/{{ item.item.file }}
+[5].kube.state = latest
+[5].with_items[0] = {{ container_engine_accelerator_manifests.results }}
+[5].when[0] = inventory_hostname == groups['kube_control_plane'][0] and nvidia_driver_install_container and nvidia_driver_install_supported

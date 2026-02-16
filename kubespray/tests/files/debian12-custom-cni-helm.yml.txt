@@ -1,0 +1,17 @@
+~d0.cloud_image = debian-12
+~d0.kube_owner = root
+~d0.kube_network_plugin = custom_cni
+~d0.custom_cni_chart_namespace = kube-system
+~d0.custom_cni_chart_release_name = cilium
+~d0.custom_cni_chart_repository_name = cilium
+~d0.custom_cni_chart_repository_url = https://helm.cilium.io
+~d0.custom_cni_chart_ref = cilium/cilium
+~d0.custom_cni_chart_version = 1.18.6
+~d0.custom_cni_chart_values = 
+~d1.cluster = 
+~d2.name = kubespray
+~d1.hubble = 
+~d2.enabled = false
+~d1.ipam = 
+~d2.operator = 
+~d3.clusterPoolIPv4PodCIDRList = 

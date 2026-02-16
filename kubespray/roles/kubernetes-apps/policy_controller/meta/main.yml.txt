@@ -1,0 +1,4 @@
+dependencies[0].role = policy_controller/calico
+dependencies[0].when[0] = kube_network_plugin in ['calico']
+dependencies[0].when[1] = enable_network_policy
+dependencies[0].tags[0] = policy-controller

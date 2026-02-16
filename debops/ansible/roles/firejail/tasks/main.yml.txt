@@ -1,0 +1,153 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret
+[1].name = Ensure specified packages are present
+[1]["ansible.builtin.package"].name = {{ q("flattened", (firejail__base_packages
+                              + firejail__packages
+                              + firejail__group_packages
+                              + firejail__host_packages)) }}
+
+[1]["ansible.builtin.package"].state = present
+[1].when = firejail__deploy_state in ["present"]
+[1].register = firejail__register_packages
+[1].until = firejail__register_packages is succeeded
+[1].tags[0] = role::firejail:pkgs
+[2].name = Get program file path of firejail
+[2]["ansible.builtin.command"] = which -a firejail
+[2].register = firejail__register_program_file_path
+[2].check_mode = False
+[2].changed_when = False
+[2].failed_when = firejail__register_program_file_path.rc not in [0, 1]
+[2].when = (firejail__program_file_path == "auto")
+[3].name = Set program file path of firejail for later use in the role
+[3]["ansible.builtin.set_fact"].firejail__program_file_path = {{ (firejail__register_program_file_path.stdout_lines
+                                      + ["/usr/bin/firejail"]) | first }} 
+[3].when = (firejail__program_file_path == "auto")
+[4].name = Get list of system wide profiles
+[4]["ansible.builtin.find"].file_type = file
+[4]["ansible.builtin.find"].paths[0] = {{ firejail__config_path }}
+[4]["ansible.builtin.find"].patterns = *.profile
+[4]["ansible.builtin.find"].use_regex = False
+[4]["ansible.builtin.find"].hidden = False
+[4]["ansible.builtin.find"].recurse = False
+[4].register = firejail__register_find_system_wide_profiles
+[5].name = Set list of system wide profiles
+[5]["ansible.builtin.set_fact"].firejail__fact_system_wide_profiles = {{
+      firejail__register_find_system_wide_profiles.files
+        | map(attribute="path")
+        | map("basename")
+        | map("regex_replace", "\.profile$", "") | list }}
+
+[6].name = Check if programs which should be sandboxed are installed
+[6]["ansible.builtin.command"] = which -a {{ item | quote }}
+[6].check_mode = False
+[6].changed_when = False
+[6].failed_when = firejail__register_cmd_which_programs.rc not in [0, 1]
+[6].register = firejail__register_cmd_which_programs
+[6].when = (item in (firejail__combined_program_sandboxes.keys() | list + (firejail__fact_system_wide_profiles if (firejail__global_profiles_system_wide_sandboxed == "if_installed") else [])))
+[6].with_items = {{ firejail__combined_program_sandboxes.keys() | list | union(firejail__fact_system_wide_profiles) }}
+[7].name = Set list of installed programs
+[7]["ansible.builtin.set_fact"].firejail__fact_installed_programs = {{
+      firejail__register_cmd_which_programs.results
+      | selectattr("rc", "defined")
+      | selectattr("rc", "equalto", 0)
+      | map(attribute="stdout_lines")
+      | map("first") | map("basename") | list }}
+
+[8].name = Ensure that the local bin path exists
+[8]["ansible.builtin.file"].path = {{ firejail__system_local_bin_path }}
+[8]["ansible.builtin.file"].state = directory
+[8]["ansible.builtin.file"].mode = 0755
+[9].name = Create/remove symlinks for sandboxed programs
+[9]["ansible.builtin.file"].path = {{ firejail__system_local_bin_path + "/" + item }}
+[9]["ansible.builtin.file"].src = {{ firejail__program_file_path }}
+[9]["ansible.builtin.file"].state = {{ "link"
+               if (firejail__deploy_state in ["present"] and
+                   ((item in firejail__combined_program_sandboxes and
+                    ((firejail__combined_program_sandboxes[item].system_wide_sandboxed
+                      | d(firejail__program_sandboxes_system_wide_sandboxed) == "present") or
+                     ((firejail__combined_program_sandboxes[item].system_wide_sandboxed
+                       | d(firejail__program_sandboxes_system_wide_sandboxed) == "if_installed") and
+                       item in firejail__fact_installed_programs))) or
+                    (item not in firejail__combined_program_sandboxes and
+                     ((firejail__global_profiles_system_wide_sandboxed == "present") or
+                     (firejail__global_profiles_system_wide_sandboxed == "if_installed" and
+                      item in firejail__fact_installed_programs)))))
+               else "absent" }}
+
+[9]["ansible.builtin.file"].owner = root
+[9]["ansible.builtin.file"].group = root
+[9]["ansible.builtin.file"].mode = 0755
+[9]["ansible.builtin.file"].force = {{ ansible_check_mode | d(omit) }}
+[9].when = not (item in firejail__combined_program_sandboxes and firejail__combined_program_sandboxes[item].system_wide_sandboxed | d("present") in ["ignored"])
+[9].with_items = {{ firejail__combined_program_sandboxes.keys() | list | union(firejail__fact_system_wide_profiles) }}
+[10].name = Provide (additional) profiles
+[10]["ansible.builtin.copy"].dest = {{ item.value.profile.dest | d(firejail__config_path + "/" + item.key + ".profile") }}
+[10]["ansible.builtin.copy"].backup = {{ item.value.profile.backup | d(omit) }}
+[10]["ansible.builtin.copy"].content = {{ item.value.profile.content | d(omit) }}
+[10]["ansible.builtin.copy"].directory_mode = {{ item.value.profile.directory_mode | d(omit) }}
+[10]["ansible.builtin.copy"].follow = {{ item.value.profile.follow | d(omit) }}
+[10]["ansible.builtin.copy"].force = {{ item.value.profile.force | d(omit) }}
+[10]["ansible.builtin.copy"].owner = {{ item.value.profile.owner | d("root") }}
+[10]["ansible.builtin.copy"].group = {{ item.value.profile.group | d("root") }}
+[10]["ansible.builtin.copy"].mode = {{ item.value.profile.mode | d("0644") }}
+[10]["ansible.builtin.copy"].selevel = {{ item.value.profile.selevel | d(omit) }}
+[10]["ansible.builtin.copy"].serole = {{ item.value.profile.serole | d(omit) }}
+[10]["ansible.builtin.copy"].setype = {{ item.value.profile.setype | d(omit) }}
+[10]["ansible.builtin.copy"].seuser = {{ item.value.profile.seuser | d(omit) }}
+[10]["ansible.builtin.copy"].src = {{ item.value.profile.src | d(omit) }}
+[10]["ansible.builtin.copy"].validate = {{ item.value.profile.validate | d(omit) }}
+[10].when = (firejail__deploy_state in ["present"] and "profile" in item.value and item.value.profile.state | d("present") == "present")
+[10].with_dict = {{ firejail__combined_program_sandboxes }}
+[10].tags[0] = role::firejail:profile
+[11].name = Delete profiles
+[11]["ansible.builtin.file"].path = {{ item.value.profile.dest | d(firejail__config_path + "/" + item.key + ".profile") }}
+[11]["ansible.builtin.file"].state = absent
+[11].when = ("profile" in item.value and (item.value.profile.state | d("present") == "absent" or firejail__deploy_state in ["absent"]))
+[11].with_dict = {{ firejail__combined_program_sandboxes }}
+[11].tags[0] = role::firejail:profile
+[12].name = Get list of files in local bin path
+[12]["ansible.builtin.find"].file_type = file
+[12]["ansible.builtin.find"].paths[0] = {{ firejail__system_local_bin_path }}
+[12]["ansible.builtin.find"].hidden = False
+[12]["ansible.builtin.find"].recurse = False
+[12].register = firejail__register_profile_program_symlinks_find
+[12].no_log = {{ debops__no_log | d(True) }}
+[13].name = Workaround to get the realpath
+[13]["ansible.builtin.stat"].path = {{ item.path }}
+[13].register = firejail__register_profile_program_symlinks_stat
+[13].no_log = {{ debops__no_log | d(True) }}
+[13].with_items = {{ firejail__register_profile_program_symlinks_find.files }}
+[14].name = Remove program symlink when profiles is is not defined in any variable
+[14]["ansible.builtin.file"].path = {{ item.stat.path }}
+[14]["ansible.builtin.file"].state = absent
+[14].no_log = {{ debops__no_log | d(True) }}
+[14].when = (item.stat.islnk and ((item.stat.lnk_source | basename == "firejail" and (item.stat.lnk_source != firejail__program_file_path or firejail__deploy_state not in ["present"])) or (item.stat.lnk_source == firejail__program_file_path and (item.stat.path | basename not in (firejail__combined_program_sandboxes.keys() | list | union(firejail__fact_system_wide_profiles))))))
+[14].with_items = {{ firejail__register_profile_program_symlinks_stat.results }}
+[15].name = Ensure ~/.local/share/applications exists
+[15]["ansible.builtin.file"].path = ~/.local/share/applications
+[15]["ansible.builtin.file"].state = directory
+[15]["ansible.builtin.file"].mode = 0755
+[15].become = True
+[15].become_user = {{ item.name }}
+[15].no_log = {{ debops__no_log | d(True) }}
+[15].when = firejail__deploy_state in ["present"] and item != "root" and item.state | d("present") == "present"
+[15].loop = {{ q("flattened", firejail__combined_fix_for_users) }}
+[16].name = Apply workaround for desktop files
+[16]["ansible.builtin.command"] = firecfg --fix
+[16].register = firejail__register_cmd_firecfg_fix
+[16].changed_when = ("created" in firejail__register_cmd_firecfg_fix.stdout)
+[16].become = True
+[16].become_user = {{ item.name }}
+[16].no_log = {{ debops__no_log | d(True) }}
+[16].when = firejail__deploy_state in ["present"] and item != "root" and item.state | d("present") == "present"
+[16].loop = {{ q("flattened", firejail__combined_fix_for_users) }}
+[17].name = Ensure specified packages are absent
+[17]["ansible.builtin.package"].name = {{ item }}
+[17]["ansible.builtin.package"].state = absent
+[17].when = firejail__deploy_state in ["absent"]
+[17].loop = {{ q("flattened", firejail__base_packages
+                           + firejail__packages
+                           + firejail__group_packages
+                           + firejail__host_packages) }}
+
+[17].tags[0] = role::firejail:pkgs

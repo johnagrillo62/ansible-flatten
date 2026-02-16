@@ -1,0 +1,69 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Pre hooks
+[2]["ansible.builtin.include_tasks"] = {{ lookup("debops.debops.task_src", "sysctl/pre_main.yml") }}
+[2].when = sysctl__enabled | bool
+[3].name = Make sure that Ansible local facts directory exists
+[3]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = root
+[3]["ansible.builtin.file"].group = root
+[3]["ansible.builtin.file"].mode = 0755
+[4].name = Save sysctl local facts
+[4]["ansible.builtin.template"].src = etc/ansible/facts.d/sysctl.fact.j2
+[4]["ansible.builtin.template"].dest = /etc/ansible/facts.d/sysctl.fact
+[4]["ansible.builtin.template"].owner = root
+[4]["ansible.builtin.template"].group = root
+[4]["ansible.builtin.template"].mode = 0755
+[4].notify[0] = Refresh host facts
+[4].tags[0] = meta::facts
+[5].name = Update Ansible facts if they were modified
+[5]["ansible.builtin.meta"] = flush_handlers
+[6].name = Add/remove diversion of custom sysctl configuration files
+[6]["debops.debops.dpkg_divert"].path = /etc/sysctl.d/{{ item.filename | d(item.weight | string + "-" + item.name + ".conf") }}
+[6]["debops.debops.dpkg_divert"].state = {{ item.state | d("present") }}
+[6]["debops.debops.dpkg_divert"].delete = True
+[6].loop = {{ sysctl__combined_parameters | debops.debops.parse_kv_items }}
+[6].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[6].when = (sysctl__enabled | bool and item.name | d() and item.state | d('present') in ['present', 'absent'] and item.divert | d(False) | bool)
+[7].name = Remove custom sysctl configuration files
+[7]["ansible.builtin.file"].path = /etc/sysctl.d/{{ item.filename | d(item.weight | string + "-" + item.name + ".conf") }}
+[7]["ansible.builtin.file"].state = absent
+[7].with_items = {{ sysctl__combined_parameters | debops.debops.parse_kv_items }}
+[7].register = sysctl__register_config_removed
+[7].when = sysctl__enabled | bool and item.name | d() and item.state | d('present') == 'absent'
+[8].name = Generate custom sysctl configuration files
+[8]["ansible.builtin.template"].src = etc/sysctl.d/parameters.conf.j2
+[8]["ansible.builtin.template"].dest = /etc/sysctl.d/{{ item.filename | d(item.weight | string + "-" + item.name + ".conf") }}
+[8]["ansible.builtin.template"].owner = root
+[8]["ansible.builtin.template"].group = root
+[8]["ansible.builtin.template"].mode = 0644
+[8].loop = {{ sysctl__combined_parameters | debops.debops.parse_kv_items }}
+[8].loop_control.label = {{ item.name }}
+[8].register = sysctl__register_config_created
+[8].when = sysctl__enabled | bool and item.name | d() and item.options | d() and item.state | d('present') not in ['absent', 'ignore', 'init']
+[9].name = Check sysctl command capabilities
+[9]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && sysctl --help | grep -E '^\s+\-\-system\s+' || true
+[9].args.executable = bash
+[9].register = sysctl__register_system
+[9].changed_when = sysctl__register_system.changed | bool
+[9].when = (sysctl__enabled | bool and (sysctl__register_config_created is changed or sysctl__register_config_removed is changed))
+[9].check_mode = False
+[10].name = Apply kernel parameters if they were modified
+[10]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+{% if (sysctl__register_system.stdout | d()) %}
+sysctl --system
+{% else %}
+sysctl -e -p $(find /etc/sysctl.d -mindepth 1 -maxdepth 1 -name '*.conf' -print0 | sort -z | xargs -r0)
+             /etc/sysctl.conf
+{% endif %}
+
+[10].args.executable = bash
+[10].register = sysctl__register_apply
+[10].changed_when = sysctl__register_apply.changed | bool
+[10].when = (sysctl__enabled | bool and (sysctl__register_config_created is changed or sysctl__register_config_removed is changed))
+[11].name = Post hooks
+[11]["ansible.builtin.include_tasks"] = {{ lookup("debops.debops.task_src", "sysctl/post_main.yml") }}
+[11].when = sysctl__enabled | bool

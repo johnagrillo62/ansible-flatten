@@ -1,0 +1,6 @@
+[0].name = Cilium check
+[0].import_tasks = check.yml
+[1].name = Cilium install
+[1].include_tasks = install.yml
+[2].name = Cilium apply
+[2].include_tasks = apply.yml

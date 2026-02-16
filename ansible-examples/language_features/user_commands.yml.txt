@@ -1,0 +1,11 @@
+[0].hosts = all
+[0].remote_user = root
+[0].vars.password = $1$SomeSalt$UqddPX3r4kH3UL5jq5/ZI.
+[0].tasks[0].name = test basic user account creation
+[0].tasks[0].user = name=tset comment=TsetUser group=users shell=/sbin/nologin createhome=no
+[0].tasks[1].user = name=tset comment=NyetUser
+[0].tasks[2].user = name=tset password={{password}}
+[0].tasks[3].user = name=tset groups=dialout,uucp
+[0].tasks[4].user = name=tset groups=dialout,wheel
+[0].tasks[5].user = name=tset groups=uucp append=yes
+[0].tasks[6].user = name=tset state=absent

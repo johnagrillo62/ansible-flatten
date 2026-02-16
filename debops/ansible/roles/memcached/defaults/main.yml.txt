@@ -1,0 +1,19 @@
+memcached__base_packages[0] = memcached
+memcached__version = {{ ansible_local.memcached.version | d("0.0.0") }}
+memcached__bind = 127.0.0.1
+memcached__memory = {{ (memcached__memory_available | float *
+                        memcached__memory_multiplier | float) | int }} 
+memcached__memory_available = {{ ansible_memtotal_mb }}
+memcached__memory_multiplier = 0.3
+memcached__connections = 1024
+memcached__options = 
+memcached__etc_services__dependent_list[0].name = memcache
+memcached__etc_services__dependent_list[0].port = 11211
+memcached__ferm__dependent_rules[0].type = accept
+memcached__ferm__dependent_rules[0].dport[0] = memcache
+memcached__ferm__dependent_rules[0].protocol[0] = tcp
+memcached__ferm__dependent_rules[0].protocol[1] = udp
+memcached__ferm__dependent_rules[0].saddr = {{ memcached__allow }}
+memcached__ferm__dependent_rules[0].accept_any = False
+memcached__ferm__dependent_rules[0].weight = 50
+memcached__ferm__dependent_rules[0].role = memcached

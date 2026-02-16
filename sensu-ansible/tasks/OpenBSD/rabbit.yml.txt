@@ -1,0 +1,9 @@
+~d0.name = Include ansible_distribution vars
+~d1.include_vars = 
+~d2.file = "{{ ansible_distribution }}.yml"
+~d1.tags = rabbitmq
+~d0.name = Ensure RabbitMQ is installed
+~d1.tags = rabbitmq
+~d1.pkgng = 
+~d2.name = rabbitmq
+~d2.state = "{{ sensu_rabbitmq_pkg_state }}"

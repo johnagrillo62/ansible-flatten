@@ -1,0 +1,5 @@
+roles[0].name = geerlingguy.firewall
+roles[1].name = geerlingguy.pip
+roles[2].name = geerlingguy.ansible
+roles[3].name = geerlingguy.java
+roles[4].name = geerlingguy.jenkins

@@ -1,0 +1,9 @@
+~d0.name = Enable/disable Apache modules
+~d1.debops.debops.apache2_module = 
+~d2.name = '{{ item.key }}'
+~d2.state = '{{ (item.value.enabled
+~d2.force = '{{ item.value.force | d(False) | bool }}'
+~d1.notify = [ 'Test apache and reload' ]
+~d1.when = (item.key in apache__tpl_available_modules
+~d1.with_dict = '{{ apache__combined_modules }}'
+~d1.tags = [ 'role::apache:modules' ]

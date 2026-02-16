@@ -1,0 +1,124 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Import DebOps secret role
+[2]["ansible.builtin.import_role"].name = secret
+[3].name = Install Postfix APT packages
+[3]["ansible.builtin.apt"].name = {{ (postfix__base_packages
+             + postfix__dependent_packages
+             + postfix__host_packages
+             + postfix__group_packages
+             + postfix__packages)
+             | flatten }}
+
+[3]["ansible.builtin.apt"].state = present
+[3]["ansible.builtin.apt"].install_recommends = False
+[3].register = postfix__register_packages
+[3].until = postfix__register_packages is succeeded
+[3].when = ansible_pkg_mgr == 'apt'
+[3].tags[0] = meta::provision
+[4].name = Purge other SMTP servers
+[4]["ansible.builtin.apt"].name = {{ postfix__purge_packages | flatten }}
+[4]["ansible.builtin.apt"].state = absent
+[4]["ansible.builtin.apt"].purge = True
+[4].when = postfix__purge_packages | d() and ansible_pkg_mgr == 'apt'
+[4].tags[0] = meta::provision
+[5].name = Disable Postfix configuration in debconf
+[5]["ansible.builtin.debconf"].name = postfix
+[5]["ansible.builtin.debconf"].question = postfix/main_mailer_type
+[5]["ansible.builtin.debconf"].vtype = select
+[5]["ansible.builtin.debconf"].value = No configuration
+[5].when = ansible_pkg_mgr == 'apt'
+[6].name = Make sure Ansible local facts directory exists
+[6]["ansible.builtin.file"].dest = /etc/ansible/facts.d
+[6]["ansible.builtin.file"].state = directory
+[6]["ansible.builtin.file"].owner = root
+[6]["ansible.builtin.file"].group = root
+[6]["ansible.builtin.file"].mode = 0755
+[7].name = Configure Postfix local facts
+[7]["ansible.builtin.template"].src = etc/ansible/facts.d/postfix.fact.j2
+[7]["ansible.builtin.template"].dest = /etc/ansible/facts.d/postfix.fact
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0755
+[7].notify[0] = Refresh host facts
+[7].tags[0] = meta::facts
+[8].name = Re-read local facts if they have been modified
+[8]["ansible.builtin.meta"] = flush_handlers
+[9].name = Configure /etc/mailname
+[9]["ansible.builtin.copy"].content = {{ postfix__mailname + '\n' }}
+[9]["ansible.builtin.copy"].dest = /etc/mailname
+[9]["ansible.builtin.copy"].owner = root
+[9]["ansible.builtin.copy"].group = root
+[9]["ansible.builtin.copy"].mode = 0644
+[9].notify[0] = Check postfix and reload
+[10].name = Install /etc/postfix/Makefile
+[10]["ansible.builtin.template"].src = etc/postfix/Makefile.j2
+[10]["ansible.builtin.template"].dest = /etc/postfix/Makefile
+[10]["ansible.builtin.template"].owner = root
+[10]["ansible.builtin.template"].group = root
+[10]["ansible.builtin.template"].mode = 0644
+[11].name = Generate Postfix 'main.cf' configuration
+[11]["ansible.builtin.template"].src = etc/postfix/main.cf.j2
+[11]["ansible.builtin.template"].dest = /etc/postfix/main.cf
+[11]["ansible.builtin.template"].owner = root
+[11]["ansible.builtin.template"].group = root
+[11]["ansible.builtin.template"].mode = 0644
+[11].notify[0] = Check postfix and reload
+[12].name = Generate Postfix 'master.cf' configuration
+[12]["ansible.builtin.template"].src = etc/postfix/master.cf.j2
+[12]["ansible.builtin.template"].dest = /etc/postfix/master.cf
+[12]["ansible.builtin.template"].owner = root
+[12]["ansible.builtin.template"].group = root
+[12]["ansible.builtin.template"].mode = 0644
+[12].notify[0] = Check postfix and reload
+[13].name = Remove Postfix lookup tables
+[13]["ansible.builtin.file"].path = /etc/postfix/{{ item.name }}
+[13]["ansible.builtin.file"].state = absent
+[13].loop = {{ postfix__combined_lookup_tables | debops.debops.parse_kv_items }}
+[13].when = item.name | d() and item.state | d('present') == 'absent'
+[13].notify[0] = Process Postfix Makefile
+[13].notify[1] = Check postfix and reload
+[13].no_log = {{ debops__no_log | d(item.no_log)
+              | d(True if (item.mode | d("0644") == "0600") else False) }} 
+[14].name = Generate Postfix lookup tables
+[14]["ansible.builtin.template"].src = etc/postfix/lookup_table.j2
+[14]["ansible.builtin.template"].dest = /etc/postfix/{{ item.name }}
+[14]["ansible.builtin.template"].owner = {{ item.owner | d("root") }}
+[14]["ansible.builtin.template"].group = {{ item.group | d("postfix") }}
+[14]["ansible.builtin.template"].mode = {{ item.mode | d("0640") }}
+[14].loop = {{ postfix__combined_lookup_tables | debops.debops.parse_kv_items }}
+[14].notify[0] = Process Postfix Makefile
+[14].notify[1] = Check postfix and reload
+[14].when = item.name | d() and item.state | d('present') != 'absent'
+[14].no_log = {{ debops__no_log | d(item.no_log)
+              | d(True if (item.mode | d("0640") in ["0640", "0600"])
+                  else False) }}
+
+[15].name = Save dependent configuration on Ansible Controller
+[15]["ansible.builtin.template"].src = {{ "secret/postfix/dependent_config/inventory_hostname/" + item + ".j2" }}
+[15]["ansible.builtin.template"].dest = {{ secret + "/postfix/dependent_config/" + inventory_hostname + "/" + item }}
+[15]["ansible.builtin.template"].mode = 0644
+[15].become = False
+[15].delegate_to = localhost
+[15].with_items[0] = maincf.json
+[15].with_items[1] = mastercf.json
+[16].name = Make sure that PKI hook directory exists
+[16]["ansible.builtin.file"].path = {{ postfix__pki_hook_path }}
+[16]["ansible.builtin.file"].state = directory
+[16]["ansible.builtin.file"].owner = root
+[16]["ansible.builtin.file"].group = root
+[16]["ansible.builtin.file"].mode = 0755
+[16].when = postfix__pki | bool
+[17].name = Manage PKI postfix hook
+[17]["ansible.builtin.template"].src = etc/pki/hooks/postfix.j2
+[17]["ansible.builtin.template"].dest = {{ postfix__pki_hook_path + "/" + postfix__pki_hook_name }}
+[17]["ansible.builtin.template"].owner = root
+[17]["ansible.builtin.template"].group = root
+[17]["ansible.builtin.template"].mode = 0755
+[17].when = postfix__pki | bool
+[18].name = Ensure the PKI postfix hook is absent
+[18]["ansible.builtin.file"].path = {{ postfix__pki_hook_path + "/" + postfix__pki_hook_name }}
+[18]["ansible.builtin.file"].state = absent
+[18].when = not (postfix__pki | bool)

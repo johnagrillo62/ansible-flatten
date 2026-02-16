@@ -1,0 +1,11 @@
+[0].name = Calico-rr | Pre-upgrade tasks
+[0].include_tasks = pre.yml
+[1].name = Calico-rr | Configuring node tasks
+[1].include_tasks = update-node.yml
+[2].name = Calico-rr | Set label for route reflector
+[2].command = {{ bin_dir }}/calicoctl.sh label node {{ inventory_hostname }} 'i-am-a-route-reflector=true' --overwrite
+[2].changed_when = false
+[2].register = calico_rr_label
+[2].until = calico_rr_label is succeeded
+[2].delay = {{ retry_stagger | random + 3 }}
+[2].retries = 10

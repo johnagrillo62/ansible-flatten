@@ -1,0 +1,85 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Check if host supports hardware virtualization
+[1]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && egrep 'vmx|svm|0xc0f' /proc/cpuinfo || true
+[1].args.executable = bash
+[1].register = libvirtd__register_hw_virt
+[1].check_mode = False
+[1].changed_when = False
+[2].name = Install libvirtd support
+[2]["ansible.builtin.package"].name = {{ q("flattened", (libvirtd__network_packages
+                              + libvirtd__misc_packages
+                              + libvirtd__packages
+                              + (libvirtd__base_packages_map[ansible_distribution_release]
+                                 if (ansible_distribution_release in libvirtd__base_packages_map.keys())
+                                 else libvirtd__base_packages)
+                              + (libvirtd__kvm_packages
+                                 if libvirtd__kvm_support | bool
+                                 else []))) }}
+
+[2]["ansible.builtin.package"].state = present
+[2]["ansible.builtin.package"].install_recommends = False
+[2].register = libvirtd__register_packages
+[2].until = libvirtd__register_packages is succeeded
+[3].name = Make sure that Ansible local facts directory exists
+[3]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = root
+[3]["ansible.builtin.file"].group = root
+[3]["ansible.builtin.file"].mode = 0755
+[4].name = Save libvirtd local facts
+[4]["ansible.builtin.template"].src = etc/ansible/facts.d/libvirtd.fact.j2
+[4]["ansible.builtin.template"].dest = /etc/ansible/facts.d/libvirtd.fact
+[4]["ansible.builtin.template"].owner = root
+[4]["ansible.builtin.template"].group = root
+[4]["ansible.builtin.template"].mode = 0755
+[4].notify[0] = Refresh host facts
+[4].tags[0] = meta::facts
+[5].name = Update Ansible facts if they were modified
+[5]["ansible.builtin.meta"] = flush_handlers
+[6].name = Divert managed configuration files
+[6]["debops.debops.dpkg_divert"].path = {{ item }}
+[6].loop[0] = /etc/libvirt/libvirt.conf
+[6].loop[1] = /etc/libvirt/libvirtd.conf
+[7].name = Generate libvirt configuration files
+[7]["ansible.builtin.template"].src = {{ item }}.j2
+[7]["ansible.builtin.template"].dest = /{{ item }}
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0644
+[7].with_items[0] = etc/libvirt/libvirt.conf
+[8].name = Generate libvirtd configuration files
+[8]["ansible.builtin.template"].src = {{ item }}.j2
+[8]["ansible.builtin.template"].dest = /{{ item }}
+[8]["ansible.builtin.template"].owner = root
+[8]["ansible.builtin.template"].group = root
+[8]["ansible.builtin.template"].mode = 0644
+[8].with_items[0] = etc/libvirt/libvirtd.conf
+[8].notify[0] = Restart libvirtd
+[8].notify[1] = Restart libvirt-bin
+[9].name = Add administrators to libvirtd access group
+[9]["ansible.builtin.user"].name = {{ item }}
+[9]["ansible.builtin.user"].groups = {{ libvirtd__unix_sock_group }}
+[9]["ansible.builtin.user"].append = True
+[9].with_items = {{ libvirtd__admins }}
+[9].when = libvirtd__admins | d()
+[10].name = Install ferm post hook
+[10]["ansible.builtin.template"].src = etc/ferm/hooks/post.d/reload-libvirtd.j2
+[10]["ansible.builtin.template"].dest = /etc/ferm/hooks/post.d/reload-libvirtd
+[10]["ansible.builtin.template"].owner = root
+[10]["ansible.builtin.template"].group = root
+[10]["ansible.builtin.template"].mode = 0755
+[10].when = libvirtd__ferm_post_hook | bool
+[11].name = Configure Kernel Same-page Merging
+[11]["ansible.builtin.template"].src = etc/sysfs.d/ksm.conf.j2
+[11]["ansible.builtin.template"].dest = /etc/sysfs.d/ksm.conf
+[11]["ansible.builtin.template"].owner = root
+[11]["ansible.builtin.template"].group = root
+[11]["ansible.builtin.template"].mode = 0644
+[11].notify[0] = Restart sysfsutils
+[12].name = Check /sys filesystem mount options
+[12]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && findmnt -n -o FS-OPTIONS --target /sys | tr ',' '\n'
+[12].args.executable = bash
+[12].register = libvirtd__register_sysfs
+[12].changed_when = False
+[12].check_mode = False

@@ -1,0 +1,66 @@
+nodejs__distribution_release = {{ ansible_local.core.distribution_release | d(ansible_distribution_release) }}
+nodejs__node_upstream = {{ ansible_local.nodejs.node_upstream
+                            | d(nodejs__distribution_release in ["xenial"]) | bool }} 
+nodejs__node_upstream_release = {{ "node_8.x"
+                                   if (nodejs__distribution_release in
+                                       ["stretch", "trusty",
+                                        "xenial", "bionic"])
+                                   else "node_10.x" }}
+
+nodejs__node_upstream_key_id = 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
+nodejs__node_upstream_repository = deb https://deb.nodesource.com/{{ nodejs__node_upstream_release }} {{ nodejs__distribution_release }} main
+nodejs__yarn_upstream = {{ True
+                           if nodejs__node_upstream | bool
+                           else (ansible_local.nodejs.yarn_upstream
+                                  | d(nodejs__distribution_release in
+                                    ["stretch", "xenial", "bionic"])) }}
+
+nodejs__yarn_upstream_key_id = 72ECF46A56B4AD39C907BBB71646B01B86E50310
+nodejs__yarn_upstream_repository = deb https://dl.yarnpkg.com/debian/ stable main
+nodejs__remove_packages[0] = cmdtest
+nodejs__remove_packages[1] = {{ "yarnpkg" if nodejs__yarn_upstream | bool else [] }}
+nodejs__base_packages[0] = nodejs
+nodejs__base_packages[1] = {{ [] if nodejs__node_upstream | bool else "npm" }}
+nodejs__base_packages[2] = {{ "yarn"
+        if nodejs__yarn_upstream | bool
+        else ([]
+              if (nodejs__distribution_release in
+                  ["stretch", "trusty",
+                   "xenial", "bionic"])
+              else "yarnpkg") }}
+
+nodejs__npm_production_mode = True
+nodejs__apt_preferences__dependent_list[0].packages[0] = nodejs
+nodejs__apt_preferences__dependent_list[0].packages[1] = nodejs-*
+nodejs__apt_preferences__dependent_list[0].packages[2] = node-*
+nodejs__apt_preferences__dependent_list[0].packages[3] = libssl1.0.0
+nodejs__apt_preferences__dependent_list[0].packages[4] = libssl-dev
+nodejs__apt_preferences__dependent_list[0].packages[5] = npm
+nodejs__apt_preferences__dependent_list[0].packages[6] = libuv1
+nodejs__apt_preferences__dependent_list[0].packages[7] = libuv1-dev
+nodejs__apt_preferences__dependent_list[0].backports[0] = stretch
+nodejs__apt_preferences__dependent_list[0].reason = Unsupported NodeJS version, parity with next Debian release
+nodejs__apt_preferences__dependent_list[0].by_role = debops_nodejs
+nodejs__apt_preferences__dependent_list[0].filename = debops_nodejs.pref
+nodejs__apt_preferences__dependent_list[0].state = {{ "absent" if nodejs__node_upstream | bool else "present" }}
+nodejs__apt_preferences__dependent_list[1].package = *
+nodejs__apt_preferences__dependent_list[1].pin = origin "deb.nodesource.com"
+nodejs__apt_preferences__dependent_list[1].priority = 100
+nodejs__apt_preferences__dependent_list[1].reason = Don't upgrade software automatically using packages from external repository
+nodejs__apt_preferences__dependent_list[1].role = debops.nodejs
+nodejs__apt_preferences__dependent_list[1].suffix = _deb_nodesource_com
+nodejs__apt_preferences__dependent_list[1].state = {{ "present" if nodejs__node_upstream | bool else "absent" }}
+nodejs__apt_preferences__dependent_list[2].packages[0] = nodejs
+nodejs__apt_preferences__dependent_list[2].packages[1] = nodejs-*
+nodejs__apt_preferences__dependent_list[2].pin = origin "deb.nodesource.com"
+nodejs__apt_preferences__dependent_list[2].priority = 501
+nodejs__apt_preferences__dependent_list[2].reason = Prefer nodejs packages from the same repository for consistency
+nodejs__apt_preferences__dependent_list[2].role = debops.nodejs
+nodejs__apt_preferences__dependent_list[2].suffix = _deb_nodesource_com
+nodejs__apt_preferences__dependent_list[2].state = {{ "present" if nodejs__node_upstream | bool else "absent" }}
+nodejs__keyring__dependent_apt_keys[0].id = {{ nodejs__node_upstream_key_id }}
+nodejs__keyring__dependent_apt_keys[0].repo = {{ nodejs__node_upstream_repository }}
+nodejs__keyring__dependent_apt_keys[0].state = {{ "present" if nodejs__node_upstream | bool else "absent" }}
+nodejs__keyring__dependent_apt_keys[1].id = {{ nodejs__yarn_upstream_key_id }}
+nodejs__keyring__dependent_apt_keys[1].repo = {{ nodejs__yarn_upstream_repository }}
+nodejs__keyring__dependent_apt_keys[1].state = {{ "present" if nodejs__yarn_upstream | bool else "absent" }}

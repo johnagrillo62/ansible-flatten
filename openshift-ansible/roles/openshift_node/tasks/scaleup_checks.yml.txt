@@ -1,0 +1,20 @@
+[0].name = Ensure [new_workers] group is populated
+[0].fail.msg = Detected no [new_workers] in inventory. Please add hosts to the [new_workers] host group to add nodes.
+
+[0].when = groups.new_workers | default([]) | length == 0
+[1].name = Get cluster nodes
+[1].command = oc get nodes --kubeconfig={{ openshift_node_kubeconfig_path }} --output=name
+
+[1].register = oc_get
+[1].until[0] = oc_get.stdout != ''
+[1].retries = 36
+[1].delay = 5
+[1].changed_when = false
+[2].name = Check for nodes which are already part of the cluster
+[2].set_fact.openshift_node_active_nodes = {{ openshift_node_active_nodes + [ item ] }}
+[2].when = item in oc_get.stdout
+[2].loop = {{ groups.new_workers }}
+[3].name = Fail if new_workers group contains active nodes
+[3].fail.msg = Detected active nodes in [new_workers] group. Please move these nodes to the [workers] group. {{ openshift_node_active_nodes | join(', ') }}
+
+[3].when = openshift_node_active_nodes | length > 0

@@ -1,0 +1,3 @@
+~d0.name = Prepare postconf environment
+~d1.ansible.builtin.set_fact = 
+~d2.postconf__env_capabilities = '{{ lookup("template", "lookup/postconf__env_capabilities.j2") }}'

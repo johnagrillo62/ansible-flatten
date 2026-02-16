@@ -1,0 +1,99 @@
+resolved__enabled = {{ True
+                       if (ansible_service_mgr == "systemd" and
+                           resolved__fact_service_state == "present")
+                       else False }}
+
+resolved__deploy_state = absent
+resolved__resolv_conf = /run/systemd/resolve/stub-resolv.conf
+resolved__fallback_conf = 00fallback-dns.conf
+resolved__dnssd_enabled = True
+resolved__base_packages = {{ ["libnss-resolve"]
+                              if (ansible_distribution_release in
+                                  (["stretch", "buster", "bullseye",
+                                    "bionic", "focal", "jammy"]))
+                              else ["systemd-resolved", "libnss-resolve"] }}
+
+resolved__skip_packages[0] = resolvconf
+resolved__skip_packages[1] = openresolv
+resolved__version = {{ ansible_local.resolved.version | d("0") }}
+resolved__synthesize_hostname = False
+resolved__default_configuration[0].name = DNS
+resolved__default_configuration[0].state = init
+resolved__default_configuration[1].name = FallbackDNS
+resolved__default_configuration[1].state = init
+resolved__default_configuration[2].name = Domains
+resolved__default_configuration[2].state = init
+resolved__default_configuration[3].name = DNSSEC
+resolved__default_configuration[3].value = False
+resolved__default_configuration[3].state = init
+resolved__default_configuration[4].name = DNSOverTLS
+resolved__default_configuration[4].value = False
+resolved__default_configuration[4].state = init
+resolved__default_configuration[5].name = MulticastDNS
+resolved__default_configuration[5].value = {{ resolved__dnssd_enabled | bool }}
+resolved__default_configuration[5].state = {{ "init" if (resolved__dnssd_enabled | bool) else "present" }}
+resolved__default_configuration[6].name = LLMNR
+resolved__default_configuration[6].value = True
+resolved__default_configuration[6].state = init
+resolved__default_configuration[7].name = Cache
+resolved__default_configuration[7].value = True
+resolved__default_configuration[7].state = init
+resolved__default_configuration[8].name = DNSStubListener
+resolved__default_configuration[8].value = True
+resolved__default_configuration[8].state = init
+resolved__default_configuration[9].name = DNSStubListenerExtra
+resolved__default_configuration[9].value = 
+resolved__default_configuration[9].state = init
+resolved__default_configuration[10].name = ReadEtcHosts
+resolved__default_configuration[10].value = True
+resolved__default_configuration[10].state = init
+resolved__default_configuration[11].name = ResolveUnicastSingleLabel
+resolved__default_configuration[11].value = False
+resolved__default_configuration[11].state = init
+resolved__combined_configuration = {{ resolved__default_configuration
+                                      + resolved__configuration
+                                      + resolved__group_configuration
+                                      + resolved__host_configuration }}
+
+resolved__default_units[0].name = workstation.dnssd
+resolved__default_units[0].comment = Publish information about the host in mDNS
+resolved__default_units[0].raw = [Service]
+Name=%H
+Type=_workstation._tcp
+Port=9
+
+resolved__default_units[0].state = present
+resolved__default_units[1].name = ssh.dnssd
+resolved__default_units[1].comment = Publish information about the SSH service
+resolved__default_units[1].raw = [Service]
+Name=%H
+Type=_ssh._tcp
+Port=22
+
+resolved__default_units[1].state = present
+resolved__default_units[2].name = sftp-ssh.dnssd
+resolved__default_units[2].comment = Publish information about the SFTP service
+resolved__default_units[2].raw = [Service]
+Name=%H
+Type=_sftp-ssh._tcp
+Port=22
+
+resolved__default_units[2].state = present
+resolved__combined_units = {{ resolved__default_units
+                              + resolved__dependent_units
+                              + resolved__units
+                              + resolved__group_units
+                              + resolved__host_units }}
+
+resolved__etc_services__dependent_list[0].name = llmnr
+resolved__etc_services__dependent_list[0].port = 5355
+resolved__etc_services__dependent_list[0].protocols[0] = tcp
+resolved__etc_services__dependent_list[0].protocols[1] = udp
+resolved__dpkg_cleanup__dependent_packages[0].name = systemd-resolved
+resolved__dpkg_cleanup__dependent_packages[0].ansible_fact = resolved
+resolved__dpkg_cleanup__dependent_packages[0].state = {{ "absent"
+               if (ansible_distribution_release in
+                   (["stretch", "buster", "bullseye",
+                     "bionic", "focal", "jammy"]))
+               else "present" }}
+

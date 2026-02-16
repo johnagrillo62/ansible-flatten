@@ -1,0 +1,192 @@
+apache__base_packages[0] = apache2
+apache__base_packages[1] = {{ "libapache2-mod-security2" if (apache__security_module_enabled | bool) else [] }}
+apache__deploy_state = present
+apache__fqdn = {{ ansible_fqdn }}
+apache__domain = {{ ansible_domain }}
+apache__config_path = /etc/apache2
+apache__service_name = apache2
+apache__user = www-data
+apache__server_name = {{ apache__fqdn }}
+apache__server_admin = {{ ansible_local.core.admin_public_email[0]
+                          if (ansible_local.core.admin_public_email | d())
+                          else (apache__user + "@" + apache__fqdn) }}
+
+apache__server_tokens = ProductOnly
+apache__server_signature = Off
+apache__trace_enabled = Off
+apache__http_listen[0] = 80
+apache__https_listen[0] = 443
+apache__config_use_if_version = True
+apache__config_min_version = current_major_minor
+apache__default_directory_match["/."] = Require all denied
+apache__combined_directory_match = {{ apache__default_directory_match
+                                      | combine(apache__directory_match)
+                                      | combine(apache__group_directory_match)
+                                      | combine(apache__host_directory_match) }}
+
+apache__role_modules.headers = True
+apache__role_modules.alias = True
+apache__role_modules.ssl.enabled = {{ True if (apache__https_listen and apache__https_enabled) else False }}
+apache__role_modules.security2.enabled = {{ apache__security_module_enabled | bool }}
+apache__role_modules.status.enabled = {{ apache__status_enabled | bool }}
+apache__role_modules.status.config = <Location /server-status>
+    # Revoke default permissions granted in `/etc/apache2/mods-available/status.conf`.
+    Require all denied
+</Location>
+
+apache__role_modules.socache_shmcb.enabled = {{ True
+                 if (apache__ocsp_stapling_enabled | bool
+                     and "shmcb" in apache__ocsp_stapling_cache)
+                 else omit }}
+
+apache__role_modules.authz_host.enabled = {{ True
+                 if (apache__status_enabled | bool
+                     and apache__status_allow_localhost)
+                 else omit }}
+
+apache__role_modules.rewrite.enabled = {{ True
+                 if (apache__register_mod_rewrite_used is defined and
+                     apache__register_mod_rewrite_used.rc | d(1) == 0)
+                 else omit }}
+
+apache__combined_modules = {{ apache__role_modules
+                              | combine(apache__modules)
+                              | combine(apache__group_modules)
+                              | combine(apache__host_modules) }}
+
+apache__security_module_enabled = False
+apache__security_module_server_signature = {{ omit }}
+apache__mpm_max_connections_per_child = 0
+apache__role_snippets.local-debops_apache = True
+apache__role_snippets.security.type = divert
+apache__role_snippets.security.raw = # This file exists here to make Debian package scripts happy.
+# For the actual security directives enabled in server context refer to
+# the `local-debops_apache.conf` file.
+#
+# `postinst` of the `apache2` package normally tries to enable the
+# `security` snippet in server context without checking if it is actually
+# there. The package provided `security.conf` snippet has been diverted
+# to `package-security.conf` and is not enabled to allow `debops.apache`
+# to configure and change security related settings.
+
+apache__role_snippets.security.divert_filename = package-security
+apache__role_snippets.security.divert_suffix = 
+apache__role_snippets.local-debops_apache_security_module.state = {{ apache__security_module_enabled | bool | ternary("present", "absent") }}
+apache__combined_snippets = {{ apache__dependent_snippets
+                               | combine(apache__role_snippets)
+                               | combine(apache__snippets)
+                               | combine(apache__group_snippets)
+                               | combine(apache__host_snippets) }}
+
+apache__https_enabled = {{ ansible_local | d() and ansible_local.pki | d() and
+                           (ansible_local.pki.enabled | d() | bool) and
+                           apache__https_listen | length > 0 }}
+
+apache__redirect_to_https = {{ apache__https_enabled | bool }}
+apache__pki_realm_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+apache__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+apache__pki_crt_filename = {{ ansible_local.pki.crt | d("default.crt") }}
+apache__pki_key_filename = {{ ansible_local.pki.key | d("default.key") }}
+apache__pki_ca_filename = {{ ansible_local.pki.ca | d("CA.crt") }}
+apache__pki_trusted_filename = {{ ansible_local.pki.trusted | d("trusted.crt") }}
+apache__tls_cipher_suite_set_name = {{ "mozilla_modern"
+                                      if apache__tls_protocols | length == 5 and
+                                        apache__tls_protocols[4] == "-TLSv1.2"
+                                      else "mozilla_intermediate" }}
+
+apache__tls_protocols[0] = all
+apache__tls_protocols[1] = -SSLv3
+apache__tls_protocols[2] = -TLSv1
+apache__tls_protocols[3] = -TLSv1.1
+apache__tls_cipher_suite_sets.bettercrypto_org__set_a = EDH+aRSA+AES256:EECDH+aRSA+AES256:!SSLv3
+apache__tls_cipher_suite_sets.bettercrypto_org__set_b = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH:CAMELLIA128-SHA:AES128-SHA
+apache__tls_cipher_suite_sets.bettercrypto_org__set_b_pfs = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH
+apache__tls_cipher_suite_sets.cipherli_st = EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH
+apache__tls_cipher_suite_sets.pfs = EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4
+apache__tls_cipher_suite_sets.pfs_rc4 = EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:RC4:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS
+apache__tls_cipher_suite_sets.hardened = ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+apache__tls_cipher_suite_sets.mozilla = ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-ECDSA-RC4-SHA:AES128:AES256:RC4-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK
+apache__tls_cipher_suite_sets.mozilla_modern = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+apache__tls_cipher_suite_sets.mozilla_intermediate = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+apache__tls_cipher_suite_sets.mozilla_old = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA
+apache__tls_cipher_suite_sets.fips = FIPS@STRENGTH:!aNULL:!eNULL
+apache__tls_cipher_suite_sets.ncsc_nl = ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256
+apache__tls_cipher_suite_sets.default = 
+apache__tls_honor_cipher_order = on
+apache__tls_compression = off
+apache__tls_dhparam_set_name = default
+apache__tls_dhparam_file = {{ ansible_local.dhparam[apache__tls_dhparam_set_name]
+                              if (ansible_local | d() and ansible_local.dhparam | d() and
+                                  ansible_local.dhparam[apache__tls_dhparam_set_name] | d())
+                              else "" }}
+
+apache__ocsp_stapling_enabled = True
+apache__ocsp_stapling_cache = shmcb:${APACHE_RUN_DIR}/ocsp_scache(512000)
+apache__ocsp_stapling_response_max_age = {{ 30 * 24 * 3600 }}
+apache__ocsp_stapling_force_url = False
+apache__ocsp_stapling_verify = {{ apache__ocsp_stapling_enabled | bool }}
+apache__hsts_enabled = True
+apache__hsts_max_age = 15768000
+apache__hsts_subdomains = True
+apache__hsts_preload = False
+apache__http_csp_append = 
+apache__http_frame_options = SAMEORIGIN
+apache__http_xss_protection = 1; mode=block
+apache__http_referrer_policy = same-origin
+apache__http_content_type_options = nosniff
+apache__http_sec_headers_directive_options = set
+apache__default_vhost.name = {{ apache__default_vhost_name }}
+apache__default_vhost.filename = 000-default
+apache__default_vhost.root = /var/www/html
+apache__default_vhost_name = default.{{ apache__domain }}
+apache__role_vhosts[0].name = 000-default
+apache__role_vhosts[0].type = divert
+apache__role_vhosts[0].divert_filename = package-default
+apache__role_vhosts[0].divert_suffix = 
+apache__role_vhosts[0].comment = `postinst` of the `apache2` package normally tries to enable
+the `000-default` site without checking if it is actually there.
+Divert the package provided `000-default` site file away, we will not need it :)
+
+apache__role_vhosts[1].name = default-ssl
+apache__role_vhosts[1].type = divert
+apache__role_vhosts[1].divert_filename = package-default-https
+apache__role_vhosts[1].divert_suffix = 
+apache__role_vhosts[1].comment = Divert the package provided `default-ssl` site file away, we will not need it :)
+
+apache__role_vhosts[2] = {{ apache__default_vhost }}
+apache__role_vhosts[3] = {{ apache__status_vhost }}
+apache__combined_vhosts = {{ apache__vhosts +
+                             apache__group_vhosts +
+                             apache__host_vhosts +
+                             apache__role_vhosts +
+                             apache__dependent_vhosts }}
+
+apache__vhost_type = default
+apache__vhost_allow_override = None
+apache__vhost_options[0] = +FollowSymLinks
+apache__log_level = warn
+apache__access_log_format = combined
+apache__status_enabled = False
+apache__status_vhost_enabled = {{ apache__status_enabled }}
+apache__status_for_vhost_enabled = False
+apache__status_location = /server-status
+apache__status_allow_localhost = False
+apache__status_directives = 
+apache__status_extended_enabled = {{ apache__status_enabled | bool }}
+apache__status_vhost_name[0] = localhost
+apache__status_vhost.name = {{ apache__status_vhost_name }}
+apache__status_vhost.filename = debops.apache-status
+apache__status_vhost.status_enabled = True
+apache__status_vhost.status_allow_localhost = True
+apache__status_vhost.listen_http[0] = localhost:80
+apache__status_vhost.https_enabled = False
+apache__status_vhost.enabled = {{ apache__status_vhost_enabled | bool }}
+apache__ferm__dependent_rules[0].type = accept
+apache__ferm__dependent_rules[0].dport = {{ apache__http_listen | union(apache__https_listen) }}
+apache__ferm__dependent_rules[0].saddr = {{ apache__allow + apache__group_allow + apache__host_allow }}
+apache__ferm__dependent_rules[0].accept_any = True
+apache__ferm__dependent_rules[0].weight = 40
+apache__ferm__dependent_rules[0].by_role = debops.apache
+apache__ferm__dependent_rules[0].name = http_https
+apache__ferm__dependent_rules[0].multiport = True
+apache__ferm__dependent_rules[0].rule_state = {{ apache__deploy_state }}

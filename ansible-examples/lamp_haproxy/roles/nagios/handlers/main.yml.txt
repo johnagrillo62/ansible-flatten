@@ -1,0 +1,4 @@
+[0].name = restart httpd
+[0].service = name=httpd state=restarted
+[1].name = restart nagios
+[1].service = name=nagios state=restarted

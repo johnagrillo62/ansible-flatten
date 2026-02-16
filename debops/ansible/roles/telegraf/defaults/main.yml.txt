@@ -1,0 +1,49 @@
+telegraf__base_packages[0] = telegraf
+telegraf__additional_groups[0] = {{ (ansible_local.proc_hidepid.group | d("procadmins"))
+        if (ansible_local.proc_hidepid.enabled | d()) | bool
+        else [] }}
+
+telegraf__default_configuration[0].name = agent
+telegraf__default_configuration[0].config.agent.interval = 10s
+telegraf__default_configuration[0].config.agent.round_interval = True
+telegraf__default_configuration[0].config.agent.metric_batch_size = 1000
+telegraf__default_configuration[0].config.agent.metric_buffer_limit = 10000
+telegraf__default_configuration[0].config.agent.collection_jitter = 0s
+telegraf__default_configuration[0].config.agent.flush_interval = 10s
+telegraf__default_configuration[0].config.agent.flush_jitter = 0s
+telegraf__default_configuration[0].config.agent.precision = 
+telegraf__default_configuration[0].config.agent.hostname = 
+telegraf__default_configuration[0].config.agent.omit_hostname = False
+telegraf__combined_configuration = {{ telegraf__default_configuration
+                                      + telegraf__configuration
+                                      + telegraf__group_configuration
+                                      + telegraf__host_configuration }}
+
+telegraf__default_plugins[0].name = input_system
+telegraf__default_plugins[1].name = input_cpu
+telegraf__default_plugins[1].config.inputs.cpu[0].percpu = True
+telegraf__default_plugins[1].config.inputs.cpu[0].totalcpu = True
+telegraf__default_plugins[1].config.inputs.cpu[0].collect_cpu_time = False
+telegraf__default_plugins[1].config.inputs.cpu[0].report_active = False
+telegraf__default_plugins[2].name = input_disk
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[0] = tmpfs
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[1] = devtmpfs
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[2] = devfs
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[3] = iso8660
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[4] = ovelay
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[5] = aufs
+telegraf__default_plugins[2].config.inputs.disk[0].ignore_fs[6] = squashfs
+telegraf__default_plugins[3].name = input_diskio
+telegraf__default_plugins[4].name = input_internal
+telegraf__default_plugins[5].name = input_influxdb_local
+telegraf__default_plugins[5].config.inputs.influxdb_v2_listener.service_address = 127.0.0.1:38086
+telegraf__default_plugins[5].state = present
+telegraf__default_plugins[6].name = output_discard
+telegraf__default_plugins[6].state = present
+telegraf__combined_plugins = {{ telegraf__default_plugins
+                                + telegraf__plugins
+                                + telegraf__group_plugins
+                                + telegraf__host_plugins }}
+
+telegraf__influxdata__dependent_packages[0] = {{ telegraf__base_packages }}
+telegraf__influxdata__dependent_packages[1] = {{ telegraf__packages }}

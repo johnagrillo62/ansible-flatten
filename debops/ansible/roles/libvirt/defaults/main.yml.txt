@@ -1,0 +1,55 @@
+libvirt__base_packages[0][0] = gawk
+libvirt__base_packages[0][1] = netcat-openbsd
+libvirt__base_packages[0][2] = virtinst
+libvirt__base_packages[1] = {{ [] if (ansible_distribution_release in ["bullseye"])
+           else "virt-top" }} 
+libvirt__base_packages[2] = {{ "virt-goodies"
+        if (ansible_local | d() and ansible_local.python | d() and
+            (ansible_local.python.installed2 | d()) | bool)
+        else [] }}
+
+libvirt__packages[0] = libvirt-clients
+libvirt__packages_map.trusty[0] = libvirt-bin
+libvirt__packages_map.xenial[0] = libvirt-bin
+libvirt__group_map.Debian = libvirt
+libvirt__group_map.Ubuntu = libvirtd
+libvirt__default_uri = qemu:///system
+libvirt__connections.localhost = {{ libvirt__default_uri }}
+libvirt__uri = localhost
+libvirt__networks[0] = {{ libvirt__networks_default }}
+libvirt__networks[1] = {{ libvirt__networks_virt_nat }}
+libvirt__networks_default[0].name = default
+libvirt__networks_default[0].type = dnsmasq
+libvirt__networks_default[0].bridge = virbr0
+libvirt__networks_default[0].addresses[0] = 192.168.122.1/24
+libvirt__networks_default[0].dhcp_range[0] = 2
+libvirt__networks_default[0].dhcp_range[1] = -2
+libvirt__networks_default[0].state = absent
+libvirt__networks_default[1].name = external
+libvirt__networks_default[1].type = bridge
+libvirt__networks_default[1].bridge = br0
+libvirt__networks_default[1].interface_present = br0
+libvirt__networks_default[2].name = internal
+libvirt__networks_default[2].type = bridge
+libvirt__networks_default[2].bridge = br1
+libvirt__networks_default[2].interface_present = br1
+libvirt__networks_default[3].name = nat
+libvirt__networks_default[3].type = bridge
+libvirt__networks_default[3].bridge = br2
+libvirt__networks_default[3].interface_present = br2
+libvirt__networks_virt_nat[0].name = virt-nat
+libvirt__networks_virt_nat[0].type = dnsmasq
+libvirt__networks_virt_nat[0].bridge = virbr0
+libvirt__networks_virt_nat[0].addresses[0] = 192.168.122.1/24
+libvirt__networks_virt_nat[0].domain = nat.{{ ansible_domain }}
+libvirt__networks_virt_nat[0].state = active
+libvirt__networks_virt_nat[0].forward = True
+libvirt__networks_virt_nat[0].dhcp = True
+libvirt__pools[0] = {{ libvirt__pools_default }}
+libvirt__pools_default[0].name = default
+libvirt__pools_default[0].type = dir
+libvirt__pools_default[0].path = /var/lib/libvirt/images
+libvirt__python__dependent_packages3[0] = python3-libvirt
+libvirt__python__dependent_packages3[1] = python3-lxml
+libvirt__python__dependent_packages2[0] = python-libvirt
+libvirt__python__dependent_packages2[1] = python-lxml

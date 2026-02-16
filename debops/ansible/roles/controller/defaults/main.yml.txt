@@ -1,0 +1,30 @@
+controller__base_packages[0] = git
+controller__base_packages[1] = uuid-runtime
+controller__pip_packages[0] = debops
+controller__install_systemwide = True
+controller__update_method = {{ ("batch"
+                                if (ansible_local | d() and ansible_local.atd | d() and
+                                    ansible_local.atd.enabled | bool)
+                                else "async") }}
+
+controller__async_timeout = {{ (60 * 20) }}
+controller__data_path = {{ (ansible_local.fhs.share | d("/usr/local/share"))
+                            + "/debops" }} 
+controller__project_git_repo = 
+controller__project_name = 
+controller__python__dependent_packages3[0] = python3-dev
+controller__python__dependent_packages3[1] = python3-dnspython
+controller__python__dependent_packages3[2] = python3-netaddr
+controller__python__dependent_packages3[3] = python3-passlib
+controller__python__dependent_packages3[4] = python3-setuptools
+controller__python__dependent_packages3[5] = {{ ([]
+         if (ansible_distribution_release in
+             ["stretch", "trusty", "xenial"])
+         else "python3-ldap") }}
+
+controller__python__dependent_packages2[0] = python-dev
+controller__python__dependent_packages2[1] = python-dnspython
+controller__python__dependent_packages2[2] = python-ldap
+controller__python__dependent_packages2[3] = python-netaddr
+controller__python__dependent_packages2[4] = python-passlib
+controller__python__dependent_packages2[5] = python-setuptools

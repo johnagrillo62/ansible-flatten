@@ -1,0 +1,27 @@
+[0].name = Generate a test ID
+[0].set_fact.test_id = {{ lookup('password', '/dev/null chars=ascii_letters length=16') }}
+[0].when = test_id is not defined
+[1].name = Generate names
+[1].set_fact.label_name = AWX-Collection-tests-label-label-{{ test_id }}
+[2].name = Create a Label
+[2].label.name = {{ label_name }}
+[2].label.organization = Default
+[2].label.state = present
+[2].register = results
+[3].assert.that[0] = results is changed
+[4].name = Create a Label with exists
+[4].label.name = {{ label_name }}
+[4].label.organization = Default
+[4].label.state = exists
+[4].register = results
+[5].assert.that[0] = results is not changed
+[6].name = Check module fails with correct msg
+[6].label.name = Test Label
+[6].label.organization = Non_existing_org
+[6].label.state = present
+[6].register = result
+[6].ignore_errors = yes
+[7].assert.that[0] = result is failed
+[7].assert.that[1] = result is not changed
+[7].assert.that[2] = 'Non_existing_org' in result.msg
+[7].assert.that[3] = result.total_results == 0

@@ -1,0 +1,4 @@
+~d0.name = Restart rspamd
+~d1.ansible.builtin.service = 
+~d2.name = 'rspamd'
+~d2.state = 'restarted'

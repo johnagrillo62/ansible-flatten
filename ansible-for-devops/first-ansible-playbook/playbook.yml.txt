@@ -1,0 +1,13 @@
+[0].hosts = all
+[0].become = yes
+[0].tasks[0].name = Ensure chrony (for time synchronization) is installed.
+[0].tasks[0].dnf.name = chrony
+[0].tasks[0].dnf.state = present
+[0].tasks[1].name = Ensure chrony is running.
+[0].tasks[1].service.name = chronyd
+[0].tasks[1].service.state = started
+[0].tasks[1].service.enabled = yes
+[1].hosts = all
+[1].become = yes
+[1].tasks[0].dnf = name=chrony state=present
+[1].tasks[1].service = name=chronyd state=started enabled=yes

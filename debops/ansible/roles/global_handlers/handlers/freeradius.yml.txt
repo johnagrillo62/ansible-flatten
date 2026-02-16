@@ -1,0 +1,9 @@
+~d0.name = Check freeradius configuration and restart
+~d1.ansible.builtin.command = freeradius -C
+~d1.register = global_handlers__freeradius_register_check_config
+~d1.changed_when = global_handlers__freeradius_register_check_config.changed | bool
+~d1.notify = [ 'Restart freeradius' ]
+~d0.name = Restart freeradius
+~d1.ansible.builtin.service = 
+~d2.name = 'freeradius'
+~d2.state = 'restarted'

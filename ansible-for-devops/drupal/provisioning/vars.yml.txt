@@ -1,0 +1,3 @@
+~d0.drupal_core_path = "/var/www/drupal"
+~d0.domain = "drupal"
+~d0.drupal_site_name = "Drupal Test"

@@ -1,0 +1,12 @@
+etc_services__enabled = True
+etc_services__diversion = /etc/services.d/10_debian_etc_services
+etc_services__base_packages[0] = netbase
+etc_services__combined_list[0] = {{ etc_services__list }}
+etc_services__combined_list[1] = {{ etc_services__group_list }}
+etc_services__combined_list[2] = {{ etc_services__host_list }}
+etc_services__combined_list[3] = {{ etc_services__dependent_list }}
+etc_services__combined_list[4] = {{ etc_services_list | d([]) }}
+etc_services__combined_list[5] = {{ etc_services_group_list | d([]) }}
+etc_services__combined_list[6] = {{ etc_services_host_list | d([]) }}
+etc_services__combined_list[7] = {{ etc_services_dependent_list | d([]) }}
+etc_services__combined_list[8] = {{ etc_services_dependency_list | d([]) }}

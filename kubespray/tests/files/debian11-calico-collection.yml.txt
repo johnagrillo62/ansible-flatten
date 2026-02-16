@@ -1,0 +1,2 @@
+cloud_image = debian-11
+containerd_static_binary = true

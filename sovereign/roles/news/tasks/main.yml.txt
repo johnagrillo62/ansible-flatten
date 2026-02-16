@@ -1,0 +1,2 @@
+[0].import_tasks = selfoss.yml
+[0].tags = selfoss

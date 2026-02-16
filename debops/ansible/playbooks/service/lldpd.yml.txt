@@ -1,0 +1,8 @@
+~d0.name = Manage LLDP service
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_all_hosts', 'debops_service_lldpd' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = lldpd
+~d3.tags = [ 'role::lldpd', 'skip::lldpd' ]

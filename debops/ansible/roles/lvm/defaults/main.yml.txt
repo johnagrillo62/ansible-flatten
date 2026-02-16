@@ -1,0 +1,14 @@
+lvm__packages[0] = lvm2
+lvm__global_use_lvmetad = True
+lvm__devices_filter[0] = a|sd.*|
+lvm__devices_filter[1] = a|vd.*|
+lvm__devices_filter[2] = a|drbd.*|
+lvm__devices_filter[3] = a|md.*|
+lvm__devices_filter[4] = r|.*|
+lvm__devices_global_filter = {{ lvm__devices_filter }}
+lvm__config_lookup = 
+lvm__config.global.use_lvmetad = {{ lvm__global_use_lvmetad }}
+lvm__config.devices.filter = {{ lvm__devices_filter }}
+lvm__config.devices.global_filter = {{ lvm__devices_global_filter }}
+lvm__default_fs_type = ext4
+lvm__default_mount_options = defaults

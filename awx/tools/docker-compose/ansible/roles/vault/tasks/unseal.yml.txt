@@ -1,0 +1,16 @@
+[0].name = Set vault_addr
+[0].include_tasks = set_vault_addr.yml
+[1].name = Load vault keys
+[1].include_vars.file = {{ vault_file }}
+[2].name = Unseal the vault
+[2]["flowerysong.hvault.seal"].vault_addr = {{ vault_addr_from_host }}
+[2]["flowerysong.hvault.seal"].validate_certs = false
+[2]["flowerysong.hvault.seal"].state = unsealed
+[2]["flowerysong.hvault.seal"].key = {{ item }}
+[2].loop[0] = {{ Unseal_Key_1 }}
+[2].loop[1] = {{ Unseal_Key_2 }}
+[2].loop[2] = {{ Unseal_Key_3 }}
+[2].register = unseal_result
+[2].until = unseal_result is succeeded or unseal_result is failed and 'Connection refused' not in unseal_result.msg
+[2].retries = 5
+[2].delay = 1

@@ -1,0 +1,9 @@
+[0].name = Install libselinux-python
+[0].yum = name=libselinux-python state=present
+[1].name = Install GPG key for EPEL
+[1].get_url = url=https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+[2].name = Install EPEL repository
+[2].yum = name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm state=present
+[3].name = Setup Iptables rules
+[3].template = src=iptables.j2 dest=/etc/sysconfig/iptables
+[3].notify = restart iptables

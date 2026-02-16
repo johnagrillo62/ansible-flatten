@@ -1,0 +1,8 @@
+~d0.name = Restart mosquitto
+~d1.ansible.builtin.service = 
+~d2.name = 'mosquitto'
+~d2.state = 'restarted'
+~d0.name = Reload mosquitto
+~d1.ansible.builtin.service = 
+~d2.name = 'mosquitto'
+~d2.state = 'reloaded'

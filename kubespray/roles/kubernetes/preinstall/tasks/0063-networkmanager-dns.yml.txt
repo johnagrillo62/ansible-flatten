@@ -1,0 +1,29 @@
+[0].name = NetworkManager | Add nameservers to NM configuration
+[0]["community.general.ini_file"].path = /etc/NetworkManager/conf.d/dns.conf
+[0]["community.general.ini_file"].section = global-dns-domain-*
+[0]["community.general.ini_file"].option = servers
+[0]["community.general.ini_file"].value = {{ nameserverentries | join(',') }}
+[0]["community.general.ini_file"].mode = 0600
+[0]["community.general.ini_file"].backup = {{ leave_etc_backup_files }}
+[0].when[0] = ('127.0.0.53' not in nameserverentries or systemd_resolved_enabled.rc != 0)
+[0].notify = Preinstall | update resolvconf for networkmanager
+[1].name = Set default dns if remove_default_searchdomains is false
+[1].set_fact.default_searchdomains[0] = default.svc.{{ dns_domain }}
+[1].set_fact.default_searchdomains[1] = svc.{{ dns_domain }}
+[1].when = not remove_default_searchdomains | default() | bool or (remove_default_searchdomains | default() | bool and searchdomains | default([]) | length==0)
+[2].name = NetworkManager | Add DNS search to NM configuration
+[2]["community.general.ini_file"].path = /etc/NetworkManager/conf.d/dns.conf
+[2]["community.general.ini_file"].section = global-dns
+[2]["community.general.ini_file"].option = searches
+[2]["community.general.ini_file"].value = {{ (default_searchdomains | default([]) + searchdomains) | join(',') }}
+[2]["community.general.ini_file"].mode = 0600
+[2]["community.general.ini_file"].backup = {{ leave_etc_backup_files }}
+[2].notify = Preinstall | update resolvconf for networkmanager
+[3].name = NetworkManager | Add DNS options to NM configuration
+[3]["community.general.ini_file"].path = /etc/NetworkManager/conf.d/dns.conf
+[3]["community.general.ini_file"].section = global-dns
+[3]["community.general.ini_file"].option = options
+[3]["community.general.ini_file"].value = ndots:{{ ndots }},timeout:{{ dns_timeout | default('2') }},attempts:{{ dns_attempts | default('2') }}
+[3]["community.general.ini_file"].mode = 0600
+[3]["community.general.ini_file"].backup = {{ leave_etc_backup_files }}
+[3].notify = Preinstall | update resolvconf for networkmanager

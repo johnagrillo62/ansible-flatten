@@ -1,0 +1,10 @@
+redis_sentinel__monitors[0].name = redis-ha-second
+redis_sentinel__monitors[0].host = redis.example.org
+redis_sentinel__monitors[0].port = 6380
+redis_sentinel__monitors[0].quorum = 2
+redis_sentinel__monitors[0].failover-timeout = 180000
+redis_sentinel__monitors[0].down-after-miliseconds = 30000
+redis_sentinel__monitors[1].name = redis-ha-third
+redis_sentinel__monitors[1].host = redis.example.org
+redis_sentinel__monitors[1].port = 6381
+redis_sentinel__monitors[1].quorum = 2

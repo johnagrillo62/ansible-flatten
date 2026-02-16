@@ -1,0 +1,5 @@
+[0].debug.msg = OwnCloud is not supported in this distribution release https://github.com/sovereign/sovereign/issues/765
+[0].when = ansible_distribution_release in ["jessie", "trusty"]
+[1].import_tasks = owncloud.yml
+[1].tags = owncloud
+[1].when = ansible_distribution_release not in ["jessie", "trusty"]

@@ -1,0 +1,26 @@
+[0].name = Install http and php etc
+[0].yum.name = {{ item }}
+[0].yum.state = present
+[0].with_items[0] = httpd
+[0].with_items[1] = php
+[0].with_items[2] = php-mysql
+[0].with_items[3] = git
+[0].with_items[4] = libsemanage-python
+[0].with_items[5] = libselinux-python
+[1].name = insert iptables rule for httpd
+[1].lineinfile.dest = /etc/sysconfig/iptables
+[1].lineinfile.create = yes
+[1].lineinfile.state = present
+[1].lineinfile.regexp = {{ httpd_port }}
+[1].lineinfile.insertafter = ^:OUTPUT 
+[1].lineinfile.line = -A INPUT -p tcp  --dport {{ httpd_port }} -j  ACCEPT
+[1].notify = restart iptables
+[2].name = http service state
+[2].service.name = httpd
+[2].service.state = started
+[2].service.enabled = yes
+[3].name = Configure SELinux to allow httpd to connect to remote database
+[3].seboolean.name = httpd_can_network_connect_db
+[3].seboolean.state = true
+[3].seboolean.persistent = yes
+[3].when = sestatus.rc != 0

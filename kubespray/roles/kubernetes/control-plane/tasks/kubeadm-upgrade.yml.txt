@@ -1,0 +1,56 @@
+[0].name = Ensure kube-apiserver is up before upgrade
+[0].import_tasks = check-api.yml
+[1].name = Kubeadm | Upgrade first control plane node to {{ kube_version }}
+[1].command = timeout -k 600s 600s {{ bin_dir }}/kubeadm upgrade apply -y v{{ kube_version }} {%- if kubeadm_config_api_version == 'v1beta3' %} --certificate-renewal={{ kubeadm_upgrade_auto_cert_renewal }} --ignore-preflight-errors={{ kubeadm_ignore_preflight_errors | join(',') }} --allow-experimental-upgrades --etcd-upgrade={{ (etcd_deployment_type == "kubeadm") | lower }} {% if kubeadm_patches | length > 0 %}--patches={{ kubeadm_patches_dir }}{% endif %} --force {%- else %} --config={{ kube_config_dir }}/kubeadm-config.yaml {%- endif %} {%- if kube_version is version('1.32.0', '>=') %} --skip-phases={{ kubeadm_init_phases_skip | join(',') }} {%- endif %}
+[1].register = kubeadm_upgrade
+[1].when = inventory_hostname == first_kube_control_plane
+[1].failed_when = kubeadm_upgrade.rc != 0 and "field is immutable" not in kubeadm_upgrade.stderr
+[1].environment.PATH = {{ bin_dir }}:{{ ansible_env.PATH }}
+[2].name = Kubeadm | Upgrade other control plane nodes to {{ kube_version }}
+[2].command = {{ bin_dir }}/kubeadm upgrade node {%- if kubeadm_config_api_version == 'v1beta3' %} --certificate-renewal={{ kubeadm_upgrade_auto_cert_renewal }} --ignore-preflight-errors={{ kubeadm_ignore_preflight_errors | join(',') }} --etcd-upgrade={{ (etcd_deployment_type == "kubeadm") | lower }} {% if kubeadm_patches | length > 0 %}--patches={{ kubeadm_patches_dir }}{% endif %} {%- else %} --config={{ kube_config_dir }}/kubeadm-config.yaml {%- endif %} --skip-phases={{ kubeadm_upgrade_node_phases_skip | join(',') }}
+[2].register = kubeadm_upgrade
+[2].when = inventory_hostname != first_kube_control_plane
+[2].failed_when = kubeadm_upgrade.rc != 0 and "field is immutable" not in kubeadm_upgrade.stderr
+[2].environment.PATH = {{ bin_dir }}:{{ ansible_env.PATH }}
+[3].name = Update kubeadm and kubelet configmaps after upgrade
+[3].command = {{ bin_dir }}/kubeadm init phase upload-config all --config {{ kube_config_dir }}/kubeadm-config.yaml
+[3].register = kubeadm_upload_config
+[3].retries = 3
+[3].until = kubeadm_upload_config.rc == 0
+[3].when[0] = inventory_hostname == first_kube_control_plane
+[4].name = Update kube-proxy configmap after upgrade
+[4].command = {{ bin_dir }}/kubeadm init phase addon kube-proxy --config {{ kube_config_dir }}/kubeadm-config.yaml
+[4].register = kube_proxy_upload_config
+[4].retries = 3
+[4].until = kube_proxy_upload_config.rc == 0
+[4].when[0] = inventory_hostname == first_kube_control_plane
+[4].when[1] = ('addon/kube-proxy' not in kubeadm_init_phases_skip)
+[5].name = Rewrite kubeadm managed etcd static pod manifests with updated configmap
+[5].command = {{ bin_dir }}/kubeadm init phase etcd local --config {{ kube_config_dir }}/kubeadm-config.yaml
+[5].when[0] = etcd_deployment_type == "kubeadm"
+[5].notify = Control plane | restart kubelet
+[6].name = Rewrite kubernetes control plane static pod manifests with updated configmap
+[6].command = {{ bin_dir }}/kubeadm init phase control-plane all --config {{ kube_config_dir }}/kubeadm-config.yaml
+[6].notify = Control plane | restart kubelet
+[7].name = Flush kubelet handlers
+[7].meta = flush_handlers
+[8].name = Ensure kube-apiserver is up after upgrade and control plane configuration updates
+[8].import_tasks = check-api.yml
+[9].name = Kubeadm | Remove binding to anonymous user
+[9].command = {{ kubectl }} -n kube-public delete rolebinding kubeadm:bootstrap-signer-clusterinfo --ignore-not-found
+[9].when = remove_anonymous_access
+[10].name = Kubeadm | clean kubectl cache to refresh api types
+[10].file.path = {{ item }}
+[10].file.state = absent
+[10].with_items[0] = /root/.kube/cache
+[10].with_items[1] = /root/.kube/http-cache
+[11].name = Kubeadm | scale down coredns replicas to 0 if not using coredns dns_mode
+[11].command = {{ kubectl }} -n kube-system scale deployment/coredns --replicas 0
+[11].register = scale_down_coredns
+[11].retries = 6
+[11].delay = 5
+[11].until = scale_down_coredns is succeeded
+[11].run_once = true
+[11].when[0] = kubeadm_scale_down_coredns_enabled
+[11].when[1] = dns_mode not in ['coredns', 'coredns_dual']
+[11].changed_when = false

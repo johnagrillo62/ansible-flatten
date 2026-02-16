@@ -1,0 +1,24 @@
+~d0.name = CSI CRD | Generate Manifests
+~d1.template = 
+~d2.src = "{{ item.file }}.j2"
+~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
+~d2.mode = "0644"
+~d1.with_items = 
+~d2.{name = volumegroupsnapshotclasses, file: volumegroupsnapshotclasses.yml}
+~d2.{name = volumegroupsnapshotcontents, file: volumegroupsnapshotcontents.yml}
+~d2.{name = volumegroupsnapshots, file: volumegroupsnapshots.yml}
+~d2.{name = volumesnapshotclasses, file: volumesnapshotclasses.yml}
+~d2.{name = volumesnapshotcontents, file: volumesnapshotcontents.yml}
+~d2.{name = volumesnapshots, file: volumesnapshots.yml}
+~d1.register = csi_crd_manifests
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = CSI CRD | Apply Manifests
+~d1.kube = 
+~d2.kubectl = "{{ bin_dir }}/kubectl"
+~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
+~d2.state = "latest"
+~d2.wait = true
+~d1.with_items = 
+~d1.when = 
+~d1.loop_control = 
+~d2.label = "{{ item.item.file }}"

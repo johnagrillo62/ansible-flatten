@@ -1,0 +1,7 @@
+[0].name = Restart nfs-kernel-server service
+[0]["ansible.builtin.service"].name = nfs-kernel-server
+[0]["ansible.builtin.service"].state = restarted
+[1].name = Reload NFS exports
+[1]["ansible.builtin.command"] = exportfs -ra
+[1].register = global_handlers__nfs_server_register_exportfs
+[1].changed_when = global_handlers__nfs_server_register_exportfs.changed | bool

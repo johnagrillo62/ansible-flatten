@@ -1,0 +1,12 @@
+[0].import_role.name = cluster-dump
+[1].name = Check kubectl output
+[1].command = {{ bin_dir }}/kubectl get nodes
+[1].changed_when = false
+[1].register = get_nodes
+[2].name = Check that all nodes are running and ready
+[2].command = {{ bin_dir }}/kubectl get nodes --no-headers -o yaml
+[2].changed_when = false
+[2].register = get_nodes_yaml
+[2].until[0] = (get_nodes_yaml.stdout | from_yaml)["items"] | map(attribute = "status.conditions") | map("items2dict", key_name="type", value_name="status") | map(attribute="Ready") | list | min
+[2].retries = 30
+[2].delay = 10

@@ -1,0 +1,20 @@
+[0].name = Firewall configuration.
+[0].hosts = all
+[0].become = yes
+[0].vars.firewall_allowed_tcp_ports[0] = 22
+[0].vars.firewall_allowed_tcp_ports[1] = 80
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=3600
+[0].roles[0] = geerlingguy.firewall
+[1].name = HAProxy Load Balancer setup.
+[1].hosts = balancer
+[1].become = yes
+[1].vars.haproxy_backend_servers[0].name = 192.168.56.3
+[1].vars.haproxy_backend_servers[0].address = 192.168.56.3:80
+[1].vars.haproxy_backend_servers[1].name = 192.168.56.4
+[1].vars.haproxy_backend_servers[1].address = 192.168.56.4:80
+[1].roles[0] = geerlingguy.haproxy
+[2].name = Apache webserver setup.
+[2].hosts = app
+[2].become = yes
+[2].roles[0] = geerlingguy.apache

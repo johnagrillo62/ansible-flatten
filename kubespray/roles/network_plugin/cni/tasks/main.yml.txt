@@ -1,0 +1,12 @@
+[0].name = CNI | make sure /opt/cni/bin exists
+[0].file.path = /opt/cni/bin
+[0].file.state = directory
+[0].file.mode = 0755
+[0].file.owner = {{ cni_bin_owner }}
+[0].file.recurse = true
+[1].name = CNI | Copy cni plugins
+[1].unarchive.src = {{ downloads.cni.dest }}
+[1].unarchive.dest = /opt/cni/bin
+[1].unarchive.mode = 0755
+[1].unarchive.owner = {{ cni_bin_owner }}
+[1].unarchive.remote_src = true

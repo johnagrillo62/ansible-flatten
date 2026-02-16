@@ -1,0 +1,7 @@
+doc[0][0].hosts = all
+doc[0][0].serial = 3
+doc[0][0].tasks[0].name = ping
+doc[0][0].tasks[0].ping = null
+doc[0][0].tasks[1].name = ping2
+doc[0][0].tasks[1].ping = null
+doc[1] = 

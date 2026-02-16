@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].tasks[0].name = Ensure 'man' directory exists.
+[0].tasks[0].file.path = /usr/share/man/man1
+[0].tasks[0].file.state = directory
+[0].tasks[0].file.recurse = True
+[1].import_playbook = ../solr/provisioning/playbook.yml

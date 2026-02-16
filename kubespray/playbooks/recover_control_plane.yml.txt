@@ -1,0 +1,23 @@
+~d0.name = Common tasks for every playbooks
+~d1.import_playbook = boilerplate.yml
+~d0.name = Recover etcd
+~d1.hosts = etcd[0]
+~d1.environment = "{{ proxy_disable_env }}"
+~d1.roles = 
+~d2.{ role = kubespray_defaults}
+~d2.role = recover_control_plane/etcd
+~d3.when = etcd_deployment_type != "kubeadm"
+~d0.name = Recover control plane
+~d1.hosts = kube_control_plane[0]
+~d1.environment = "{{ proxy_disable_env }}"
+~d1.roles = 
+~d2.{ role = kubespray_defaults}
+~d2.{ role = recover_control_plane/control-plane }
+~d0.name = Apply whole cluster install
+~d1.import_playbook = cluster.yml
+~d0.name = Perform post recover tasks
+~d1.hosts = kube_control_plane
+~d1.environment = "{{ proxy_disable_env }}"
+~d1.roles = 
+~d2.{ role = kubespray_defaults}
+~d2.{ role = recover_control_plane/post-recover }

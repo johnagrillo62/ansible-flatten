@@ -1,0 +1,5 @@
+[0].name = Macvlan | reload network
+[0].service.name = {% if ansible_os_family == "RedHat" -%} network {%- elif ansible_distribution == "Ubuntu" and ansible_distribution_release == "bionic" -%} systemd-networkd {%- elif ansible_os_family == "Debian" -%} networking {%- endif %}
+[0].service.state = restarted
+[0].when = not ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"] and kube_network_plugin not in ['calico']
+[0].listen = Macvlan | restart network

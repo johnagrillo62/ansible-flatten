@@ -1,0 +1,7 @@
+[0].hosts = all
+[0].pre_tasks[0].name = Update the apt cache.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=600
+[0].tasks[0].add_host.name = localhost
+[0].tasks[0].add_host.groups = logs
+[0].tasks[0].changed_when = false
+[1].import_playbook = ../elk/provisioning/elk/main.yml

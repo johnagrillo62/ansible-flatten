@@ -1,0 +1,199 @@
+minidlna__base_packages[0] = minidlna
+minidlna__original_configuration[0].name = user
+minidlna__original_configuration[0].comment = Specify the user name or uid to run as (root by default).
+On Debian system command line option (from /etc/default/minidlna) overrides this.
+
+minidlna__original_configuration[0].value = minidlna
+minidlna__original_configuration[0].state = comment
+minidlna__original_configuration[1].name = media_dir
+minidlna__original_configuration[1].comment = Path to the directory you want scanned for media files.
+
+This option can be specified more than once if you want multiple directories
+scanned.
+
+If you want to restrict a media_dir to a specific content type, you can
+prepend the directory name with a letter representing the type (A, P or V),
+followed by a comma, as so:
+  * "A" for audio    (eg. media_dir=A,/var/lib/minidlna/music)
+  * "P" for pictures (eg. media_dir=P,/var/lib/minidlna/pictures)
+  * "V" for video    (eg. media_dir=V,/var/lib/minidlna/videos)
+  * "PV" for pictures and video (eg. media_dir=PV,/var/lib/minidlna/digital_camera)
+
+minidlna__original_configuration[1].value[0] = /var/lib/minidlna
+minidlna__original_configuration[2].name = merge_media_dirs
+minidlna__original_configuration[2].comment = Set this to merge all media_dir base contents into the root container
+(The default is no.)
+
+minidlna__original_configuration[2].value = False
+minidlna__original_configuration[2].state = comment
+minidlna__original_configuration[3].name = db_dir
+minidlna__original_configuration[3].comment = Path to the directory that should hold the database and album art cache.
+minidlna__original_configuration[3].value = /var/cache/minidlna
+minidlna__original_configuration[3].state = comment
+minidlna__original_configuration[4].name = log_dir
+minidlna__original_configuration[4].comment = Path to the directory that should hold the log file.
+minidlna__original_configuration[4].value = /var/log/minidlna
+minidlna__original_configuration[4].state = comment
+minidlna__original_configuration[5].name = log_level
+minidlna__original_configuration[5].comment = Type and minimum level of importance of messages to be logged.
+
+The types are "artwork", "database", "general", "http", "inotify",
+"metadata", "scanner", "ssdp" and "tivo".
+
+The levels are "off", "fatal", "error", "warn", "info" or "debug".
+"off" turns of logging entirely, "fatal" is the highest level of importance
+and "debug" the lowest.
+
+The types are comma-separated, followed by an equal sign ("="), followed by a
+level that applies to the preceding types. This can be repeated, separating
+each of these constructs with a comma.
+
+The default is to log all types of messages at the "warn" level.
+
+minidlna__original_configuration[5].value = general,artwork,database,inotify,scanner,metadata,http,ssdp,tivo=warn
+minidlna__original_configuration[5].state = comment
+minidlna__original_configuration[6].name = root_container
+minidlna__original_configuration[6].comment = Use a different container as the root of the directory tree presented to
+clients. The possible values are:
+  * "." - standard container
+  * "B" - "Browse Directory"
+  * "M" - "Music"
+  * "P" - "Pictures"
+  * "V" - "Video"
+  * Or, you can specify the ObjectID of your desired root container
+    (eg. 1$F for Music/Playlists)
+If you specify "B" and the client device is audio-only then "Music/Folders"
+will be used as root.
+
+minidlna__original_configuration[6].value = .
+minidlna__original_configuration[6].state = comment
+minidlna__original_configuration[7].name = network_interface
+minidlna__original_configuration[7].comment = Network interface(s) to bind to (e.g. eth0), comma delimited.
+This option can be specified more than once.
+
+minidlna__original_configuration[7].state = comment
+minidlna__original_configuration[8].name = port
+minidlna__original_configuration[8].comment = Port number for HTTP traffic (descriptions, SOAP, media transfer).
+This option is mandatory (or it must be specified on the command-line using
+"-p").
+
+minidlna__original_configuration[8].value = 8200
+minidlna__original_configuration[9].name = presentation_url
+minidlna__original_configuration[9].comment = URL presented to clients (e.g. http://example.com:80).
+
+minidlna__original_configuration[9].value = /
+minidlna__original_configuration[9].state = comment
+minidlna__original_configuration[10].name = friendly_name
+minidlna__original_configuration[10].comment = Name that the DLNA server presents to clients.
+Defaults to "hostname: username".
+
+minidlna__original_configuration[10].value = 
+minidlna__original_configuration[10].state = comment
+minidlna__original_configuration[11].name = serial
+minidlna__original_configuration[11].comment = Serial number the server reports to clients.
+Defaults to the MAC address of network interface.
+
+minidlna__original_configuration[11].value = 
+minidlna__original_configuration[11].state = comment
+minidlna__original_configuration[12].name = uuid
+minidlna__original_configuration[12].comment = Specify device's UPnP UUID minidlna should use. By default MAC address is
+used to build uniq UUID.
+
+minidlna__original_configuration[12].value = 
+minidlna__original_configuration[12].state = comment
+minidlna__original_configuration[13].name = model_name
+minidlna__original_configuration[13].comment = Model name the server reports to clients.
+minidlna__original_configuration[13].value = Windows Media Connect compatible (MiniDLNA)
+minidlna__original_configuration[13].state = comment
+minidlna__original_configuration[14].name = model_number
+minidlna__original_configuration[14].comment = Model number the server reports to clients.
+Defaults to the version number of minidlna.
+
+minidlna__original_configuration[14].value = 
+minidlna__original_configuration[14].state = comment
+minidlna__original_configuration[15].name = inotify
+minidlna__original_configuration[15].comment = Automatic discovery of new files in the media_dir directory.
+minidlna__original_configuration[15].value = True
+minidlna__original_configuration[15].state = comment
+minidlna__original_configuration[16].name = album_art_names
+minidlna__original_configuration[16].comment = List of file names to look for when searching for album art.
+Names should be delimited with a forward slash ("/").
+This option can be specified more than once.
+
+minidlna__original_configuration[16].value[0] = Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg
+minidlna__original_configuration[16].value[1] = AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg
+minidlna__original_configuration[16].value[2] = Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg
+minidlna__original_configuration[17].name = strict_dlna
+minidlna__original_configuration[17].comment = Strictly adhere to DLNA standards.
+This allows server-side downscaling of very large JPEG images, which may
+decrease JPEG serving performance on (at least) Sony DLNA products.
+
+minidlna__original_configuration[17].value = False
+minidlna__original_configuration[17].state = comment
+minidlna__original_configuration[18].name = enable_tivo
+minidlna__original_configuration[18].comment = Support for streaming .jpg and .mp3 files to a TiVo supporting HMO.
+minidlna__original_configuration[18].value = False
+minidlna__original_configuration[18].state = comment
+minidlna__original_configuration[19].name = tivo_discovery
+minidlna__original_configuration[19].comment = Which method to use for registering in TiVo: 'bonjour' (default) or
+legacy 'beacon'
+
+minidlna__original_configuration[19].value = bonjour
+minidlna__original_configuration[19].state = comment
+minidlna__original_configuration[20].name = notify_interval
+minidlna__original_configuration[20].comment = SSDP notify interval, in seconds.
+minidlna__original_configuration[20].value = 895
+minidlna__original_configuration[20].state = comment
+minidlna__original_configuration[21].name = minissdpdsocket
+minidlna__original_configuration[21].comment = Path to the MiniSSDPd socket, for MiniSSDPd support.
+minidlna__original_configuration[21].value = /run/minissdpd.sock
+minidlna__original_configuration[21].state = comment
+minidlna__original_configuration[22].name = force_sort_criteria
+minidlna__original_configuration[22].comment = Always set SortCriteria to this value, regardless of the SortCriteria
+passed by the client
+e.g. force_sort_criteria=+upnp:class,+upnp:originalTrackNumber,+dc:title
+
+minidlna__original_configuration[22].value = 
+minidlna__original_configuration[22].state = comment
+minidlna__original_configuration[23].name = max_connections
+minidlna__original_configuration[23].comment = maximum number of simultaneous connections
+note: many clients open several simultaneous connections while streaming
+
+minidlna__original_configuration[23].value = 50
+minidlna__original_configuration[23].state = comment
+minidlna__original_configuration[24].name = wide_links
+minidlna__original_configuration[24].comment = set this to yes to allow symlinks that point outside user-defined media_dirs.
+minidlna__original_configuration[24].value = False
+minidlna__original_configuration[24].state = comment
+minidlna__default_configuration[0].name = notify_interval
+minidlna__default_configuration[0].value = 30
+minidlna__default_configuration[0].state = present
+minidlna__combined_configuration = {{ minidlna__original_configuration
+                                      + minidlna__default_configuration
+                                      + minidlna__configuration
+                                      + minidlna__group_configuration
+                                      + minidlna__host_configuration }}
+
+minidlna__ferm__dependent_rules[0].name = minidlna_allow_http
+minidlna__ferm__dependent_rules[0].type = accept
+minidlna__ferm__dependent_rules[0].dport[0] = minidlna
+minidlna__ferm__dependent_rules[0].protocol[0] = tcp
+minidlna__ferm__dependent_rules[0].saddr = {{ minidlna__allow + minidlna__group_allow + minidlna__host_allow }}
+minidlna__ferm__dependent_rules[0].weight = 50
+minidlna__ferm__dependent_rules[0].by_role = debops.minidlna
+minidlna__ferm__dependent_rules[1].name = minidlna_allow_ssdp
+minidlna__ferm__dependent_rules[1].type = accept
+minidlna__ferm__dependent_rules[1].dport[0] = ssdp
+minidlna__ferm__dependent_rules[1].protocol[0] = udp
+minidlna__ferm__dependent_rules[1].saddr = {{ minidlna__ssdp_allow + minidlna__ssdp_group_allow + minidlna__ssdp_host_allow }}
+minidlna__ferm__dependent_rules[1].accept_any = False
+minidlna__ferm__dependent_rules[1].weight = 50
+minidlna__ferm__dependent_rules[1].by_role = debops.minidlna
+minidlna_server__etc_services__dependent_list[0].name = ssdp
+minidlna_server__etc_services__dependent_list[0].port = 1900
+minidlna_server__etc_services__dependent_list[0].protocol[0] = udp
+minidlna_server__etc_services__dependent_list[0].comment = Simple Service Discovery Protocol
+minidlna_server__etc_services__dependent_list[1].name = minidlna
+minidlna_server__etc_services__dependent_list[1].port = 8200
+minidlna_server__etc_services__dependent_list[1].protocol[0] = tcp
+minidlna_server__etc_services__dependent_list[1].comment = MiniDLNA media server Web Interface

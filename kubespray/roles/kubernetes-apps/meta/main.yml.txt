@@ -1,0 +1,77 @@
+dependencies[0].role = kubernetes-apps/utils
+dependencies[1].role = kubernetes-apps/ansible
+dependencies[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[2].role = kubernetes-apps/helm
+dependencies[2].when[0] = helm_enabled
+dependencies[2].tags[0] = helm
+dependencies[3].role = kubernetes-apps/registry
+dependencies[3].when[0] = registry_enabled
+dependencies[3].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[3].tags[0] = registry
+dependencies[4].role = kubernetes-apps/metrics_server
+dependencies[4].when[0] = metrics_server_enabled
+dependencies[4].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[4].tags[0] = metrics_server
+dependencies[5].role = kubernetes-apps/csi_driver/csi_crd
+dependencies[5].when[0] = cinder_csi_enabled or csi_snapshot_controller_enabled
+dependencies[5].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[5].tags[0] = csi-driver
+dependencies[6].role = kubernetes-apps/csi_driver/cinder
+dependencies[6].when[0] = cinder_csi_enabled
+dependencies[6].tags[0] = cinder-csi-driver
+dependencies[6].tags[1] = csi-driver
+dependencies[7].role = kubernetes-apps/csi_driver/aws_ebs
+dependencies[7].when[0] = aws_ebs_csi_enabled
+dependencies[7].tags[0] = aws-ebs-csi-driver
+dependencies[7].tags[1] = csi-driver
+dependencies[8].role = kubernetes-apps/csi_driver/azuredisk
+dependencies[8].when[0] = azure_csi_enabled
+dependencies[8].tags[0] = azure-csi-driver
+dependencies[8].tags[1] = csi-driver
+dependencies[9].role = kubernetes-apps/csi_driver/gcp_pd
+dependencies[9].when[0] = gcp_pd_csi_enabled
+dependencies[9].tags[0] = gcp-pd-csi-driver
+dependencies[9].tags[1] = csi-driver
+dependencies[10].role = kubernetes-apps/csi_driver/upcloud
+dependencies[10].when[0] = upcloud_csi_enabled
+dependencies[10].tags[0] = upcloud-csi-driver
+dependencies[10].tags[1] = csi-driver
+dependencies[11].role = kubernetes-apps/csi_driver/vsphere
+dependencies[11].when[0] = vsphere_csi_enabled
+dependencies[11].tags[0] = vsphere-csi-driver
+dependencies[11].tags[1] = csi-driver
+dependencies[12].role = kubernetes-apps/persistent_volumes
+dependencies[12].when[0] = persistent_volumes_enabled
+dependencies[12].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[12].tags[0] = persistent_volumes
+dependencies[13].role = kubernetes-apps/snapshots
+dependencies[13].when = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[13].tags[0] = snapshots
+dependencies[13].tags[1] = csi-driver
+dependencies[14].role = kubernetes-apps/container_runtimes
+dependencies[14].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[14].tags[0] = container-runtimes
+dependencies[15].role = kubernetes-apps/container_engine_accelerator
+dependencies[15].when = nvidia_accelerator_enabled
+dependencies[15].tags[0] = container_engine_accelerator
+dependencies[16].role = kubernetes-apps/kubelet-csr-approver
+dependencies[16].when[0] = kubelet_csr_approver_enabled
+dependencies[16].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[16].tags[0] = kubelet-csr-approver
+dependencies[17].role = kubernetes-apps/metallb
+dependencies[17].when[0] = metallb_enabled
+dependencies[17].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[17].tags[0] = metallb
+dependencies[18].role = kubernetes-apps/argocd
+dependencies[18].when[0] = argocd_enabled
+dependencies[18].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[18].tags[0] = argocd
+dependencies[19].role = kubernetes-apps/scheduler_plugins
+dependencies[19].when[0] = scheduler_plugins_enabled
+dependencies[19].when[1] = kube_major_version is version('1.29', '<')
+dependencies[19].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[19].tags[0] = scheduler_plugins
+dependencies[20].role = kubernetes-apps/node_feature_discovery
+dependencies[20].when[0] = node_feature_discovery_enabled
+dependencies[20].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[20].tags[0] = node_feature_discovery

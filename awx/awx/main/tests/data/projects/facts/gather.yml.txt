@@ -1,0 +1,9 @@
+[0].hosts = all
+[0].vars.extra_value = 
+[0].gather_facts = false
+[0].connection = local
+[0].tasks[0].name = set a custom fact
+[0].tasks[0].set_fact.foo = bar{{ extra_value }}
+[0].tasks[0].set_fact.bar.a.b[0] = c
+[0].tasks[0].set_fact.bar.a.b[1] = d
+[0].tasks[0].set_fact.cacheable = true

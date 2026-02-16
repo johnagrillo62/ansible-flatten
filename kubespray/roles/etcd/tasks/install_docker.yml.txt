@@ -1,0 +1,37 @@
+[0].name = Get currently-deployed etcd version
+[0].shell = {{ docker_bin_dir }}/docker ps --filter='name={{ etcd_member_name }}' --format='{{ '{{ .Image }}' }}'
+[0].register = etcd_current_docker_image
+[0].when = etcd_cluster_setup
+[1].name = Get currently-deployed etcd-events version
+[1].shell = {{ docker_bin_dir }}/docker ps --filter='name={{ etcd_member_name }}-events' --format='{{ '{{ .Image }}' }}'
+[1].register = etcd_events_current_docker_image
+[1].when = etcd_events_cluster_setup
+[2].name = Restart etcd if necessary
+[2].command = /bin/true
+[2].notify = Restart etcd
+[2].when[0] = etcd_cluster_setup
+[2].when[1] = etcd_image_tag not in etcd_current_docker_image.stdout | default('')
+[3].name = Restart etcd-events if necessary
+[3].command = /bin/true
+[3].notify = Restart etcd-events
+[3].when[0] = etcd_events_cluster_setup
+[3].when[1] = etcd_image_tag not in etcd_events_current_docker_image.stdout | default('')
+[4].name = Get currently-deployed etcd version as x.y.z format
+[4].set_fact.etcd_current_version = {{ (etcd_current_docker_image.stdout | regex_search('.*:v([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1'))[0] | default('') }}
+[4].when = etcd_cluster_setup
+[5].name = Cleanup v2 store data
+[5].import_tasks = clean_v2_store.yml
+[6].name = Install etcd launch script
+[6].template.src = etcd.j2
+[6].template.dest = {{ bin_dir }}/etcd
+[6].template.owner = root
+[6].template.mode = 0750
+[6].template.backup = true
+[6].when = etcd_cluster_setup
+[7].name = Install etcd-events launch script
+[7].template.src = etcd-events.j2
+[7].template.dest = {{ bin_dir }}/etcd-events
+[7].template.owner = root
+[7].template.mode = 0750
+[7].template.backup = true
+[7].when = etcd_events_cluster_setup

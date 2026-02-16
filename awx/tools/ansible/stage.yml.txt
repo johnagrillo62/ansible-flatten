@@ -1,0 +1,15 @@
+[0].hosts = localhost
+[0].connection = local
+[0].vars.changelog_path = 
+[0].vars.payload.body = {{ (lookup('file', changelog_path) | replace('\\n', '\n')) if changelog_path else '' }}
+[0].vars.payload.name = {{ version }}
+[0].vars.payload.tag_name = {{ version }}
+[0].vars.payload.draft = true
+[0].tasks[0].name = Publish draft Release
+[0].tasks[0].uri.url = https://api.github.com/repos/{{ repo }}/releases
+[0].tasks[0].uri.method = POST
+[0].tasks[0].uri.headers.Accept = application/vnd.github.v3+json
+[0].tasks[0].uri.headers.Authorization = Bearer {{ github_token }}
+[0].tasks[0].uri.body = {{ payload | to_json }}
+[0].tasks[0].uri.status_code[0] = 200
+[0].tasks[0].uri.status_code[1] = 201

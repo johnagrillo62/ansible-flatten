@@ -1,0 +1,1 @@
+calico_wireguard_packages[0] = wireguard-tools

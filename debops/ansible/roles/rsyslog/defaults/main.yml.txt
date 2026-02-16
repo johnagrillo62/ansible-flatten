@@ -1,0 +1,699 @@
+rsyslog__enabled = True
+rsyslog__deploy_state = present
+rsyslog__unprivileged = {{ "True"
+                           if (ansible_distribution in ["Ubuntu"])
+                           else "False" }}
+
+rsyslog__remote_enabled = {{ True
+                             if (rsyslog__allow
+                                 + rsyslog__group_allow
+                                 + rsyslog__host_allow)
+                             else False }}
+
+rsyslog__forward_enabled = {{ True
+                              if q("flattened", (rsyslog__default_forward
+                                                 + rsyslog__forward
+                                                 + rsyslog__group_forward
+                                                 + rsyslog__host_forward))
+                              else False }}
+
+rsyslog__base_packages[0] = rsyslog
+rsyslog__tls_packages[0] = rsyslog-gnutls
+rsyslog__user = {{ "syslog" if rsyslog__unprivileged | bool else "root" }}
+rsyslog__group = {{ "syslog" if rsyslog__unprivileged | bool else "root" }}
+rsyslog__append_groups = {{ ["ssl-cert"] if (rsyslog__unprivileged | bool
+				and rsyslog__pki | bool) else [] }} 
+rsyslog__home = {{ "/home/syslog"
+                   if (ansible_distribution in ["Ubuntu"])
+                   else "/var/log" }}
+
+rsyslog__file_owner = {{ rsyslog__user }}
+rsyslog__file_group = adm
+rsyslog__default_logfiles[0] = /var/log/syslog
+rsyslog__default_logfiles[1] = /var/log/kern.log
+rsyslog__default_logfiles[2] = /var/log/auth.log
+rsyslog__default_logfiles[3] = /var/log/user.log
+rsyslog__default_logfiles[4] = /var/log/daemon.log
+rsyslog__default_logfiles[5] = /var/log/messages
+rsyslog__default_logfiles[6] = /var/log/mail.log
+rsyslog__default_logfiles[7] = /var/log/mail.info
+rsyslog__default_logfiles[8] = /var/log/mail.warn
+rsyslog__default_logfiles[9] = /var/log/mail.err
+rsyslog__default_logfiles[10] = /var/log/cron.log
+rsyslog__default_logfiles[11] = /var/log/lpr.log
+rsyslog__default_logfiles[12] = /var/log/debug
+rsyslog__pki = {{ ansible_local.pki.enabled | d() | bool }}
+rsyslog__pki_path = {{ ansible_local.pki.path | d("/etc/pki") }}
+rsyslog__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+rsyslog__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
+rsyslog__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
+rsyslog__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+rsyslog__default_netstream_driver = {{ "gtls"
+                                       if rsyslog__pki | bool
+                                       else "ptcp" }}
+
+rsyslog__default_driver_mode = {{ "1"
+                                  if rsyslog__default_netstream_driver == "gtls"
+                                  else "0" }}
+
+rsyslog__default_driver_authmode = {{ "x509/name"
+                                      if rsyslog__default_netstream_driver == "gtls" and
+                                         rsyslog__default_driver_mode == "1"
+                                      else "anon" }}
+
+rsyslog__domain = {{ ansible_domain }}
+rsyslog__permitted_peers[0] = *.{{ rsyslog__domain }}
+rsyslog__send_permitted_peers = {{ rsyslog__permitted_peers | first }}
+rsyslog__syslog_srv_rr = {{ q("debops.debops.dig_srv", "_syslog._tcp." + rsyslog__domain,
+                              "syslog." + rsyslog__domain, 6514) }} 
+rsyslog__default_forward = {{ rsyslog__syslog_srv_rr
+                              if (rsyslog__syslog_srv_rr[0]["dig_srv_src"] | d("") != "fallback" and
+                                  not rsyslog__remote_enabled | bool and
+                                  rsyslog__pki | bool)
+                              else [] }}
+
+rsyslog__original_configuration[0].name = module_imuxsock
+rsyslog__original_configuration[0].comment = Provides support for local system logging
+rsyslog__original_configuration[0].raw = module(load="imuxsock")
+
+rsyslog__original_configuration[0].state = present
+rsyslog__original_configuration[0].section = modules
+rsyslog__original_configuration[1].name = module_imklog
+rsyslog__original_configuration[1].comment = Provides kernel logging support
+rsyslog__original_configuration[1].raw = module(load="imklog")
+
+rsyslog__original_configuration[1].state = present
+rsyslog__original_configuration[1].section = modules
+rsyslog__original_configuration[2].name = module_immark
+rsyslog__original_configuration[2].comment = Provides --MARK-- message capability
+rsyslog__original_configuration[2].raw = module(load="immark")
+
+rsyslog__original_configuration[2].state = comment
+rsyslog__original_configuration[2].section = modules
+rsyslog__original_configuration[3].name = module_imudp
+rsyslog__original_configuration[3].comment = Provides UDP syslog reception
+rsyslog__original_configuration[3].raw = module(load="imudp")
+input(type="imudp" port="514")
+
+rsyslog__original_configuration[3].state = comment
+rsyslog__original_configuration[3].section = modules
+rsyslog__original_configuration[4].name = module_imtcp
+rsyslog__original_configuration[4].comment = Provides TCP syslog reception
+rsyslog__original_configuration[4].raw = module(load="imtcp")
+input(type="imtcp" port="514")
+
+rsyslog__original_configuration[4].state = comment
+rsyslog__original_configuration[4].section = modules
+rsyslog__original_configuration[5].name = default_template
+rsyslog__original_configuration[5].comment = Use traditional timestamp format.
+To enable high precision timestamps, comment out the following line.
+
+rsyslog__original_configuration[5].raw = $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+rsyslog__original_configuration[5].state = present
+rsyslog__original_configuration[5].section = global
+rsyslog__original_configuration[6].name = default_permissions
+rsyslog__original_configuration[6].comment = Set the default permissions for all log files.
+rsyslog__original_configuration[6].raw = $FileOwner root
+$FileGroup adm
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+
+rsyslog__original_configuration[6].state = present
+rsyslog__original_configuration[6].section = global
+rsyslog__original_configuration[7].name = spool_state
+rsyslog__original_configuration[7].comment = Where to place spool and state files
+rsyslog__original_configuration[7].raw = $WorkDirectory /var/spool/rsyslog
+
+rsyslog__original_configuration[7].state = present
+rsyslog__original_configuration[7].section = global
+rsyslog__original_configuration[8].name = include_config
+rsyslog__original_configuration[8].comment = Include all config files in /etc/rsyslog.d/
+rsyslog__original_configuration[8].raw = $IncludeConfig /etc/rsyslog.d/*.conf
+
+rsyslog__original_configuration[8].state = present
+rsyslog__original_configuration[8].section = global
+rsyslog__original_configuration[9].name = auth_facility
+rsyslog__original_configuration[9].comment = First some standard log files.  Log by facility.
+rsyslog__original_configuration[9].raw = auth,authpriv.*			/var/log/auth.log
+*.*;auth,authpriv.none		-/var/log/syslog
+
+rsyslog__original_configuration[9].state = present
+rsyslog__original_configuration[9].section = rules
+rsyslog__original_configuration[10].name = cron_facility
+rsyslog__original_configuration[10].raw = cron.*				/var/log/cron.log
+
+rsyslog__original_configuration[10].state = comment
+rsyslog__original_configuration[10].section = rules
+rsyslog__original_configuration[11].name = daemon_facility
+rsyslog__original_configuration[11].raw = daemon.*			-/var/log/daemon.log
+
+rsyslog__original_configuration[11].state = present
+rsyslog__original_configuration[11].section = rules
+rsyslog__original_configuration[12].name = kern_facility
+rsyslog__original_configuration[12].raw = kern.*				-/var/log/kern.log
+
+rsyslog__original_configuration[12].state = present
+rsyslog__original_configuration[12].section = rules
+rsyslog__original_configuration[13].name = lpr_facility
+rsyslog__original_configuration[13].raw = lpr.*				-/var/log/lpr.log
+
+rsyslog__original_configuration[13].state = present
+rsyslog__original_configuration[13].section = rules
+rsyslog__original_configuration[14].name = mail_facility
+rsyslog__original_configuration[14].raw = mail.*				-/var/log/mail.log
+
+rsyslog__original_configuration[14].state = present
+rsyslog__original_configuration[14].section = rules
+rsyslog__original_configuration[15].name = user_facility
+rsyslog__original_configuration[15].raw = user.*				-/var/log/user.log
+
+rsyslog__original_configuration[15].state = present
+rsyslog__original_configuration[15].section = rules
+rsyslog__original_configuration[16].name = mail_log
+rsyslog__original_configuration[16].comment = Logging for the mail system.  Split it up so that
+it is easy to write scripts to parse these files.
+
+rsyslog__original_configuration[16].raw = mail.info			-/var/log/mail.info
+mail.warn			-/var/log/mail.warn
+mail.err			/var/log/mail.err
+
+rsyslog__original_configuration[16].state = present
+rsyslog__original_configuration[16].section = rules
+rsyslog__original_configuration[17].name = debug_log
+rsyslog__original_configuration[17].comment = Some "catch-all" log files.
+rsyslog__original_configuration[17].raw = *.=debug;\
+	auth,authpriv.none;\
+	news.none;mail.none	-/var/log/debug
+
+rsyslog__original_configuration[17].state = present
+rsyslog__original_configuration[17].section = rules
+rsyslog__original_configuration[18].name = messages
+rsyslog__original_configuration[18].raw = *.=info;*.=notice;*.=warn;\
+	auth,authpriv.none;\
+	cron,daemon.none;\
+	mail,news.none		-/var/log/messages
+
+rsyslog__original_configuration[18].state = present
+rsyslog__original_configuration[18].section = rules
+rsyslog__original_configuration[19].name = emergencies
+rsyslog__original_configuration[19].comment = Emergencies are sent to everybody logged in.
+rsyslog__original_configuration[19].raw = *.emerg				:omusrmsg:*
+
+rsyslog__original_configuration[19].state = present
+rsyslog__original_configuration[19].section = rules
+rsyslog__default_configuration[0].name = module_imklog
+rsyslog__default_configuration[0].state = {{ "comment"
+               if (ansible_virtualization_type in ["lxc", "docker", "openvz"])
+               else "ignore" }}
+
+rsyslog__default_configuration[1].name = module_imudp
+rsyslog__default_configuration[1].raw = module(load="imudp")
+input(type="imudp" port="514" ruleset="remote")
+
+rsyslog__default_configuration[1].state = {{ "present" if rsyslog__remote_enabled | bool else "comment" }}
+rsyslog__default_configuration[2].name = include_modules
+rsyslog__default_configuration[2].comment = Include *.input files in /etc/rsyslog.d/
+rsyslog__default_configuration[2].raw = $IncludeConfig /etc/rsyslog.d/*.input
+
+rsyslog__default_configuration[2].state = present
+rsyslog__default_configuration[2].section = modules
+rsyslog__default_configuration[3].name = default_permissions
+rsyslog__default_configuration[3].raw = $FileOwner {{ rsyslog__file_owner }}
+$FileGroup {{ rsyslog__file_group }}
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+{% if rsyslog__unprivileged | bool %}
+$PrivDropToUser {{ rsyslog__user }}
+$PrivDropToGroup {{ rsyslog__group }}
+{% endif %}
+
+rsyslog__default_configuration[3].state = present
+rsyslog__default_configuration[4].name = cron_facility
+rsyslog__default_configuration[4].state = present
+rsyslog__default_configuration[5].name = include_templates
+rsyslog__default_configuration[5].comment = Include *.template files in /etc/rsyslog.d/
+rsyslog__default_configuration[5].raw = $IncludeConfig /etc/rsyslog.d/*.template
+
+rsyslog__default_configuration[5].state = present
+rsyslog__default_configuration[5].section = global
+rsyslog__default_configuration[5].copy_id_from = default_template
+rsyslog__default_configuration[6].name = include_outputs
+rsyslog__default_configuration[6].comment = Include *.output files in /etc/rsyslog.d/
+rsyslog__default_configuration[6].raw = $IncludeConfig /etc/rsyslog.d/*.output
+
+rsyslog__default_configuration[6].state = present
+rsyslog__default_configuration[6].section = global
+rsyslog__default_configuration[7].name = include_rules
+rsyslog__default_configuration[7].comment = Include *.ruleset files in /etc/rsyslog.d/
+rsyslog__default_configuration[7].raw = $IncludeConfig /etc/rsyslog.d/*.ruleset
+
+rsyslog__default_configuration[7].state = present
+rsyslog__default_configuration[7].section = rules
+rsyslog__default_configuration[8].name = include_remote_rules
+rsyslog__default_configuration[8].comment = Include *.remote files in /etc/rsyslog.d/
+rsyslog__default_configuration[8].raw = ruleset(name="remote") {
+  $IncludeConfig /etc/rsyslog.d/*.remote
+}
+
+rsyslog__default_configuration[8].section = rules
+rsyslog__default_configuration[8].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__combined_configuration = {{ rsyslog__original_configuration
+                                     + rsyslog__default_configuration
+                                     + rsyslog__configuration
+                                     + rsyslog__group_configuration
+                                     + rsyslog__host_configuration }}
+
+rsyslog__default_configuration_sections[0].name = modules
+rsyslog__default_configuration_sections[1].name = global
+rsyslog__default_configuration_sections[1].title = Global directives
+rsyslog__default_configuration_sections[2].name = templates
+rsyslog__default_configuration_sections[2].state = hidden
+rsyslog__default_configuration_sections[3].name = output
+rsyslog__default_configuration_sections[3].title = Output channels
+rsyslog__default_configuration_sections[3].state = hidden
+rsyslog__default_configuration_sections[4].name = rules
+rsyslog__default_configuration_sections[5].name = unknown
+rsyslog__default_configuration_sections[5].title = Other options
+rsyslog__combined_configuration_sections = {{ rsyslog__default_configuration_sections
+                                              + rsyslog__configuration_sections }} 
+rsyslog__default_rules[0].name = 00forward-logs.conf
+rsyslog__default_rules[0].state = {{ "present"
+               if (rsyslog__forward_enabled | bool and
+                   rsyslog__pki | bool)
+               else "absent" }}
+
+rsyslog__default_rules[0].options[0].name = forward_logs_to_hosts
+rsyslog__default_rules[0].options[0].comment = Forward logs to specified hosts
+rsyslog__default_rules[0].options[0].raw = {% for element in q("flattened", (rsyslog__default_forward
+                                  + rsyslog__forward
+                                  + rsyslog__group_forward
+                                  + rsyslog__host_forward)) %}
+{{ element.selector | d("*.*") }} action(
+      type="omfwd"
+      target="{{ (element.target | d(element)) | regex_replace("\.$", "") }}"
+      port="{{ element.port | d('6514') }}"
+      protocol="{{ element.protocol | d('tcp') }}"
+      queue.type="{{ element.queue_type | d('linkedList') }}"
+      queue.size="{{ element.queue_size | d('10000') }}"
+      action.resumeRetryCount="{{ element.resume_retry_count | d('100') }}"
+      streamDriver="{{ element.netstream_driver | d(rsyslog__default_netstream_driver) }}"
+      streamDriverMode="{{ element.driver_mode | d(rsyslog__default_driver_mode) }}"
+      streamDriverAuthMode="{{ element.driver_authmode | d(rsyslog__default_driver_authmode) }}"
+{% if element.driver_authmode | d(rsyslog__default_driver_authmode) != "anon" %}
+{% if rsyslog__send_permitted_peers is string %}
+      streamDriverPermittedPeers="{{ rsyslog__send_permitted_peers }}"
+{% else %}
+      streamDriverPermittedPeers="{{ rsyslog__send_permitted_peers | first }}"
+{% endif %}
+{% endif %}
+    )
+{% endfor %}
+rsyslog__default_rules[0].options[0].state = present
+rsyslog__default_rules[1].name = cron-session.conf
+rsyslog__default_rules[1].comment = Redirect PAM session information for 'cron' entries to the cron log file,
+to avoid filling up auth.log
+
+rsyslog__default_rules[1].raw = if ($msg contains "pam_unix(cron:session): session opened for user") then {
+  action(
+    type="omfile"
+    file="/var/log/cron.log"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+{% if rsyslog__remote_enabled | bool %}
+  action(
+    type="omfile"
+    dynaFile="RemoteHostCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  action(
+    type="omfile"
+    dynaFile="RemoteServiceCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+{% endif %}
+  stop
+} else if ($msg contains "pam_unix(cron:session): session closed for user") then {
+  action(
+    type="omfile"
+    file="/var/log/cron.log"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+{% if rsyslog__remote_enabled | bool %}
+  action(
+    type="omfile"
+    dynaFile="RemoteHostCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  action(
+    type="omfile"
+    dynaFile="RemoteServiceCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+{% endif %}
+  stop
+}
+
+rsyslog__default_rules[1].state = present
+rsyslog__default_rules[2].name = network.conf
+rsyslog__default_rules[2].comment = Network and TLS configuration options
+rsyslog__default_rules[2].raw = global(
+  defaultNetstreamDriver="{{ rsyslog__default_netstream_driver }}"
+{% if rsyslog__pki | bool %}
+  defaultNetstreamDriverCAFile="{{ rsyslog__pki_path + '/' + rsyslog__pki_realm + '/' + rsyslog__pki_ca }}"
+  defaultNetstreamDriverCertFile="{{ rsyslog__pki_path + '/' + rsyslog__pki_realm + '/' + rsyslog__pki_crt }}"
+  defaultNetstreamDriverKeyFile="{{ rsyslog__pki_path + '/' + rsyslog__pki_realm + '/' + rsyslog__pki_key }}"
+{% endif %}
+)
+rsyslog__default_rules[2].state = {{ "present"
+               if (rsyslog__remote_enabled | bool or
+                   rsyslog__forward_enabled | bool)
+               else "absent" }}
+
+rsyslog__default_rules[3].name = remote.input
+rsyslog__default_rules[3].state = {{ "present"
+               if rsyslog__remote_enabled | bool
+               else "absent" }}
+
+rsyslog__default_rules[3].options[0].name = tcp_plain_module
+rsyslog__default_rules[3].options[0].comment = Enable plain TCP support
+rsyslog__default_rules[3].options[0].raw = module(
+  load="imptcp"
+)
+rsyslog__default_rules[3].options[0].state = present
+rsyslog__default_rules[3].options[1].name = tcp_tls_module
+rsyslog__default_rules[3].options[1].comment = Enable GnuTLS TCP support
+rsyslog__default_rules[3].options[1].raw = module(
+  load="imtcp"
+  streamDriver.name="gtls"
+  streamDriver.mode="1"
+  streamDriver.authMode="{{ rsyslog__default_driver_authmode }}"
+{% if rsyslog__default_driver_authmode != "anon" %}
+{% if rsyslog__permitted_peers is string %}
+  permittedPeer="{{ rsyslog__permitted_peers }}"
+{% else %}
+  permittedPeer=["{{ rsyslog__permitted_peers | join('","') }}"]
+{% endif %}
+{% endif %}
+)
+rsyslog__default_rules[3].options[1].state = {{ "present" if rsyslog__pki | bool else "absent" }}
+rsyslog__default_rules[3].options[2].name = tcp_plain_input
+rsyslog__default_rules[3].options[2].comment = Enable plain TCP input
+rsyslog__default_rules[3].options[2].raw = input(
+    type="imptcp"
+    port="514"
+    ruleset="remote"
+)
+rsyslog__default_rules[3].options[2].state = present
+rsyslog__default_rules[3].options[3].name = tcp_tls_input
+rsyslog__default_rules[3].options[3].comment = Enable GnuTLS TCP input
+rsyslog__default_rules[3].options[3].raw = input(
+  type="imtcp"
+  port="6514"
+  ruleset="remote"
+)
+rsyslog__default_rules[3].options[3].state = {{ "present" if rsyslog__pki | bool else "absent" }}
+rsyslog__default_rules[4].name = 20-ufw.conf
+rsyslog__default_rules[4].divert = True
+rsyslog__default_rules[4].divert_to = 65-ufw.conf
+rsyslog__default_rules[4].state = {{ rsyslog__deploy_state
+               if (ansible_distribution in ["Ubuntu"])
+               else "ignore" }}
+
+rsyslog__default_rules[5].name = 50-default.conf
+rsyslog__default_rules[5].divert = True
+rsyslog__default_rules[5].state = {{ "present"
+               if (ansible_distribution in ["Ubuntu"])
+               else "absent" }}
+
+rsyslog__default_rules[6].name = remote.template
+rsyslog__default_rules[6].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__default_rules[6].options[0].name = remote_host_syslog
+rsyslog__default_rules[6].options[0].comment = Remote host system logs
+rsyslog__default_rules[6].options[0].raw = template(
+  name="RemoteHostSyslog"
+  type="string"
+  string="/var/log/remote/hosts/%HOSTNAME%/syslog"
+)
+rsyslog__default_rules[6].options[0].state = present
+rsyslog__default_rules[6].options[1].name = remote_host_auth_log
+rsyslog__default_rules[6].options[1].comment = Remote host auth logs
+rsyslog__default_rules[6].options[1].raw = template(
+  name="RemoteHostAuthLog"
+  type="string"
+  string="/var/log/remote/hosts/%HOSTNAME%/auth.log"
+)
+rsyslog__default_rules[6].options[1].state = present
+rsyslog__default_rules[6].options[2].name = remote_host_cron_log
+rsyslog__default_rules[6].options[2].comment = Remote host cron logs
+rsyslog__default_rules[6].options[2].raw = template(
+  name="RemoteHostCronLog"
+  type="string"
+  string="/var/log/remote/hosts/%HOSTNAME%/cron.log"
+)
+rsyslog__default_rules[6].options[2].state = present
+rsyslog__default_rules[6].options[3].name = remote_service_auth_log
+rsyslog__default_rules[6].options[3].comment = Remote service auth logs
+rsyslog__default_rules[6].options[3].raw = template(
+  name="RemoteServiceAuthLog"
+  type="string"
+  string="/var/log/remote/services/auth/auth.log"
+)
+rsyslog__default_rules[6].options[3].state = present
+rsyslog__default_rules[6].options[4].name = remote_service_cron_log
+rsyslog__default_rules[6].options[4].comment = Remote service cron logs
+rsyslog__default_rules[6].options[4].raw = template(
+  name="RemoteServiceCronLog"
+  type="string"
+  string="/var/log/remote/services/cron/cron.log"
+)
+rsyslog__default_rules[6].options[4].state = present
+rsyslog__default_rules[6].options[5].name = remote_service_mail_log
+rsyslog__default_rules[6].options[5].comment = Remote service mail logs
+rsyslog__default_rules[6].options[5].raw = template(
+  name="RemoteServiceMailLog"
+  type="string"
+  string="/var/log/remote/services/mail/mail.log"
+)
+rsyslog__default_rules[6].options[5].state = present
+rsyslog__default_rules[7].name = local-as-remote.ruleset
+rsyslog__default_rules[7].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__default_rules[7].options[0].name = remote_log_copy
+rsyslog__default_rules[7].options[0].comment = Copy of the local log files to complete remote logs
+rsyslog__default_rules[7].options[0].raw = auth,authpriv.*                ?RemoteHostAuthLog
+auth,authpriv.*                ?RemoteServiceAuthLog
+*.*;cron,auth,authpriv.none    -?RemoteHostSyslog
+cron.*                         -?RemoteHostCronLog
+cron.*                         -?RemoteServiceCronLog
+mail.*                         -?RemoteServiceMailLog
+rsyslog__default_rules[7].options[0].state = present
+rsyslog__default_rules[8].name = cron-session.remote
+rsyslog__default_rules[8].raw = if ($msg contains "pam_unix(cron:session): session opened for user") then {
+  action(
+    type="omfile"
+    dynaFile="RemoteHostCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  action(
+    type="omfile"
+    dynaFile="RemoteServiceCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  stop
+} else if ($msg contains "pam_unix(cron:session): session closed for user") then {
+  action(
+    type="omfile"
+    dynaFile="RemoteHostCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  action(
+    type="omfile"
+    dynaFile="RemoteServiceCronLog"
+    fileOwner="{{ rsyslog__file_owner }}"
+    fileGroup="{{ rsyslog__file_group }}"
+    fileCreateMode="0640"
+    dirCreateMode="0755"
+  )
+  stop
+}
+
+rsyslog__default_rules[8].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__default_rules[9].name = 50-dynamic-logs.remote
+rsyslog__default_rules[9].state = absent
+rsyslog__default_rules[10].name = ruleset.remote
+rsyslog__default_rules[10].comment = Store remote logs in separate logfiles
+rsyslog__default_rules[10].raw = auth,authpriv.*                     ?RemoteHostAuthLog
+auth,authpriv.*                     ?RemoteServiceAuthLog
+*.*;cron,auth,authpriv.none         -?RemoteHostSyslog
+cron.*                              -?RemoteHostCronLog
+cron.*                              -?RemoteServiceCronLog
+mail.*                              -?RemoteServiceMailLog
+rsyslog__default_rules[10].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__default_rules[11].name = zz-stop.remote
+rsyslog__default_rules[11].comment = This is a workaround to support empty "remote" ruleset on
+older versions of rsyslog package.
+http://comments.gmane.org/gmane.comp.sysutils.rsyslog/15616
+rsyslog__default_rules[11].raw = stop
+rsyslog__default_rules[11].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
+rsyslog__legacy_rules[0].name = 00-global.conf
+rsyslog__legacy_rules[0].state = absent
+rsyslog__legacy_rules[1].name = 05-common-defaults.conf
+rsyslog__legacy_rules[1].state = absent
+rsyslog__legacy_rules[2].name = 10-local-modules.conf
+rsyslog__legacy_rules[2].state = absent
+rsyslog__legacy_rules[3].name = 20-templates.conf
+rsyslog__legacy_rules[3].state = absent
+rsyslog__legacy_rules[4].name = 40-cron.system
+rsyslog__legacy_rules[4].state = absent
+rsyslog__legacy_rules[5].name = 50-default-rulesets.conf
+rsyslog__legacy_rules[5].state = absent
+rsyslog__legacy_rules[6].name = 50-default.system
+rsyslog__legacy_rules[6].state = absent
+rsyslog__combined_rules = {{ rsyslog__default_rules
+                             + rsyslog__legacy_rules
+                             + rsyslog__rules
+                             + rsyslog__group_rules
+                             + rsyslog__host_rules
+                             + rsyslog__dependent_rules }}
+
+rsyslog__rotation_period_system = weekly
+rsyslog__rotation_count_system = 8
+rsyslog__rotation_period_remote = weekly
+rsyslog__rotation_count_remote = 52
+rsyslog__ferm__dependent_rules[0].name = syslog_udp_tcp
+rsyslog__ferm__dependent_rules[0].type = accept
+rsyslog__ferm__dependent_rules[0].dport[0] = 514
+rsyslog__ferm__dependent_rules[0].protocols[0] = udp
+rsyslog__ferm__dependent_rules[0].protocols[1] = tcp
+rsyslog__ferm__dependent_rules[0].saddr = {{ rsyslog__allow + rsyslog__group_allow + rsyslog__host_allow }}
+rsyslog__ferm__dependent_rules[0].role = rsyslog
+rsyslog__ferm__dependent_rules[0].accept_any = False
+rsyslog__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
+                        rsyslog__remote_enabled | bool)
+                    else "absent" }}
+
+rsyslog__ferm__dependent_rules[1].name = syslog-tls
+rsyslog__ferm__dependent_rules[1].type = accept
+rsyslog__ferm__dependent_rules[1].dport[0] = syslog-tls
+rsyslog__ferm__dependent_rules[1].saddr = {{ rsyslog__allow + rsyslog__group_allow + rsyslog__host_allow }}
+rsyslog__ferm__dependent_rules[1].role = rsyslog
+rsyslog__ferm__dependent_rules[1].accept_any = False
+rsyslog__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
+                        rsyslog__remote_enabled | bool)
+                    else "absent" }}
+
+rsyslog__logrotate__dependent_config[0].filename = 000rsyslog-unprivileged
+rsyslog__logrotate__dependent_config[0].comment = The rsyslog daemon is run unprivileged
+rsyslog__logrotate__dependent_config[0].options = su root {{ rsyslog__group }}
+
+rsyslog__logrotate__dependent_config[0].state = {{ "present"
+                if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
+                    rsyslog__unprivileged | bool)
+                else "absent" }}
+
+rsyslog__logrotate__dependent_config[1].filename = rsyslog
+rsyslog__logrotate__dependent_config[1].divert = True
+rsyslog__logrotate__dependent_config[1].sections[0].logs = /var/log/syslog
+rsyslog__logrotate__dependent_config[1].sections[0].options = rotate {{ rsyslog__rotation_count_system }}
+{{ rsyslog__rotation_period_system }}
+maxsize 1G
+missingok
+notifempty
+delaycompress
+compress
+
+rsyslog__logrotate__dependent_config[1].sections[0].postrotate = {{ "invoke-rc.d rsyslog rotate > /dev/null"
+  if (ansible_distribution_release in
+       (["stretch", "trusty"]))
+  else "/usr/lib/rsyslog/rsyslog-rotate" }}
+
+rsyslog__logrotate__dependent_config[1].sections[1].logs = {{ (rsyslog__default_logfiles
+                   + rsyslog__logfiles)
+                  | difference(["/var/log/syslog"]) | sort }}
+
+rsyslog__logrotate__dependent_config[1].sections[1].options = rotate {{ rsyslog__rotation_count_system }}
+{{ rsyslog__rotation_period_system }}
+maxsize 1G
+missingok
+notifempty
+compress
+delaycompress
+sharedscripts
+
+rsyslog__logrotate__dependent_config[1].sections[1].postrotate = {{ "invoke-rc.d rsyslog rotate > /dev/null"
+  if (ansible_distribution_release in
+       (["stretch", "trusty"]))
+  else "/usr/lib/rsyslog/rsyslog-rotate" }}
+
+rsyslog__logrotate__dependent_config[1].state = {{ "present"
+                if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent")
+                else "absent" }}
+
+rsyslog__logrotate__dependent_config[2].filename = rsyslog-remote
+rsyslog__logrotate__dependent_config[2].logs[0] = /var/log/remote/*/*/syslog
+rsyslog__logrotate__dependent_config[2].logs[1] = /var/log/remote/*/*/*.log
+rsyslog__logrotate__dependent_config[2].options = rotate {{ rsyslog__rotation_count_remote }}
+{{ rsyslog__rotation_period_remote }}
+maxsize 1G
+missingok
+notifempty
+compress
+delaycompress
+sharedscripts
+
+rsyslog__logrotate__dependent_config[2].postrotate = {{ "invoke-rc.d rsyslog rotate > /dev/null"
+  if (ansible_distribution_release in
+       (["stretch", "trusty"]))
+  else "/usr/lib/rsyslog/rsyslog-rotate" }}
+
+rsyslog__logrotate__dependent_config[2].state = {{ "present"
+                if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
+                    rsyslog__remote_enabled | bool)
+                else "absent" }}
+
+rsyslog__dpkg_cleanup__dependent_packages[0].name = rsyslog
+rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[0] = /etc/rsyslog.conf
+rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[1] = /etc/logrotate.d/rsyslog
+rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[2] = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items
+            | selectattr("divert", "defined") | list
+            | selectattr("divert", "equalto", True) | list
+            | map(attribute="name") | list
+            | map("regex_replace", "^(.*)$", "/etc/rsyslog.d/\1") | list }}
+
+rsyslog__dpkg_cleanup__dependent_packages[0].remove_files[0] = /etc/logrotate.d/rsyslog-remote
+rsyslog__dpkg_cleanup__dependent_packages[0].remove_files[1] = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items
+            | selectattr("divert", "undefined") | list
+            | map(attribute="name") | list
+            | map("regex_replace", "^(.*)$", "/etc/rsyslog.d/\1") | list }}
+

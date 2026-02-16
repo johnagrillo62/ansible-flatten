@@ -1,0 +1,8 @@
+[0].name = Restart libvirtd
+[0]["ansible.builtin.service"].name = libvirtd
+[0]["ansible.builtin.service"].state = restarted
+[0].when = ansible_distribution_release not in ['trusty', 'xenial']
+[1].name = Restart libvirt-bin
+[1]["ansible.builtin.service"].name = libvirt-bin
+[1]["ansible.builtin.service"].state = restarted
+[1].when = ansible_distribution_release in ['trusty', 'xenial']

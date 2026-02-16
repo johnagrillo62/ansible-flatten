@@ -1,0 +1,10 @@
+[0].name = APT Dist-Upgrade
+[0].apt.update_cache = true
+[0].apt.upgrade = dist
+[0].apt.autoremove = true
+[0].apt.dpkg_options = force-confold,force-confdef
+[0].register = apt_upgrade
+[1].name = Reboot after APT Dist-Upgrade
+[1].when[0] = apt_upgrade.changed or system_upgrade_reboot == 'always'
+[1].when[1] = system_upgrade_reboot != 'never'
+[1].reboot: = null

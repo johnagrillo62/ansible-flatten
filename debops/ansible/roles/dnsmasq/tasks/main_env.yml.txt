@@ -1,0 +1,3 @@
+~d0.name = Prepare environment for dependent Ansible roles
+~d1.ansible.builtin.set_fact = 
+~d2.dnsmasq__env_tcpwrappers__dependent_allow = '{{ dnsmasq__tcpwrappers__dependent_allow }}'

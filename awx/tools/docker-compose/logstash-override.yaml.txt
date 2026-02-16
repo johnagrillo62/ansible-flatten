@@ -1,0 +1,5 @@
+services.logstash.build.context = ../
+services.logstash.build.dockerfile = Dockerfile-logstash
+services.logstash.container_name = tools_logstash_1
+services.logstash.hostname = logstash
+services.logstash.networks[0] = awx

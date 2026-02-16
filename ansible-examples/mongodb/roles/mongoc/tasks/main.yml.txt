@@ -1,0 +1,15 @@
+[0].name = Create data directory for mongoc configuration server
+[0].file = path={{ mongodb_datadir_prefix }}/configdb state=directory owner=mongod group=mongod
+[1].name = Create the mongo configuration server startup file
+[1].template = src=mongoc.j2 dest=/etc/init.d/mongoc mode=0655
+[2].name = Create the mongo configuration server file
+[2].template = src=mongoc.conf.j2 dest=/etc/mongoc.conf
+[3].name = Copy the keyfile for authentication
+[3].copy = src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+[4].name = Start the mongo configuration server service
+[4].command = creates=/var/lock/subsys/mongoc /etc/init.d/mongoc start
+[5].name = pause
+[5].pause = seconds=20
+[6].name = add the admin user
+[6].mongodb_user = database=admin name=admin password={{ mongo_admin_pass }} login_port={{ mongoc_port }} state=present
+[6].ignore_errors = yes

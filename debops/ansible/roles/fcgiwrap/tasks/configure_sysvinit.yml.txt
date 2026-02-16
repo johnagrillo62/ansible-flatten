@@ -1,0 +1,37 @@
+~d0.name = Create init script configuration
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/default/fcgiwrap-instance.j2'
+~d2.dest = '/etc/default/fcgiwrap-{{ item.name }}'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.with_items = '{{ fcgiwrap__instances }}'
+~d1.register = fcgiwrap__register_init_config
+~d0.name = Copy fcgiwrap init script to new instance
+~d1.ansible.builtin.command = 'cp /etc/init.d/fcgiwrap /etc/init.d/fcgiwrap-{{ item.name }}'
+~d1.args = 
+~d2.creates = '/etc/init.d/fcgiwrap-{{ item.name }}'
+~d1.register = fcgiwrap__register_init_script
+~d1.with_items = '{{ fcgiwrap__instances }}'
+~d0.name = Modify fcgiwrap instance init script (insserv)
+~d1.ansible.builtin.lineinfile = 
+~d2.dest = '/etc/init.d/fcgiwrap-{{ item.name }}'
+~d2.regexp = '^# Provides:\s+fcgiwrap.*$'
+~d2.line = '# Provides:          fcgiwrap-{{ item.name }}'
+~d2.state = 'present'
+~d2.mode = '0755'
+~d1.with_items = '{{ fcgiwrap__instances }}'
+~d0.name = Modify fcgiwrap instance init script (name)
+~d1.ansible.builtin.lineinfile = 
+~d2.dest = '/etc/init.d/fcgiwrap-{{ item.name }}'
+~d2.regexp = '^NAME="fcgiwrap.*"$'
+~d2.line = 'NAME="fcgiwrap-{{ item.name }}"'
+~d2.state = 'present'
+~d2.mode = '0755'
+~d1.with_items = '{{ fcgiwrap__instances }}'
+~d0.name = Enable fcgiwrap instance init script
+~d1.ansible.builtin.service = 
+~d2.name = 'fcgiwrap-{{ item.name }}'
+~d2.state = 'started'
+~d2.enabled = True
+~d1.with_items = '{{ fcgiwrap__instances }}'

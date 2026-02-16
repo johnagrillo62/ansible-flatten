@@ -1,0 +1,14 @@
+[0].hosts = test
+[0].remote_user = root
+[0].tasks[0].name = Change setype of /etc/exports to non-default value
+[0].tasks[0].file = path=/etc/exports setype=etc_t
+[0].tasks[1].name = Change seuser of /etc/exports to non-default value
+[0].tasks[1].file = path=/etc/exports seuser=unconfined_u
+[0].tasks[2].name = Set selinux context back to default value
+[0].tasks[2].file = path=/etc/exports context=default
+[0].tasks[3].name = Create empty file
+[0].tasks[3].command = /bin/touch /tmp/foo
+[0].tasks[4].name = Change setype of /tmp/foo
+[0].tasks[4].file = path=/tmp/foo setype=default_t
+[0].tasks[5].name = Try to set secontext to default, but this will fail because of the lack of a default in the policy
+[0].tasks[5].file = path=/tmp/foo context=default

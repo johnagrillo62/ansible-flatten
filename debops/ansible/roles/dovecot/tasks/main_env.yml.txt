@@ -1,0 +1,4 @@
+~d0.name = Remove ferm 'debops-legacy-input-rules' file
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/ferm/filter-input.d/dovecot.conf'
+~d2.state = 'absent'

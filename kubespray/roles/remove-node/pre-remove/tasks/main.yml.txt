@@ -1,0 +1,6 @@
+[0].name = Warn for usage of deprecated role
+[0].fail.msg = remove-node/pre-remove is deprecated, switch to remove_node/pre_remove
+[0].ignore_errors = true
+[0].run_once = true
+[1].name = Compat for direct role import
+[1].import_role.name = remove_node/pre_remove

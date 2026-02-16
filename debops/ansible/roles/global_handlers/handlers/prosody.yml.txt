@@ -1,0 +1,4 @@
+~d0.name = 'Restart prosody'
+~d1.ansible.builtin.service = 
+~d2.name = 'prosody'
+~d2.state = 'restarted'

@@ -1,0 +1,20 @@
+[0].name = Create Certificates for HashiCorp Vault
+[0].block[0].name = Create Hashicorp Vault cert directory
+[0].block[0].file.path = {{ hashivault_cert_dir }}
+[0].block[0].file.state = directory
+[0].block[1].name = Generate vault server certificate
+[0].block[1].command = openssl req -new -newkey rsa:2048 -x509 -days 365 -nodes -out {{ hashivault_server_public_keyfile }} -keyout {{ hashivault_server_private_keyfile }} -subj "{{ hashivault_server_cert_subject }}"{% for ext in hashivault_server_cert_extensions %} -addext "{{ ext }}"{% endfor %}
+[0].block[1].args.creates = {{ hashivault_server_public_keyfile }}
+[0].block[2].name = Generate vault test client certificate
+[0].block[2].command = openssl req -new -newkey rsa:2048 -x509 -days 365 -nodes -out {{ hashivault_client_public_keyfile }} -keyout {{ hashivault_client_private_keyfile }} -subj "{{ hashivault_client_cert_subject }}"{% for ext in hashivault_client_cert_extensions %} -addext "{{ ext }}"{% endfor %}
+[0].block[2].args.creates = {{ hashivault_client_public_keyfile }}
+[0].block[3].name = Set mode for vault certificates
+[0].block[3]["ansible.builtin.file"].path = {{ hashivault_cert_dir }}
+[0].block[3]["ansible.builtin.file"].recurse = true
+[0].block[3]["ansible.builtin.file"].state = directory
+[0].block[3]["ansible.builtin.file"].mode = 0777
+[0].when = vault_tls | bool
+[1].name = Delete Certificates for HashiCorp Vault
+[1].file.path = {{ hashivault_cert_dir }}
+[1].file.state = absent
+[1].when = vault_tls | bool == false

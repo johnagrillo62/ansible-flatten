@@ -1,0 +1,7 @@
+[0].name = Kubelet | reload systemd
+[0].systemd_service.daemon_reload = true
+[0].listen = Node | restart kubelet
+[1].name = Kubelet | restart kubelet
+[1].service.name = kubelet
+[1].service.state = restarted
+[1].listen = Node | restart kubelet

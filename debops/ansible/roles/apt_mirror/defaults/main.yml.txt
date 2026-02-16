@@ -1,0 +1,79 @@
+apt_mirror__base_packages[0] = apt-mirror
+apt_mirror__cron_time = 0 4	* * *
+apt_mirror__user = apt-mirror
+apt_mirror__group = apt-mirror
+apt_mirror__fqdn = {{ ansible_fqdn }}
+apt_mirror__web_root = /var/spool/apt-mirror/mirror
+apt_mirror__default_options[0].name = base_path
+apt_mirror__default_options[0].value = /var/spool/apt-mirror
+apt_mirror__default_options[0].state = comment
+apt_mirror__default_options[1].name = mirror_path
+apt_mirror__default_options[1].value = $base_path/mirror
+apt_mirror__default_options[1].state = comment
+apt_mirror__default_options[2].name = skel_path
+apt_mirror__default_options[2].value = $base_path/skel
+apt_mirror__default_options[2].state = comment
+apt_mirror__default_options[3].name = var_path
+apt_mirror__default_options[3].value = $base_path/var
+apt_mirror__default_options[3].state = dynamic
+apt_mirror__default_options[4].name = cleanscript
+apt_mirror__default_options[4].value = $var_path/clean.sh
+apt_mirror__default_options[4].state = comment
+apt_mirror__default_options[5].name = defaultarch
+apt_mirror__default_options[5].value = <running host architecture>
+apt_mirror__default_options[5].state = comment
+apt_mirror__default_options[6].name = postmirror_script
+apt_mirror__default_options[6].value = $var_path/postmirror.sh
+apt_mirror__default_options[6].state = comment
+apt_mirror__default_options[7].name = run_postmirror
+apt_mirror__default_options[7].value = 0
+apt_mirror__default_options[7].state = comment
+apt_mirror__default_options[8].name = nthreads
+apt_mirror__default_options[8].value = 20
+apt_mirror__default_options[9].name = _tilde
+apt_mirror__default_options[9].value = 0
+apt_mirror__default_configuration[0].name = default
+apt_mirror__default_configuration[0].filename = mirror.list
+apt_mirror__default_configuration[0].sources[0].name = debian-stable
+apt_mirror__default_configuration[0].sources[0].type = deb
+apt_mirror__default_configuration[0].sources[0].uri = http://deb.debian.org/debian
+apt_mirror__default_configuration[0].sources[0].suite = stable
+apt_mirror__default_configuration[0].sources[0].components[0] = main
+apt_mirror__default_configuration[0].sources[0].components[1] = contrib
+apt_mirror__default_configuration[0].sources[0].components[2] = non-free
+apt_mirror__default_configuration[0].sources[0].state = comment
+apt_mirror__default_configuration[0].sources[1].name = debian-stable-src
+apt_mirror__default_configuration[0].sources[1].raw = deb-src http://deb.debian.org/debian stable main contrib non-free
+apt_mirror__default_configuration[0].sources[1].state = comment
+apt_mirror__default_configuration[0].sources[2].name = clean-debian
+apt_mirror__default_configuration[0].sources[2].comment = Generate a clean.sh script for Debian mirror
+apt_mirror__default_configuration[0].sources[2].type = clean
+apt_mirror__default_configuration[0].sources[2].uri = http://deb.debian.org/debian
+apt_mirror__default_configuration[0].sources[2].weight = 1000
+apt_mirror__combined_configuration = {{ apt_mirror__default_configuration
+                                        + apt_mirror__configuration
+                                        + apt_mirror__group_configuration
+                                        + apt_mirror__host_configuration }}
+
+apt_mirror__nginx__dependent_servers[0].by_role = debops.apt_mirror
+apt_mirror__nginx__dependent_servers[0].enabled = True
+apt_mirror__nginx__dependent_servers[0].ssl = False
+apt_mirror__nginx__dependent_servers[0].filename = debops.apt_mirror_http
+apt_mirror__nginx__dependent_servers[0].name = {{ apt_mirror__fqdn }}
+apt_mirror__nginx__dependent_servers[0].root = {{ apt_mirror__web_root }}
+apt_mirror__nginx__dependent_servers[0].webroot_create = False
+apt_mirror__nginx__dependent_servers[0].location./ = try_files $uri $uri/ $uri.html /index.html =404;
+autoindex on;
+
+apt_mirror__nginx__dependent_servers[0].state = present
+apt_mirror__nginx__dependent_servers[1].by_role = debops.apt_mirror
+apt_mirror__nginx__dependent_servers[1].enabled = True
+apt_mirror__nginx__dependent_servers[1].listen = False
+apt_mirror__nginx__dependent_servers[1].filename = debops.apt_mirror_https
+apt_mirror__nginx__dependent_servers[1].name = {{ apt_mirror__fqdn }}
+apt_mirror__nginx__dependent_servers[1].root = {{ apt_mirror__web_root }}
+apt_mirror__nginx__dependent_servers[1].webroot_create = False
+apt_mirror__nginx__dependent_servers[1].location./ = try_files $uri $uri/ $uri.html /index.html =404;
+autoindex on;
+
+apt_mirror__nginx__dependent_servers[1].state = {{ "present" if (ansible_local.pki.enabled | d()) | bool else "absent" }}

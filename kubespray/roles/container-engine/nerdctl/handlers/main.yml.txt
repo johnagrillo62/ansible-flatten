@@ -1,0 +1,10 @@
+~d0.name = Get nerdctl completion
+~d1.command = "{{ bin_dir }}/nerdctl completion bash"
+~d1.changed_when = false
+~d1.register = nerdctl_completion
+~d1.check_mode = false
+~d0.name = Install nerdctl completion
+~d1.copy = 
+~d2.dest = /etc/bash_completion.d/nerdctl
+~d2.content = "{{ nerdctl_completion.stdout }}"
+~d2.mode = "0644"

@@ -1,0 +1,362 @@
+dnsmasq__base_packages[0] = dnsmasq
+dnsmasq__dhcpv4 = True
+dnsmasq__dhcpv6 = True
+dnsmasq__default_interfaces[0].name = br2
+dnsmasq__default_interfaces[0].state = {{ "present"
+               if (hostvars[inventory_hostname]["ansible_br2"] is defined)
+               else "absent" }}
+
+dnsmasq__combined_interfaces = {{ dnsmasq__default_interfaces
+                                  + dnsmasq__interfaces }} 
+dnsmasq__hostname = {{ ansible_hostname }}
+dnsmasq__base_domain = {{ ansible_domain }}
+dnsmasq__base_domain_rebind_ok = True
+dnsmasq__public_dns = False
+dnsmasq__boot_enabled = True
+dnsmasq__boot_ipxe_enabled = True
+dnsmasq__boot_server = 
+dnsmasq__boot_tftp_root = /srv/tftp
+dnsmasq__boot_filename = {{ "menu.ipxe" if dnsmasq__boot_ipxe_enabled | bool else "pxelinux.0" }}
+dnsmasq__dhcp_dns_filename = host-resource-records.conf
+dnsmasq__default_configuration[0].name = 00_main.conf
+dnsmasq__default_configuration[0].state = absent
+dnsmasq__default_configuration[1].name = global.conf
+dnsmasq__default_configuration[1].options[0].name = conntrack
+dnsmasq__default_configuration[1].options[0].comment = Enable connection tracking support for firewalls
+dnsmasq__default_configuration[1].options[0].raw = conntrack
+
+dnsmasq__default_configuration[1].options[0].state = present
+dnsmasq__default_configuration[1].options[1].name = enable-ra
+dnsmasq__default_configuration[1].options[1].comment = Enable support for IPv6 Router Advertisements using dnsmasq
+dnsmasq__default_configuration[1].options[1].raw = enable-ra
+
+dnsmasq__default_configuration[1].options[1].state = present
+dnsmasq__default_configuration[1].options[2].name = bind-interfaces
+dnsmasq__default_configuration[1].options[2].comment = Bind only to the network interfaces explicitly set in the
+configuration. This is required to allow additional dnsmasq instances
+managed by, for example, libvirt.
+
+dnsmasq__default_configuration[1].options[2].raw = bind-dynamic
+
+dnsmasq__default_configuration[1].options[2].state = present
+dnsmasq__default_configuration[1].options[3].name = loopback-interface
+dnsmasq__default_configuration[1].options[3].comment = Bind to loopback interface for local DNS queries
+dnsmasq__default_configuration[1].options[3].raw = interface = lo
+no-dhcp-interface = lo
+
+dnsmasq__default_configuration[1].options[3].state = present
+dnsmasq__default_configuration[1].options[4].name = addn-hosts
+dnsmasq__default_configuration[1].options[4].comment = Read hosts information from additional files or directories
+dnsmasq__default_configuration[1].options[4].value = {{ dnsmasq__etc_hosts }}
+dnsmasq__default_configuration[1].options[4].state = {{ "present" if dnsmasq__etc_hosts | d() else "absent" }}
+dnsmasq__default_configuration[2].name = consul.conf
+dnsmasq__default_configuration[2].comment = Support for Consul Agent DNS service on localhost
+Ref: https://www.consul.io/docs/agent/dns.html
+
+dnsmasq__default_configuration[2].raw = server = /consul/127.0.0.1#8600
+
+dnsmasq__default_configuration[2].state = {{ "present"
+               if (ansible_local.consul.installed | d() | bool)
+               else "init" }}
+
+dnsmasq__default_configuration[3].name = lxd-override
+dnsmasq__default_configuration[3].filename = lxd
+dnsmasq__default_configuration[3].comment = Tell any system-wide dnsmasq instance to make sure to bind to interfaces
+instead of listening on 0.0.0.0
+
+dnsmasq__default_configuration[3].raw = bind-dynamic
+except-interface = lxdbr0
+
+dnsmasq__default_configuration[3].state = {{ "present" if (ansible_distribution == "Ubuntu") else "ignore" }}
+dnsmasq__default_configuration[4].name = reserved-domains.conf
+dnsmasq__default_configuration[4].options[0].name = reserved-domains
+dnsmasq__default_configuration[4].options[0].comment = Do not forward the reserved top level domains to upstream nameservers
+
+dnsmasq__default_configuration[4].options[0].raw = # Ref: https://tools.ietf.org/html/rfc2606
+local = /test/example/invalid/
+
+# Ref: https://tools.ietf.org/html/rfc6762
+local = /local/
+
+# Ref: https://tools.ietf.org/html/rfc7686
+local = /onion/
+
+dnsmasq__default_configuration[4].options[0].state = present
+dnsmasq__default_configuration[4].options[1].name = private-domains
+dnsmasq__default_configuration[4].options[1].comment = Do not forward the following private top level DNS names to upstream
+DNS servers because RFC 6762 recommends not to use unregistered
+top-level domains (https://tools.ietf.org/html/rfc6762#appendix-G)
+
+dnsmasq__default_configuration[4].options[1].raw = local = /intranet/internal/private/corp/home/lan/
+
+dnsmasq__default_configuration[4].options[1].state = present
+dnsmasq__default_configuration[5].name = block-dns-over-https
+dnsmasq__default_configuration[5].comment = Blocking the 'use-application-dns.net' domain instructs the applications
+that support DNS over HTTPS to not use it and rely on the system resolver
+instead. This might be required for certain applications to support
+access to internal services, resolve split-DNS correctly, etc.
+
+Ref: https://support.mozilla.org/en-US/kb/canary-domain-use-application-dnsnet
+
+dnsmasq__default_configuration[5].raw = server = /use-application-dns.net/
+
+dnsmasq__default_configuration[5].state = present
+dnsmasq__default_configuration[6].name = dns-global.conf
+dnsmasq__default_configuration[6].options[0].name = localise-queries
+dnsmasq__default_configuration[6].options[0].comment = Return localized answers to DNS queries from '/etc/hosts' depending
+on the originating network interface
+
+dnsmasq__default_configuration[6].options[0].raw = localise-queries
+
+dnsmasq__default_configuration[6].options[0].state = present
+dnsmasq__default_configuration[6].options[1].name = domain-needed
+dnsmasq__default_configuration[6].options[1].comment = Never forward plain hostname queries for A or AAAA records to
+upstream servers
+
+dnsmasq__default_configuration[6].options[1].raw = domain-needed
+
+dnsmasq__default_configuration[6].options[1].state = present
+dnsmasq__default_configuration[6].options[2].name = expand-hosts
+dnsmasq__default_configuration[6].options[2].comment = Expand short hostnames found in the '/etc/hosts' file to full FQDN
+addresses
+
+dnsmasq__default_configuration[6].options[2].raw = expand-hosts
+
+dnsmasq__default_configuration[6].options[2].state = present
+dnsmasq__default_configuration[6].options[3].name = stop-dns-rebind
+dnsmasq__default_configuration[6].options[3].comment = Reject addresses from the upstream DNS nameservers which are located
+in the private IP address ranges
+
+dnsmasq__default_configuration[6].options[3].raw = stop-dns-rebind
+
+dnsmasq__default_configuration[6].options[3].state = present
+dnsmasq__default_configuration[6].options[4].name = rebind-localhost-ok
+dnsmasq__default_configuration[6].options[4].comment = Skip rebinding checks for '127.0.0.0/8' IP address range. This range
+is used by the realtime black hole (RBL) servers.
+
+dnsmasq__default_configuration[6].options[4].raw = rebind-localhost-ok
+
+dnsmasq__default_configuration[6].options[4].state = present
+dnsmasq__default_configuration[6].options[5].name = rebind-local-domain-ok
+dnsmasq__default_configuration[6].options[5].comment = Skip rebinding checks for local domain, in case dnsmasq is used as
+a DNS cache and forwarder on a host that is a part of a network with
+private IP address ranges, with a different DHCP/DNS server
+maintaining the leases.
+
+dnsmasq__default_configuration[6].options[5].option = rebind-domain-ok
+dnsmasq__default_configuration[6].options[5].value = {{ dnsmasq__base_domain }}
+dnsmasq__default_configuration[6].options[5].state = {{ "present"
+                   if (dnsmasq__base_domain_rebind_ok | bool and
+                       dnsmasq__base_domain | d())
+                   else "absent" }}
+
+dnsmasq__default_configuration[6].options[6].name = rebind-parent-domain-ok
+dnsmasq__default_configuration[6].options[6].comment = Skip rebinding checks for the parent domain if it has 4 or more
+levels, which is most likely an internal domain on a network with
+private IP address ranges.
+
+dnsmasq__default_configuration[6].options[6].option = rebind-domain-ok
+dnsmasq__default_configuration[6].options[6].value = {{ dnsmasq__base_domain.split(".")[1:] | join(".") }}
+dnsmasq__default_configuration[6].options[6].state = {{ "present"
+                   if (dnsmasq__base_domain_rebind_ok | bool and
+                        dnsmasq__base_domain | d() and
+                       (dnsmasq__base_domain.split(".") | length >= 4))
+                   else "absent" }}
+
+dnsmasq__default_configuration[6].options[7].name = bogus-priv
+dnsmasq__default_configuration[6].options[7].comment = Do not forward reverse DNS queries for private IP addresses to
+upstream DNS servers.
+When an LXC network support is enabled, this parameter is commented
+out to allow revDNS queries. It will also be commented out when
+upstream nameservers are located in a private network to allow DNS
+queries to reach them. Ref: https://bugs.debian.org/461054
+
+dnsmasq__default_configuration[6].options[7].raw = bogus-priv
+
+dnsmasq__default_configuration[6].options[7].state = {{ "comment"
+                   if ((ansible_local.lxc.net_domain | d()) or
+                       (ansible_local.resolvconf.upstream_nameservers
+                        | d(ansible_dns.nameservers)
+                        | ansible.utils.ipaddr("private")))
+                   else "present" }}
+
+dnsmasq__default_configuration[6].options[8].name = resolv-file
+dnsmasq__default_configuration[6].options[8].comment = Use custom list of nameservers instead of the system upstream
+nameservers
+
+dnsmasq__default_configuration[6].options[8].value = /etc/resolvconf/upstream.conf
+dnsmasq__default_configuration[6].options[8].state = {{ "present" if dnsmasq__nameservers | d() else "absent" }}
+dnsmasq__default_configuration[7].name = lxc-net.conf
+dnsmasq__default_configuration[7].comment = Support for resolving LXC container hosts that use the 'lxc-net' bridge
+configuration
+
+dnsmasq__default_configuration[7].options[0].name = local
+dnsmasq__default_configuration[7].options[0].value = {{ "/" + (ansible_local.lxc.net_domain | d(""))
+                   + "/" + ansible_local.lxc.net_address | d("") }} 
+dnsmasq__default_configuration[7].options[1].name = host-record
+dnsmasq__default_configuration[7].options[1].value = {{ ansible_local.lxc.net_domain | d("")
+                   + "," + ansible_local.lxc.net_address | d("") }} 
+dnsmasq__default_configuration[7].options[1].state = {{ "present"
+                   if ("." not in ansible_local.lxc.net_domain | d())
+                   else "absent" }}
+
+dnsmasq__default_configuration[7].options[2].name = rev-server
+dnsmasq__default_configuration[7].options[2].value = {{ ansible_local.lxc.net_subnet | d("")
+                   + "," + ansible_local.lxc.net_address | d("") }} 
+dnsmasq__default_configuration[7].options[3].name = rebind-domain-ok
+dnsmasq__default_configuration[7].options[3].value = {{ ansible_local.lxc.net_domain | d("") }}
+dnsmasq__default_configuration[7].state = {{ "present"
+               if (ansible_local.lxc.net_domain | d())
+               else "init" }}
+
+dnsmasq__default_configuration[8].name = dhcp-boot.conf
+dnsmasq__default_configuration[8].comment = This configuration file contains dnsmasq options related to booting
+remote hosts using iPXE boot menu
+
+dnsmasq__default_configuration[8].options[0].name = dhcp-match-ipxe
+dnsmasq__default_configuration[8].options[0].comment = Tag all DHCP requests with option 175 as coming from iPXE to avoid
+recursive loops
+
+dnsmasq__default_configuration[8].options[0].option = dhcp-match
+dnsmasq__default_configuration[8].options[0].value = set:ipxe,175
+dnsmasq__default_configuration[8].options[1].name = dhcp-match-d-i
+dnsmasq__default_configuration[8].options[1].comment = Tag all DHCP requests with 'd-i' vendor class as coming from the
+Debian Installer
+
+dnsmasq__default_configuration[8].options[1].option = dhcp-match
+dnsmasq__default_configuration[8].options[1].value = set:debian-installer,option:vendor-class,"d-i"
+dnsmasq__default_configuration[8].options[2].name = vendor-match
+dnsmasq__default_configuration[8].options[2].comment = Inspect the vendor class string and match the text to set the tag
+Ref: https://tools.ietf.org/html/rfc4578#section-2.1
+
+dnsmasq__default_configuration[8].options[2].raw = dhcp-vendorclass = BIOS,PXEClient:Arch:00000
+dhcp-vendorclass = UEFI32,PXEClient:Arch:00006
+dhcp-vendorclass = UEFI,PXEClient:Arch:00007
+dhcp-vendorclass = UEFI64,PXEClient:Arch:00009
+
+dnsmasq__default_configuration[8].options[3].name = boot-ipxe-local
+dnsmasq__default_configuration[8].options[3].comment = Set the boot file name based on the matching tag from the vendor class (above)
+dnsmasq__default_configuration[8].options[3].raw = {% if dnsmasq__boot_ipxe_enabled | bool %}
+# Redirect non-iPXE clients to iPXE
+dhcp-boot = tag:!ipxe,tag:BIOS,undionly.kpxe
+dhcp-boot = tag:!ipxe,tag:UEFI32,i386-efi/ipxe.efi
+dhcp-boot = tag:!ipxe,tag:UEFI,ipxe.efi
+dhcp-boot = tag:!ipxe,tag:UEFI64,ipxe.efi
+
+# Load the main menu in iPXE clients
+{% endif %}
+dhcp-boot = {{ dnsmasq__boot_filename }}
+
+dnsmasq__default_configuration[8].options[3].state = {{ "absent" if dnsmasq__boot_server | d() else "present" }}
+dnsmasq__default_configuration[8].options[4].name = boot-ipxe-remote
+dnsmasq__default_configuration[8].options[4].comment = Set the boot file name based on the matching tag from the vendor class (above)
+dnsmasq__default_configuration[8].options[4].raw = {% if dnsmasq__boot_ipxe_enabled | bool %}
+# Redirect non-iPXE clients to iPXE
+dhcp-boot = tag:!ipxe,tag:BIOS,undionly.kpxe,,{{ dnsmasq__boot_server }}
+dhcp-boot = tag:!ipxe,tag:UEFI32,i386-efi/ipxe.efi,,{{ dnsmasq__boot_server }}
+dhcp-boot = tag:!ipxe,tag:UEFI,ipxe.efi,,{{ dnsmasq__boot_server }}
+dhcp-boot = tag:!ipxe,tag:UEFI64,ipxe.efi,,{{ dnsmasq__boot_server }}
+
+# Load the main menu in iPXE clients
+{% endif %}
+dhcp-boot = {{ dnsmasq__boot_filename }},,{{ dnsmasq__boot_server }}
+
+dnsmasq__default_configuration[8].options[4].state = {{ "present" if dnsmasq__boot_server | d() else "absent" }}
+dnsmasq__default_configuration[8].state = {{ "present" if dnsmasq__boot_enabled | bool else "init" }}
+dnsmasq__interface_configuration = {{ lookup("template", "lookup/dnsmasq__interface_configuration.j2",
+                                             convert_data=False) | from_yaml }} 
+dnsmasq__combined_configuration = {{ dnsmasq__default_configuration
+                                     + dnsmasq__interface_configuration
+                                     + dnsmasq__configuration
+                                     + dnsmasq__group_configuration
+                                     + dnsmasq__host_configuration }}
+
+dnsmasq__ferm__dependent_rules[0].type = accept
+dnsmasq__ferm__dependent_rules[0].by_role = debops.dnsmasq
+dnsmasq__ferm__dependent_rules[0].name = dns
+dnsmasq__ferm__dependent_rules[0].weight = 40
+dnsmasq__ferm__dependent_rules[0].protocol[0] = udp
+dnsmasq__ferm__dependent_rules[0].protocol[1] = tcp
+dnsmasq__ferm__dependent_rules[0].saddr = {{ dnsmasq__public_dns_allow }}
+dnsmasq__ferm__dependent_rules[0].dport[0] = domain
+dnsmasq__ferm__dependent_rules[0].accept_any = True
+dnsmasq__ferm__dependent_rules[0].interface = {{ []
+                   if (dnsmasq__public_dns | bool)
+                   else (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                         | selectattr("state", "equalto", "present")
+                         | map(attribute="name") | list) }}
+
+dnsmasq__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if ((dnsmasq__public_dns | bool) or
+                        (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                            | selectattr("state", "equalto", "present")
+                            | map(attribute="name") | list))
+                    else "absent" }}
+
+dnsmasq__ferm__dependent_rules[1].type = accept
+dnsmasq__ferm__dependent_rules[1].by_role = debops.dnsmasq
+dnsmasq__ferm__dependent_rules[1].name = dhcpv4
+dnsmasq__ferm__dependent_rules[1].weight = 40
+dnsmasq__ferm__dependent_rules[1].protocol[0] = udp
+dnsmasq__ferm__dependent_rules[1].dport[0] = bootps
+dnsmasq__ferm__dependent_rules[1].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                   | selectattr("state", "equalto", "present")
+                   | map(attribute="name") | list }}
+
+dnsmasq__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (dnsmasq__dhcpv4 | bool and
+                        (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                         | selectattr("state", "equalto", "present")
+                         | map(attribute="name") | list))
+                    else "absent" }}
+
+dnsmasq__ferm__dependent_rules[2].type = accept
+dnsmasq__ferm__dependent_rules[2].by_role = debops.dnsmasq
+dnsmasq__ferm__dependent_rules[2].name = dhcpv6
+dnsmasq__ferm__dependent_rules[2].weight = 40
+dnsmasq__ferm__dependent_rules[2].saddr[0] = fe80::/10
+dnsmasq__ferm__dependent_rules[2].daddr[0] = ff02::1:2
+dnsmasq__ferm__dependent_rules[2].protocol[0] = udp
+dnsmasq__ferm__dependent_rules[2].sport[0] = dhcpv6-client
+dnsmasq__ferm__dependent_rules[2].dport[0] = dhcpv6-server
+dnsmasq__ferm__dependent_rules[2].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                   | selectattr("state", "equalto", "present")
+                   | map(attribute="name") | list }}
+
+dnsmasq__ferm__dependent_rules[2].rule_state = {{ "present"
+                    if (dnsmasq__dhcpv6 | bool and
+                        (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                         | selectattr("state", "equalto", "present")
+                         | map(attribute="name") | list))
+                    else "absent" }}
+
+dnsmasq__ferm__dependent_rules[3].type = accept
+dnsmasq__ferm__dependent_rules[3].by_role = debops.dnsmasq
+dnsmasq__ferm__dependent_rules[3].filename = tftp
+dnsmasq__ferm__dependent_rules[3].weight = 40
+dnsmasq__ferm__dependent_rules[3].dport[0] = tftp
+dnsmasq__ferm__dependent_rules[3].protocol[0] = udp
+dnsmasq__ferm__dependent_rules[3].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                   | selectattr("state", "equalto", "present")
+                   | map(attribute="name") | list }}
+
+dnsmasq__ferm__dependent_rules[3].rule_state = {{ "present"
+                    if (dnsmasq__boot_enabled | bool and
+                        (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
+                         | selectattr("state", "equalto", "present")
+                         | map(attribute="name") | list))
+                    else "absent" }}
+
+dnsmasq__tcpwrappers__dependent_allow = {{ lookup("template", "lookup/dnsmasq__tcpwrappers__dependent_allow.j2",
+                                             convert_data=False) | from_yaml }} 
+dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].comment = Allow dnsmasq to read upstream DNS servers
+dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].rules[0] = /etc/resolvconf/upstream.conf r
+dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].rules[1] = /etc/hosts.dnsmasq r
+dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][1].comment = Allow dnsmasq to read /usr/share/dnsmasq-base/trust-anchors.conf provided by dnsmasq-base
+dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][1].rules[0] = /usr/share/dnsmasq-base/* r
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.by_role = debops.dnsmasq
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.paths[0] = /etc/ansible
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.paths[1] = /etc/dnsmasq.d
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.paths[2] = /etc/default/dnsmasq
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.paths[3] = /etc/resolvconf/upstream.conf
+dnsmasq__persistent_paths__dependent_paths.50_debops_dnsmasq.paths[4] = /etc/hosts.dnsmasq

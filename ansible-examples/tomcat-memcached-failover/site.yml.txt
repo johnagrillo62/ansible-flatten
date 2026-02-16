@@ -1,0 +1,12 @@
+[0].hosts = all
+[0].remote_user = root
+[0].roles[0] = common
+[1].hosts = lb_servers
+[1].remote_user = root
+[1].roles[0] = lb-nginx
+[2].hosts = backend_servers
+[2].remote_user = root
+[2].roles[0] = tomcat
+[3].hosts = memcached_servers
+[3].remote_user = root
+[3].roles[0] = memcached

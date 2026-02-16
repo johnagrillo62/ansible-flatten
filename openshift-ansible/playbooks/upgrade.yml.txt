@@ -1,0 +1,17 @@
+[0].name = Pre-upgrade hostfile checks
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = no
+[0].tasks[0].name = Ensure [workers] group is populated
+[0].tasks[0].fail.msg = Detected no workers in inventory. Please add hosts to the workers host group to upgrade nodes
+
+[0].tasks[0].when = groups.workers | default([]) | length == 0
+[1].name = Pre-upgrade checks
+[1].hosts = workers
+[1].tasks[0].import_role.name = openshift_node
+[1].tasks[0].import_role.tasks_from = version_checks.yml
+[2].name = upgrade nodes
+[2].hosts = workers
+[2].serial = 1
+[2].tasks[0].import_role.name = openshift_node
+[2].tasks[0].import_role.tasks_from = upgrade.yml

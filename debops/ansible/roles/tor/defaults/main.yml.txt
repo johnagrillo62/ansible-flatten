@@ -1,0 +1,14 @@
+tor__deploy_state = present
+tor__ferm__dependent_rules[0].type = accept
+tor__ferm__dependent_rules[0].dport = {{ ((tor_ports | map(attribute="orport") | list) + (tor_ports | map(attribute="dirport") | list)) | unique | sort }}
+tor__ferm__dependent_rules[0].accept_any = True
+tor__ferm__dependent_rules[0].weight = 40
+tor__ferm__dependent_rules[0].by_role = debops-contrib.tor
+tor__ferm__dependent_rules[0].name = tor
+tor__ferm__dependent_rules[0].rule_state = {{ "present" if (tor__deploy_state != "purged") else "absent" }}
+tor__unattended_upgrades__dependent_origins[0].origin = origin=TorProject
+tor__unattended_upgrades__dependent_origins[0].by_role = debops-contrib.tor
+tor__unattended_upgrades__dependent_origins[0].state = {{ "present"
+               if (tor__deploy_state == "present")
+               else "absent" }}
+

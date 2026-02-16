@@ -1,0 +1,12 @@
+[0].hosts = all
+[0].tasks[0].add_host.name = localhost
+[0].tasks[0].add_host.groups = nodejs-api
+[0].tasks[0].changed_when = false
+[0].tasks[1].name = Update apt cache if needed.
+[0].tasks[1].apt = update_cache=yes cache_valid_time=600
+[0].tasks[2].name = Ensure ping is present.
+[0].tasks[2].apt = name=iputils-ping state=present
+[1].import_playbook = ../deployments-rolling/playbooks/provision.yml
+[1].vars.firewall_enable_ipv6 = false
+[2].import_playbook = ../deployments-rolling/playbooks/deploy.yml
+[2].vars.firewall_enable_ipv6 = false

@@ -1,0 +1,99 @@
+miniflux__domain = {{ ansible_domain }}
+miniflux__fqdn = miniflux.{{ miniflux__domain }}
+miniflux__bind = 127.0.0.1
+miniflux__port = 3366
+miniflux__user = miniflux
+miniflux__group = miniflux
+miniflux__gecos = Miniflux
+miniflux__shell = /usr/sbin/nologin
+miniflux__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                    + "/" + miniflux__user }} 
+miniflux__database_host = {{ ansible_local.postgresql.server | d("localhost") }}
+miniflux__database_port = {{ ansible_local.postgresql.port | d("5432") }}
+miniflux__database_name = miniflux_production
+miniflux__database_user = miniflux
+miniflux__database_password = {{ lookup("password", secret + "/postgresql/" +
+                                    (ansible_local.postgresql.delegate_to | d("localhost")) + "/" +
+                                    (ansible_local.postgresql.port | d("5432")) + "/credentials/" +
+                                    miniflux__database_user + "/password") }}
+
+miniflux__upstream_gpg_key = 5A7A 89AC F055 24CA A0F3  6F9B AEB7 A164 0710 8DB5
+miniflux__upstream_type = apt
+miniflux__upstream_version = 2.0.35
+miniflux__upstream_url_mirror = https://github.com/miniflux/v2/releases/
+miniflux__upstream_platform = linux-amd64
+miniflux__upstream_git_repository = https://github.com/miniflux/miniflux
+miniflux__binary = {{ ansible_local.golang.binaries["miniflux"]
+                      if (ansible_local.golang.binaries | d() and
+                          ansible_local.golang.binaries.miniflux | d())
+                      else "" }}
+
+miniflux__default_configuration[0].name = run_migrations
+miniflux__default_configuration[0].value = True
+miniflux__default_configuration[1].name = database_url
+miniflux__default_configuration[1].value = {{ "postgres://" + miniflux__database_user
+               + ":" + miniflux__database_password
+               + "@" + miniflux__database_host
+               + ":" + miniflux__database_port
+               + "/" + miniflux__database_name }}
+
+miniflux__default_configuration[2].name = listen_addr
+miniflux__default_configuration[2].value = {{ miniflux__bind + ":" + miniflux__port }}
+miniflux__default_configuration[3].name = base_url
+miniflux__default_configuration[3].value = {{ "https://" + miniflux__fqdn }}
+miniflux__combined_configuration = {{ miniflux__default_configuration
+                                      + miniflux__configuration
+                                      + miniflux__group_configuration
+                                      + miniflux__host_configuration }}
+
+miniflux__keyring__dependent_apt_keys[0].id = {{ miniflux__upstream_gpg_key }}
+miniflux__keyring__dependent_apt_keys[0].url = https://apt.miniflux.app/KEY.gpg
+miniflux__keyring__dependent_apt_keys[0].repo = deb https://apt.miniflux.app/ /
+miniflux__keyring__dependent_apt_keys[0].state = {{ "present"
+               if (miniflux__upstream_type == "apt")
+               else "absent" }}
+
+miniflux__postgresql__dependent_roles[0].name = {{ miniflux__database_user }}
+miniflux__postgresql__dependent_roles[1].name = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_roles[1].flags[0] = NOLOGIN
+miniflux__postgresql__dependent_groups[0].roles[0] = {{ miniflux__database_user }}
+miniflux__postgresql__dependent_groups[0].groups[0] = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_groups[0].database = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_databases[0].name = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_databases[0].owner = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_pgpass[0].owner = {{ miniflux__user }}
+miniflux__postgresql__dependent_pgpass[0].group = {{ miniflux__group }}
+miniflux__postgresql__dependent_pgpass[0].home = {{ miniflux__home }}
+miniflux__postgresql__dependent_pgpass[0].system = True
+miniflux__postgresql__dependent_extensions[0].database = {{ miniflux__database_name }}
+miniflux__postgresql__dependent_extensions[0].extension = hstore
+miniflux__golang__dependent_packages[0].name = miniflux
+miniflux__golang__dependent_packages[0].upstream_type = {{ miniflux__upstream_type }}
+miniflux__golang__dependent_packages[0].apt_packages[0] = miniflux
+miniflux__golang__dependent_packages[0].gpg[0].id = {{ miniflux__upstream_gpg_key }}
+miniflux__golang__dependent_packages[0].gpg[0].url = https://apt.miniflux.app/KEY.gpg
+miniflux__golang__dependent_packages[0].url[0].src = {{ miniflux__upstream_url_mirror + "download/" + miniflux__upstream_version + "/miniflux-" + miniflux__upstream_platform }}
+miniflux__golang__dependent_packages[0].url[0].dest = releases/{{ miniflux__upstream_platform }}/miniflux/miniflux/" + miniflux__upstream_version + "/miniflux_" + miniflux__upstream_version + "_linux_amd64
+miniflux__golang__dependent_packages[0].url_binaries[0].src = releases/{{ miniflux__upstream_platform }}/miniflux/miniflux/" + miniflux__upstream_version + "/miniflux_" + miniflux__upstream_version + "_linux_amd64
+miniflux__golang__dependent_packages[0].url_binaries[0].dest = miniflux
+miniflux__golang__dependent_packages[0].url_binaries[0].notify[0] = Restart miniflux
+miniflux__golang__dependent_packages[0].git[0].repo = {{ miniflux__upstream_git_repository }}
+miniflux__golang__dependent_packages[0].git[0].version = {{ miniflux__upstream_version }}
+miniflux__golang__dependent_packages[0].git[0].build_script = make clean linux-amd64
+
+miniflux__golang__dependent_packages[0].git_binaries[0].src = github.com/miniflux/v2/bin/miniflux.app
+miniflux__golang__dependent_packages[0].git_binaries[0].dest = miniflux
+miniflux__golang__dependent_packages[0].git_binaries[0].notify[0] = Restart miniflux
+miniflux__nginx__dependent_upstreams[0].name = miniflux-upstream
+miniflux__nginx__dependent_upstreams[0].server = {{ miniflux__bind }}:{{ miniflux__port }}
+miniflux__nginx__dependent_servers[0].name = {{ miniflux__fqdn }}
+miniflux__nginx__dependent_servers[0].by_role = debops.miniflux
+miniflux__nginx__dependent_servers[0].filename = debops.miniflux
+miniflux__nginx__dependent_servers[0].type = proxy
+miniflux__nginx__dependent_servers[0].proxy_location = /
+miniflux__nginx__dependent_servers[0].proxy_headers = True
+miniflux__nginx__dependent_servers[0].proxy_options = proxy_redirect off;
+
+miniflux__nginx__dependent_servers[0].proxy_pass = http://miniflux-upstream
+miniflux__etc_services__dependent_list[0].name = miniflux
+miniflux__etc_services__dependent_list[0].port = {{ miniflux__port }}

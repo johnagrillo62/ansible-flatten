@@ -1,0 +1,19 @@
+~d0.hosts = localhost
+~d1.gather_facts = no
+~d1.vars = 
+~d2.complex = 
+~d3.ghostbusters = [ 'egon', 'ray', 'peter', 'winston' ]
+~d3.mice = [ 'pinky', 'brain', 'larry' ]
+~d1.tasks = 
+~d2.name = this is the basic way data passing works for any module
+~d3.action = ping data='Hi Mom'
+~d2.name = of course this can also be written like so, which is shorter
+~d3.ping = data='Hi Mom'
+~d2.name = but what if you have a complex module that needs complicated data?
+~d3.ping = 
+~d4.data = 
+~d5.moo = cow
+~d5.asdf = [1,2,3,4]
+~d2.name = can we make that cleaner? sure!
+~d3.ping = 
+~d4.data = "{{ complex }}"

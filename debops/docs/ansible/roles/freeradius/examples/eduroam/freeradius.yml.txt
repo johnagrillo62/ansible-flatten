@@ -1,0 +1,59 @@
+~d0.radius_domain = '{{ ansible_domain }}'
+~d0.radius_guest_vlan = '101'
+~d0.radius_local_vlan = '102'
+~d0.radius_pki_realm = 'domain'
+~d0.radius_cert_file = '/etc/pki/realms/{{ radius_pki_realm }}/default.crt'
+~d0.radius_key_file = '/etc/pki/realms/{{ radius_pki_realm }}/default.key'
+~d0.radius_ca_file = '/etc/pki/realms/{{ radius_pki_realm }}/CA.crt'
+~d0.radius_access_point_subnet = '192.168.2.0/24'
+~d0.radius_access_point_password = '{{ lookup("password", secret
+~d0.radius_test_user_password = '{{ lookup("password", secret
+~d0.freeradius__host_allow = [ '{{ radius_access_point_subnet }}' ]
+~d0.freeradius__host_configuration = 
+~d1.name = 'sites-available/default'
+~d2.raw = |
+~d7.control = Load-Balance-Key := &Calling-Station-ID
+~d7.control = Proxy-To-Realm := 'eduroam_flr'
+~d7.request = Operator-Name := "1${operator_name}"
+~d6.Tunnel-Type = = VLAN
+~d6.Tunnel-Medium-Type = = IEEE-802
+~d5.if (&control = Proxy-To-Realm) {
+~d7.Tunnel-Private-Group-ID = = ${eduroam_guest_vlan}
+~d7.Tunnel-Private-Group-ID = = ${eduroam_local_vlan}
+~d5.if (&session-state = Stripped-User-Name) {
+~d7.User-Name = = "%{session-state:Stripped-User-Name}@%{Stripped-User-Domain}"
+~d2.state = 'present'
+~d1.name = 'mods-available/eap'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = 'mods-available/linelog'
+~d2.raw = |
+~d4.format = "action = Recv-Request, %{pairs = request:}"
+~d4.format = "action = Send-Accept, %{pairs = request:}"
+~d4.format = "action = Send-Reject, %{pairs = request:}"
+~d4.format = "action = Send-Proxy-Request, %{pairs = proxy-request:}"
+~d4.format = "action = Recv-Proxy-Response, %{pairs = proxy-reply:}"
+~d2.state = 'present'
+~d1.name = 'proxy.conf'
+~d2.raw = |
+~d2.state = 'absent'
+~d2.no_log = '{{ debops__no_log | d(True) }}'
+~d1.name = 'clients.conf'
+~d2.raw = |
+~d2.state = 'present'
+~d2.no_log = '{{ debops__no_log | d(True) }}'
+~d1.name = 'sites-available/inner-tunnel'
+~d2.raw = |
+~d6.&outer.session-state = Stripped-User-Name := &Stripped-User-Name
+~d2.state = 'present'
+~d1.name = 'mods-enabled/inner-eap'
+~d2.link_src = '../mods-available/inner-eap'
+~d1.name = 'mods-available/inner-eap'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = 'mods-config/files/authorize'
+~d2.comment = |
+~d2.raw = |
+~d3.DEFAULT Cleartext-Password = = '{{ radius_test_user_password }}'
+~d2.state = 'present'
+~d2.no_log = '{{ debops__no_log | d(True) }}'

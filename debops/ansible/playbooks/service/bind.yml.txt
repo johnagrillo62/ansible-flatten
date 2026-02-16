@@ -1,0 +1,44 @@
+[0].name = Manage BIND servers
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_bind
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+
+[0].roles[0].role = apt_preferences
+[0].roles[0].tags[0] = role::apt_preferences
+[0].roles[0].tags[1] = skip::apt_preferences
+[0].roles[0].tags[2] = role::nginx
+[0].roles[0].apt_preferences__dependent_list[0] = {{ nginx__apt_preferences__dependent_list }}
+[0].roles[0].apt_preferences__dependent_list[1] = {{ bind__apt_preferences__dependent_list }}
+[0].roles[1].role = ferm
+[0].roles[1].tags[0] = role::ferm
+[0].roles[1].tags[1] = skip::ferm
+[0].roles[1].tags[2] = role::nginx
+[0].roles[1].ferm__dependent_rules[0] = {{ nginx__ferm__dependent_rules }}
+[0].roles[1].ferm__dependent_rules[1] = {{ bind__ferm__dependent_rules }}
+[0].roles[2].role = resolvconf
+[0].roles[2].tags[0] = role::resolvconf
+[0].roles[2].tags[1] = skip::resolvconf
+[0].roles[2].resolvconf__dependent_services[0] = bind
+[0].roles[3].role = cron
+[0].roles[3].tags[0] = role::cron
+[0].roles[3].tags[1] = skip::cron
+[0].roles[4].role = logrotate
+[0].roles[4].tags[0] = role::logrotate
+[0].roles[4].tags[1] = skip::logrotate
+[0].roles[4].logrotate__dependent_config[0] = {{ slapd__logrotate__dependent_config }}
+[0].roles[4].when[0] = "dnssec" in bind__features
+[0].roles[4].when[1] = bind__dnssec_script_enabled | d(False)
+[0].roles[5].role = bind
+[0].roles[5].tags[0] = role::bind
+[0].roles[5].tags[1] = skip::bind
+[0].roles[6].role = nginx
+[0].roles[6].tags[0] = role::nginx
+[0].roles[6].tags[1] = skip::nginx
+[0].roles[6].nginx__dependent_servers[0] = {{ bind__nginx__dependent_servers }}
+[0].roles[6].when = ansible_local.nginx.enabled | d(False) or bind__features | intersect([ "doh_proxy", "stats_proxy" ]) | length > 0

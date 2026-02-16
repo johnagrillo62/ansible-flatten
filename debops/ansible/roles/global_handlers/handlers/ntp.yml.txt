@@ -1,0 +1,18 @@
+~d0.name = Restart openntpd
+~d1.ansible.builtin.service = 
+~d2.name = 'openntpd'
+~d2.state = 'restarted'
+~d1.when = not ansible_check_mode
+~d0.name = Restart ntp
+~d1.ansible.builtin.service = 
+~d2.name = 'ntp'
+~d2.state = 'restarted'
+~d1.when = ntp__daemon == 'ntpd'
+~d0.name = Restart systemd-timesyncd
+~d1.ansible.builtin.service = 
+~d2.name = 'systemd-timesyncd'
+~d2.state = 'restarted'
+~d0.name = Restart chrony
+~d1.ansible.builtin.service = 
+~d2.name = 'chrony'
+~d2.state = 'restarted'

@@ -1,0 +1,24 @@
+influxdb2__base_packages[0] = influxdb2
+influxdb2__base_packages[1] = influxdb2-cli
+influxdb2__fqdn = {{ ansible_fqdn }}
+influxdb2__port = 8086
+influxdb2__default_configuration[0].name = default
+influxdb2__default_configuration[0].config.bolt-path = /var/lib/influxdb/influxd.bolt
+influxdb2__default_configuration[0].config.engine-path = /var/lib/influxdb/engine
+influxdb2__combined_configuration = {{ influxdb2__default_configuration +
+                                       influxdb2__configuration }} 
+influxdb2__influxdata__dependent_packages[0] = {{ influxdb2__base_packages }}
+influxdb2__influxdata__dependent_packages[1] = {{ influxdb2__packages }}
+influxdb2__etc_services__dependent_list[0].name = influxdb2-http
+influxdb2__etc_services__dependent_list[0].port = {{ influxdb2__port }}
+influxdb2__etc_services__dependent_list[0].protocol[0] = tcp
+influxdb2__nginx__dependent_upstreams[0].name = influxdb2_upstream
+influxdb2__nginx__dependent_upstreams[0].server = {{ "127.0.0.1:" + influxdb2__port }}
+influxdb2__nginx__dependent_upstreams[0].state = present
+influxdb2__nginx__dependent_servers[0].name = {{ influxdb2__fqdn }}
+influxdb2__nginx__dependent_servers[0].by_role = debops.influxdb2
+influxdb2__nginx__dependent_servers[0].filename = debops.influxdb2
+influxdb2__nginx__dependent_servers[0].state = present
+influxdb2__nginx__dependent_servers[0].type = proxy
+influxdb2__nginx__dependent_servers[0].proxy_pass = http://influxdb2_upstream
+influxdb2__nginx__dependent_servers[0].allow = {{ influxdb2__allow }}

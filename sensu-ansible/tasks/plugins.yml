@@ -1,0 +1,152 @@
+---
+# tasks/plugins.yml: Deploy available checks/plugins/handlers/filters/mutators
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+
+- name: Ensure Sensu plugin directory exists
+  file:
+    dest: "{{ sensu_config_path }}/plugins"
+    state: directory
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+
+- name: Ensure local directories exist
+  file:
+    state: directory
+    dest: "{{ static_data_store }}/sensu/{{ item }}"
+  delegate_to: localhost
+  become: no
+  run_once: true
+  loop:
+    - checks
+    - filters
+    - handlers
+    - mutators
+    - definitions
+    - client_definitions
+    - client_templates
+
+- name: Ensure any remote plugins defined are present
+  shell: umask 0022; sensu-install -p {{ item }}
+  loop: "{{ sensu_remote_plugins }}"
+  changed_when: false
+  when: sensu_remote_plugins | length > 0
+
+- name: Register available checks
+  command: "ls {{ static_data_store }}/sensu/checks"
+  delegate_to: localhost
+  register: sensu_available_checks
+  changed_when: false
+  become: false
+  run_once: true
+
+- name: Deploy check plugins
+  copy:
+    src: "{{ static_data_store }}/sensu/checks/{{ item }}/"
+    dest: "{{ sensu_config_path }}/plugins/"
+    mode: 0755
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  when:
+    - sensu_available_checks is defined
+    - sensu_available_checks is not skipped
+    - item in sensu_available_checks.stdout_lines
+  loop: "{{ group_names|flatten }}"
+  notify: restart sensu-client service
+
+- name: Deploy handler plugins
+  copy:
+    src: "{{ static_data_store }}/sensu/handlers/"
+    dest: "{{ sensu_config_path }}/plugins/"
+    mode: 0755
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  notify: restart sensu-client service
+
+- name: Deploy filter plugins
+  copy:
+    src: "{{ static_data_store }}/sensu/filters/"
+    dest: "{{ sensu_config_path }}/plugins/"
+    mode: 0755
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  notify: restart sensu-client service
+
+- name: Deploy mutator plugins
+  copy:
+    src: "{{ static_data_store }}/sensu/mutators/"
+    dest: "{{ sensu_config_path }}/plugins/"
+    mode: 0755
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  notify: restart sensu-client service
+
+- name: Deploy check/handler/filter/mutator definitions to the master
+  template:
+    src: "{{ item }}"
+    dest: "{{ sensu_config_path }}/conf.d/{{ item | basename | regex_replace('.j2', '') }}"
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  when: sensu_master
+  with_fileglob:
+    - "{{ static_data_store }}/sensu/definitions/*"
+  notify:
+    - restart sensu-server service
+    - restart sensu-api service
+    - restart sensu-enterprise service
+
+- name: Register available client definitions
+  command: "ls {{ static_data_store }}/sensu/client_definitions"
+  delegate_to: localhost
+  register: sensu_available_client_definitions
+  changed_when: false
+  become: false
+  run_once: true
+
+- name: Deploy client definitions
+  copy:
+    src: "{{ static_data_store }}/sensu/client_definitions/{{ item }}/"
+    dest: "{{ sensu_config_path }}/conf.d/{{ item | basename | regex_replace('.j2', '') }}"
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  when:
+    - sensu_available_client_definitions is defined
+    - sensu_available_client_definitions is not skipped
+    - item in sensu_available_client_definitions.stdout_lines
+  loop: "{{ group_names|flatten }}"
+  notify: restart sensu-client service
+
+- name: Register available client templates
+  command: "ls {{ static_data_store }}/sensu/client_templates"
+  delegate_to: localhost
+  register: sensu_available_client_templates
+  changed_when: false
+  become: false
+  run_once: true
+
+- name: Deploy client template folders
+  file:
+    path: '{{ sensu_config_path }}/conf.d/{{ item | basename }}'
+    state: directory
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  when:
+    - sensu_available_client_templates is defined
+    - sensu_available_client_templates is not skipped
+    - item in sensu_available_client_templates.stdout_lines
+  loop: "{{ group_names|flatten }}"
+  notify: restart sensu-client service
+
+- name: Deploy client templates
+  template:
+    src: "{{ static_data_store }}/sensu/client_templates/{{ item.path | dirname }}/{{ item.path | basename }}"
+    dest: "{{ sensu_config_path }}/conf.d/{{ item.path | dirname }}/{{ item.path | basename | regex_replace('.j2', '') }}"
+    owner: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+  with_filetree: "{{ static_data_store }}/sensu/client_templates"
+  when:
+    - item.state == 'file'
+    - item.path | dirname in group_names
+  notify: restart sensu-client service

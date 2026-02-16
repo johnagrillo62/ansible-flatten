@@ -1,0 +1,15 @@
+[0].name = Generate the awx.awx collection
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = false
+[0].vars.api_url = {{ lookup('env', 'TOWER_HOST') }}
+[0].vars_files[0] = vars/generate_for.yml
+[0].vars_files[1] = vars/aliases.yml
+[0].vars_files[2] = vars/associations.yml
+[0].vars_files[3] = vars/resolution.yml
+[0].vars_files[4] = vars/examples.yml
+[0].module_defaults.uri.validate_certs = false
+[0].module_defaults.uri.force_basic_auth = true
+[0].module_defaults.uri.url_username = {{ lookup('env', 'TOWER_USERNAME') }}
+[0].module_defaults.uri.url_password = {{ lookup('env', 'TOWER_PASSWORD') }}
+[0].roles[0] = generate

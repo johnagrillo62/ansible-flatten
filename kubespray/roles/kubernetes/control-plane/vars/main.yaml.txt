@@ -1,0 +1,5 @@
+kube_apiserver_admission_plugins_needs_configuration[0] = EventRateLimit
+kube_apiserver_admission_plugins_needs_configuration[1] = ImagePolicyWebhook
+kube_apiserver_admission_plugins_needs_configuration[2] = PodSecurity
+kube_apiserver_admission_plugins_needs_configuration[3] = PodNodeSelector
+kube_apiserver_admission_plugins_needs_configuration[4] = ResourceQuota

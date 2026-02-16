@@ -1,0 +1,4 @@
+[0].name = Update initramfs
+[0]["ansible.builtin.command"] = update-initramfs -u {{ dropbear_initramfs__update_options }}
+[0].register = dropbear_initramfs__register_update
+[0].changed_when = dropbear_initramfs__register_update.changed | bool

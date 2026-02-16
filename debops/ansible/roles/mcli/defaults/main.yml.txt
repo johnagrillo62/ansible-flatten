@@ -1,0 +1,38 @@
+mcli__upstream_gpg_key = 4405 F3F0 DDBA 1B9E 68A3  1D25 12C7 4390 F9AA C728
+mcli__upstream_type = url
+mcli__upstream_upgrade = False
+mcli__upstream_url_mirror = https://dl.min.io/client/mc/release/
+mcli__upstream_platform = linux-amd64
+mcli__upstream_url_release = {{ mcli__env_upstream_url_release }}
+mcli__upstream_url_binary = {{ "archive/mc." + mcli__upstream_url_release }}
+mcli__upstream_git_repository = https://github.com/minio/mc
+mcli__upstream_git_release = {{ "RELEASE.2019-03-20T21-29-03Z"
+                                if (ansible_distribution_release in
+                                    ["stretch", "buster", "xenial", "bionic"])
+                                    else ("RELEASE.2019-09-05T23-43-50Z"
+                                      if (ansible_distribution_release in
+                                          ["bullseye"])
+                                      else mcli__upstream_url_release) }}
+
+mcli__binary = {{ ansible_local.golang.binaries["mcli"]
+                   if (ansible_local.golang.binaries | d() and
+                       ansible_local.golang.binaries.mcli | d())
+                   else "" }}
+
+mcli__golang__dependent_packages[0].name = mcli
+mcli__golang__dependent_packages[0].upstream_type = {{ mcli__upstream_type }}
+mcli__golang__dependent_packages[0].gpg = {{ mcli__upstream_gpg_key }}
+mcli__golang__dependent_packages[0].url[0].src = {{ mcli__upstream_url_mirror + mcli__upstream_platform + "/" + mcli__upstream_url_binary }}
+mcli__golang__dependent_packages[0].url[0].dest = releases/{{ mcli__upstream_platform }}/mc/mc.{{ mcli__upstream_url_release }}
+mcli__golang__dependent_packages[0].url[0].checksum = sha256:{{ mcli__upstream_url_mirror + mcli__upstream_platform + "/" + mcli__upstream_url_binary }}.sha256sum
+mcli__golang__dependent_packages[0].url[1].src = {{ mcli__upstream_url_mirror + mcli__upstream_platform + "/" + mcli__upstream_url_binary + ".asc" }}
+mcli__golang__dependent_packages[0].url[1].dest = releases/{{ mcli__upstream_platform }}/mc/mc.{{ mcli__upstream_url_release }}.asc
+mcli__golang__dependent_packages[0].url[1].gpg_verify = True
+mcli__golang__dependent_packages[0].url_binaries[0].src = releases/{{ mcli__upstream_platform }}/mc/mc.{{ mcli__upstream_url_release }}
+mcli__golang__dependent_packages[0].url_binaries[0].dest = mcli
+mcli__golang__dependent_packages[0].git[0].repo = {{ mcli__upstream_git_repository }}
+mcli__golang__dependent_packages[0].git[0].version = {{ mcli__upstream_git_release }}
+mcli__golang__dependent_packages[0].git[0].build_script = make clean build
+
+mcli__golang__dependent_packages[0].git_binaries[0].src = {{ mcli__upstream_git_repository.split("://")[1] + "/mc" }}
+mcli__golang__dependent_packages[0].git_binaries[0].dest = mcli

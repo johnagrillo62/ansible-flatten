@@ -1,0 +1,3 @@
+calico_wireguard_repo = https://download.copr.fedorainfracloud.org/results/jdoss/wireguard/epel-7-$basearch/
+calico_wireguard_packages[0] = wireguard-dkms
+calico_wireguard_packages[1] = wireguard-tools

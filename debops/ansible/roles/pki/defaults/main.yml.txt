@@ -1,0 +1,163 @@
+pki_enabled = {{ (True
+                  if pki_default_domain
+                  else False) | bool }}
+
+pki_download_extra = True
+pki_internal = {{ (True
+                   if pki_default_domain
+                   else False) | bool }}
+
+pki_inventory_groups[0] = debops_service_pki
+pki_vcs_ignore_patterns_role[0] = **/private/**
+pki_acme = {{ (True
+               if (((ansible_all_ipv4_addresses | d([]) +
+                     ansible_all_ipv6_addresses | d([])) | ansible.utils.ipaddr("public")
+                    and pki_default_domain)
+                   or pki_acme_type != "acme-tiny")
+               else False) | bool }}
+
+pki_acme_install = {{ pki_acme | bool }}
+pki_acme_library = openssl
+pki_acme_user = pki-acme
+pki_acme_group = pki-acme
+pki_acme_home = /run/pki-acme
+pki_acme_type = acme-tiny
+pki_acme_tiny_repo = https://github.com/diafygi/acme-tiny
+pki_acme_tiny_version = main
+pki_acme_tiny_src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                       + "/" + pki_acme_user }} 
+pki_acme_tiny_bin = /usr/local/bin/acme-tiny
+pki_acme_ca = le-live-v2
+pki_acme_ca_api_map.le-live = https://acme-v01.api.letsencrypt.org
+pki_acme_ca_api_map.le-staging = https://acme-staging.api.letsencrypt.org
+pki_acme_ca_api_map.le-live-v2 = https://acme-v02.api.letsencrypt.org/directory
+pki_acme_ca_api_map.le-staging-v2 = https://acme-staging-v02.api.letsencrypt.org/directory
+pki_acme_contacts[0] = mailto:{{ ansible_local.core.admin_public_email[0] | d("root@" + ansible_domain) }}
+pki_acme_challenge_dir = {{ ansible_local.nginx.acme_root | d("/srv/www/sites/acme/public")
+                            + "/.well-known/acme-challenge" }} 
+pki_create_acme_challenge_dir = {{ True if (ansible_local.nginx.acme | d() and
+                                            ansible_local.nginx.acme | bool) else False }} 
+pki_certbot_default_configuration[0].name = key-type
+pki_certbot_default_configuration[0].comment = Define the default key signature algorithm to use for certificates.
+DebOps currently supports only RSA signature algorithm.
+
+pki_certbot_default_configuration[0].value = rsa
+pki_certbot_default_configuration[1].name = max-log-backups
+pki_certbot_default_configuration[1].comment = Because we are using logrotate for greater flexibility, disable the
+internal certbot logrotation.
+
+pki_certbot_default_configuration[1].value = 0
+pki_certbot_default_configuration[2].name = post-hook
+pki_certbot_default_configuration[2].comment = The certbot script does not execute post-hooks on initial certificate
+issuance, only renewals. This should ensure that the permissions are
+fixed when certificates are created.
+
+pki_certbot_default_configuration[2].value = /etc/letsencrypt/renewal-hooks/post/000-fix-permissions
+pki_certbot_combined_configuration = {{ pki_certbot_default_configuration
+                                        + pki_certbot_configuration }} 
+pki_base_packages[0] = ssl-cert
+pki_base_packages[1] = make
+pki_base_packages[2] = ca-certificates
+pki_base_packages[3] = gnutls-bin
+pki_base_packages[4] = openssl
+pki_base_packages[5] = acl
+pki_acme_packages[0] = {{ "curl" if (pki_acme_type == "acme-tiny" and pki_acme_install | bool) else [] }}
+pki_acme_packages[1] = {{ "git" if (pki_acme_type == "acme-tiny" and pki_acme_install | bool) else [] }}
+pki_acme_packages[2] = {{ [] if (pki_acme_install | bool == false or ansible_distribution_release in
+               ["stretch", "trusty", "xenial", "bionic"])
+           else "acme-tiny" if (pki_acme_type == "acme-tiny") else [] }}
+
+pki_acme_packages[3] = {{ "python3-certbot-dns-cloudflare" if (pki_acme_type == "dns-cloudflare" and pki_acme_install | bool) else [] }}
+pki_acme_packages[4] = {{ "python3-certbot-dns-digitalocean" if (pki_acme_type == "dns-digitalocean" and pki_acme_install | bool) else [] }}
+pki_acme_packages[5] = {{ "python3-certbot-dns-dnsimple" if (pki_acme_type == "dns-dnsimple" and pki_acme_install | bool) else [] }}
+pki_acme_packages[6] = {{ "python3-certbot-dns-gehirn" if (pki_acme_type == "dns-gehirn" and pki_acme_install | bool) else [] }}
+pki_acme_packages[7] = {{ "python3-certbot-dns-google" if (pki_acme_type == "dns-google" and pki_acme_install | bool) else [] }}
+pki_acme_packages[8] = {{ "python3-certbot-dns-linode" if (pki_acme_type == "dns-linode" and pki_acme_install | bool) else [] }}
+pki_acme_packages[9] = {{ "python3-certbot-dns-ovh" if (pki_acme_type == "dns-ovh" and pki_acme_install | bool) else [] }}
+pki_acme_packages[10] = {{ "python3-certbot-dns-rfc2136" if (pki_acme_type == "dns-rfc2136" and pki_acme_install | bool) else [] }}
+pki_acme_packages[11] = {{ "python3-certbot-dns-route53" if (pki_acme_type == "dns-route53" and pki_acme_install | bool) else [] }}
+pki_acme_packages[12] = {{ "python3-certbot-dns-sakuracloud" if (pki_acme_type == "dns-sakuracloud" and pki_acme_install | bool) else [] }}
+pki_acme_packages[13] = {{ "python3-certbot-dns-gandi" if (pki_acme_type == "dns-gandi" and pki_acme_install | bool) else [] }}
+pki_acme_packages[14] = {{ "certbot" if (pki_acme_type in
+                ["dns-cloudflare", "dns-digitalocean",
+                 "dns-dnsimple", "dns-gehirn", "dns-google",
+                 "dns-linode", "dns-ovh", "dns-rfc2136",
+                 "dns-route53", "dns-sakuracloud", "dns-gandi", "manual"]
+           and pki_acme_install | bool) else [] }}
+
+pki_root = /etc/pki
+pki_public_group = root
+pki_private_group = ssl-cert
+pki_public_dir_mode = 0755
+pki_private_dir_mode = 0750
+pki_public_mode = 0644
+pki_private_mode = 0640
+pki_default_sign_base = 365
+pki_default_root_sign_multiplier = 12
+pki_default_ca_sign_multiplier = 10
+pki_default_cert_sign_multiplier = 3
+pki_library = gnutls
+pki_realm_key_size = 2048
+pki_system_realm = {{ ansible_local.pki.realm | d("domain") }}
+pki_system_ca_realm = {{ pki_system_realm }}
+pki_default_domain = {{ ansible_domain }}
+pki_default_subdomains[0] = _wildcard_
+pki_authority_preference[0] = external
+pki_authority_preference[1] = acme
+pki_authority_preference[2] = internal
+pki_authority_preference[3] = selfsigned
+pki_default_realms[0].name = domain
+pki_default_realms[0].acme = False
+pki_default_realms[0].default_subdomains[0] = {{ ansible_hostname }}
+pki_default_realms[0].default_subdomains[1] = *.{{ ansible_hostname }}
+pki_default_realms[0].default_subdomains[2] = _wildcard_
+pki_scheduler = True
+pki_scheduler_interval = weekly
+pki_dhparam = {{ True
+                 if ansible_local.dhparam.default | d()
+                 else False }}
+
+pki_dhparam_file = {{ ansible_local.dhparam.default | d("") }}
+pki_ca_library = openssl
+pki_default_authority = domain
+pki_ca_name_constraints = True
+pki_ca_name_constraints_critical = True
+pki_ca_domain = {{ ansible_domain }}
+pki_ca_organization = {{ pki_ca_domain.split(".") | first | capitalize }}
+pki_ca_root_dn[0] = o={{ pki_ca_organization }} Certificate Authority
+pki_ca_root_key_size = 4096
+pki_ca_domain_dn[0] = o={{ pki_ca_organization }}
+pki_ca_domain_dn[1] = ou=Domain CA
+pki_ca_domain_key_size = 4096
+pki_ca_service_enabled = False
+pki_ca_service_dn[0] = o={{ pki_ca_organization }}
+pki_ca_service_dn[1] = ou=Internal Services CA
+pki_ca_service_key_size = 4096
+pki_authorities_ca_root.name = root
+pki_authorities_ca_root.enabled = {{ True if pki_ca_domain | d() else False }}
+pki_authorities_ca_root.subdomain = root-ca
+pki_authorities_ca_root.subject = {{ pki_ca_root_dn }}
+pki_authorities_ca_root.key_size = {{ pki_ca_root_key_size }}
+pki_authorities_ca_domain.name = domain
+pki_authorities_ca_domain.enabled = {{ True if pki_ca_domain | d() else False }}
+pki_authorities_ca_domain.subdomain = domain-ca
+pki_authorities_ca_domain.subject = {{ pki_ca_domain_dn }}
+pki_authorities_ca_domain.issuer_name = root
+pki_authorities_ca_domain.key_size = {{ pki_ca_domain_key_size }}
+pki_authorities_ca_service.name = service
+pki_authorities_ca_service.subdomain = service-ca
+pki_authorities_ca_service.subject = {{ pki_ca_service_dn }}
+pki_authorities_ca_service.type = service
+pki_authorities_ca_service.enabled = {{ True if (pki_ca_domain | d() and pki_ca_service_enabled | bool) else False }}
+pki_authorities_ca_service.key_size = {{ pki_ca_service_key_size }}
+pki_authorities[0] = {{ pki_authorities_ca_root }}
+pki_authorities[1] = {{ pki_authorities_ca_domain }}
+pki_authorities[2] = {{ pki_authorities_ca_service }}
+pki_ca_certificates_path = by-group/all
+pki_system_ca_certificates_trust_new = True
+pki_system_ca_certificates_blacklist[0] = mozilla/CNNIC_ROOT.crt
+pki_system_ca_certificates_blacklist[1] = mozilla/China_Internet_Network_Information_Center_EV_Certificates_Root.crt
+pki_system_ca_certificates_download_by_host = {{ pki_enabled | bool }}
+pki_system_ca_certificates_download_by_group = {{ pki_enabled | bool }}
+pki_system_ca_certificates_download_all_hosts = {{ pki_enabled | bool }}
+pki_system_ca_certificates_download_all_hosts_force = False

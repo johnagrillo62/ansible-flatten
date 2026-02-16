@@ -1,0 +1,5 @@
+gcp_pd_csi_volume_type = pd-standard
+gcp_pd_regional_replication_enabled = false
+gcp_pd_restrict_zone_replication = false
+gcp_pd_restricted_zones[0] = europe-west1-b
+gcp_pd_restricted_zones[1] = europe-west1-c

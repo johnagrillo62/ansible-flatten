@@ -1,0 +1,23 @@
+[0].name = Make sure /etc/gunicorn.d/ directory exists
+[0]["ansible.builtin.file"].path = /etc/gunicorn.d
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[1].name = Remove gunicorn configuration
+[1]["ansible.builtin.file"].path = /etc/gunicorn.d/{{ item.name }}
+[1]["ansible.builtin.file"].state = absent
+[1].loop = {{ q("flattened", gunicorn__applications
+                           + gunicorn__dependent_applications) }} 
+[1].notify[0] = Restart gunicorn
+[1].when = item.name | d() and item.state | d('present') == 'absent'
+[2].name = Generate gunicorn configuration
+[2]["ansible.builtin.template"].src = etc/gunicorn.d/application.j2
+[2]["ansible.builtin.template"].dest = /etc/gunicorn.d/{{ item.name }}
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = root
+[2]["ansible.builtin.template"].mode = 0644
+[2].loop = {{ q("flattened", gunicorn__applications
+                           + gunicorn__dependent_applications) }} 
+[2].notify[0] = Restart gunicorn
+[2].when = item.name | d() and item.state | d('present') != 'absent'

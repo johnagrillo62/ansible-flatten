@@ -1,0 +1,12 @@
+[0].name = Crun | Copy runtime class manifest
+[0].template.src = runtimeclass-crun.yml
+[0].template.dest = {{ kube_config_dir }}/runtimeclass-crun.yml
+[0].template.mode = 0664
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Crun | Apply manifests
+[1].kube.name = runtimeclass-crun
+[1].kube.kubectl = {{ bin_dir }}/kubectl
+[1].kube.resource = runtimeclass
+[1].kube.filename = {{ kube_config_dir }}/runtimeclass-crun.yml
+[1].kube.state = latest
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]

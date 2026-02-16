@@ -1,0 +1,2 @@
+sonobuoy_enabled = true
+ignore_assert_errors = true

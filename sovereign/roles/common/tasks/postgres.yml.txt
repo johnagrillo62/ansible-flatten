@@ -1,0 +1,9 @@
+[0].name = Install Postgres
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = postgresql
+[0].with_items[1] = python-psycopg2
+[0].tags[0] = dependencies
+[1].name = Set password for PostgreSQL admin user
+[1].become = true
+[1].become_user = postgres
+[1].postgresql_user = name={{ db_admin_username }} password={{ db_admin_password }} encrypted=yes

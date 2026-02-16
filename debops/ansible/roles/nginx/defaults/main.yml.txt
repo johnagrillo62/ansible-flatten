@@ -1,0 +1,247 @@
+nginx__deploy_state = present
+nginx_flavor = full
+nginx__flavor_distribution_release = {{ ansible_local.core.distribution_release
+                                         | d(ansible_distribution_release) }} 
+nginx__flavor_apt_key_id = {{ nginx__flavor_apt_key_id_map[nginx_flavor] | d() }}
+nginx__flavor_apt_repository = {{ nginx__flavor_apt_repository_map[nginx_flavor] | d() }}
+nginx__flavor_apt_key_id_map["nginx.org"] = 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
+nginx__flavor_apt_key_id_map.passenger = 16378A33A6EF16762922526E561F9B9CAC40B2F7
+nginx__flavor_apt_repository_map["nginx.org"] = deb https://nginx.org/packages/{{ ansible_distribution | lower }}/ {{ nginx__flavor_distribution_release }} nginx
+nginx__flavor_apt_repository_map.passenger = deb https://oss-binaries.phusionpassenger.com/apt/passenger {{ nginx__flavor_distribution_release }} main
+nginx__flavor_packages = {{ nginx_flavor_package_map[nginx_flavor] }}
+nginx_flavor_package_map.full[0] = nginx-full
+nginx_flavor_package_map.light[0] = nginx-light
+nginx_flavor_package_map.extras[0] = nginx-extras
+nginx_flavor_package_map.passenger[0] = nginx-extras
+nginx_flavor_package_map.passenger[1] = ruby
+nginx_flavor_package_map.passenger[2] = {{ "passenger"
+          if (nginx__flavor_distribution_release in
+              ["trusty", "xenial"])
+          else "libnginx-mod-http-passenger" }}
+
+nginx_flavor_package_map["nginx.org"][0] = nginx
+nginx_user = www-data
+nginx_www = /srv/www
+nginx_public_dir_name = public
+nginx_etc_path = /etc/nginx
+nginx_private_path = {{ nginx_etc_path + "/private" }}
+nginx_run_path = /run
+nginx_log_path = {{ "unix:/dev/log" if nginx_log_to_syslog else "/var/log/nginx" }}
+nginx_log_to_syslog = False
+nginx_syslog_config = nohostname
+nginx_passenger_root = 
+nginx_passenger_ruby = 
+nginx_passenger_max_pool_size = {{ (ansible_processor_cores | int * 5) }}
+nginx_passenger_options = False
+nginx_passenger_default_min_instances = {{ ansible_processor_cores }}
+nginx_http_auth_basic = {{ nginx_http_auth_users }}
+nginx_http_auth_basic_name = nginx_http
+nginx__http_auth_htpasswd.name = {{ nginx_http_auth_basic_name }}
+nginx__http_auth_htpasswd.users = {{ nginx_http_auth_users }}
+nginx_http_server_names_hash_bucket_size = 64
+nginx_http_server_names_hash_max_size = 512
+nginx_http_options = ssl_session_cache shared:SSL:10m;
+ssl_session_timeout 5m;
+sendfile on;
+tcp_nopush on;
+tcp_nodelay on;
+types_hash_max_size 2048;
+gzip on;
+gzip_disable "msie6";
+gzip_comp_level    5;
+gzip_min_length    256;
+gzip_proxied       any;
+gzip_vary          on;
+gzip_types
+  application/atom+xml
+  application/javascript
+  application/json
+  application/ld+json
+  application/manifest+json
+  application/rss+xml
+  application/vnd.geo+json
+  application/vnd.ms-fontobject
+  application/x-font-ttf
+  application/x-web-app-manifest+json
+  application/xhtml+xml
+  application/xml
+  font/opentype
+  image/bmp
+  image/svg+xml
+  image/x-icon
+  text/cache-manifest
+  text/css
+  text/plain
+  text/vnd.rim.location.xloc
+  text/vtt
+  text/x-component
+  text/x-cross-domain-policy;
+
+nginx_http_extra_options = 
+nginx_extra_options = 
+nginx_manage_ipv6only = True
+nginx_listen_port[0] = [::]:80
+nginx_listen_ssl_port[0] = [::]:443
+nginx_real_ip_header = X-Forwarded-For
+nginx_real_ip_recursive = False
+nginx_default_keepalive_timeout = 60
+nginx_multi_accept = off
+nginx_pki = {{ ansible_local | d() and ansible_local.pki | d() and
+               (ansible_local.pki.enabled | d() | bool) }} 
+nginx_pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+nginx_pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+nginx_pki_ca_realm = {{ ansible_local.pki.ca_realm | d("domain") }}
+nginx_pki_crt = default.crt
+nginx_pki_key = default.key
+nginx_pki_ca = CA.crt
+nginx_pki_trusted = trusted.crt
+nginx_pki_hook_name = nginx
+nginx_pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
+nginx_pki_hook_action = reload
+nginx_ssl_dhparam = {{ (""
+                        if nginx_default_tls_protocols | length == 1 and
+                           nginx_default_tls_protocols[0] == "TLSv1.3"
+                        else
+                           (ansible_local.dhparam[nginx_ssl_dhparam_set]
+                            if (ansible_local | d() and ansible_local.dhparam | d() and
+                                ansible_local.dhparam[nginx_ssl_dhparam_set] | d())
+                            else "")) }}
+
+nginx_ssl_dhparam_set = default
+nginx_default_ssl_ciphers = {{ "mozilla_modern"
+                               if nginx_default_tls_protocols | length == 1 and
+                                  nginx_default_tls_protocols[0] == "TLSv1.3"
+                               else "mozilla_intermediate" }}
+
+nginx_default_tls_protocols = {{ ["TLSv1.2", "TLSv1.3"]
+                                 if ansible_local.nginx.version | d("0.0.0") is version("1.13.0", ">=")
+                                 else ["TLSv1.2"] }}
+
+nginx_default_ssl_curve = secp384r1
+nginx_default_ssl_verify_client = False
+nginx_default_ssl_client_certificate = 
+nginx_default_ssl_crl = 
+nginx_ocsp = True
+nginx_ocsp_verify = {{ nginx_ocsp | bool }}
+nginx_hsts_age = {{ 2 * 365 * 24 * 60 * 60 }}
+nginx_hsts_subdomains = True
+nginx_hsts_preload = False
+nginx_enable_http2 = True
+nginx__http_csp_append = 
+nginx_default_name = 
+nginx_default_ssl_name = 
+nginx_default_type = default
+nginx_webroot_create = True
+nginx_webroot_owner = root
+nginx_webroot_group = root
+nginx_webroot_mode = 0755
+nginx_welcome_template = srv/www/sites/welcome/public/index.html.j2
+nginx_welcome_domain = {{ ansible_domain }}
+nginx_acme = True
+nginx_acme_root = {{ nginx_www + "/sites/acme/public" }}
+nginx_acme_server = False
+nginx_acme_domain = acme.{{ ansible_domain }}
+nginx__hostname_domains[0] = {{ ansible_domain }}
+nginx_status_localhost = {{ ["127.0.0.1/32", "::1/128"] + ansible_all_ipv4_addresses | d([]) +
+                            (ansible_all_ipv6_addresses | d([])
+                             | difference(ansible_all_ipv6_addresses | d([])
+                             | ansible.utils.ipaddr("link-local"))) }}
+
+nginx_status_name = /nginx_status
+nginx_default_satisfy = any
+nginx_default_auth_basic_realm = Access to this website is restricted
+nginx_htpasswd_secret_path = {{ secret + "/credentials/" + inventory_hostname + "/nginx/htpasswd" }}
+nginx__htpasswd_crypt_scheme = sha512_crypt
+nginx__htpasswd_password_length = 32
+nginx__htpasswd_password_characters = ascii_letters,digits,.-_~&()*=
+nginx__default_htpasswd[0] = {{ nginx__http_auth_htpasswd }}
+nginx__default_maps[0].name = host_without_local
+nginx__default_maps[0].map = $host $host_without_local
+nginx__default_maps[0].mapping = ~*^(?<subdomain>[a-zA-Z0-9\-\_\.]+)\.local$ $subdomain;
+nginx__default_maps[1].name = connection_upgrade
+nginx__default_maps[1].map = $http_upgrade $connection_upgrade
+nginx__default_maps[1].mapping = ''      Close;
+
+nginx__default_maps[1].default = Upgrade
+nginx__default_upstreams[0] = {{ nginx_upstream_php5_www_data }}
+nginx_upstream_php5_www_data.state = absent
+nginx_upstream_php5_www_data.name = php5_www-data
+nginx_upstream_php5_www_data.type = php5
+nginx_upstream_php5_www_data.php5 = www-data
+nginx__default_servers[0] = {{ nginx_server_welcome }}
+nginx__internal_servers[0] = {{ nginx_server_localhost }}
+nginx__internal_servers[1] = {{ nginx_server_acme }}
+nginx_server_welcome.enabled = True
+nginx_server_welcome.name[0] = welcome
+nginx_server_welcome.welcome = True
+nginx_server_welcome.welcome_domain = {{ nginx_welcome_domain }}
+nginx_server_welcome.csp = default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self';
+nginx_server_welcome.csp_enabled = True
+nginx_server_localhost.enabled = True
+nginx_server_localhost.name[0] = localhost
+nginx_server_localhost.name[1] = 127.0.0.1
+nginx_server_localhost.name[2] = [::1]
+nginx_server_localhost.acme = False
+nginx_server_localhost.ssl = False
+nginx_server_localhost.welcome = True
+nginx_server_localhost.welcome_css = False
+nginx_server_acme.enabled = {{ nginx_acme_server | bool }}
+nginx_server_acme.delete = {{ not nginx_acme_server | bool }}
+nginx_server_acme.name[0] = {{ nginx_acme_domain }}
+nginx_server_acme.filename = acme-challenge
+nginx_server_acme.root = {{ nginx_acme_root }}
+nginx_default_try_files[0] = $uri
+nginx_default_try_files[1] = $uri/
+nginx_default_try_files[2] = $uri.html
+nginx_default_try_files[3] = $uri.htm
+nginx_default_try_files[4] = $uri/index.html
+nginx__http_xss_protection = 1; mode=block
+nginx__http_referrer_policy = same-origin
+nginx__http_permitted_cross_domain_policies = {{ omit }}
+nginx__http_robots_tag = {{ omit }}
+nginx_apt_preferences_dependent_list = {{ nginx__apt_preferences__dependent_list }}
+nginx__apt_preferences__dependent_list[0].package = nginx nginx-*
+nginx__apt_preferences__dependent_list[0].pin = release o=Phusion
+nginx__apt_preferences__dependent_list[0].reason = Support for Phusion Passenger
+nginx__apt_preferences__dependent_list[0].priority = 600
+nginx__apt_preferences__dependent_list[0].suffix = _passenger
+nginx__apt_preferences__dependent_list[0].by_role = debops.nginx
+nginx__apt_preferences__dependent_list[0].state = {{ ((nginx__deploy_state in ["present"]) and (nginx_flavor in ["passenger"])) | ternary("present", "absent") }}
+nginx_php5_status = False
+nginx_php5_status_name = php5_status
+nginx_php5_ping_name = php5_ping
+nginx_privileged_group = webadmins
+nginx_ssl_ciphers.bettercrypto_org__set_a = EDH+aRSA+AES256:EECDH+aRSA+AES256:!SSLv3
+nginx_ssl_ciphers.bettercrypto_org__set_b = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH:CAMELLIA128-SHA:AES128-SHA
+nginx_ssl_ciphers.bettercrypto_org__set_b_pfs = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH
+nginx_ssl_ciphers.cipherli_st = EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH
+nginx_ssl_ciphers.pfs = EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4
+nginx_ssl_ciphers.pfs_rc4 = EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:RC4:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS
+nginx_ssl_ciphers.hardened = ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+nginx_ssl_ciphers.mozilla = ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-ECDSA-RC4-SHA:AES128:AES256:RC4-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK
+nginx_ssl_ciphers.mozilla_modern = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+nginx_ssl_ciphers.mozilla_intermediate = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+nginx_ssl_ciphers.mozilla_old = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA
+nginx_ssl_ciphers.fips = FIPS@STRENGTH:!aNULL:!eNULL
+nginx_ssl_ciphers.ncsc_nl = ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256
+nginx_ssl_ciphers.default = 
+nginx_ferm_dependent_rules = {{ nginx__ferm__dependent_rules }}
+nginx__ferm__dependent_rules[0].type = accept
+nginx__ferm__dependent_rules[0].dport[0] = http
+nginx__ferm__dependent_rules[0].dport[1] = https
+nginx__ferm__dependent_rules[0].saddr = {{ nginx_allow + nginx_group_allow + nginx_host_allow }}
+nginx__ferm__dependent_rules[0].accept_any = True
+nginx__ferm__dependent_rules[0].weight = 40
+nginx__ferm__dependent_rules[0].by_role = nginx
+nginx__ferm__dependent_rules[0].name = http_https
+nginx__ferm__dependent_rules[0].multiport = True
+nginx__ferm__dependent_rules[0].delete = {{ nginx__deploy_state != "present" }}
+nginx__keyring__dependent_apt_keys[0].id = {{ nginx__flavor_apt_key_id }}
+nginx__keyring__dependent_apt_keys[0].repo = {{ nginx__flavor_apt_repository }}
+nginx__keyring__dependent_apt_keys[0].state = {{ "present"
+               if (nginx_flavor in ["nginx.org", "passenger"] and
+                   nginx__deploy_state == "present")
+               else "absent" }}
+
+nginx__python__dependent_packages3[0] = python3-passlib
+nginx__python__dependent_packages2[0] = python-passlib

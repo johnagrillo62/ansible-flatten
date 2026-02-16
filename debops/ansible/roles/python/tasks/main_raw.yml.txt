@@ -1,0 +1,20 @@
+~d0.name = Inject host entries into /etc/hosts
+~d1.ansible.builtin.raw = |
+~d1.register = python__register_etc_hosts
+~d1.changed_when = python__register_etc_hosts.stdout == ''
+~d1.when = python__enabled | bool and python__raw_etc_hosts | d()
+~d0.name = Detect the OS release manually, no Ansible facts available
+~d1.ansible.builtin.raw = grep -E '^VERSION=' /etc/os-release | tr -d '(")' | cut -d" " -f2
+~d1.register = python__register_raw_release
+~d1.changed_when = False
+~d1.check_mode = False
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Update APT repositories, install core Python packages
+~d1.ansible.builtin.raw = |
+~d1.register = python__register_raw
+~d1.when = python__enabled | bool
+~d1.changed_when = (not python__register_raw.stdout
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Reset connection to the host
+~d1.ansible.builtin.meta = 'reset_connection'
+~d1.tags = [ 'meta::facts' ]

@@ -1,0 +1,15 @@
+sks_autoinit = False
+sks_contact = 
+sks_from = PGP Key Server <pgp-public-keys@{{ ansible_fqdn }}>
+sks_domain[0] = keyserver.{{ ansible_domain }}
+sks_cluster = {{ groups.debops_service_sks }}
+sks_frontends[0] = {{ sks_cluster[0] }}
+sks__etc_services__dependent_list[0].name = {{ sks_recon_name }}
+sks__etc_services__dependent_list[0].port = {{ sks_recon_port }}
+sks__etc_services__dependent_list[0].comment = SKS Keyserver Reconcilliation Service
+sks__etc_services__dependent_list[1].name = {{ sks_hkp_frontend_name }}
+sks__etc_services__dependent_list[1].port = {{ sks_hkp_frontend_port }}
+sks__etc_services__dependent_list[1].comment = SKS Keyserver Backend Service
+sks__nginx__dependent_servers[0] = {{ sks_nginx_frontend }}
+sks__nginx__dependent_servers[1] = {{ sks_nginx_ssl_frontend }}
+sks__nginx__dependent_upstreams[0] = {{ sks_nginx_upstreams }}

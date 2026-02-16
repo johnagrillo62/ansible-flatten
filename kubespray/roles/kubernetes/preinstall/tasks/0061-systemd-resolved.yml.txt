@@ -1,0 +1,11 @@
+[0].name = Create systemd-resolved drop-in directory
+[0].file.state = directory
+[0].file.name = /etc/systemd/resolved.conf.d/
+[0].file.mode = 0755
+[1].name = Write Kubespray DNS settings to systemd-resolved
+[1].template.src = resolved.conf.j2
+[1].template.dest = /etc/systemd/resolved.conf.d/kubespray.conf
+[1].template.owner = root
+[1].template.group = root
+[1].template.mode = 0644
+[1].notify = Preinstall | Restart systemd-resolved

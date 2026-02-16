@@ -1,0 +1,22 @@
+[0].hosts = web
+[0].gather_facts = true
+[1].hosts = haproxy
+[1].tasks[0].name = Installs haproxy load balancer
+[1].tasks[0].apt.pkg = haproxy
+[1].tasks[0].apt.state = present
+[1].tasks[0].apt.update_cache = true
+[1].tasks[1].name = Pushes configuration
+[1].tasks[1].template.src = templates/haproxy.cfg.j2
+[1].tasks[1].template.dest = /etc/haproxy/haproxy.cfg
+[1].tasks[1].template.mode = 0640
+[1].tasks[1].template.owner = root
+[1].tasks[1].template.group = root
+[1].tasks[1].notify[0] = restart haproxy
+[1].tasks[2].name = Sets default starting flag to 1
+[1].tasks[2].lineinfile.dest = /etc/default/haproxy
+[1].tasks[2].lineinfile.regexp = ^ENABLED
+[1].tasks[2].lineinfile.line = ENABLED=1
+[1].tasks[2].notify[0] = restart haproxy
+[1].handlers[0].name = restart haproxy
+[1].handlers[0].service.name = haproxy
+[1].handlers[0].service.state = restarted

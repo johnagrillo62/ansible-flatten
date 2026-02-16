@@ -1,0 +1,2 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret

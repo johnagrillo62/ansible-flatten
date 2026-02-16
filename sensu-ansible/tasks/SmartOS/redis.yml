@@ -1,0 +1,12 @@
+---
+# tasks/SmartOS/redis.yml: Deploy redis
+# Specific to Ubuntu
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: redis
+
+- name: Ensure redis is installed
+  tags: redis
+  pkgin: name=redis state={{ sensu_redis_pkg_state }}

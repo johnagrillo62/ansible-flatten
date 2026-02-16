@@ -1,0 +1,13 @@
+[0].hosts = nodes
+[0].tasks[0].command = dnf -y update
+[0].tasks[1].command = dnf install NetworkManager -y
+[0].tasks[2].name = Start NetworkManager
+[0].tasks[2].command = systemctl start NetworkManager
+[0].tasks[3].name = Enable NetworkManager
+[0].tasks[3].command = systemctl enable NetworkManager
+[0].tasks[4].name = Install docker
+[0].tasks[4].command = dnf install docker -y
+[0].tasks[5].name = Start Docker
+[0].tasks[5].command = systemctl start docker
+[0].tasks[6].name = Enable docker
+[0].tasks[6].command = systemctl enable docker

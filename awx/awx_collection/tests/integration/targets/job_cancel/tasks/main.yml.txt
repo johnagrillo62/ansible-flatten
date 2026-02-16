@@ -1,0 +1,30 @@
+~d0.name = Launch a Job Template
+~d1.job_launch = 
+~d2.job_template = "Demo Job Template"
+~d1.register = job
+~d0.assert = 
+~d2.that = 
+~d0.name = Cancel the job
+~d1.job_cancel = 
+~d2.job_id = "{{ job.id }}"
+~d2.request_timeout = 60
+~d1.register = results
+~d0.assert = 
+~d2.that = 
+~d0.name = Cancel an already canceled job (assert failure)
+~d1.job_cancel = 
+~d2.job_id = "{{ job.id }}"
+~d2.fail_if_not_running = true
+~d1.register = results
+~d1.ignore_errors = yes
+~d1.until = results is failed and results.msg == 'Job is not running'
+~d1.retries = 6
+~d1.delay = 5
+~d0.name = Check module fails with correct msg
+~d1.job_cancel = 
+~d2.job_id = 9999999999
+~d1.register = result
+~d1.ignore_errors = yes
+~d0.assert = 
+~d2.that = 
+~d3."result.msg =='Unable to cancel job_id/9999999999 = The requested object could not be found.'

@@ -1,0 +1,69 @@
+[0].name = Remove legacy APT preferences
+[0]["ansible.builtin.file"].dest = /etc/apt/preferences.d/{{ item.filename | d((item.role | d(item.by_role | d("pin")))
+                                                       + "_" + ((item.package.split(" ")[0]
+                                                                 if item.package is string
+                                                                 else item.package[0])
+                                                                if item.package | d()
+                                                                else (item.packages.split(" ")[0]
+                                                                      if item.packages is string
+                                                                      else item.packages[0]))
+                                                       + (item.suffix | d("")) + ".pref") | replace("*", "all") }}
+
+[0]["ansible.builtin.file"].state = absent
+[0].loop = {{ q("flattened", apt_preferences_list | d([])
+                           + apt_preferences_group_list | d([])
+                           + apt_preferences_host_list | d([])
+                           + apt_preferences_dependent_list | d([])
+                           + apt_preferences__list
+                           + apt_preferences__group_list
+                           + apt_preferences__host_list
+                           + apt_preferences__dependent_list) }}
+
+[0].when = ("." in item.role | d(item.by_role | d("")))
+[1].name = Remove APT preferences
+[1]["ansible.builtin.file"].dest = /etc/apt/preferences.d/{{ item.filename | d((item.role | d(item.by_role | d("pin"))) | replace(".", "_")
+                                     + "_" + ((item.package.split(" ")[0]
+                                               if item.package is string
+                                               else item.package[0])
+                                              if item.package | d()
+                                              else (item.packages.split(" ")[0]
+                                                    if item.packages is string
+                                                    else item.packages[0]))
+                                     + (item.suffix | d("")) + ".pref") | replace("*", "all") }}
+
+[1]["ansible.builtin.file"].state = absent
+[1].loop = {{ q("flattened", apt_preferences_list | d([])
+                           + apt_preferences_group_list | d([])
+                           + apt_preferences_host_list | d([])
+                           + apt_preferences_dependent_list | d([])
+                           + apt_preferences__list
+                           + apt_preferences__group_list
+                           + apt_preferences__host_list
+                           + apt_preferences__dependent_list) }}
+
+[1].when = ((((item.state | d() and item.state == 'absent') or item.delete | d() | bool) and (item.package | d() or item.packages | d()) and (item.version is undefined or (item.version is defined and not item.version))) or (item.raw is undefined and item.pin is undefined and (item.backports is undefined or (item.backports is iterable and item.backports and ansible_distribution_release not in item.backports)) and ansible_distribution_release not in apt_preferences__next_release.keys()))
+[2].name = Create APT preferences
+[2]["ansible.builtin.template"].src = etc/apt/preferences.d/pin.pref.j2
+[2]["ansible.builtin.template"].dest = /etc/apt/preferences.d/{{ item.filename | d((item.role | d(item.by_role | d("pin"))) | replace(".", "_")
+                                     + "_" + ((item.package.split(" ")[0]
+                                               if item.package is string
+                                               else item.package[0])
+                                              if item.package | d()
+                                              else (item.packages.split(" ")[0]
+                                                    if item.packages is string
+                                                    else item.packages[0]))
+                                     + (item.suffix | d("")) + ".pref") | replace("*", "all") }}
+
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = root
+[2]["ansible.builtin.template"].mode = 0644
+[2].loop = {{ q("flattened", apt_preferences_list | d([])
+                           + apt_preferences_group_list | d([])
+                           + apt_preferences_host_list | d([])
+                           + apt_preferences_dependent_list | d([])
+                           + apt_preferences__list
+                           + apt_preferences__group_list
+                           + apt_preferences__host_list
+                           + apt_preferences__dependent_list) }}
+
+[2].when = ((((item.state | d('present')) != 'absent' and (not (item.delete | d() | bool))) and (item.package | d() or item.packages | d())) and (item.raw | d() or item.version | d() or (item.pin is undefined and (item.backports is undefined or (item.backports is iterable and item.backports and ansible_distribution_release in item.backports)) and ansible_distribution_release in apt_preferences__next_release.keys()) or item.pin | d()))

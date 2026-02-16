@@ -1,0 +1,44 @@
+---
+# tasks/CentOS/dashboard.yml: Deployment of the Uchiwa dashboard
+# Specific to CentOS
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: dashboard
+
+
+- name: Ensure Uchiwa is installed
+  tags: dashboard
+  package:
+    name:
+      - chkconfig
+      - uchiwa
+    state: present
+  when: not se_enterprise
+
+- name: Ensure Sensu Enterprise Dashboard is installed
+  tags: dashboard
+  package:
+    name: "{{ sensu_enterprise_dashboard_package }}"
+    state: present
+  when: se_enterprise
+
+- name: Deploy Uchiwa config
+  tags: dashboard
+  template:
+    src: uchiwa_config.json.j2
+    dest: "{{ sensu_config_path }}/uchiwa.json"
+  when: not se_enterprise
+  notify:
+    - restart uchiwa service
+
+
+- name: Deploy Sensu Enterprise Dashboard
+  tags: dashboard
+  template:
+    src: sensu_enterprise_dashboard_config.json.j2
+    dest: "{{ sensu_config_path }}/dashboard.json"
+  when: se_enterprise
+  notify:
+    - restart sensu-enterprise-dashboard service

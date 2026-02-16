@@ -1,0 +1,5 @@
+[0].name = Update PAM common configuration
+[0]["ansible.builtin.shell"] = pam-auth-update --package libpam-modules 2>/dev/null
+[0].register = auth__register_pam_update
+[0].changed_when = auth__register_pam_update.changed | bool
+[0].when = ansible_distribution_release not in ["bionic", "buster"]

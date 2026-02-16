@@ -1,0 +1,21 @@
+doc[0][0].name = Install security-related packages
+doc[0][0].apt = pkg={{ item }} state=present
+doc[0][0].with_items[0] = fail2ban
+doc[0][0].with_items[1] = whois
+doc[0][0].with_items[2] = lynis
+doc[0][0].with_items[3] = rkhunter
+doc[0][0].tags[0] = dependencies
+doc[0][1].name = Copy fail2ban configuration into place
+doc[0][1].template = src=etc_fail2ban_jail.local.j2 dest=/etc/fail2ban/jail.local
+doc[0][1].notify = restart fail2ban
+doc[0][2].name = Copy fail2ban dovecot configuration into place
+doc[0][2].copy = src=etc_fail2ban_filter.d_dovecot-pop3imap.conf dest=/etc/fail2ban/filter.d/dovecot-pop3imap.conf
+doc[0][2].notify = restart fail2ban
+doc[0][3].name = Ensure fail2ban is started
+doc[0][3].service = name=fail2ban state=started
+doc[0][4].name = Update sshd config for PFS and more secure defaults
+doc[0][4].template = src=etc_ssh_sshd_config.j2 dest=/etc/ssh/sshd_config
+doc[0][4].notify = restart ssh
+doc[0][5].name = Update ssh config for more secure defaults
+doc[0][5].template = src=etc_ssh_ssh_config.j2 dest=/etc/ssh/ssh_config
+doc[1] = 

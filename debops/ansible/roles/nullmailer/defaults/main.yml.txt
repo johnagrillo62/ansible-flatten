@@ -1,0 +1,166 @@
+nullmailer__enabled = True
+nullmailer__skip_mta = True
+nullmailer__skip_mta_packages[0] = postfix
+nullmailer__purge_mta_packages[0] = exim4-base
+nullmailer__purge_mta_packages[1] = exim4-config
+nullmailer__purge_mta_packages[2] = exim4-daemon-light
+nullmailer__purge_mta_packages[3] = postfix
+nullmailer__purge_mta_packages[4] = msmtp-mta
+nullmailer__purge_mta_packages[5] = dma
+nullmailer__base_packages[0] = nullmailer
+nullmailer__base_packages[1] = bsd-mailx
+nullmailer__smtpd_packages = {{ ["xinetd"] if nullmailer__smtpd | bool else [] }}
+nullmailer__mailname = {{ nullmailer__fqdn }}
+nullmailer__fqdn = {{ ansible_fqdn }}
+nullmailer__domain = {{ ansible_domain }}
+nullmailer__adminaddr[0] = {{ "root@" + nullmailer__relayhost }}
+nullmailer__idhost = {{ nullmailer__fqdn }}
+nullmailer__helohost = {{ nullmailer__fqdn }}
+nullmailer__defaulthost = {{ nullmailer__mailname }}
+nullmailer__defaultdomain = {{ nullmailer__domain }}
+nullmailer__allmailfrom = 
+nullmailer__ldap_enabled = {{ ansible_local.ldap.enabled
+                              if (ansible_local | d() and ansible_local.ldap | d() and
+                                  ansible_local.ldap.enabled is defined)
+                              else False }}
+
+nullmailer__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+nullmailer__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+nullmailer__ldap_self_rdn = uid=nullmailer
+nullmailer__ldap_self_object_classes[0] = account
+nullmailer__ldap_self_object_classes[1] = simpleSecurityObject
+nullmailer__ldap_self_object_classes[2] = authorizedServiceObject
+nullmailer__ldap_self_attributes.uid = {{ nullmailer__ldap_self_rdn.split("=")[1] }}
+nullmailer__ldap_self_attributes.userPassword = {{ nullmailer__ldap_bindpw }}
+nullmailer__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+nullmailer__ldap_self_attributes.description = Account used by the "nullmailer" service to send authenticated mail messages
+nullmailer__ldap_self_attributes.authorizedService = mail:send
+nullmailer__ldap_binddn = {{ ([nullmailer__ldap_self_rdn] + nullmailer__ldap_device_dn) | join(",") }}
+nullmailer__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                     + nullmailer__ldap_binddn | to_uuid + ".password length=32"))
+                             if nullmailer__ldap_enabled | bool
+                             else "" }}
+
+nullmailer__starttls = True
+nullmailer__smtp_srv_rr = {{ q("debops.debops.dig_srv", "_smtp._tcp." + nullmailer__domain,
+                               "smtp." + nullmailer__domain, 25)
+                             if nullmailer__enabled | bool
+                             else [] }}
+
+nullmailer__smtp_port = {{ nullmailer__smtp_srv_rr[0]["port"] }}
+nullmailer__relayhost = {{ nullmailer__smtp_srv_rr[0]["target"] }}
+nullmailer__relayhost_options[0] = --port={{ nullmailer__smtp_port }}
+nullmailer__relayhost_options[1] = {{ "--ssl"
+        if (nullmailer__smtp_port == "465")
+        else "--starttls" }}
+
+nullmailer__default_remotes[0].host = {{ nullmailer__relayhost }}
+nullmailer__default_remotes[0].options = {{ nullmailer__relayhost_options }}
+nullmailer__default_remotes[0].auth = True
+nullmailer__default_remotes[0].user = {{ nullmailer__ldap_self_rdn.split("=")[1] + "@" + nullmailer__fqdn }}
+nullmailer__default_remotes[0].password = {{ nullmailer__ldap_bindpw }}
+nullmailer__default_remotes[0].state = {{ "present" if nullmailer__ldap_enabled | bool else "absent" }}
+nullmailer__default_remotes[1] = {{ (nullmailer__relayhost_options | combine({"host": nullmailer__relayhost}))
+        if (nullmailer__relayhost_options is mapping)
+        else ({"host": nullmailer__relayhost,
+               "state": ("absent" if nullmailer__ldap_enabled | bool else "present"),
+               "options": nullmailer__relayhost_options}) }}
+
+nullmailer__maxpause = 86400
+nullmailer__pausetime = 60
+nullmailer__sendtimeout = 3600
+nullmailer__configuration_files[0].dest = /etc/mailname
+nullmailer__configuration_files[0].content = {{ nullmailer__mailname }}
+nullmailer__configuration_files[1].dest = /etc/nullmailer/adminaddr
+nullmailer__configuration_files[1].content = {{ nullmailer__adminaddr
+                 if nullmailer__adminaddr is string
+                 else nullmailer__adminaddr | join(",") }}
+
+nullmailer__configuration_files[2].dest = /etc/nullmailer/idhost
+nullmailer__configuration_files[2].content = {{ nullmailer__idhost }}
+nullmailer__configuration_files[2].mode = 0644
+nullmailer__configuration_files[2].state = {{ "present" if nullmailer__idhost else "absent" }}
+nullmailer__configuration_files[3].dest = /etc/nullmailer/helohost
+nullmailer__configuration_files[3].content = {{ nullmailer__helohost }}
+nullmailer__configuration_files[3].mode = 0644
+nullmailer__configuration_files[3].state = {{ "present" if nullmailer__helohost else "absent" }}
+nullmailer__configuration_files[4].dest = /etc/nullmailer/defaulthost
+nullmailer__configuration_files[4].content = {{ nullmailer__defaulthost }}
+nullmailer__configuration_files[4].mode = 0644
+nullmailer__configuration_files[4].state = {{ "present" if nullmailer__defaulthost else "absent" }}
+nullmailer__configuration_files[5].dest = /etc/nullmailer/defaultdomain
+nullmailer__configuration_files[5].content = {{ nullmailer__defaultdomain }}
+nullmailer__configuration_files[5].mode = 0644
+nullmailer__configuration_files[5].state = {{ "present" if nullmailer__defaultdomain else "absent" }}
+nullmailer__configuration_files[6].dest = /etc/nullmailer/maxpause
+nullmailer__configuration_files[6].content = {{ nullmailer__maxpause }}
+nullmailer__configuration_files[6].mode = 0644
+nullmailer__configuration_files[6].state = {{ "present" if nullmailer__maxpause else "absent" }}
+nullmailer__configuration_files[7].dest = /etc/nullmailer/pausetime
+nullmailer__configuration_files[7].content = {{ nullmailer__pausetime }}
+nullmailer__configuration_files[7].mode = 0644
+nullmailer__configuration_files[7].state = {{ "present" if nullmailer__pausetime else "absent" }}
+nullmailer__configuration_files[8].dest = /etc/nullmailer/sendtimeout
+nullmailer__configuration_files[8].content = {{ nullmailer__sendtimeout }}
+nullmailer__configuration_files[8].mode = 0644
+nullmailer__configuration_files[8].state = {{ "present" if nullmailer__sendtimeout else "absent" }}
+nullmailer__configuration_files[9].dest = /etc/nullmailer/allmailfrom
+nullmailer__configuration_files[9].content = {{ nullmailer__allmailfrom }}
+nullmailer__configuration_files[9].mode = 0644
+nullmailer__configuration_files[9].state = {{ "present" if nullmailer__allmailfrom else "absent" }}
+nullmailer__private_configuration_files[0].dest = /etc/nullmailer/remotes
+nullmailer__private_configuration_files[0].content = {{ lookup('template', 'lookup/nullmailer__remotes.j2')
+                 | from_yaml | join('\n') }} 
+nullmailer__private_configuration_files[0].owner = mail
+nullmailer__private_configuration_files[0].group = mail
+nullmailer__private_configuration_files[0].mode = 0600
+nullmailer__smtpd = False
+nullmailer__smtpd_bind = 127.0.0.1
+nullmailer__smtpd_bind6 = ::1
+nullmailer__smtpd_port = 25
+nullmailer__ldap__dependent_tasks[0].name = Create nullmailer account for {{ nullmailer__ldap_device_dn | join(",") }}
+nullmailer__ldap__dependent_tasks[0].dn = {{ nullmailer__ldap_binddn }}
+nullmailer__ldap__dependent_tasks[0].objectClass = {{ nullmailer__ldap_self_object_classes }}
+nullmailer__ldap__dependent_tasks[0].attributes = {{ nullmailer__ldap_self_attributes }}
+nullmailer__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+nullmailer__ldap__dependent_tasks[0].state = {{ "present"
+               if (nullmailer__ldap_enabled | bool and
+                   nullmailer__ldap_device_dn | d())
+               else "ignore" }}
+
+nullmailer__ferm__dependent_rules[0].type = accept
+nullmailer__ferm__dependent_rules[0].dport[0] = {{ nullmailer__smtpd_port }}
+nullmailer__ferm__dependent_rules[0].saddr = {{ nullmailer__smtpd_allow }}
+nullmailer__ferm__dependent_rules[0].accept_any = False
+nullmailer__ferm__dependent_rules[0].weight = 50
+nullmailer__ferm__dependent_rules[0].role = debops.nullmailer
+nullmailer__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if (nullmailer__deploy_state | d("present") != "absent" and
+                        nullmailer__smtpd | bool) else "absent" }}
+
+nullmailer__tcpwrappers__dependent_allow[0].daemon = sendmail
+nullmailer__tcpwrappers__dependent_allow[0].client = {{ nullmailer__smtpd_allow }}
+nullmailer__tcpwrappers__dependent_allow[0].accept_any = False
+nullmailer__tcpwrappers__dependent_allow[0].weight = 50
+nullmailer__tcpwrappers__dependent_allow[0].filename = nullmailer_dependent_allow
+nullmailer__tcpwrappers__dependent_allow[0].comment = Allow remote connections to SMTP server
+nullmailer__tcpwrappers__dependent_allow[0].state = {{ "present"
+               if (nullmailer__deploy_state | d("present") != "absent" and
+                   nullmailer__smtpd | bool) else "absent" }}
+
+nullmailer__dpkg_cleanup__dependent_packages[0].name = nullmailer
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[0] = {{ (nullmailer__configuration_files
+             | selectattr("dest", "defined")
+             | map(attribute="dest") | list)
+            | difference("/etc/mailname") }}
+
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[1] = {{ nullmailer__private_configuration_files
+            | selectattr("dest", "defined")
+            | map(attribute="dest") | list }}
+
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[2] = /etc/ferm/ferm.d/50_debops.nullmailer_accept_25.conf
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[3] = /etc/hosts.allow.d/50_nullmailer_dependent_allow
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[4] = /etc/xinetd.d/nullmailer-smtpd
+nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[5] = /etc/xinetd.d/nullmailer-smtpd6
+nullmailer__dpkg_cleanup__dependent_packages[0].reload_services[0] = xinetd
+nullmailer__dpkg_cleanup__dependent_packages[0].restart_services[0] = ferm

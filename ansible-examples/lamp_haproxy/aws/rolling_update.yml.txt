@@ -1,0 +1,25 @@
+~d0.hosts = tag_ansible_group_monitoring
+~d1.tasks = []
+~d0.hosts = tag_ansible_group_webservers
+~d1.serial = 1
+~d1.pre_tasks = 
+~d1.name = disable nagios alerts for this host webserver service
+~d2.nagios = 'action=disable_alerts host={{ inventory_hostname }} services=webserver'
+~d2.delegate_to = "{{ item }}"
+~d2.with_items = "{{ groups.tag_ansible_group_monitoring }}"
+~d1.name = disable the server in haproxy
+~d2.haproxy = 'state=disabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats'
+~d2.delegate_to = "{{ item }}"
+~d2.with_items = "{{ groups.tag_ansible_group_lbservers }}"
+~d1.roles = 
+~d1.post_tasks = 
+~d1.name = wait for webserver to come up
+~d2.wait_for = 'host={{ inventory_hostname }} port=80 state=started timeout=80'
+~d1.name = enable the server in haproxy
+~d2.haproxy = 'state=enabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats'
+~d2.delegate_to = "{{ item }}"
+~d2.with_items = "{{ groups.tag_ansible_group_lbservers }}"
+~d1.name = re-enable nagios alerts
+~d2.nagios = 'action=enable_alerts host={{ inventory_hostname }} services=webserver'
+~d2.delegate_to = "{{ item }}"
+~d2.with_items = "{{ groups.tag_ansible_group_monitoring }}"

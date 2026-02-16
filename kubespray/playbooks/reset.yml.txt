@@ -1,0 +1,25 @@
+~d0.name = Common tasks for every playbooks
+~d1.import_playbook = boilerplate.yml
+~d0.name = Gather facts
+~d1.import_playbook = internal_facts.yml
+~d0.name = Reset cluster
+~d1.hosts = etcd:k8s_cluster:calico_rr
+~d1.gather_facts = false
+~d1.pre_tasks = 
+~d2.name = Reset Confirmation
+~d3.pause = 
+~d4.prompt = "Are you sure you want to reset cluster state? Type 'yes' to reset your cluster."
+~d3.register = reset_confirmation_prompt
+~d3.run_once = true
+~d3.when = 
+~d2.name = Check confirmation
+~d3.fail = 
+~d4.msg = "Reset confirmation failed"
+~d3.when = 
+~d2.name = Gather information about installed services
+~d3.service_facts = 
+~d1.environment = "{{ proxy_disable_env }}"
+~d1.roles = 
+~d2.{ role = kubespray_defaults}
+~d2.{ role = kubernetes/preinstall, when: "dns_mode != 'none' and resolvconf_mode == 'host_resolvconf'", tags: resolvconf, dns_early: true }
+~d2.{ role = reset, tags: reset }

@@ -1,0 +1,4 @@
+[0].name = Restart tinyproxy
+[0]["ansible.builtin.service"].name = tinyproxy
+[0]["ansible.builtin.service"].state = restarted
+[0]["ansible.builtin.service"].enabled = yes

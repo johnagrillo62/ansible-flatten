@@ -1,0 +1,50 @@
+[0].name = Determine whether roundcube is configured
+[0].stat = path=/var/www/roundcube/config.inc.php
+[0].register = roundcube_config
+[1].name = Install roundcube dependencies
+[1].apt = pkg={{ item }} state=present
+[1].with_items[0] = php5
+[1].with_items[1] = php5-sqlite
+[1].with_items[2] = php5-mcrypt
+[1].with_items[3] = php5-gd
+[1].with_items[4] = php5-pspell
+[1].with_items[5] = php5-intl
+[1].with_items[6] = php5-curl
+[1].with_items[7] = aspell
+[1].with_items[8] = aspell-en
+[1].tags[0] = dependencies
+[2].name = Clone roundcube
+[2].git = repo=https://github.com/roundcube/roundcubemail.git dest=/var/www/roundcube version={{ webmail_version }} update=no accept_hostkey=yes
+[3].name = Get Composer installer
+[3].get_url = url=https://getcomposer.org/installer dest=/tmp/composer-installer
+[4].name = Copy composer configuration
+[4].copy = src=var_www_roundcube_composer.json dest=/var/www/roundcube/composer.json owner=root group=www-data mode=0644
+[5].name = Install Composer
+[5].command = php /tmp/composer-installer chdir=/root creates=/root/composer.phar
+[6].name = Initialize composer
+[6].command = php /root/composer.phar install --no-dev chdir=/var/www/roundcube creates=/var/www/roundcube/vendor/autoload.php
+[7].name = Remove installer directory
+[7].file = path=/var/www/roundcube/installer state=absent
+[8].name = Install Roundcube configuration
+[8].template = src=var_www_roundcube_config_config.inc.j2 dest=/var/www/roundcube/config/config.inc.php
+[9].name = Create db directory
+[9].file = path=/decrypted/roundcube group=www-data mode=0775 state=directory
+[10].name = Make logs and temp directories writable by web server
+[10].file = path=/var/www/roundcube/{{ item }} mode=0775 state=directory
+[10].with_items[0] = temp
+[10].with_items[1] = logs
+[11].name = Make roundcube directory accessible to web server
+[11].file = path=/var/www/roundcube group=www-data recurse=yes state=directory
+[12].name = Install sieve plugin configuration
+[12].copy = src=var_www_roundcube_plugins_managesieve_config.inc.php dest=/var/www/roundcube/plugins/managesieve/config.inc.php owner=root group=www-data mode=0644
+[13].name = Install global sieve
+[13].copy = src=var_www_roundcube_config_global.sieve dest=/var/www/roundcube/config/global.sieve owner=root group=www-data mode=0644
+[14].name = Install carddav plugin configuration
+[14].copy = src=var_www_roundcube_plugins_carddav_config.inc.php dest=/var/www/roundcube/plugins/carddav/config.inc.php owner=root group=www-data mode=0644
+[15].name = Install Google 2-factor authentication plugin configuration
+[15].copy = src=var_www_roundcube_plugins_twofactor_gauthenticator_config.inc.php dest=/var/www/roundcube/plugins/twofactor_gauthenticator/config.inc.php owner=root group=www-data mode=0644
+[16].name = Configure Apache for Roundcube
+[16].template = src=etc_apache2_sites-available_roundcube.j2 dest=/etc/apache2/sites-available/roundcube.conf group=root owner=root force=yes
+[17].name = Enable Roundcube site
+[17].command = a2ensite roundcube.conf creates=/etc/apache2/sites-enabled/roundcube.conf
+[17].notify = restart apache

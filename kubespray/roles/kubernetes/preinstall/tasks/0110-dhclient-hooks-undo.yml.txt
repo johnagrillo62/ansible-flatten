@@ -1,0 +1,10 @@
+[0].name = Remove kubespray specific config from dhclient config
+[0].blockinfile.path = {{ dhclientconffile }}
+[0].blockinfile.state = absent
+[0].blockinfile.backup = {{ leave_etc_backup_files }}
+[0].blockinfile.marker = # Ansible entries {mark}
+[0].notify = Preinstall | propagate resolvconf to k8s components
+[1].name = Remove kubespray specific dhclient hook
+[1].file.path = {{ dhclienthookfile }}
+[1].file.state = absent
+[1].notify = Preinstall | propagate resolvconf to k8s components

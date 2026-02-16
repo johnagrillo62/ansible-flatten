@@ -1,0 +1,7 @@
+~d0.redis_sentinel__bind = [ '0.0.0.0', '::' ]
+~d0.redis_sentinel__allow = [ '192.0.2.0/24', '2001:db8::/32' ]
+~d0.redis_sentinel__instances = 
+~d1.name = 'second'
+~d2.port = '6380'
+~d1.name = 'third'
+~d2.port = '6381'

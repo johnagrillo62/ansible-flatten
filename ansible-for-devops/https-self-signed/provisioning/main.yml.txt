@@ -1,0 +1,22 @@
+[0].hosts = all
+[0].vars_files[0] = vars/main.yml
+[0].pre_tasks[0].name = Ensure apt cache is updated.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=600
+[0].pre_tasks[1].name = Install dependency for pyopenssl.
+[0].pre_tasks[1].apt = name=libssl-dev state=present
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.pip
+[0].roles[2] = geerlingguy.nginx
+[0].tasks[0].import_tasks = tasks/self-signed-cert.yml
+[0].tasks[1].name = Ensure docroot exists.
+[0].tasks[1].file.path = {{ nginx_docroot }}
+[0].tasks[1].file.state = directory
+[0].tasks[2].name = Copy example index.html file in place.
+[0].tasks[2].copy.src = files/index.html
+[0].tasks[2].copy.dest = {{ nginx_docroot }}/index.html
+[0].tasks[2].copy.mode = 0755
+[0].tasks[3].name = Copy Nginx server configuration in place.
+[0].tasks[3].template.src = templates/https.test.conf.j2
+[0].tasks[3].template.dest = /etc/nginx/sites-enabled/https.test.conf
+[0].tasks[3].template.mode = 0644
+[0].tasks[3].notify = restart nginx

@@ -1,0 +1,4 @@
+~d0.name = Restart imapproxy
+~d1.ansible.builtin.service = 
+~d2.name = 'imapproxy'
+~d2.state = 'restarted'

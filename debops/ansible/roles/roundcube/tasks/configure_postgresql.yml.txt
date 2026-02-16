@@ -1,0 +1,17 @@
+~d0.name = Create Roundcube PostgreSQL database
+~d1.community.postgresql.postgresql_db = 
+~d2.name = '{{ roundcube__database_map[roundcube__database].dbname }}'
+~d2.owner = '{{ roundcube__database_map[roundcube__database].dbuser }}'
+~d2.state = 'present'
+~d1.delegate_to = '{{ ansible_local.postgresql.delegate_to }}'
+~d1.register = roundcube__register_postgresql_status
+~d0.name = Import initial database schema
+~d1.community.postgresql.postgresql_db = # noqa no-handler
+~d2.name = '{{ roundcube__database_map[roundcube__database].dbname }}'
+~d2.state = 'restore'
+~d2.target = '{{ roundcube__database_schema }}'
+~d2.login_user = '{{ roundcube__database_map[roundcube__database].dbuser }}'
+~d2.login_password = '{{ roundcube__database_map[roundcube__database].dbpass }}'
+~d2.login_host = '{{ roundcube__database_map[roundcube__database].dbhost }}'
+~d1.when = (roundcube__register_postgresql_status | d() is defined and
+~d1.no_log = '{{ debops__no_log | d(True) }}'

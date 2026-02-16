@@ -1,0 +1,14 @@
+authors[0] = AWX Project Contributors <awx-project@googlegroups.com>
+description = Indirect host counting example repo. Not for use in production.
+documentation = https://github.com/ansible/awx
+homepage = https://github.com/ansible/awx
+issues = https://github.com/ansible/awx
+license[0] = GPL-3.0-or-later
+name = query
+namespace = demo
+readme = README.md
+repository = https://github.com/ansible/awx
+tags[0] = demo
+tags[1] = testing
+tags[2] = host_counting
+version = 0.0.1

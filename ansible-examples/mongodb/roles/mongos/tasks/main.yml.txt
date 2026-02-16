@@ -1,0 +1,14 @@
+[0].name = Create the mongos startup file
+[0].template = src=mongos.j2 dest=/etc/init.d/mongos mode=0655
+[1].name = Create the mongos configuration file
+[1].template = src=mongos.conf.j2 dest=/etc/mongos.conf
+[2].name = Copy the keyfile for authentication
+[2].copy = src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+[3].name = Start the mongos service
+[3].command = creates=/var/lock/subsys/mongos /etc/init.d/mongos start
+[4].name = pause
+[4].pause = seconds=20
+[5].name = copy the file for shard test
+[5].template = src=testsharding.j2 dest=/tmp/testsharding.js
+[6].name = copy the file enable  sharding
+[6].template = src=enablesharding.j2 dest=/tmp/enablesharding.js

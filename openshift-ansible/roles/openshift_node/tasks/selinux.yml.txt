@@ -1,0 +1,3 @@
+[0].name = Exclude kubelet dir from fixfiles
+[0].copy.dest = /etc/selinux/fixfiles_exclude_dirs
+[0].copy.content = /var/lib/kubelet

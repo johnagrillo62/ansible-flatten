@@ -1,0 +1,2 @@
+[0].import_tasks = znc.yml
+[0].tags = znc

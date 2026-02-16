@@ -1,0 +1,6 @@
+dependencies[0].role = kubernetes-apps/common_crds/gateway_api
+dependencies[0].when = gateway_api_enabled
+dependencies[0].tags[0] = gateway_api
+dependencies[1].role = kubernetes-apps/common_crds/prometheus_operator_crds
+dependencies[1].when = prometheus_operator_crds_enabled
+dependencies[1].tags[0] = prometheus_operator_crds

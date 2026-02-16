@@ -1,0 +1,9 @@
+[0].name = Include ansible_distribution vars
+[0].include_tasks = {{ role_path }}/tasks/{{ ansible_distribution }}/redis.yml
+[0].tags = redis
+[1].name = Ensure redis is running
+[1].tags = redis
+[1].service.name = {{ sensu_redis_service_name }}
+[1].service.pattern = /usr/bin/redis-server
+[1].service.state = started
+[1].service.enabled = true

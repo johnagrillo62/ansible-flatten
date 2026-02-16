@@ -1,0 +1,3 @@
+~d0._kubectl_apply_stdin = 
+~d0.server_side_apply = false
+~d0.kubectl_apply_stdin = "{{ _kubectl_apply_stdin | join(' ') }}"

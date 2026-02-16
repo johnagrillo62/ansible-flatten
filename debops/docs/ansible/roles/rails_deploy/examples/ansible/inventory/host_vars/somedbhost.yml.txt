@@ -1,0 +1,7 @@
+postgresql_version = 9.3
+postgresql_pgdg = True
+postgresql_default_cluster[0].name = main
+postgresql_default_cluster[0].port = 5432
+postgresql_default_cluster[0].listen_addresses = 0.0.0.0
+postgresql_default_cluster[0].hba[0].hosts = {{ rails_deploy_hosts_master }}
+postgresql_default_cluster[0].allow = rails_deploy_hosts_master

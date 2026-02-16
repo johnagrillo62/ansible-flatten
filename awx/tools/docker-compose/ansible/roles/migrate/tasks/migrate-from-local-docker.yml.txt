@@ -1,0 +1,33 @@
+[0].name = Remove awx_postgres to ensure consistent start state
+[0].shell = docker rm -f awx_postgres
+
+[0].ignore_errors = true
+[1].name = Start Local Docker database container
+[1].docker_compose.project_src = {{ old_docker_compose_dir }}
+[1].docker_compose.services[0] = postgres
+[1].docker_compose.state = present
+[1].docker_compose.recreate = always
+[2].name = Wait for postgres to initialize
+[2].wait_for.timeout = 3
+[3].name = Database dump to local filesystem
+[3].shell = docker-compose -f {{ old_docker_compose_dir }}/docker-compose.yml exec -T postgres pg_dumpall -U {{ pg_username }} > awx_dump.sql
+
+[4].name = Stop AWX containers so the old postgres container does not get used
+[4].docker_compose.project_src = {{ old_docker_compose_dir }}
+[4].docker_compose.state = absent
+[4].ignore_errors = true
+[5].name = Start dev env database container
+[5].docker_compose.project_src = {{ playbook_dir }}/../_sources
+[5].docker_compose.files = docker-compose.yml
+[5].docker_compose.services[0] = postgres
+[5].docker_compose.state = present
+[5].docker_compose.recreate = always
+[5].environment.COMPOSE_PROJECT_NAME = tools
+[6].name = Wait for postgres to initialize
+[6].wait_for.timeout = 3
+[7].name = Restore to new postgres container
+[7].shell = COMPOSE_PROJECT_NAME=tools docker-compose -f {{ playbook_dir }}/../_sources/docker-compose.yml exec -T postgres psql -U {{ pg_username }} -d {{ pg_database }} -p {{ pg_port }} < awx_dump.sql
+
+[8].name = Clean up temporary awx db dump
+[8].file.path = awx_dump.sql
+[8].file.state = absent

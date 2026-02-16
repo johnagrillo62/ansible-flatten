@@ -1,0 +1,16 @@
+~d0.name = Manage Tor relay
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_tor' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = secret
+~d3.tags = [ 'role::tor' ]
+~d2.role = ferm
+~d3.tags = [ 'role::ferm', 'skip::ferm' ]
+~d3.ferm__dependent_rules = 
+~d2.role = unattended_upgrades
+~d3.tags = [ 'role::unattended_upgrades' ]
+~d3.unattended_upgrades__dependent_origins = '{{ tor__unattended_upgrades__dependent_origins }}'
+~d2.role = tor
+~d3.tags = [ 'role::tor' ]

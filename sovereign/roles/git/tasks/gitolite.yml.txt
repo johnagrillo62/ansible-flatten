@@ -1,0 +1,17 @@
+[0].name = Create gitolite group
+[0].group = name=git state=present
+[1].name = Create gitolite user
+[1].user = name=git state=present home=/home/git system=yes group=git
+[2].name = Add www-data to the git group
+[2].user = name=www-data groups=git append=yes
+[3].name = Install gitolite3 package
+[3].apt = pkg=gitolite3 state=present
+[3].tags[0] = dependencies
+[4].name = Copy .gitolite.rc file
+[4].copy = src=home_git_.gitolite.rc dest=/home/git/.gitolite.rc group=git owner=git mode=0644
+[5].name = Copy SSH public key to server
+[5].copy = src=gitolite.pub dest=/home/git/{{ main_user_name }}.pub group=git owner=git mode=0644
+[6].name = Setup gitolite
+[6].become_user = git
+[6].command = gitolite setup -pk {{ main_user_name }}.pub chdir=/home/git
+[6].tags[0] = skip_ansible_lint

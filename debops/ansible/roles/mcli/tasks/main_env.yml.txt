@@ -1,0 +1,3 @@
+~d0.name = Prepare mcli environment
+~d1.ansible.builtin.set_fact = 
+~d2.mcli__env_upstream_url_release = '{{ ansible_local.mcli.release_tag

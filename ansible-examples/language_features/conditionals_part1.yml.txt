@@ -1,0 +1,10 @@
+doc[0][0].hosts = all
+doc[0][0].remote_user = root
+doc[0][0].vars_files[0] = vars/external_vars.yml
+doc[0][0].vars_files[1][0] = vars/{{ facter_operatingsystem }}.yml
+doc[0][0].vars_files[1][1] = vars/defaults.yml
+doc[0][0].tasks[0].name = ensure apache is latest
+doc[0][0].tasks[0].action = {{ packager }} pkg={{ apache }} state=latest
+doc[0][0].tasks[1].name = ensure apache is running
+doc[0][0].tasks[1].service = name={{ apache }} state=running
+doc[1] = 

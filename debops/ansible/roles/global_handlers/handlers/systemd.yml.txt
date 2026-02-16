@@ -1,0 +1,10 @@
+[0].name = Reload systemd daemon
+[0]["ansible.builtin.systemd"].daemon_reload = True
+[0].listen[0] = Reload service manager
+[0].when = ansible_service_mgr == 'systemd'
+[1].name = Create temporary files with systemd-tmpfiles
+[1]["ansible.builtin.command"] = systemd-tmpfiles --create
+[1].listen[0] = Create temporary files
+[1].register = global_handlers__systemd_register_tmpfiles
+[1].changed_when = global_handlers__systemd_register_tmpfiles.stdout != ''
+[1].when = ansible_service_mgr == 'systemd'

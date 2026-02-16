@@ -1,0 +1,8 @@
+[0].name = Converge
+[0].hosts = all
+[0].tasks[0].name = Update apt cache (on Debian).
+[0].tasks[0]["ansible.builtin.apt"].update_cache = true
+[0].tasks[0]["ansible.builtin.apt"].cache_valid_time = 3600
+[0].tasks[0].when = ansible_os_family == 'Debian'
+[1].name = Import playbook
+[1]["ansible.builtin.import_playbook"] = ../../main.yml

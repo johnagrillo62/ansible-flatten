@@ -1,0 +1,12 @@
+[0].name = Create directory for mail autoconfiguration virtualhost
+[0].file = state=directory path=/var/www/autoconfig group=www-data owner=root
+[1].name = Create directory holding the autoconfig XML file
+[1].file = state=directory path=/var/www/autoconfig/mail group=www-data owner=root
+[2].name = Create the autoconfig XML file
+[2].template = src=var_www_autoconfig_mail_config-v1.1.j2 dest=/var/www/autoconfig/mail/config-v1.1.xml group=www-data owner=root
+[3].name = Configure the mail autoconfiguration virtualhost
+[3].template = src=etc_apache2_sites-available_autoconfig.j2 dest=/etc/apache2/sites-available/autoconfig.conf group=root owner=root
+[3].notify = restart apache
+[4].name = Enable the mail autoconfiguration virtualhost
+[4].command = a2ensite autoconfig.conf creates=/etc/apache2/sites-enabled/autoconfig.conf
+[4].notify = restart apache

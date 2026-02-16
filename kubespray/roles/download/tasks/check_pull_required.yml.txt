@@ -1,0 +1,15 @@
+[0].name = Check_pull_required |  Generate a list of information about the images on a node
+[0].shell = {{ image_info_command }}
+[0].register = docker_images
+[0].changed_when = false
+[0].check_mode = false
+[0].when = not download_always_pull
+[1].name = Check_pull_required | Set pull_required if the desired image is not yet loaded
+[1].set_fact.pull_required = {%- if image_reponame | regex_replace('^docker\.io/(library/)?', '') in docker_images.stdout.split(',') %}false{%- else -%}true{%- endif -%}
+[1].when = not download_always_pull
+[2].name = Check_pull_required | Check that the local digest sha256 corresponds to the given image tag
+[2].assert.that = {{ download.repo }}:{{ download.tag }} in docker_images.stdout.split(',')
+[2].when[0] = not download_always_pull
+[2].when[1] = not pull_required
+[2].when[2] = pull_by_digest
+[2].tags[0] = asserts

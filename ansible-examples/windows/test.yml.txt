@@ -1,0 +1,17 @@
+~d0.name = test raw module
+~d1.hosts = all
+~d1.tasks = 
+~d2.name = run ipconfig
+~d3.raw = ipconfig
+~d3.register = ipconfig
+~d2.debug = var=ipconfig
+~d0.name = test stat module
+~d1.hosts = windows
+~d1.tasks = 
+~d2.name = test stat module on file
+~d3.win_stat = path="C:/Windows/win.ini"
+~d3.register = stat_file
+~d2.debug = var=stat_file
+~d2.name = check stat_file result
+~d3.assert = 
+~d5.that = 

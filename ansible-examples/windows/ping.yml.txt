@@ -1,0 +1,5 @@
+doc[0][0].name = Ping
+doc[0][0].hosts = all
+doc[0][0].tasks[0].name = ping
+doc[0][0].tasks[0].win_ping = null
+doc[1] = 

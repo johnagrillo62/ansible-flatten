@@ -1,0 +1,8 @@
+[0].name = Remove user groups if requested
+[0]["ansible.builtin.group"].name = {{ item.group | default(item.name + gitusers_name_suffix) }}
+[0]["ansible.builtin.group"].state = absent
+[0].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[0].when = (item.name is defined and (item.state is defined and item.state == 'absent'))

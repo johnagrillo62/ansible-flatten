@@ -1,0 +1,3 @@
+firewall_allowed_tcp_ports[0] = 22
+firewall_allowed_tcp_ports[1] = 80
+varnish_use_default_vcl = false

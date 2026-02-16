@@ -1,0 +1,14 @@
+debconf__combined_entries = {{ debconf__entries
+                                  + debconf__group_entries
+                                  + debconf__host_entries }}
+
+debconf__filtered_entries = {{ lookup("template",
+                                     "lookup/debconf__filtered_entries.j2",
+                                     convert_data=False) | from_yaml }}
+
+debconf__cache_valid_time = {{ (60 * 60) }}
+debconf__apt_state = present
+debconf__combined_commands = {{ debconf__commands
+                                   + debconf__group_commands
+                                   + debconf__host_commands }}
+

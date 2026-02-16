@@ -1,0 +1,11 @@
+apiVersion = apps/v1
+kind = Deployment
+metadata.name = a4d-nginx
+metadata.namespace = default
+metadata.labels.app = nginx
+spec.replicas = 3
+spec.selector.matchLabels.app = nginx
+spec.template.metadata.labels.app = nginx
+spec.template.spec.containers[0].name = nginx
+spec.template.spec.containers[0].image = nginx:1.7.9
+spec.template.spec.containers[0].ports[0].containerPort = 80

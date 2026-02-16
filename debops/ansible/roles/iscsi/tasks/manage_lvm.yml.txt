@@ -1,0 +1,50 @@
+[0].name = Unmount filesystems if requested
+[0]["ansible.posix.mount"].name = {{ item.mount }}
+[0]["ansible.posix.mount"].src = {{ "/dev/mapper/" + item.vg + "-" + item.lv }}
+[0]["ansible.posix.mount"].fstype = {{ item.fs_type | d(iscsi__default_fs_type) }}
+[0]["ansible.posix.mount"].state = absent
+[0].with_items = {{ iscsi__logical_volumes }}
+[0].when = iscsi__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.mount | d(False) and (item.state is defined and item.state == 'absent')
+[1].name = Remove Logical Volumes if requested
+[1]["community.general.lvol"].vg = {{ item.vg }}
+[1]["community.general.lvol"].lv = {{ item.lv }}
+[1]["community.general.lvol"].size = {{ item.size }}
+[1]["community.general.lvol"].force = {{ item.force | d(omit) }}
+[1]["community.general.lvol"].state = absent
+[1].with_items = {{ iscsi__logical_volumes }}
+[1].when = iscsi__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.state | d() and item.state == 'absent'
+[2].name = Manage LVM Volume Groups
+[2]["community.general.lvg"].vg = {{ item.item.lvm_vg }}
+[2]["community.general.lvg"].pvs = {{ item.devicenodes | join(",") }}
+[2]["community.general.lvg"].state = {{ item.item.lvm_state | d("present") }}
+[2]["community.general.lvg"].pesize = {{ item.item.lvm_pesize | d(omit) }}
+[2]["community.general.lvg"].force = {{ item.item.lvm_force | d(omit) }}
+[2]["community.general.lvg"].vg_options = {{ item.item.lvm_options | d(omit) }}
+[2].with_items = {{ iscsi__register_targets.results }}
+[2].when = iscsi__register_targets | d(False) and iscsi__register_targets.results | d() and item.devicenodes | d() and item.item.lvm_vg | d()
+[3].name = Manage LVM Logical Volumes
+[3]["community.general.lvol"].vg = {{ item.vg }}
+[3]["community.general.lvol"].lv = {{ item.lv }}
+[3]["community.general.lvol"].size = {{ item.size }}
+[3]["community.general.lvol"].force = {{ item.force | d(omit) }}
+[3]["community.general.lvol"].state = present
+[3].with_items = {{ iscsi__logical_volumes }}
+[3].when = iscsi__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and (item.state is undefined or item.state != 'absent')
+[4].name = Manage filesystems
+[4]["community.general.filesystem"].dev = {{ "/dev/mapper/" + item.vg + "-" + item.lv }}
+[4]["community.general.filesystem"].fstype = {{ item.fs_type | d(iscsi__default_fs_type) }}
+[4]["community.general.filesystem"].force = {{ item.fs_force | d(omit) }}
+[4]["community.general.filesystem"].opts = {{ item.fs_opts | d(omit) }}
+[4].with_items = {{ iscsi__logical_volumes }}
+[4].when = iscsi__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and (item.state is undefined or item.state != 'absent') and ((item.mount | d() and (item.fs is undefined or item.fs | d()) or item.fs | d()))
+[5].name = Manage mount points
+[5]["ansible.posix.mount"].name = {{ item.mount }}
+[5]["ansible.posix.mount"].src = {{ "/dev/mapper/" + item.vg + "-" + item.lv }}
+[5]["ansible.posix.mount"].fstype = {{ item.fs_type | d(iscsi__default_fs_type) }}
+[5]["ansible.posix.mount"].opts = {{ item.mount_opts | d(iscsi__default_mount_options) }}
+[5]["ansible.posix.mount"].state = {{ item.mount_state | d("mounted") }}
+[5]["ansible.posix.mount"].dump = {{ item.mount_dump | d(omit) }}
+[5]["ansible.posix.mount"].passno = {{ item.mount_passno | d(omit) }}
+[5]["ansible.posix.mount"].fstab = {{ item.mount_fstab | d(omit) }}
+[5].with_items = {{ iscsi__logical_volumes }}
+[5].when = iscsi__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.mount | d(False) and (item.state is undefined or item.state != 'absent')

@@ -1,0 +1,47 @@
+[0].name = Install avahi-alias script
+[0]["ansible.builtin.copy"].src = usr/local/sbin/avahi-alias
+[0]["ansible.builtin.copy"].dest = {{ avahi__alias_install_path }}/avahi-alias
+[0]["ansible.builtin.copy"].mode = 0755
+[0].register = avahi__register_alias_script
+[1].name = Install avahi-alias.service
+[1]["ansible.builtin.template"].src = etc/systemd/system/avahi-alias.service.j2
+[1]["ansible.builtin.template"].dest = /etc/systemd/system/avahi-alias.service
+[1]["ansible.builtin.template"].owner = root
+[1]["ansible.builtin.template"].group = root
+[1]["ansible.builtin.template"].mode = 0644
+[1].register = avahi__register_alias_service
+[2].name = Make sure that the CNAME alias file exists
+[2]["ansible.builtin.file"].path = {{ avahi__alias_config_file }}
+[2]["ansible.builtin.file"].state = touch
+[2]["ansible.builtin.file"].owner = root
+[2]["ansible.builtin.file"].group = root
+[2]["ansible.builtin.file"].mode = 0644
+[2].when = avahi__register_alias_script is changed
+[3].name = Manage list of CNAME entries
+[3]["ansible.builtin.lineinfile"].dest = {{ avahi__alias_config_file }}
+[3]["ansible.builtin.lineinfile"].regexp = {{ "^" + (item.value.cname
+                       if item.value.cname.endswith("." + avahi__domain)
+                       else (item.value.cname + "." + avahi__domain)) + "$" }}
+
+[3]["ansible.builtin.lineinfile"].line = {{ (item.value.cname
+               if item.value.cname.endswith("." + avahi__domain)
+               else (item.value.cname + "." + avahi__domain)) }}
+
+[3]["ansible.builtin.lineinfile"].state = {{ "present"
+               if item.value.cname_state | d(item.value.state | d("present")) != "absent"
+               else "absent" }}
+
+[3]["ansible.builtin.lineinfile"].mode = 0644
+[3].with_dict = {{ avahi__combined_services }}
+[3].register = avahi__register_aliases
+[3].when = item.value.cname | d()
+[4].name = Manage avahi-alias.service
+[4]["ansible.builtin.systemd"].name = avahi-alias.service
+[4]["ansible.builtin.systemd"].enabled = {{ True if avahi__register_alias_script is changed else omit }}
+[4]["ansible.builtin.systemd"].daemon_reload = {{ True if (avahi__register_alias_script is changed or
+                                avahi__register_alias_service is changed) else omit }} 
+[4]["ansible.builtin.systemd"].state = {{ "restarted" if (avahi__register_alias_script is changed or
+                               avahi__register_alias_service is changed or
+                               avahi__register_aliases is changed) else omit }}
+
+[4].when = ansible_service_mgr == 'systemd'

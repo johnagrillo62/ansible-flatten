@@ -1,0 +1,13 @@
+~d0.name = Check the API servers are responding
+~d1.uri = 
+~d2.url = "https://{{ (access_ip if (ipv4_stack | default(true)) else access_ip6) | default(ansible_default_ipv4.address if (ipv4_stack | default(true)) else ansible_default_ipv6.address) | ansible.utils.ipwrap }}:{{ kube_apiserver_port | default(6443) }}/version"
+~d2.validate_certs = false
+~d2.status_code = 200
+~d1.register = apiserver_response
+~d1.retries = 12
+~d1.delay = 5
+~d1.until = apiserver_response is success
+~d0.name = Check API servers version
+~d1.assert = 
+~d2.that = 
+~d2.fail_msg = "apiserver is {{ apiserver_response.json.gitVersion }}, expected {{ kube_version }}"

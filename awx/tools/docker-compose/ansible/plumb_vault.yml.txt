@@ -1,0 +1,6 @@
+[0].name = Plumb AWX for Vault
+[0].hosts = localhost
+[0].gather_facts = False
+[0].vars.awx_host = https://127.0.0.1:8043
+[0].tasks[0].include_role.name = vault
+[0].tasks[0].include_role.tasks_from = plumb

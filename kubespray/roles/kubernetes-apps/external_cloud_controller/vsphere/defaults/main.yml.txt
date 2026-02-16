@@ -1,0 +1,6 @@
+~d0.external_vsphere_vcenter_port = "443"
+~d0.external_vsphere_insecure = "true"
+~d0.external_vsphere_cloud_controller_extra_args = {}
+~d0.external_vsphere_cloud_controller_image_tag = "v1.31.0"
+~d0.external_vsphere_user = "{{ lookup('env', 'VSPHERE_USER') }}"
+~d0.external_vsphere_password = "{{ lookup('env', 'VSPHERE_PASSWORD') }}"

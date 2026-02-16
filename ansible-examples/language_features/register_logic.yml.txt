@@ -1,0 +1,19 @@
+doc[0][0].name = test playbook
+doc[0][0].remote_user = root
+doc[0][0].hosts = all
+doc[0][0].tasks[0].shell = grep hi /etc/motd
+doc[0][0].tasks[0].ignore_errors = yes
+doc[0][0].tasks[0].register = motd_result
+doc[0][0].tasks[1].shell = echo "motd contains the word hi"
+doc[0][0].tasks[1].when = motd_result.rc == 0
+doc[0][0].tasks[2].shell = echo "motd contains the word hi"
+doc[0][0].tasks[2].when = motd_result.stdout.find('hi') != -1
+doc[0][0].tasks[3].shell = echo "motd contains word hi"
+doc[0][0].tasks[3].when = 'hi' in motd_result.stdout
+doc[0][0].tasks[4].name = motd lines matching 'hi'
+doc[0][0].tasks[4].shell = echo "{{ item  }}"
+doc[0][0].tasks[4].with_items = motd_result.stdout_lines
+doc[0][0].tasks[5].name = motd lines matching 'hi'
+doc[0][0].tasks[5].shell = echo "{{ item  }}"
+doc[0][0].tasks[5].with_items = motd_result.stdout.split('\n')
+doc[1] = 

@@ -1,0 +1,37 @@
+~d0.name = Combine BTRFS subvolumes
+~d1.ansible.builtin.set_fact = 
+~d2.btrfs__subvolumes_combined = '{{
+~d0.name = Ensure required packages are installed
+~d1.ansible.builtin.package = 
+~d2.name = '{{ q("flattened", btrfs__base_packages) }}'
+~d2.state = 'present'
+~d1.register = btrfs__register_packages
+~d1.until = btrfs__register_packages is succeeded
+~d1.tags = [ 'role::btrfs:pkts' ]
+~d0.name = Create BTRFS subvolumes
+~d1.debops.debops.btrfs_subvolume = 
+~d2.state = 'present'
+~d2.path = '{{ item.key }}'
+~d2.qgroups = '{{ item.value.qgroups | d(omit) }}'
+~d2.commit = '{{ item.value.commit | d(omit) }}'
+~d2.recursive = '{{ item.value.recursive | d(omit) }}'
+~d1.when = (item.value.state | d("present") == "present")
+~d1.with_dict = '{{ btrfs__subvolumes_combined }}'
+~d1.tags = [ 'role::btrfs:subvolumes' ]
+~d0.name = Remove BTRFS subvolumes
+~d1.debops.debops.btrfs_subvolume = 
+~d2.state = 'absent'
+~d2.path = '{{ item.key }}'
+~d1.when = (item.value.state | d("present") != "present")
+~d1.with_dict = '{{ btrfs__subvolumes_combined }}'
+~d1.tags = [ 'role::btrfs:subvolumes' ]
+~d0.name = Set directory permissions
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item.key }}'
+~d2.state = 'directory'
+~d2.owner = '{{ item.value.dir_owner | d(omit) }}'
+~d2.group = '{{ item.value.dir_group | d(omit) }}'
+~d2.mode = '{{ item.value.dir_mode | d(omit) }}'
+~d1.when = (item.value.state | d("present") == "present")
+~d1.with_dict = '{{ btrfs__subvolumes_combined }}'
+~d1.tags = [ 'role::btrfs:subvolumes' ]

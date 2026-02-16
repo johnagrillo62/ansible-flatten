@@ -1,0 +1,4 @@
+[0].hosts = web
+[0].roles[0] = apache
+[1].hosts = haproxy
+[1].roles[0] = haproxy

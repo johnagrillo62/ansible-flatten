@@ -1,0 +1,10 @@
+fcgiwrap__packages[0] = fcgiwrap
+fcgiwrap__disable_default = True
+fcgiwrap__threads = {{ ansible_processor_cores }}
+fcgiwrap__options_map["1.1"] = -f -c {{ fcgiwrap__threads }}
+fcgiwrap__options_map["1.0"] = -c {{ fcgiwrap__threads }}
+fcgiwrap__user = www-data
+fcgiwrap__group = www-data
+fcgiwrap__socket_user = www-data
+fcgiwrap__socket_group = www-data
+fcgiwrap__socket_mode = 0660

@@ -1,0 +1,52 @@
+[0].name = Metrics Server | Delete addon dir
+[0].file.path = {{ kube_config_dir }}/addons/metrics_server
+[0].file.state = absent
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[0].tags[0] = upgrade
+[1].name = Metrics Server | Create addon dir
+[1].file.path = {{ kube_config_dir }}/addons/metrics_server
+[1].file.state = directory
+[1].file.owner = root
+[1].file.group = root
+[1].file.mode = 0755
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = Metrics Server | Templates list
+[2].set_fact.metrics_server_templates[0].name = auth-delegator
+[2].set_fact.metrics_server_templates[0].file = auth-delegator.yaml
+[2].set_fact.metrics_server_templates[0].type = clusterrolebinding
+[2].set_fact.metrics_server_templates[1].name = auth-reader
+[2].set_fact.metrics_server_templates[1].file = auth-reader.yaml
+[2].set_fact.metrics_server_templates[1].type = rolebinding
+[2].set_fact.metrics_server_templates[2].name = metrics-server-sa
+[2].set_fact.metrics_server_templates[2].file = metrics-server-sa.yaml
+[2].set_fact.metrics_server_templates[2].type = sa
+[2].set_fact.metrics_server_templates[3].name = metrics-server-deployment
+[2].set_fact.metrics_server_templates[3].file = metrics-server-deployment.yaml
+[2].set_fact.metrics_server_templates[3].type = deploy
+[2].set_fact.metrics_server_templates[4].name = metrics-server-service
+[2].set_fact.metrics_server_templates[4].file = metrics-server-service.yaml
+[2].set_fact.metrics_server_templates[4].type = service
+[2].set_fact.metrics_server_templates[5].name = metrics-apiservice
+[2].set_fact.metrics_server_templates[5].file = metrics-apiservice.yaml
+[2].set_fact.metrics_server_templates[5].type = service
+[2].set_fact.metrics_server_templates[6].name = resource-reader-clusterrolebinding
+[2].set_fact.metrics_server_templates[6].file = resource-reader-clusterrolebinding.yaml
+[2].set_fact.metrics_server_templates[6].type = clusterrolebinding
+[2].set_fact.metrics_server_templates[7].name = resource-reader
+[2].set_fact.metrics_server_templates[7].file = resource-reader.yaml
+[2].set_fact.metrics_server_templates[7].type = clusterrole
+[3].name = Metrics Server | Create manifests
+[3].template.src = {{ item.file }}.j2
+[3].template.dest = {{ kube_config_dir }}/addons/metrics_server/{{ item.file }}
+[3].template.mode = 0644
+[3].with_items = {{ metrics_server_templates }}
+[3].register = metrics_server_manifests
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[4].name = Metrics Server | Apply manifests
+[4].kube.name = {{ item.item.name }}
+[4].kube.kubectl = {{ bin_dir }}/kubectl
+[4].kube.resource = {{ item.item.type }}
+[4].kube.filename = {{ kube_config_dir }}/addons/metrics_server/{{ item.item.file }}
+[4].kube.state = latest
+[4].with_items = {{ metrics_server_manifests.results }}
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0]

@@ -1,0 +1,60 @@
+[0].name = Create gitusers scripts path
+[0]["ansible.builtin.file"].path = {{ gitusers_git_scripts }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[1].name = Install gitusers scripts
+[1]["ansible.builtin.copy"].src = var/lib/gitusers/
+[1]["ansible.builtin.copy"].dest = {{ gitusers_git_scripts }}
+[1]["ansible.builtin.copy"].owner = root
+[1]["ansible.builtin.copy"].group = root
+[1]["ansible.builtin.copy"].mode = 0755
+[2].name = Prepare gituser environment
+[2]["ansible.builtin.template"].src = srv/gitusers/{{ item.1 }}.j2
+[2]["ansible.builtin.template"].dest = {{ item.0.home | default(gitusers_default_home_prefix + "/"
+                                    + item.0.name + gitusers_name_suffix) }} /.{{ item.1 }}
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = root
+[2]["ansible.builtin.template"].mode = 0644
+[2].with_nested[0] = {{ gitusers_list + gitusers_group_list + gitusers_host_list }}
+[2].with_nested[1][0] = forward
+[2].with_nested[1][1] = gitconfig
+[2].with_nested[1][2] = motd
+[2].when = ((item.0.name is defined and item.0.name) and (item.0.state is undefined or (item.0.state is defined and item.0.state != 'absent')))
+[3].name = Create base directory for user websites
+[3]["ansible.builtin.file"].path = {{ gitusers_default_www_prefix }}/{{ item.group | default(item.name + gitusers_name_suffix) }}
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = root
+[3]["ansible.builtin.file"].group = {{ gitusers_default_www_group }}
+[3]["ansible.builtin.file"].mode = 0711
+[3].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[3].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))
+[4].name = Create root directory for user websites
+[4]["ansible.builtin.file"].path = {{ gitusers_default_www_prefix }}/{{ item.0.group | default(item.0.name
+                                                                       + gitusers_name_suffix) }} /{{ item.1 }}
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].owner = root
+[4]["ansible.builtin.file"].group = {{ item.0.group | default(item.0.name + gitusers_name_suffix) }}
+[4]["ansible.builtin.file"].mode = 02775
+[4].with_nested[0] = {{ gitusers_list + gitusers_group_list + gitusers_host_list }}
+[4].with_nested[1][0] = checkouts
+[4].with_nested[1][1] = sites
+[4].with_nested[1][2] = userdir
+[4].when = ((item.0.name is defined and item.0.name) and (item.0.state is undefined or (item.0.state is defined and item.0.state != 'absent')))
+[5].name = Symlink git-shell-commands to user directories
+[5]["ansible.builtin.file"].path = {{ item.home | default(gitusers_default_home_prefix + "/"
+                                  + item.name + gitusers_name_suffix) + "/git-shell-commands" }} 
+[5]["ansible.builtin.file"].src = {{ gitusers_git_scripts + "/git-shell-commands/" }}
+[5]["ansible.builtin.file"].state = link
+[5]["ansible.builtin.file"].owner = root
+[5]["ansible.builtin.file"].group = root
+[5]["ansible.builtin.file"].mode = 0755
+[5].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[5].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))

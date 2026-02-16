@@ -1,0 +1,9 @@
+[0].name = Test sshd configuration and restart
+[0]["ansible.builtin.command"] = sshd -t
+[0].register = global_handlers__sshd_register_test_config
+[0].changed_when = global_handlers__sshd_register_test_config.changed | bool
+[0].notify[0] = Restart sshd
+[1].name = Restart sshd
+[1]["ansible.builtin.service"].name = ssh
+[1]["ansible.builtin.service"].state = restarted
+[1].when = (ansible_local.sshd.socket_activation | d('disabled')) == 'disabled'

@@ -1,0 +1,16 @@
+~d0.galaxy_info = 
+~d1.author = Calum MacRae
+~d1.description = Deploy a full Sensu monitoring stack; including redis, RabbitMQ & the Uchiwa dashboard
+~d1.license = MIT
+~d1.min_ansible_version = 2.5
+~d1.platforms = 
+~d2.name = EL
+~d3.versions = 
+~d2.name = Ubuntu
+~d3.versions = 
+~d2.name = Debian
+~d3.versions = 
+~d2.name = Fedora
+~d3.versions = 
+~d1.galaxy_tags = 
+~d0.dependencies = []

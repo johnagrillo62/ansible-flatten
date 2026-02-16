@@ -1,0 +1,105 @@
+[0].name = Install OpenVPN and dependencies
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = dnsmasq
+[0].with_items[1] = openvpn
+[0].with_items[2] = udev
+[0].tags[0] = dependencies
+[1].name = Generate RSA keys for the CA and Server
+[1].command = openssl genrsa -out {{ item }}.key {{ openvpn_key_size }} chdir={{ openvpn_path }} creates={{ item }}.key
+[1].with_items[0] = ca
+[1].with_items[1] = server
+[2].name = Create directories for clients
+[2].file = path={{ openvpn_path }}/{{ item }} state=directory
+[2].with_items = {{ openvpn_clients }}
+[3].name = Generate RSA keys for the clients
+[3].command = openssl genrsa -out client.key {{ openvpn_key_size }} chdir={{ openvpn_path }}/{{ item }} creates=client.key
+[3].with_items = {{ openvpn_clients }}
+[4].name = Set the proper permissions on all RSA keys
+[4].file = path={{ openvpn_path }} recurse=yes state=directory owner=root group=root mode=0600
+[5].name = Generate CA certificate
+[5].command = openssl req -nodes -batch -new -x509 -key {{ openvpn_ca }}.key -out {{ openvpn_ca }}.crt -days {{ openvpn_days_valid }} -subj "{{ openssl_request_subject }}/CN=sovereign-ca-certificate" creates={{ openvpn_ca }}.crt
+[6].name = Generate the OpenSSL configuration that will be used for the Server certificate's req and ca commands
+[6].template = src=openssl-server-certificate.cnf.j2 dest={{ openvpn_path }}/openssl-server-certificate.cnf
+[7].name = Seed a blank database file that will be used when generating the Server's certificate
+[7].file = path={{ openvpn_path }}/index.txt state=touch
+[8].name = Seed a serial file that will be used when generating the Server's certificate
+[8].copy = content="01" dest={{ openvpn_path }}/serial
+[9].name = Generate CSR for the Server
+[9].command = openssl req -batch -extensions server -new -key server.key -out server.csr -config {{ openvpn_path }}/openssl-server-certificate.cnf chdir={{ openvpn_path }} creates=server.csr
+[10].name = Generate certificate for the Server
+[10].command = openssl ca -batch -extensions server -in server.csr -out server.crt -config openssl-server-certificate.cnf chdir={{ openvpn_path }} creates=server.crt
+[11].name = Generate CSRs for the clients
+[11].command = openssl req -new -key client.key -out client.csr -subj "{{ openssl_request_subject }}/CN={{ item }}" chdir={{ openvpn_path }}/{{ item }} creates=client.csr
+[11].with_items = {{ openvpn_clients }}
+[12].name = Generate certificates for the clients
+[12].command = openssl x509 -CA {{ openvpn_ca }}.crt -CAkey {{ openvpn_ca }}.key -CAcreateserial -req -days {{ openvpn_days_valid }} -in client.csr -out client.crt chdir={{ openvpn_path }}/{{ item }} creates=client.crt
+[12].with_items = {{ openvpn_clients }}
+[13].name = Generate HMAC firewall key
+[13].command = openvpn --genkey --secret {{ openvpn_hmac_firewall }} creates={{ openvpn_hmac_firewall }}
+[14].name = Register CA certificate contents
+[14].command = cat ca.crt chdir={{ openvpn_path }}
+[14].register = openvpn_ca_contents
+[14].tags[0] = skip_ansible_lint
+[15].name = Register client certificate contents
+[15].command = cat client.crt chdir={{ openvpn_path }}/{{ item }}
+[15].with_items = {{ openvpn_clients }}
+[15].register = openvpn_client_certificates
+[15].tags[0] = skip_ansible_lint
+[16].name = Register client key contents
+[16].command = cat client.key chdir={{ openvpn_path }}/{{ item }}
+[16].with_items = {{ openvpn_clients }}
+[16].register = openvpn_client_keys
+[16].tags[0] = skip_ansible_lint
+[17].name = Register HMAC firewall contents
+[17].command = cat ta.key chdir={{ openvpn_path }}
+[17].register = openvpn_hmac_firewall_contents
+[17].tags[0] = skip_ansible_lint
+[18].name = Create the client configs
+[18].template = src=client.cnf.j2 dest={{ openvpn_path }}/{{ item[0] }}/{{ openvpn_server }}.ovpn
+[18].with_together[0] = {{ openvpn_clients }}
+[18].with_together[1] = {{ openvpn_client_certificates.results }}
+[18].with_together[2] = {{ openvpn_client_keys.results }}
+[19].name = Generate Diffie-Hellman parameters (this will take a while)
+[19].command = openssl dhparam -out {{ openvpn_dhparam }} {{ openvpn_key_size }} creates={{ openvpn_dhparam }}
+[20].name = Add empty rc.local if it doesn't exist
+[20].copy = src=rc.local dest=/etc/rc.local mode=0700 owner=root group=root force=no
+[21].name = custom rc.local file with iptables rules
+[21].template = src=rc.local_ansible_openvpn dest=/etc/rc.local_ansible_openvpn mode=0700 owner=root group=root
+[22].name = Ensure custom rc.local file is included in rc.local
+[22].lineinfile = dest=/etc/rc.local line='bash /etc/rc.local_ansible_openvpn' insertbefore='exit 0'
+[23].name = Run custom rc file
+[23].command = bash /etc/rc.local_ansible_openvpn
+[23].changed_when = False
+[24].name = Enable IPv4 traffic forwarding
+[24].sysctl = name=net.ipv4.ip_forward value=1
+[25].name = Allow OpenVPN through ufw
+[25].ufw = rule=allow port={{ openvpn_port }} proto={{ openvpn_protocol }}
+[25].tags = ufw
+[26].name = Copy OpenVPN configuration file into place
+[26].template = src=etc_openvpn_server.conf.j2 dest=/etc/openvpn/server.conf
+[26].notify = restart openvpn
+[27].name = Copy OpenVPN PAM configuration file into place
+[27].copy = src=etc_pam.d_openvpn dest=/etc/pam.d/openvpn
+[27].notify = restart openvpn
+[28].name = Enable OpenVPN server systemd service unit
+[28].service = name=openvpn@server enabled=yes
+[29].meta = flush_handlers
+[30].name = Copy dnsmasq configuration file into place
+[30].copy = src=etc_dnsmasq.conf dest=/etc/dnsmasq.conf
+[30].notify = restart dnsmasq
+[31].name = Copy the ca.crt and ta.key files that clients will need in order to connect to the OpenVPN server
+[31].command = cp {{ openvpn_path }}/{{ item[1] }} {{ openvpn_path }}/{{ item[0] }}
+[31].tags[0] = skip_ansible_lint
+[31].with_nested[0] = {{ openvpn_clients }}
+[31].with_nested[1][0] = ca.crt
+[31].with_nested[1][1] = ta.key
+[32].name = Retrieve the files that clients will need in order to connect to the OpenVPN server
+[32].fetch = src={{ openvpn_path }}/{{ item[0] }}/{{ item[1] }} dest=/tmp/sovereign-openvpn-files
+[32].with_nested[0] = {{ openvpn_clients }}
+[32].with_nested[1][0] = client.crt
+[32].with_nested[1][1] = client.key
+[32].with_nested[1][2] = ca.crt
+[32].with_nested[1][3] = ta.key
+[32].with_nested[1][4] = {{ openvpn_server }}.ovpn
+[33].name = Pause for OpenVPN instructions...
+[33].pause = seconds=5 prompt="You are ready to set up your OpenVPN clients. The files that you need are in /tmp/sovereign-openvpn-files. Make sure LZO compression is enabled and that you provide the ta.key file for the TLS-Auth option with a direction of '1'. Press any key to continue..."

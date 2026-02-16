@@ -1,0 +1,4 @@
+[0].name = Reload all AppArmor profiles
+[0]["ansible.builtin.service"].name = apparmor
+[0]["ansible.builtin.service"].state = reloaded
+[0].when = ansible_local.apparmor.installed | d(False) | bool

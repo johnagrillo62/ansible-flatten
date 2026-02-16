@@ -1,0 +1,84 @@
+mailman__python__dependent_packages3[0] = {{ ["python3-django-auth-ldap"]
+        if mailman__ldap_enabled | bool
+        else [] }}
+
+mailman__python__dependent_packages3[1] = {{ ["python3-psycopg2"]
+        if (mailman__database_type == "postgresql")
+        else [] }}
+
+mailman__python__dependent_packages3[2] = {{ ["python3-pymysql", "python3-mysqldb"]
+        if (mailman__database_type == "mysql")
+        else [] }}
+
+mailman__python__dependent_packages2[0] = {{ ["python-django-auth-ldap"]
+        if mailman__ldap_enabled | bool
+        else [] }}
+
+mailman__python__dependent_packages2[1] = {{ ["python-psycopg2"]
+        if (mailman__database_type == "postgresql")
+        else [] }}
+
+mailman__python__dependent_packages2[2] = {{ ["python-pymysql", "python-mysqldb"]
+        if (mailman__database_type == "mysql")
+        else [] }}
+
+mailman__ldap__dependent_tasks[0].name = {{ "Create Mailman 3 account for "
+              + mailman__ldap_device_dn | join(",") }} 
+mailman__ldap__dependent_tasks[0].dn = {{ mailman__ldap_bind_dn }}
+mailman__ldap__dependent_tasks[0].objectClass = {{ mailman__ldap_self_object_classes }}
+mailman__ldap__dependent_tasks[0].attributes = {{ mailman__ldap_self_attributes }}
+mailman__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+mailman__postfix__dependent_maincf[0].name = owner_request_special
+mailman__postfix__dependent_maincf[0].value = False
+mailman__postfix__dependent_maincf[0].state = present
+mailman__postfix__dependent_maincf[1].name = transport_maps
+mailman__postfix__dependent_maincf[1].value[0] = hash:/var/lib/mailman3/data/postfix_lmtp
+mailman__postfix__dependent_maincf[1].state = present
+mailman__postfix__dependent_maincf[2].name = local_recipient_maps
+mailman__postfix__dependent_maincf[2].value[0] = proxy:unix:passwd.byname
+mailman__postfix__dependent_maincf[2].value[1] = $alias_maps
+mailman__postfix__dependent_maincf[2].value[2] = hash:/var/lib/mailman3/data/postfix_lmtp
+mailman__postfix__dependent_maincf[2].state = present
+mailman__postfix__dependent_maincf[3].name = relay_domains
+mailman__postfix__dependent_maincf[3].value[0] = hash:/var/lib/mailman3/data/postfix_domains
+mailman__postfix__dependent_maincf[3].state = present
+mailman__nginx__dependent_upstreams[0].name = mailman3
+mailman__nginx__dependent_upstreams[0].server = unix:/run/mailman3-web/uwsgi.sock fail_timeout=0
+mailman__nginx__dependent_servers[0].by_role = debops.mailman
+mailman__nginx__dependent_servers[0].enabled = True
+mailman__nginx__dependent_servers[0].name = {{ [mailman__fqdn] + mailman__additional_domains }}
+mailman__nginx__dependent_servers[0].redirect_from = True
+mailman__nginx__dependent_servers[0].filename = debops.mailman
+mailman__nginx__dependent_servers[0].location_list[0].pattern = ^/mailman/?$
+mailman__nginx__dependent_servers[0].location_list[0].pattern_prefix = ~* 
+mailman__nginx__dependent_servers[0].location_list[0].options = return 301 /postorius/lists/;
+mailman__nginx__dependent_servers[0].location_list[0].state = present
+mailman__nginx__dependent_servers[0].location_list[1].pattern = ^/mailman/listinfo/?$
+mailman__nginx__dependent_servers[0].location_list[1].pattern_prefix = ~* 
+mailman__nginx__dependent_servers[0].location_list[1].options = return 301 /postorius/lists/;
+mailman__nginx__dependent_servers[0].location_list[1].state = present
+mailman__nginx__dependent_servers[0].location_list[2].pattern = ^/mailman/listinfo/(.+)/?$
+mailman__nginx__dependent_servers[0].location_list[2].pattern_prefix = ~* 
+mailman__nginx__dependent_servers[0].location_list[2].options = return 301 /postorius/lists/$1.{{ mailman__fqdn }}/;
+mailman__nginx__dependent_servers[0].location_list[2].state = present
+mailman__nginx__dependent_servers[0].location_list[3].pattern = ^/pipermail/?$
+mailman__nginx__dependent_servers[0].location_list[3].pattern_prefix = ~* 
+mailman__nginx__dependent_servers[0].location_list[3].options = return 301 /hyperkitty/;
+mailman__nginx__dependent_servers[0].location_list[3].state = present
+mailman__nginx__dependent_servers[0].location_list[4].pattern = ^/pipermail/(.+)/?$
+mailman__nginx__dependent_servers[0].location_list[4].pattern_prefix = ~* 
+mailman__nginx__dependent_servers[0].location_list[4].options = return 301 /hyperkitty/list/$1@{{ mailman__fqdn }}/;
+mailman__nginx__dependent_servers[0].location_list[4].state = present
+mailman__nginx__dependent_servers[0].location_list[5].pattern = /
+mailman__nginx__dependent_servers[0].location_list[5].options = uwsgi_pass mailman3;
+include /etc/nginx/uwsgi_params;
+
+mailman__nginx__dependent_servers[0].location_list[5].state = present
+mailman__nginx__dependent_servers[0].location_list[6].pattern = /mailman3/static
+mailman__nginx__dependent_servers[0].location_list[6].options = alias /var/lib/mailman3/web/static;
+
+mailman__nginx__dependent_servers[0].location_list[6].state = present
+mailman__nginx__dependent_servers[0].location_list[7].pattern = /mailman3/static/favicon.ico
+mailman__nginx__dependent_servers[0].location_list[7].options = alias /var/lib/mailman3/web/static/postorius/img/favicon.ico;
+
+mailman__nginx__dependent_servers[0].location_list[7].state = present

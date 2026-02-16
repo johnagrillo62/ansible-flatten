@@ -1,0 +1,12 @@
+[0].name = Kubernetes Snapshots | Copy Cinder CSI Snapshot Class template
+[0].template.src = cinder-csi-snapshot-class.yml.j2
+[0].template.dest = {{ kube_config_dir }}/cinder-csi-snapshot-class.yml
+[0].template.mode = 0644
+[0].register = manifests
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Kubernetes Snapshots | Add Cinder CSI Snapshot Class
+[1].kube.kubectl = {{ bin_dir }}/kubectl
+[1].kube.filename = {{ kube_config_dir }}/cinder-csi-snapshot-class.yml
+[1].kube.state = latest
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].when[1] = manifests.changed

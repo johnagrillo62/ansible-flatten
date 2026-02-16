@@ -1,0 +1,11 @@
+dependencies[0].role = kubernetes-apps/external_provisioner/local_volume_provisioner
+dependencies[0].when[0] = local_volume_provisioner_enabled
+dependencies[0].when[1] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[0].tags[0] = apps
+dependencies[0].tags[1] = local-volume-provisioner
+dependencies[0].tags[2] = external-provisioner
+dependencies[1].role = kubernetes-apps/external_provisioner/local_path_provisioner
+dependencies[1].when = local_path_provisioner_enabled
+dependencies[1].tags[0] = apps
+dependencies[1].tags[1] = local-path-provisioner
+dependencies[1].tags[2] = external-provisioner

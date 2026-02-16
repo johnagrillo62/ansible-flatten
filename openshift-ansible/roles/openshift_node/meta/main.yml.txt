@@ -1,0 +1,11 @@
+~d0.galaxy_info = 
+~d1.author = Jhon Honce
+~d1.description = OpenShift Node
+~d1.company = Red Hat, Inc.
+~d1.license = Apache License, Version 2.0
+~d1.min_ansible_version = 2.1
+~d1.platforms = 
+~d1.name = EL
+~d2.versions = 
+~d1.categories = 
+~d0.dependencies = []

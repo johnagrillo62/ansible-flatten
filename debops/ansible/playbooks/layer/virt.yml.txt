@@ -1,0 +1,12 @@
+~d0.name = Configure LXC service
+~d1.import_playbook = '../service/lxc.yml'
+~d0.name = Configure LXD service
+~d1.import_playbook = '../service/lxd.yml'
+~d0.name = Configure Docker Engine service
+~d1.import_playbook = '../service/docker_server.yml'
+~d0.name = Configure libvirt daemon service
+~d1.import_playbook = '../service/libvirtd.yml'
+~d0.name = Configure libvirt qemu support
+~d1.import_playbook = '../service/libvirtd_qemu.yml'
+~d0.name = Configure libvirt client environment
+~d1.import_playbook = '../service/libvirt.yml'

@@ -1,0 +1,18 @@
+~d0.dependencies = 
+~d1.role = helm-apps
+~d2.when = 
+~d2.environment = 
+~d3.http_proxy = "{{ http_proxy | default('') }}"
+~d3.https_proxy = "{{ https_proxy | default('') }}"
+~d2.release_common_opts = {}
+~d2.releases = 
+~d3.name = kubelet-csr-approver
+~d4.namespace = "{{ kubelet_csr_approver_namespace }}"
+~d4.chart_ref = "{{ kubelet_csr_approver_chart_ref }}"
+~d4.chart_version = "{{ kubelet_csr_approver_chart_version }}"
+~d4.wait = "{{ kube_network_plugin != 'cni' }}"
+~d4.atomic = "{{ kube_network_plugin != 'cni' }}"
+~d4.values = "{{ kubelet_csr_approver_values }}"
+~d2.repositories = 
+~d3.name = "{{ kubelet_csr_approver_repository_name }}"
+~d4.url = "{{ kubelet_csr_approver_repository_url }}"

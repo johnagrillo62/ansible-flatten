@@ -1,0 +1,10 @@
+tcpwrappers__enabled = True
+tcpwrappers__base_packages[0] = libwrap0
+tcpwrappers__deny_all = True
+tcpwrappers__divert_hosts_allow = /etc/hosts.allow.d/05_debian_hosts.allow
+tcpwrappers__localhost_allow[0].daemon = ALL
+tcpwrappers__localhost_allow[0].client[0] = 127.0.0.0/8
+tcpwrappers__localhost_allow[0].client[1] = ::1/128
+tcpwrappers__localhost_allow[0].comment = Access from localhost
+tcpwrappers__localhost_allow[0].filename = allow_localhost
+tcpwrappers__localhost_allow[0].weight = 06

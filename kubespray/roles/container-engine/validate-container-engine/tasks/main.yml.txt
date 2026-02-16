@@ -1,0 +1,100 @@
+[0].name = Validate-container-engine | check if fedora coreos
+[0].stat.path = /run/ostree-booted
+[0].stat.get_attributes = false
+[0].stat.get_checksum = false
+[0].stat.get_mime = false
+[0].register = ostree
+[0].tags[0] = facts
+[1].name = Validate-container-engine | set is_ostree
+[1].set_fact.is_ostree = {{ ostree.stat.exists }}
+[1].tags[0] = facts
+[2].name = Ensure kubelet systemd unit exists
+[2].stat.path = /etc/systemd/system/kubelet.service
+[2].register = kubelet_systemd_unit_exists
+[2].tags[0] = facts
+[3].name = Populate service facts
+[3].service_facts = null
+[3].tags[0] = facts
+[4].name = Check if containerd is installed
+[4].find.file_type = file
+[4].find.recurse = true
+[4].find.use_regex = true
+[4].find.patterns[0] = containerd.service$
+[4].find.paths[0] = /lib/systemd
+[4].find.paths[1] = /etc/systemd
+[4].find.paths[2] = /run/systemd
+[4].register = containerd_installed
+[4].tags[0] = facts
+[5].name = Check if docker is installed
+[5].find.file_type = file
+[5].find.recurse = true
+[5].find.use_regex = true
+[5].find.patterns[0] = docker.service$
+[5].find.paths[0] = /lib/systemd
+[5].find.paths[1] = /etc/systemd
+[5].find.paths[2] = /run/systemd
+[5].register = docker_installed
+[5].tags[0] = facts
+[6].name = Check if crio is installed
+[6].find.file_type = file
+[6].find.recurse = true
+[6].find.use_regex = true
+[6].find.patterns[0] = crio.service$
+[6].find.paths[0] = /lib/systemd
+[6].find.paths[1] = /etc/systemd
+[6].find.paths[2] = /run/systemd
+[6].register = crio_installed
+[6].tags[0] = facts
+[7].name = Uninstall containerd
+[7].vars.service_name = containerd.service
+[7].when[0] = not (is_ostree or (ansible_distribution == "Flatcar Container Linux by Kinvolk") or (ansible_distribution == "Flatcar"))
+[7].when[1] = container_manager != "containerd"
+[7].when[2] = docker_installed.matched == 0
+[7].when[3] = containerd_installed.matched > 0
+[7].when[4] = ansible_facts.services[service_name]['state'] == 'running'
+[7].block[0].name = Drain node
+[7].block[0].include_role.name = remove_node/pre_remove
+[7].block[0].include_role.apply.tags[0] = pre-remove
+[7].block[0].when = kubelet_systemd_unit_exists.stat.exists
+[7].block[1].name = Stop kubelet
+[7].block[1].service.name = kubelet
+[7].block[1].service.state = stopped
+[7].block[1].when = kubelet_systemd_unit_exists.stat.exists
+[7].block[2].name = Remove Containerd
+[7].block[2].import_role.name = container-engine/containerd
+[7].block[2].import_role.tasks_from = reset
+[7].block[2].import_role.handlers_from = reset
+[8].name = Uninstall docker
+[8].vars.service_name = docker.service
+[8].when[0] = not (is_ostree or (ansible_distribution == "Flatcar Container Linux by Kinvolk") or (ansible_distribution == "Flatcar"))
+[8].when[1] = container_manager != "docker"
+[8].when[2] = docker_installed.matched > 0
+[8].when[3] = ansible_facts.services[service_name]['state'] == 'running'
+[8].block[0].name = Drain node
+[8].block[0].include_role.name = remove_node/pre_remove
+[8].block[0].include_role.apply.tags[0] = pre-remove
+[8].block[0].when = kubelet_systemd_unit_exists.stat.exists
+[8].block[1].name = Stop kubelet
+[8].block[1].service.name = kubelet
+[8].block[1].service.state = stopped
+[8].block[1].when = kubelet_systemd_unit_exists.stat.exists
+[8].block[2].name = Remove Docker
+[8].block[2].import_role.name = container-engine/docker
+[8].block[2].import_role.tasks_from = reset
+[9].name = Uninstall crio
+[9].vars.service_name = crio.service
+[9].when[0] = not (is_ostree or (ansible_distribution == "Flatcar Container Linux by Kinvolk") or (ansible_distribution == "Flatcar"))
+[9].when[1] = container_manager != "crio"
+[9].when[2] = crio_installed.matched > 0
+[9].when[3] = ansible_facts.services[service_name]['state'] == 'running'
+[9].block[0].name = Drain node
+[9].block[0].include_role.name = remove_node/pre_remove
+[9].block[0].include_role.apply.tags[0] = pre-remove
+[9].block[0].when = kubelet_systemd_unit_exists.stat.exists
+[9].block[1].name = Stop kubelet
+[9].block[1].service.name = kubelet
+[9].block[1].service.state = stopped
+[9].block[1].when = kubelet_systemd_unit_exists.stat.exists
+[9].block[2].name = Remove CRI-O
+[9].block[2].import_role.name = container-engine/cri-o
+[9].block[2].import_role.tasks_from = reset

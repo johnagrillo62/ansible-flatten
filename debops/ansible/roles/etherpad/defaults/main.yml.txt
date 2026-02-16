@@ -1,0 +1,197 @@
+etherpad__base_packages[0] = build-essential
+etherpad__base_packages[1] = pkg-config
+etherpad__base_packages[2] = libssl-dev
+etherpad__base_packages[3] = libpq-dev
+etherpad__base_packages[4] = curl
+etherpad__base_packages[5] = git
+etherpad__document_packages[0] = abiword
+etherpad_system_name = etherpad-lite
+etherpad_user = {{ etherpad_system_name }}
+etherpad_group = {{ etherpad_system_name }}
+etherpad_home = {{ (ansible_local.fhs.app | d("/var/local"))
+                   + "/" + etherpad_user }} 
+etherpad__shell = /usr/sbin/nologin
+etherpad_src_dir = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                      + "/" + etherpad_system_name }} 
+etherpad_log_dir = {{ (ansible_local.fhs.log | d("/var/log"))
+                      + "/" + etherpad_system_name }} 
+etherpad_log_to_file = False
+etherpad_version = {{ "1.7.0"
+                      if (ansible_local.nodejs.npm_version | d() is version("6.4.0", "<"))
+                      else "1.7.5" }}
+
+etherpad_source_address = https://github.com/ether
+etherpad_repository = etherpad-lite
+etherpad_dependencies = True
+etherpad_domain[0] = pad.{{ ansible_domain }}
+etherpad_title = Etherpad
+etherpad_mail_admin = root@{{ ansible_domain }}
+etherpad_welcome_text = Welcome to {{ etherpad_title }}!
+
+This pad is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents.
+
+Contact with administrator: mailto:{{ etherpad_mail_admin }}
+
+etherpad_database_server = {{ ansible_local.mariadb.server | d(ansible_local.postgresql.server | d("")) }}
+etherpad_database_user = {{ etherpad_system_name }}
+etherpad_database_name = {{ etherpad_system_name }}
+etherpad_database_password = {{ lookup('password', secret + '/'
+                                + ('mariadb'
+                                   if etherpad__database == 'mysql'
+                                   else ('postgresql'
+                                         if etherpad__database == 'postgres'
+                                         else etherpad__database)) + '/'
+                                + (ansible_local.mariadb.delegate_to + '/'
+                                   if ansible_local.mariadb.delegate_to | d()
+                                   else (ansible_local.postgresql.delegate_to + '/'
+                                         if ansible_local.postgresql.delegate_to | d()
+                                         else ''))
+                                + (ansible_local.mariadb.port + '/'
+                                   if ansible_local.mariadb.port | d()
+                                   else (ansible_local.postgresql.port + '/'
+                                         if ansible_local.postgresql.port | d()
+                                         else ''))
+                                + '/credentials/' + etherpad_database_user + '/password length=48') }}
+
+etherpad__database = {{ "mysql"
+                        if (ansible_local | d() and ansible_local.mariadb is defined)
+                        else ("postgres"
+                              if (ansible_local | d() and ansible_local.postgresql is defined)
+                              else "sqlite") }}
+
+etherpad_database_connection = socket
+etherpad_database_config.dirty.filename = var/dirty.db
+etherpad_database_config.sqlite.filename = var/sqlite.db
+etherpad_database_config.mysql.hostname = {{ etherpad_database_server }}
+etherpad_database_config.mysql.username = {{ etherpad_database_user }}
+etherpad_database_config.mysql.database = {{ etherpad_database_name }}
+etherpad_database_config.mysql.password = {{ etherpad_database_password }}
+etherpad_database_config.mysql.socket = /var/run/mysqld/mysqld.sock
+etherpad_database_config.mysql.port = 3306
+etherpad_database_config.postgres.hostname = {{ etherpad_database_server }}
+etherpad_database_config.postgres.username = {{ etherpad_database_user }}
+etherpad_database_config.postgres.database = {{ etherpad_database_name }}
+etherpad_database_config.postgres.password = {{ etherpad_database_password }}
+etherpad_database_config.postgres.socket = /var/run/postgresql
+etherpad_database_config.postgres.port = 5432
+etherpad_bind = 127.0.0.1
+etherpad_port = 9001
+etherpad_admins[0] = admin
+etherpad_password_hashing_algo = sha512
+etherpad_password_hashing_rounds = 10
+etherpad_require_authentication = False
+etherpad_require_authorization = False
+etherpad_require_session = False
+etherpad_edit_only = False
+etherpad_trust_proxy = False
+etherpad_abiword = True
+etherpad__default_plugins[0].name = pg
+etherpad__default_plugins[0].state = {{ "present"
+               if (etherpad__database == "postgres")
+               else "absent" }}
+
+etherpad__default_plugins[1].name = sqlite3
+etherpad__default_plugins[1].state = {{ "present"
+               if (etherpad__database == "sqlite")
+               else "absent" }}
+
+etherpad__default_plugins[2] = gyp
+etherpad__default_plugins[3] = bcrypt
+etherpad__default_plugins[4] = ep_adminpads
+etherpad__default_plugins[5] = ep_align
+etherpad__default_plugins[6] = ep_font_color
+etherpad__default_plugins[7] = ep_font_family
+etherpad__default_plugins[8] = ep_font_size
+etherpad__default_plugins[9] = ep_hash_auth
+etherpad__default_plugins[10] = ep_headings
+etherpad__default_plugins[11] = ep_hide_referrer
+etherpad__default_plugins[12] = ep_line_height
+etherpad__default_plugins[13] = ep_linkify
+etherpad__default_plugins[14] = ep_message_all
+etherpad__default_plugins[15] = ep_padlist
+etherpad__default_plugins[16] = ep_page_view
+etherpad__default_plugins[17] = ep_print
+etherpad__default_plugins[18] = ep_rss
+etherpad__default_plugins[19] = ep_scrollto
+etherpad__default_plugins[20] = ep_subscript
+etherpad__default_plugins[21] = ep_superscript
+etherpad_minify = True
+etherpad_max_age = {{ (60 * 60 * 6) }}
+etherpad_disable_ip_logging = False
+etherpad_loglevel = INFO
+etherpad_custom_json = False
+etherpad_api_version = 1.2.12
+etherpad_api_key_file = {{ etherpad_home + "/" + etherpad_repository }}/APIKEY.txt
+etherpad_api_calls_debug = False
+etherpad__etc_services__dependent_list[0].name = etherpad-lite
+etherpad__etc_services__dependent_list[0].port = {{ etherpad_port }}
+etherpad__etc_services__dependent_list[0].comment = Etherpad Lite
+etherpad__logrotate__dependent_config[0].filename = etherpad-lite
+etherpad__logrotate__dependent_config[0].log = {{ etherpad_log_dir + "/*.log" }}
+etherpad__logrotate__dependent_config[0].options = weekly
+missingok
+rotate 4
+compress
+notifempty
+create 644 {{ etherpad_user }} {{ etherpad_group }}
+
+etherpad__logrotate__dependent_config[0].comment = Logrotate configuration for etherpad-lite
+etherpad__mariadb__dependent_users[0].name = {{ etherpad_database_user }}
+etherpad__mariadb__dependent_users[0].password = {{ etherpad_database_password }}
+etherpad__mariadb__dependent_users[0].owner = {{ etherpad_user }}
+etherpad__mariadb__dependent_users[0].group = {{ etherpad_group }}
+etherpad__mariadb__dependent_users[0].home = {{ etherpad_home }}
+etherpad__mariadb__dependent_databases[0].database = {{ etherpad_database_name }}
+etherpad__postgresql__dependent_roles[0].name = {{ etherpad_database_user }}
+etherpad__postgresql__dependent_roles[0].password = {{ etherpad_database_password }}
+etherpad__postgresql__dependent_roles[0].flags[0] = NOSUPERUSER
+etherpad__postgresql__dependent_roles[0].flags[1] = NOCREATEDB
+etherpad__postgresql__dependent_roles[0].flags[2] = LOGIN
+etherpad__postgresql__dependent_databases[0].name = {{ etherpad_database_name }}
+etherpad__postgresql__dependent_databases[0].port = 5432
+etherpad__postgresql__dependent_databases[0].owner = {{ etherpad_database_user }}
+etherpad__postgresql__dependent_databases[0].encoding = {{ etherpad_database_encoding | d(omit) }}
+etherpad__postgresql__dependent_databases[0].lc_collate = {{ etherpad_database_collate | d(omit) }}
+etherpad__postgresql__dependent_databases[0].lc_ctype = {{ etherpad_database_ctype | d(omit) }}
+etherpad__nginx__dependent_upstreams[0].name = {{ etherpad_system_name }}
+etherpad__nginx__dependent_upstreams[0].enabled = True
+etherpad__nginx__dependent_upstreams[0].server = 127.0.0.1:{{ etherpad_port }}
+etherpad__nginx__dependent_servers[0].by_role = debops.etherpad
+etherpad__nginx__dependent_servers[0].enabled = True
+etherpad__nginx__dependent_servers[0].favicon = False
+etherpad__nginx__dependent_servers[0].name = {{ etherpad_domain }}
+etherpad__nginx__dependent_servers[0].filename = debops.etherpad
+etherpad__nginx__dependent_servers[0].location["~ ^/(locales/|locales.json|admin/|static/|pluginfw/|javascripts/|socket.io/|ep/|minified/|api/|ro/|error/|jserror/|favicon.ico|robots.txt)"] = proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_buffering off;
+proxy_pass http://{{ etherpad_system_name }};
+
+etherpad__nginx__dependent_servers[0].location./p/ = rewrite ^/p/(.*) /$1 redirect;
+
+etherpad__nginx__dependent_servers[0].location./redirect = proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_buffering off;
+proxy_pass http://{{ etherpad_system_name }};
+
+etherpad__nginx__dependent_servers[0].location["~ ^/$"] = proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_buffering off;
+proxy_pass http://{{ etherpad_system_name }};
+
+etherpad__nginx__dependent_servers[0].location./ = rewrite ^/admin(.*) /admin/$1 redirect;
+rewrite ^/list(.*) /list break;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_buffering off;
+proxy_pass http://{{ etherpad_system_name }}/p/;
+proxy_redirect / /p/;
+
+etherpad__nginx__dependent_servers[0].location_allow["~ ^/(locales/|locales.json|admin/|static/|pluginfw/|javascripts/|socket.io/|ep/|minified/|api/|ro/|error/|jserror/|favicon.ico|robots.txt)"] = {{ etherpad_allow }}
+etherpad__nginx__dependent_servers[0].location_allow./p/ = {{ etherpad_allow }}
+etherpad__nginx__dependent_servers[0].location_allow./redirect = {{ etherpad_allow }}
+etherpad__nginx__dependent_servers[0].location_allow["~ ^/$"] = {{ etherpad_allow }}
+etherpad__nginx__dependent_servers[0].location_allow./ = {{ etherpad_allow }}

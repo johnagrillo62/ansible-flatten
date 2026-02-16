@@ -1,0 +1,27 @@
+[0].name = Check if database server is installed
+[0].environment.LC_MESSAGES = C
+[0]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && dpkg-query -W -f='${Version}\n' 'postgresql' 'postgresql-{{ postgresql_server__version }}' | grep -v '^$'
+[0].args.executable = bash
+[0].register = postgresql_server__register_installed
+[0].changed_when = False
+[0].check_mode = False
+[0].failed_when = False
+[1].name = Install PostgreSQL packages
+[1]["ansible.builtin.package"].name = {{ q("flattened", (postgresql_server__base_packages
+                              + postgresql_server__python_packages
+                              + postgresql_server__packages
+                              + (["autopostgresqlbackup"]
+                                 if (postgresql_server__autopostgresqlbackup | d()) | bool
+                                 else []))) }}
+
+[1]["ansible.builtin.package"].state = present
+[1].register = postgresql_server__register_packages
+[1].until = postgresql_server__register_packages is succeeded
+[2].name = Check if default PostgreSQL cluster exists
+[2]["ansible.builtin.stat"].path = /var/lib/postgresql/{{ postgresql_server__version }}/main/postmaster.opts
+[2].register = postgresql_server__register_installed_main
+[3].name = Remove default PostgreSQL cluster on first install
+[3]["ansible.builtin.command"] = pg_dropcluster --stop {{ postgresql_server__version }} main
+[3].register = postgresql_server__register_dropcluster
+[3].changed_when = postgresql_server__register_dropcluster.changed | bool
+[3].when = ((postgresql_server__register_installed | d() and not postgresql_server__register_installed.stdout) and (postgresql_server__register_installed_main | d() and postgresql_server__register_installed_main.stat.exists) and (ansible_local is undefined or (ansible_local | d() and ansible_local.postgresql is undefined or (ansible_local | d() and ansible_local.postgresql | d() and ansible_local.postgresql.server != 'localhost'))))

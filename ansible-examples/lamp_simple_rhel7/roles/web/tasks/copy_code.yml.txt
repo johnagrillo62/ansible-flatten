@@ -1,0 +1,4 @@
+[0].name = Copy the code from repository
+[0].git = repo={{ repository }} dest=/var/www/html/
+[1].name = Creates the index.php file
+[1].template = src=index.php.j2 dest=/var/www/html/index.php

@@ -1,0 +1,15 @@
+~d0.hosts = k8s
+~d1.become = yes
+~d1.vars_files = 
+~d1.pre_tasks = 
+~d2.name = Copy Flannel manifest tailored for Vagrant.
+~d3.copy = 
+~d4.src = files/manifests/kube-system/kube-flannel-vagrant.yml
+~d4.dest = "~/kube-flannel-vagrant.yml"
+~d1.roles = 
+~d2.role = geerlingguy.swap
+~d3.tags = ['swap', 'kubernetes']
+~d2.role = geerlingguy.docker
+~d3.tags = ['docker']
+~d2.role = geerlingguy.kubernetes
+~d3.tags = ['kubernetes']

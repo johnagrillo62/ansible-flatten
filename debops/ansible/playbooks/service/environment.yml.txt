@@ -1,0 +1,8 @@
+~d0.name = Manage system environment variables
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_all_hosts', 'debops_service_environment' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = environment
+~d3.tags = [ 'role::environment', 'skip::environment' ]

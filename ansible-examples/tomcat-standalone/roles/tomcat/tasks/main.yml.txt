@@ -1,0 +1,38 @@
+[0].name = Install Java 1.7
+[0].yum = name=java-1.7.0-openjdk state=present
+[1].name = add group "tomcat"
+[1].group = name=tomcat
+[2].name = add user "tomcat"
+[2].user = name=tomcat group=tomcat home=/usr/share/tomcat createhome=no
+[2].become = True
+[2].become_method = sudo
+[3].name = Download Tomcat
+[3].get_url = url=http://archive.apache.org/dist/tomcat/tomcat-7/v7.0.61/bin/apache-tomcat-7.0.61.tar.gz dest=/opt/apache-tomcat-7.0.61.tar.gz
+[4].name = Extract archive
+[4].command = chdir=/usr/share /bin/tar xvf /opt/apache-tomcat-7.0.61.tar.gz -C /opt/ creates=/opt/apache-tomcat-7.0.61
+[5].name = Symlink install directory
+[5].file = src=/opt/apache-tomcat-7.0.61 path=/usr/share/tomcat state=link
+[6].name = Change ownership of Tomcat installation
+[6].file = path=/usr/share/tomcat/ owner=tomcat group=tomcat state=directory recurse=yes
+[7].name = Configure Tomcat server
+[7].template = src=server.xml dest=/usr/share/tomcat/conf/
+[7].notify = restart tomcat
+[8].name = Configure Tomcat users
+[8].template = src=tomcat-users.xml dest=/usr/share/tomcat/conf/
+[8].notify = restart tomcat
+[9].name = Install Tomcat init script
+[9].copy = src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
+[10].name = Start Tomcat
+[10].service = name=tomcat state=started enabled=yes
+[11].name = deploy iptables rules
+[11].template = src=iptables-save dest=/etc/sysconfig/iptables
+[11].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '6'
+[11].notify = restart iptables
+[12].name = insert firewalld rule for tomcat http port
+[12].firewalld = port={{ http_port }}/tcp permanent=true state=enabled immediate=yes
+[12].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'
+[13].name = insert firewalld rule for tomcat https port
+[13].firewalld = port={{ https_port }}/tcp permanent=true state=enabled immediate=yes
+[13].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'
+[14].name = wait for tomcat to start
+[14].wait_for = port={{http_port}}

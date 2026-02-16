@@ -1,0 +1,4 @@
+dependencies[0].role = container-engine/containerd-common
+dependencies[1].role = container-engine/runc
+dependencies[2].role = container-engine/crictl
+dependencies[3].role = container-engine/nerdctl

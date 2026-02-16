@@ -1,0 +1,17 @@
+~d0.name = GVisor | Download runsc binary
+~d1.include_tasks = "../../../download/tasks/download_file.yml"
+~d1.vars = 
+~d2.download = "{{ download_defaults | combine(downloads.gvisor_runsc) }}"
+~d0.name = GVisor | Download containerd-shim-runsc-v1 binary
+~d1.include_tasks = "../../../download/tasks/download_file.yml"
+~d1.vars = 
+~d2.download = "{{ download_defaults | combine(downloads.gvisor_containerd_shim) }}"
+~d0.name = GVisor | Copy binaries
+~d1.copy = 
+~d2.src = "{{ item.src }}"
+~d2.dest = "{{ bin_dir }}/{{ item.dest }}"
+~d2.mode = "0755"
+~d2.remote_src = true
+~d1.with_items = 
+~d2.{ src = "{{ downloads.gvisor_runsc.dest }}", dest: "runsc" }
+~d2.{ src = "{{ downloads.gvisor_containerd_shim.dest }}", dest: "containerd-shim-runsc-v1" }

@@ -1,0 +1,3 @@
+[0].name = RHEL auto-attach subscription
+[0].command = /sbin/subscription-manager attach --auto
+[0].become = true

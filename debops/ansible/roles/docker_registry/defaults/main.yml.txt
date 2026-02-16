@@ -1,0 +1,211 @@
+docker_registry__base_packages = {{ ["docker-registry"]
+                                    if (not docker_registry__upstream | bool)
+                                    else [] }}
+
+docker_registry__version = {{ ansible_local.docker_registry.version | d("0.0.0") }}
+docker_registry__user = docker-registry
+docker_registry__group = docker-registry
+docker_registry__additional_groups[0] = {{ ansible_local.redis_server.auth_group | d([]) }}
+docker_registry__home = /var/lib/docker-registry
+docker_registry__comment = Docker Registry
+docker_registry__shell = /usr/sbin/nologin
+docker_registry__distribution_release = {{ ansible_local.core.distribution_release | d(ansible_distribution_release) }}
+docker_registry__upstream = {{ True
+                               if (docker_registry__distribution_release in
+                                   ["stretch", "trusty", "xenial"])
+                               else False }}
+
+docker_registry__src = {{ docker_registry__home + "/src" }}
+docker_registry__gopath = {{ docker_registry__home + "/go" }}
+docker_registry__git_dest = {{ docker_registry__gopath + "/src/"
+                               + docker_registry__git_repo.split("://")[1] }} 
+docker_registry__git_dir = {{ docker_registry__src + "/" + docker_registry__git_repo.split("://")[1] }}
+docker_registry__git_gpg_key = 8C7A 111C 2110 5794 B0E8  A27B F58C 5D0A 4405 ACDB
+docker_registry__git_repo = https://github.com/docker/distribution
+docker_registry__git_version = v2.7.1
+docker_registry__binary = {{ "/usr/local/bin/docker-registry"
+                             if docker_registry__upstream | bool
+                             else "/usr/bin/docker-registry" }}
+
+docker_registry__fqdn = registry.{{ docker_registry__domain }}
+docker_registry__domain = {{ ansible_domain }}
+docker_registry__backend_port = 5070
+docker_registry__max_upload_size = 4G
+docker_registry__basic_auth = {{ False
+                                 if docker_registry__token_enabled | bool
+                                 else True }}
+
+docker_registry__basic_auth_realm = Docker Registry
+docker_registry__basic_auth_name = docker-registry
+docker_registry__basic_auth_users = {{ ansible_local.core.admin_users | d([]) }}
+docker_registry__basic_auth_except_get = False
+docker_registry__storage_dir = {{ (ansible_local.fhs.data | d("/srv"))
+                                  + "/" + docker_registry__user + "/storage" }} 
+docker_registry__storage_mode = 0755
+docker_registry__redis_enabled = {{ ansible_local.redis_server.installed | d() | bool }}
+docker_registry__redis_host = 127.0.0.1
+docker_registry__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
+docker_registry__redis_password = {{ ansible_local.redis_server.password | d("") }}
+docker_registry__redis_db = 0
+docker_registry__token_provider = gitlab
+docker_registry__token_enabled = {{ True
+                                    if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                        (ansible_local[docker_registry__token_provider].registry | d()) | bool)
+                                    else False }}
+
+docker_registry__token_fqdn = {{ ansible_local[docker_registry__token_provider].fqdn
+                                 if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                     ansible_local[docker_registry__token_provider].fqdn | d())
+                                 else ("code." + docker_registry__domain) }}
+
+docker_registry__token_realm_url = {{ ansible_local[docker_registry__token_provider].registry_token_realm_url
+                                      if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                          ansible_local[docker_registry__token_provider].registry_token_realm_url | d())
+                                      else "" }}
+
+docker_registry__token_issuer = {{ ansible_local[docker_registry__token_provider].registry_token_issuer
+                                   if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                       ansible_local[docker_registry__token_provider].registry_token_issuer | d())
+                                   else "" }}
+
+docker_registry__token_service = {{ ansible_local[docker_registry__token_provider].registry_token_service
+                                    if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                        ansible_local[docker_registry__token_provider].registry_token_service | d())
+                                    else "" }}
+
+docker_registry__token_pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+docker_registry__token_pki_realm = {{ ansible_local[docker_registry__token_provider].registry_pki_realm
+                                      if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
+                                          ansible_local[docker_registry__token_provider].registry_pki_realm | d())
+                                      else "domain" }}
+
+docker_registry__token_pki_crt = default.crt
+docker_registry__token_certificate = {{ docker_registry__token_pki_path + "/"
+                                        + docker_registry__token_pki_realm + "/"
+                                        + docker_registry__token_pki_crt }}
+
+docker_registry__config_file = /etc/docker/registry/config.yml
+docker_registry__original_config[0].name = original-config
+docker_registry__original_config[0].config.version = 0.1
+docker_registry__original_config[0].config.log.fields.service = registry
+docker_registry__original_config[0].config.storage.cache.blobdescriptor = inmemory
+docker_registry__original_config[0].config.http.addr = :5000
+docker_registry__original_config[0].config.http.headers.X-Content-Type-Options[0] = nosniff
+docker_registry__original_config[0].config.health.storagedriver.enabled = True
+docker_registry__original_config[0].config.health.storagedriver.interval = 10s
+docker_registry__original_config[0].config.health.storagedriver.threshold = 3
+docker_registry__original_config[1].name = original-storage
+docker_registry__original_config[1].config.storage.filesystem.rootdirectory = /var/lib/registry
+docker_registry__default_config[0].name = default-http
+docker_registry__default_config[0].config.http.addr = 127.0.0.1:{{ docker_registry__backend_port }}
+docker_registry__default_config[1].name = original-storage
+docker_registry__default_config[1].state = absent
+docker_registry__default_config[2].name = default-storage
+docker_registry__default_config[2].config.storage.filesystem.rootdirectory = {{ docker_registry__storage_dir }}
+docker_registry__default_config[2].config.storage.delete.enabled = True
+docker_registry__default_config[3].name = default-redis
+docker_registry__default_config[3].state = {{ "present" if docker_registry__redis_enabled | bool else "absent" }}
+docker_registry__default_config[3].config.redis.addr = {{ docker_registry__redis_host + ":" + docker_registry__redis_port }}
+docker_registry__default_config[3].config.redis.password = {{ docker_registry__redis_password }}
+docker_registry__default_config[3].config.redis.db = {{ docker_registry__redis_db }}
+docker_registry__default_config[3].config.storage.cache.blobdescriptor = redis
+docker_registry__default_config[4].name = default-token
+docker_registry__default_config[4].state = {{ "present" if docker_registry__token_enabled | bool else "absent" }}
+docker_registry__default_config[4].config.auth.token.realm = {{ docker_registry__token_realm_url }}
+docker_registry__default_config[4].config.auth.token.issuer = {{ docker_registry__token_issuer }}
+docker_registry__default_config[4].config.auth.token.service = {{ docker_registry__token_service }}
+docker_registry__default_config[4].config.auth.token.rootcertbundle = {{ docker_registry__token_certificate }}
+docker_registry__combined_config = {{ docker_registry__original_config
+                                      + docker_registry__default_config
+                                      + docker_registry__config
+                                      + docker_registry__group_config
+                                      + docker_registry__host_config }}
+
+docker_registry__garbage_collector_enabled = True
+docker_registry__garbage_collector_interval = daily
+docker_registry__etc_services__dependent_list[0].name = docker-registry
+docker_registry__etc_services__dependent_list[0].port = {{ docker_registry__backend_port }}
+docker_registry__etc_services__dependent_list[0].comment = Docker Registry
+docker_registry__keyring__dependent_gpg_keys[0].user = {{ docker_registry__user }}
+docker_registry__keyring__dependent_gpg_keys[0].group = {{ docker_registry__group }}
+docker_registry__keyring__dependent_gpg_keys[0].home = {{ docker_registry__home }}
+docker_registry__keyring__dependent_gpg_keys[0].id = {{ docker_registry__git_gpg_key }}
+docker_registry__keyring__dependent_gpg_keys[0].state = {{ "present" if docker_registry__upstream | bool else "absent" }}
+docker_registry__python__dependent_packages3[0] = python3-yaml
+docker_registry__python__dependent_packages2[0] = python-yaml
+docker_registry__nginx__dependent_maps[0].name = docker_registry_headers
+docker_registry__nginx__dependent_maps[0].map = $upstream_http_docker_distribution_api_version $docker_distribution_api_version
+docker_registry__nginx__dependent_maps[0].mapping = ''     'registry/2.0';
+
+docker_registry__nginx__dependent_maps[0].state = present
+docker_registry__nginx__dependent_upstreams[0].name = docker-registry
+docker_registry__nginx__dependent_upstreams[0].server = 127.0.0.1:{{ docker_registry__backend_port }}
+docker_registry__nginx__dependent_htpasswd.name = {{ docker_registry__basic_auth_name }}
+docker_registry__nginx__dependent_htpasswd.users = {{ docker_registry__basic_auth_users }}
+docker_registry__nginx__dependent_servers[0].name = {{ docker_registry__fqdn }}
+docker_registry__nginx__dependent_servers[0].filename = debops.docker_registry
+docker_registry__nginx__dependent_servers[0].allow = {{ docker_registry__allow }}
+docker_registry__nginx__dependent_servers[0].auth_basic = {{ False
+                    if (docker_registry__basic_auth_except_get | bool)
+                    else (docker_registry__basic_auth | bool) }}
+
+docker_registry__nginx__dependent_servers[0].auth_basic_realm = {{ docker_registry__basic_auth_realm }}
+docker_registry__nginx__dependent_servers[0].auth_basic_name = {{ docker_registry__basic_auth_name }}
+docker_registry__nginx__dependent_servers[0].options = client_max_body_size {{ docker_registry__max_upload_size }};
+
+# required to avoid error HTTP 411: see Issue #1486 (https://github.com/moby/moby/issues/1486)
+chunked_transfer_encoding on;
+
+docker_registry__nginx__dependent_servers[0].location_list[0].pattern = /
+docker_registry__nginx__dependent_servers[0].location_list[0].options = {% if docker_registry__token_enabled | bool %}
+return 307 $scheme://{{ docker_registry__token_fqdn }}/;
+{% else %}
+return 307 /v2/;
+{% endif %}
+
+docker_registry__nginx__dependent_servers[0].location_list[1].pattern = /v2/
+docker_registry__nginx__dependent_servers[0].location_list[1].options = # Do not allow connections from docker 1.5 and earlier
+# docker pre-1.6.0 did not properly set the user agent on ping, catch "Go *" user agents
+if ($http_user_agent ~ "^(docker\/1\.(3|4|5(?!\.[0-9]-dev))|Go ).*$" ) {
+  return 404;
+}
+
+{% if docker_registry__basic_auth_except_get | bool %}
+set $auth_basic "{{ docker_registry__basic_auth_realm }}";
+if ($request_method ~* "^(GET|HEAD)$") {
+    set $auth_basic "off";
+}
+if ($force_authentication) {
+    set $auth_basic "{{ docker_registry__basic_auth_realm }}";
+}
+auth_basic $auth_basic;
+auth_basic_user_file {{ nginx_private_path + "/" + docker_registry__basic_auth_name }};
+
+set $auth_status "deny";
+if ($request_uri ~* "^/v2/([^/]+)/") {
+    set $user_path $1;
+}
+if ($remote_user = $user_path) {
+    set $auth_status "grant";
+}
+if ($request_method ~* "^(GET|HEAD)$") {
+    set $auth_status "grant";
+}
+if ($auth_status != "grant") {
+    return 401;
+}
+{% endif %}
+
+# If $docker_distribution_api_version is empty, the header will not be added.
+# See the map directive above where this variable is defined.
+add_header 'Docker-Distribution-Api-Version' $docker_distribution_api_version always;
+
+proxy_pass http://docker-registry;
+proxy_set_header Host              $http_host;
+proxy_set_header X-Real-IP         $remote_addr;
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Host  $server_name;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_read_timeout 900;
+
+docker_registry__nginx__dependent_servers[0].location_list[1].state = present

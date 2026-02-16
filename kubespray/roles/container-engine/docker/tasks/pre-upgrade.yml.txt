@@ -1,0 +1,22 @@
+[0].name = Remove legacy docker repo file
+[0].file.path = {{ yum_repo_dir }}/docker.repo
+[0].file.state = absent
+[0].when[0] = ansible_os_family == 'RedHat'
+[0].when[1] = not is_ostree
+[1].name = Ensure old versions of Docker are not installed. | Debian
+[1].apt.name = {{ docker_remove_packages_apt }}
+[1].apt.state = absent
+[1].when[0] = ansible_os_family == 'Debian'
+[1].when[1] = (docker_versioned_pkg[docker_version | string] is search('docker-ce'))
+[2].name = Ensure podman not installed. | RedHat
+[2].package.name = {{ podman_remove_packages_yum }}
+[2].package.state = absent
+[2].when[0] = ansible_os_family == 'RedHat'
+[2].when[1] = (docker_versioned_pkg[docker_version | string] is search('docker-ce'))
+[2].when[2] = not is_ostree
+[3].name = Ensure old versions of Docker are not installed. | RedHat
+[3].package.name = {{ docker_remove_packages_yum }}
+[3].package.state = absent
+[3].when[0] = ansible_os_family == 'RedHat'
+[3].when[1] = (docker_versioned_pkg[docker_version | string] is search('docker-ce'))
+[3].when[2] = not is_ostree

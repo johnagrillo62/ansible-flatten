@@ -1,0 +1,7 @@
+~d0.application__deploy_state = 'present'
+~d0.application__rabbitmq_server__dependent_config = 
+~d1.name = 'application_name'
+~d2.options = 
+~d3.name = 'config_first_option'
+~d4.value = 'value1'
+~d3.config_second_option = 'value2'

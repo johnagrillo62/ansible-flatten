@@ -1,0 +1,16 @@
+[0].name = Install http
+[0].yum.name = {{ item }}
+[0].yum.state = present
+[0].with_items[0] = httpd
+[0].with_items[1] = php
+[0].with_items[2] = php-mysql
+[0].with_items[3] = git
+[1].name = Configure SELinux to allow httpd to connect to remote database
+[1].seboolean.name = httpd_can_network_connect_db
+[1].seboolean.state = true
+[1].seboolean.persistent = yes
+[1].when = sestatus.rc != 0
+[2].name = http service state
+[2].service.name = httpd
+[2].service.state = started
+[2].service.enabled = yes

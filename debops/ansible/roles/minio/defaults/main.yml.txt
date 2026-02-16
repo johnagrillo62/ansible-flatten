@@ -1,0 +1,140 @@
+minio__user = minio
+minio__group = minio
+minio__additional_groups = {{ ["ssl-cert"] if minio__pki_enabled | bool else [] }}
+minio__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                 + "/" + minio__user }} 
+minio__shell = /usr/sbin/nologin
+minio__comment = MinIO
+minio__upstream_gpg_key = 4405 F3F0 DDBA 1B9E 68A3  1D25 12C7 4390 F9AA C728
+minio__upstream_type = url
+minio__upstream_upgrade = False
+minio__upstream_url_mirror = https://dl.min.io/server/minio/release/
+minio__upstream_platform = linux-amd64
+minio__upstream_url_release = {{ minio__env_upstream_url_release }}
+minio__upstream_url_binary = {{ "archive/minio." + minio__upstream_url_release }}
+minio__upstream_git_repository = https://github.com/minio/minio
+minio__upstream_git_release = {{ "RELEASE.2019-03-27T22-35-21Z"
+                                 if (ansible_distribution_release in
+                                     ["stretch", "buster", "xenial", "bionic"])
+                                     else ("RELEASE.2019-09-05T23-24-38Z"
+                                       if (ansible_distribution_release in
+                                           ["bullseye"])
+                                       else minio__upstream_url_release) }}
+
+minio__binary = {{ ansible_local.golang.binaries["minio"]
+                   if (ansible_local.golang.binaries | d() and
+                       ansible_local.golang.binaries.minio | d())
+                   else "" }}
+
+minio__config_dir = /etc/minio
+minio__volumes_dir = /srv/minio
+minio__fqdn = {{ ansible_fqdn }}
+minio__domain = {{ ansible_domain }}
+minio__pki_enabled = {{ ansible_local.pki.enabled
+                        if (ansible_local | d() and ansible_local.pki | d() and
+                            ansible_local.pki.enabled is defined)
+                        else False }}
+
+minio__pki_base_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
+minio__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+minio__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+minio__pki_crt = public/full.pem
+minio__tls_certs_dir = {{ minio__home + "/.minio/certs" }}
+minio__tls_private_key = {{ minio__pki_base_path + "/" + minio__pki_realm + "/" + minio__pki_key }}
+minio__tls_public_crt = {{ minio__pki_base_path + "/" + minio__pki_realm + "/" + minio__pki_crt }}
+minio__default_instances[0].name = main
+minio__default_instances[0].port = 9000
+minio__default_instances[0].console_port = 19000
+minio__default_instances[0].fqdn = {{ minio__fqdn }}
+minio__default_instances[0].domain = {{ minio__fqdn }}
+minio__combined_instances = {{ minio__default_instances
+                               + minio__instances
+                               + minio__group_instances
+                               + minio__host_instances }}
+
+minio__golang__dependent_packages[0].name = minio
+minio__golang__dependent_packages[0].upstream_type = {{ minio__upstream_type }}
+minio__golang__dependent_packages[0].gpg = {{ minio__upstream_gpg_key }}
+minio__golang__dependent_packages[0].url[0].src = {{ minio__upstream_url_mirror + minio__upstream_platform + "/" + minio__upstream_url_binary }}
+minio__golang__dependent_packages[0].url[0].dest = releases/{{ minio__upstream_platform }}/minio/minio.{{ minio__upstream_url_release }}
+minio__golang__dependent_packages[0].url[0].checksum = sha256:{{ minio__upstream_url_mirror + minio__upstream_platform + "/" + minio__upstream_url_binary }}.sha256sum
+minio__golang__dependent_packages[0].url[1].src = {{ minio__upstream_url_mirror + minio__upstream_platform + "/" + minio__upstream_url_binary + ".asc" }}
+minio__golang__dependent_packages[0].url[1].dest = releases/{{ minio__upstream_platform }}/minio/minio.{{ minio__upstream_url_release }}.asc
+minio__golang__dependent_packages[0].url[1].gpg_verify = True
+minio__golang__dependent_packages[0].url_binaries[0].src = releases/{{ minio__upstream_platform }}/minio/minio.{{ minio__upstream_url_release }}
+minio__golang__dependent_packages[0].url_binaries[0].dest = minio
+minio__golang__dependent_packages[0].url_binaries[0].notify = Restart minio
+minio__golang__dependent_packages[0].git[0].repo = {{ minio__upstream_git_repository }}
+minio__golang__dependent_packages[0].git[0].version = {{ minio__upstream_git_release }}
+minio__golang__dependent_packages[0].git[0].build_script = make clean build
+
+minio__golang__dependent_packages[0].git_binaries[0].src = {{ minio__upstream_git_repository.split("://")[1] + "/minio" }}
+minio__golang__dependent_packages[0].git_binaries[0].dest = minio
+minio__golang__dependent_packages[0].git_binaries[0].notify = Restart minio
+minio__etc_services__dependent_list = {{ minio__env_etc_services_dependent_list }}
+minio__sysctl__dependent_parameters[0].name = minio
+minio__sysctl__dependent_parameters[0].weight = 80
+minio__sysctl__dependent_parameters[0].options[0].name = net.ipv4.tcp_fin_timeout
+minio__sysctl__dependent_parameters[0].options[0].comment = A socket left in memory takes approximately 1.5Kb of memory. It makes
+sense to close the unused sockets preemptively to ensure no memory
+leakage. This way, even if a peer doesn't close the socket due to
+some reason, the system itself closes it after a timeout.
+
+The "tcp_fin_timeout" variable defines this timeout and tells kernel
+how long to keep sockets in the state FIN-WAIT-2. We recommend
+setting it to 30.
+
+minio__sysctl__dependent_parameters[0].options[0].value = 30
+minio__sysctl__dependent_parameters[0].options[1].name = net.ipv4.tcp_keepalive_probes
+minio__sysctl__dependent_parameters[0].options[1].comment = This variable defines the number of unacknowledged probes to be sent
+before considering a connection dead.
+
+minio__sysctl__dependent_parameters[0].options[1].value = 5
+minio__sysctl__dependent_parameters[0].options[2].name = net.core.wmem_max
+minio__sysctl__dependent_parameters[0].options[2].comment = This parameter sets the max OS send buffer size for all types of
+connections.
+
+minio__sysctl__dependent_parameters[0].options[2].value = 540000
+minio__sysctl__dependent_parameters[0].options[3].name = net.core.rmem_max
+minio__sysctl__dependent_parameters[0].options[3].comment = This parameter sets the max OS receive buffer size for all types of
+connections.
+
+minio__sysctl__dependent_parameters[0].options[3].value = 540000
+minio__sysctl__dependent_parameters[0].options[4].name = vm.swappiness
+minio__sysctl__dependent_parameters[0].options[4].comment = This parameter controls the relative weight given to swapping out
+runtime memory, as opposed to dropping pages from the system page
+cache. It takes values from 0 to 100, both inclusive. We recommend
+setting it to 10.
+
+minio__sysctl__dependent_parameters[0].options[4].value = 10
+minio__sysctl__dependent_parameters[0].options[5].name = vm.dirty_background_ratio
+minio__sysctl__dependent_parameters[0].options[5].comment = This is the percentage of system memory that can be filled with dirty
+pages, i.e. memory pages that still need to be written to disk. We
+recommend writing the data to the disk as soon as possible. To do
+this, set the dirty_background_ratio to 1.
+
+minio__sysctl__dependent_parameters[0].options[5].value = 1
+minio__sysctl__dependent_parameters[0].options[6].name = vm.dirty_ratio
+minio__sysctl__dependent_parameters[0].options[6].comment = This defines is the absolute maximum amount of system memory that can
+be filled with dirty pages before everything must get committed to
+disk.
+
+minio__sysctl__dependent_parameters[0].options[6].value = 1
+minio__sysctl__dependent_parameters[0].options[7].name = kernel.sched_min_granularity_ns
+minio__sysctl__dependent_parameters[0].options[7].comment = This parameter decides the minimum time a task will be be allowed to
+run on CPU before being preempted out. We recommend setting it to
+10ms.
+
+minio__sysctl__dependent_parameters[0].options[7].value = 10000000
+minio__sysctl__dependent_parameters[0].options[8].name = kernel.sched_wakeup_granularity_ns
+minio__sysctl__dependent_parameters[0].options[8].comment = Lowering this parameter improves wake-up latency and throughput for
+latency critical tasks, particularly when a short duty cycle load
+component must compete with CPU bound components.
+
+minio__sysctl__dependent_parameters[0].options[8].value = 15000000
+minio__sysfs__dependent_attributes[0].role = minio
+minio__sysfs__dependent_attributes[0].config[0].name = transparent_hugepages
+minio__sysfs__dependent_attributes[0].config[0].state = present
+minio__ferm__dependent_rules = {{ minio__env_ferm_dependent_rules }}
+minio__nginx__dependent_upstreams = {{ minio__env_nginx_dependent_upstreams }}
+minio__nginx__dependent_servers = {{ minio__env_nginx_dependent_servers }}

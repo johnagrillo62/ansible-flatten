@@ -1,0 +1,58 @@
+metricbeat__base_packages[0] = metricbeat
+metricbeat__version = {{ ansible_local.metricbeat.version | d("0.0.0") }}
+metricbeat__original_configuration[0].name = metricbeat_config_modules
+metricbeat__original_configuration[0].config["metricbeat.config.modules"].path = ${path.config}/modules.d/*.yml
+metricbeat__original_configuration[0].config["metricbeat.config.modules"]["reload.enabled"] = False
+metricbeat__original_configuration[1].name = setup_template_settings
+metricbeat__original_configuration[1].config["setup.template.settings"]["index.number_of_shards"] = 1
+metricbeat__original_configuration[1].config["setup.template.settings"]["index.codec"] = best_compression
+metricbeat__original_configuration[2].name = setup_kibana
+metricbeat__original_configuration[2].config["setup.kibana"] = null
+metricbeat__original_configuration[3].name = output_elasticsearch
+metricbeat__original_configuration[3].config["output.elasticsearch"].hosts[0] = localhost:9200
+metricbeat__original_configuration[4].name = processors
+metricbeat__original_configuration[4].config.processors[0].add_host_metadata = null
+metricbeat__original_configuration[4].config.processors[1].add_cloud_metadata = null
+metricbeat__original_configuration[4].config.processors[2].add_docker_metadata = null
+metricbeat__original_configuration[4].config.processors[3].add_kubernetes_metadata = null
+metricbeat__default_configuration[0].name = metricbeat_config_modules
+metricbeat__default_configuration[0].config["metricbeat.config.modules"].path = ${path.config}/modules.d/*.yml
+metricbeat__default_configuration[0].config["metricbeat.config.modules"]["reload.enabled"] = True
+metricbeat__default_configuration[0].config["metricbeat.config.modules"]["reload.period"] = 30s
+metricbeat__combined_configuration = {{ metricbeat__original_configuration
+                                        + metricbeat__default_configuration
+                                        + metricbeat__configuration
+                                        + metricbeat__group_configuration
+                                        + metricbeat__host_configuration }}
+
+metricbeat__default_snippets[0].name = modules.d/system.yml
+metricbeat__default_snippets[0].divert = True
+metricbeat__default_snippets[0].config[0].module = system
+metricbeat__default_snippets[0].config[0].period = 10s
+metricbeat__default_snippets[0].config[0].metricsets[0] = cpu
+metricbeat__default_snippets[0].config[0].metricsets[1] = load
+metricbeat__default_snippets[0].config[0].metricsets[2] = memory
+metricbeat__default_snippets[0].config[0].metricsets[3] = network
+metricbeat__default_snippets[0].config[0].metricsets[4] = process
+metricbeat__default_snippets[0].config[0].metricsets[5] = process_summary
+metricbeat__default_snippets[0].config[0].metricsets[6] = socket_summary
+metricbeat__default_snippets[0].config[0]["process.include_top_n"].by_cpu = 5
+metricbeat__default_snippets[0].config[0]["process.include_top_n"].by_memory = 5
+metricbeat__default_snippets[0].config[1].module = system
+metricbeat__default_snippets[0].config[1].period = 1m
+metricbeat__default_snippets[0].config[1].metricsets[0] = filesystem
+metricbeat__default_snippets[0].config[1].metricsets[1] = fsstat
+metricbeat__default_snippets[0].config[1].processors[0]["drop_event.when.regexp"]["system.filesystem.mount_point"] = ^/(sys|cgroup|proc|dev|etc|host|lib|snap)($|/)
+metricbeat__default_snippets[0].config[2].module = system
+metricbeat__default_snippets[0].config[2].period = 15m
+metricbeat__default_snippets[0].config[2].metricsets[0] = uptime
+metricbeat__combined_snippets = {{ metricbeat__default_snippets
+                                   + metricbeat__snippets
+                                   + metricbeat__group_snippets
+                                   + metricbeat__host_snippets }}
+
+metricbeat__combined_keys = {{ metricbeat__keys
+                               + metricbeat__group_keys
+                               + metricbeat__host_keys }}
+
+metricbeat__extrepo__dependent_sources[0] = elastic

@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].gather_facts = false
+[0].connection = local
+[0].vars.sleep_interval = 5
+[0].tasks[0].name = sleep for a specified interval
+[0].tasks[0].command = sleep '{{ sleep_interval }}'

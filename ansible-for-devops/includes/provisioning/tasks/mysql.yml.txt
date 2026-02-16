@@ -1,0 +1,14 @@
+[0].name = Create a MySQL database for Drupal.
+[0].mysql_db = db={{ domain }} state=present
+[1].name = Create a MySQL user for Drupal.
+[1].mysql_user.name = {{ domain }}
+[1].mysql_user.password = 1234
+[1].mysql_user.priv = {{ domain }}.*:ALL
+[1].mysql_user.host = localhost
+[1].mysql_user.state = present
+[2].name = Create a MySQL user for Drupal.
+[2].mysql_user.name = {{ domain }}
+[2].mysql_user.password = 1234
+[2].mysql_user.priv = {{ domain }}.*:ALL
+[2].mysql_user.host = localhost
+[2].mysql_user.state = present

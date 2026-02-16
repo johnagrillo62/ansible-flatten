@@ -1,0 +1,4 @@
+~d0.name = Restart isc-dhcp-server
+~d1.ansible.builtin.service = 
+~d2.name = 'isc-dhcp-server'
+~d2.state = 'restarted'

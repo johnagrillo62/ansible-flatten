@@ -1,0 +1,5 @@
+[0].hosts = lamp_memcached
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.memcached

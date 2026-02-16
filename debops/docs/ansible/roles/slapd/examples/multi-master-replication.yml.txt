@@ -1,0 +1,34 @@
+~d0.slapd__group_allow = [ '192.0.2.0/24' ]
+~d0.slapd__cluster_tasks = 
+~d1.name = 'Configure ServerID values'
+~d2.dn = 'cn=config'
+~d2.attributes = 
+~d3.olcServerID = 
+~d4.'001 ldap = //slapd-server1.example.org/'
+~d4.'002 ldap = //slapd-server2.example.org/'
+~d4.'003 ldap = //slapd-server3.example.org/'
+~d2.state = 'exact'
+~d1.name = 'Configure replication of the cn=config database'
+~d2.dn = 'olcDatabase={0}config,cn=config'
+~d2.attributes = 
+~d3.olcSyncrepl = 
+~d6.provider="ldap = //slapd-server1.example.org/"
+~d6.provider="ldap = //slapd-server2.example.org/"
+~d6.provider="ldap = //slapd-server3.example.org/"
+~d3.olcMirrorMode = 'TRUE'
+~d2.state = 'exact'
+~d1.name = 'Configure time and size limits in the main database'
+~d2.dn = 'olcDatabase={1}mdb,cn=config'
+~d2.attributes = 
+~d3.olcLimits = 
+~d2.ordered = True
+~d2.state = 'exact'
+~d1.name = 'Configure replication of the main database'
+~d2.dn = 'olcDatabase={1}mdb,cn=config'
+~d2.attributes = 
+~d3.olcSyncrepl = 
+~d6.provider="ldap = //slapd-server1.example.org/"
+~d6.provider="ldap = //slapd-server2.example.org/"
+~d6.provider="ldap = //slapd-server3.example.org/"
+~d3.olcMirrorMode = 'TRUE'
+~d2.state = 'exact'

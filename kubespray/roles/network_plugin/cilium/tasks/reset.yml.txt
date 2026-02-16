@@ -1,0 +1,6 @@
+[0].name = Reset | check and remove devices if still present
+[0].include_tasks = reset_iface.yml
+[0].vars.iface = {{ item }}
+[0].loop[0] = cilium_host
+[0].loop[1] = cilium_net
+[0].loop[2] = cilium_vxlan

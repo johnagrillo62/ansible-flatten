@@ -1,0 +1,21 @@
+[0].name = Check Ansible version
+[0].hosts = all
+[0].gather_facts = false
+[0].become = false
+[0].run_once = true
+[0].vars.minimal_ansible_version = 2.18.0
+[0].vars.maximal_ansible_version = 2.19.0
+[0].tags = always
+[0].tasks[0].name = Check {{ minimal_ansible_version }} <= Ansible version < {{ maximal_ansible_version }}
+[0].tasks[0].assert.msg = Ansible must be between {{ minimal_ansible_version }} and {{ maximal_ansible_version }} exclusive - you have {{ ansible_version.string }}
+[0].tasks[0].assert.that[0] = ansible_version.string is version(minimal_ansible_version, ">=")
+[0].tasks[0].assert.that[1] = ansible_version.string is version(maximal_ansible_version, "<")
+[0].tasks[0].tags[0] = check
+[0].tasks[1].name = Check that python netaddr is installed
+[0].tasks[1].assert.msg = Python netaddr is not present
+[0].tasks[1].assert.that = '127.0.0.1' | ansible.utils.ipaddr
+[0].tasks[1].tags[0] = check
+[0].tasks[2].name = Check that jinja is not too old (install via pip)
+[0].tasks[2].assert.msg = Your Jinja version is too old, install via pip
+[0].tasks[2].assert.that = {% set test %}It works{% endset %}{{ test == 'It works' }}
+[0].tasks[2].tags[0] = check

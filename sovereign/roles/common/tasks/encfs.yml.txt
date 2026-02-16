@@ -1,0 +1,21 @@
+[0].name = Install encfs & fuse
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = encfs
+[0].with_items[1] = fuse
+[0].with_items[2] = libfuse-dev
+[0].tags[0] = dependencies
+[1].name = Create encrypted directory
+[1].file = state=directory path=/encrypted
+[2].name = Check if the /encrypted directory is empty
+[2].shell = ls /encrypted/*
+[2].ignore_errors = True
+[2].changed_when = False
+[2].register = encfs_check
+[3].name = If /encrypted is empty, create the encfs there
+[3].shell = printf "p\n{{ encfs_password }}" | encfs /encrypted /decrypted --public --stdinpass && touch /decrypted/test
+[3].when = encfs_check.rc > 0
+[4].name = If /encrypted isn't empty, mount it (but only if /decrypted/test doesn't exist)
+[4].shell = printf '{{ encfs_password }}' | encfs /encrypted /decrypted --public --stdinpass creates=/decrypted/test
+[4].when = encfs_check.rc == 0
+[5].name = Set decrypted directory permissions
+[5].file = state=directory path=/decrypted group=mail mode=0775

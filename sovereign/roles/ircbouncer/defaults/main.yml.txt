@@ -1,0 +1,1 @@
+~d0.irc_timezone = "{{ common_timezone|default('Etc/UTC') }}"

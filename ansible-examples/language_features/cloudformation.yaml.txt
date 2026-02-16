@@ -1,0 +1,14 @@
+[0].name = provision stack
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = false
+[0].tasks[0].name = launch ansible cloudformation example
+[0].tasks[0].cloudformation = stack_name="ansible-cloudformation" state=present region=us-east-1 disable_rollback=true template=files/cloudformation-example.json
+
+[0].tasks[0].args.template_parameters.KeyName = jmartin
+[0].tasks[0].args.template_parameters.DiskType = ephemeral
+[0].tasks[0].args.template_parameters.InstanceType = m1.small
+[0].tasks[0].args.template_parameters.ClusterSize = 3
+[0].tasks[0].register = stack
+[0].tasks[1].name = show stack outputs
+[0].tasks[1].debug = msg="My stack outputs are {{stack.stack_outputs}}"

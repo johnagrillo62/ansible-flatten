@@ -1,0 +1,8 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret
+[1].name = Configure server-side
+[1]["ansible.builtin.include_tasks"] = configure_servers.yml
+[1].when = boxbackup_server is defined and boxbackup_server == ansible_fqdn
+[2].name = Configure client-side
+[2]["ansible.builtin.include_tasks"] = configure_clients.yml
+[2].when = boxbackup_server is defined and boxbackup_server != ansible_fqdn

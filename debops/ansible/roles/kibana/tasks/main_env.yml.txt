@@ -1,0 +1,3 @@
+~d0.name = Prepare debops.kibana environment
+~d1.ansible.builtin.set_fact = 
+~d2.kibana__secret__directories = '{{ lookup("template", "lookup/kibana__secret__directories.j2") | from_yaml }}'

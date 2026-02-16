@@ -1,0 +1,58 @@
+[0].name = Generate a random string for test
+[0].set_fact.test_id = {{ lookup('password', '/dev/null chars=ascii_letters length=16') }}
+[0].when = test_id is not defined
+[1].name = Generate names
+[1].set_fact.org_name1 = AWX-Collection-tests-import-organization-{{ test_id }}
+[1].set_fact.org_name2 = AWX-Collection-tests-import-organization2-{{ test_id }}
+[2].block[0].name = Import something
+[2].block[0].import.assets.organizations[0].name = {{ org_name1 }}
+[2].block[0].import.assets.organizations[0].description = 
+[2].block[0].import.assets.organizations[0].max_hosts = 0
+[2].block[0].import.assets.organizations[0].natural_key.name = {{ org_name1 }}
+[2].block[0].import.assets.organizations[0].natural_key.type = organization
+[2].block[0].register = import_output
+[2].block[1].assert.that[0] = import_output is changed
+[2].block[2].name = Import the same thing again
+[2].block[2].import.assets.organizations[0].name = {{ org_name1 }}
+[2].block[2].import.assets.organizations[0].description = 
+[2].block[2].import.assets.organizations[0].max_hosts = 0
+[2].block[2].import.assets.organizations[0].natural_key.name = {{ org_name1 }}
+[2].block[2].import.assets.organizations[0].natural_key.type = organization
+[2].block[2].register = import_output
+[2].block[2].ignore_errors = yes
+[2].block[3].assert.that[0] = import_output is not failed
+[2].block[4].name = Write out a json file
+[2].block[4].copy.content = {
+     "organizations": [
+          {
+               "name": "{{ org_name2 }}",
+               "description": "",
+               "max_hosts": 0,
+               "related": {
+                    "notification_templates": [],
+                    "notification_templates_started": [],
+                    "notification_templates_success": [],
+                    "notification_templates_error": [],
+                    "notification_templates_approvals": []
+               },
+               "natural_key": {
+                    "name": "{{ org_name2 }}",
+                    "type": "organization"
+               }
+          }
+     ]
+}
+
+[2].block[4].copy.dest = ./org.json
+[2].block[5].name = Load assets from a file
+[2].block[5].import.assets = {{ lookup('file', 'org.json') | from_json() }}
+[2].block[5].register = import_output
+[2].block[6].assert.that[0] = import_output is changed
+[2].always[0].name = Remove organizations
+[2].always[0].organization.name = {{ item }}
+[2].always[0].organization.state = absent
+[2].always[0].loop[0] = {{ org_name1 }}
+[2].always[0].loop[1] = {{ org_name2 }}
+[2].always[1].name = Delete org.json
+[2].always[1].file.path = ./org.json
+[2].always[1].file.state = absent

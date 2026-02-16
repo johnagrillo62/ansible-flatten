@@ -1,0 +1,6 @@
+[0].name = Cri-o | include vars/v1.29.yml
+[0].include_vars = v1.29.yml
+[0].when = crio_version is version("1.29.0", operator=">=")
+[1].name = Cri-o | include vars/v1.31.yml
+[1].include_vars = v1.31.yml
+[1].when = crio_version is version("1.31.0", operator=">=")

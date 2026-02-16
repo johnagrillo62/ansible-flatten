@@ -1,0 +1,10 @@
+cloud_image = ubuntu-2204
+mode = all-in-one
+vm_memory = 1800
+auto_renew_certificates = true
+kube_proxy_mode = iptables
+enable_nodelocaldns = false
+container_manager = docker
+etcd_deployment_type = docker
+resolvconf_mode = docker_dns
+docker_repo_key_keyring = /etc/apt/trusted.gpg.d/docker.gpg

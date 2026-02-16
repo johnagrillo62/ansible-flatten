@@ -1,0 +1,28 @@
+~d0.name = Import DebOps global handlers
+~d1.ansible.builtin.import_role = 
+~d2.name = 'global_handlers'
+~d0.name = Configure /etc/environment
+~d1.ansible.builtin.blockinfile = # noqa args[module]
+~d2.dest = '{{ environment__file }}'
+~d2.state = '{{ "present" if environment__enabled | bool else "absent" }}'
+~d2.block = '{{ lookup("template", "lookup/environment__variables.j2") }}'
+~d2.insertbefore = '{{ "BOF" if environment__placement == "before" else omit }}'
+~d2.insertafter = '{{ "EOF" if environment__placement == "after" else omit }}'
+~d0.name = Make sure Ansible fact directory exists
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/ansible/facts.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d0.name = Update Ansible local facts
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/ansible/facts.d/environment.fact.j2'
+~d2.dest = '/etc/ansible/facts.d/environment.fact'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.notify = [ 'Refresh host facts' ]
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Reload facts if they were modified
+~d1.ansible.builtin.meta = 'flush_handlers'

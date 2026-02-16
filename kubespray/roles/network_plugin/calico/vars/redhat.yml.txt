@@ -1,0 +1,2 @@
+calico_wireguard_packages[0] = wireguard-dkms
+calico_wireguard_packages[1] = wireguard-tools

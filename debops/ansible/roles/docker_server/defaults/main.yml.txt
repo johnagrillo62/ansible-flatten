@@ -1,0 +1,95 @@
+docker_server__upstream = False
+docker_server__base_packages[0] = {{ ["docker-ce", "docker-compose-plugin"]
+        if docker_server__upstream | bool
+        else ["docker.io", "docker-compose"] }}
+
+docker_server__version = {{ ansible_local.docker_server.version | d("0.0.0") }}
+docker_server__ferm_post_hook = {{ ansible_local.ferm.enabled | d() | bool }}
+docker_server__resolved_integration = {{ True
+                                         if ((ansible_local.resolved.state | d()) == "enabled")
+                                         else False }}
+
+docker_server__resolved_address = 172.17.0.1
+docker_server__resolved_networks[0] = 172.17.0.0/16
+docker_server__swarm_support = False
+docker_server__swarm_networks[0] = {{ ansible_default_ipv4.network
+                                     + "/" + ansible_default_ipv4.prefix }} 
+docker_server__admins = {{ ansible_local.core.admin_users | d([]) }}
+docker_server__default_configuration[0].name = log-driver
+docker_server__default_configuration[0].config.log-driver = journald
+docker_server__default_configuration[0].state = {{ "present"
+               if ((ansible_local.journald.enabled | d()) | bool)
+               else "ignore" }}
+
+docker_server__default_configuration[1].name = remote-nameservers
+docker_server__default_configuration[1].config.dns = {{ ansible_dns.nameservers }}
+docker_server__default_configuration[1].state = {{ "present"
+               if (not ansible_dns.nameservers
+                   | intersect(["127.0.0.1", "127.0.0.53"]))
+               else "ignore" }}
+
+docker_server__default_configuration[2].name = resolved-nameserver
+docker_server__default_configuration[2].config.dns[0] = {{ docker_server__resolved_address }}
+docker_server__default_configuration[2].state = {{ "present"
+               if (docker_server__resolved_integration | bool)
+               else "ignore" }}
+
+docker_server__combined_configuration = {{ docker_server__default_configuration
+                                           + docker_server__configuration
+                                           + docker_server__group_configuration
+                                           + docker_server__host_configuration }}
+
+docker_server__extrepo__dependent_sources[0].name = docker-ce
+docker_server__extrepo__dependent_sources[0].state = {{ "present"
+               if (docker_server__upstream | bool)
+               else "absent" }}
+
+docker_server__etc_services__dependent_list[0].name = docker-manager
+docker_server__etc_services__dependent_list[0].port = 2377
+docker_server__etc_services__dependent_list[0].protocols[0] = tcp
+docker_server__etc_services__dependent_list[0].comment = Communication with and between Docker manager nodes
+docker_server__etc_services__dependent_list[1].name = docker-discovery
+docker_server__etc_services__dependent_list[1].port = 7946
+docker_server__etc_services__dependent_list[1].comment = Docker Swarm overlay network node discovery
+docker_server__etc_services__dependent_list[2].name = docker-overlay
+docker_server__etc_services__dependent_list[2].port = 4789
+docker_server__etc_services__dependent_list[2].protocols[0] = udp
+docker_server__etc_services__dependent_list[2].comment = Docker Swarm overlay network traffic
+docker_server__ferm__dependent_rules[0].name = docker_server_resolved_listener
+docker_server__ferm__dependent_rules[0].type = accept
+docker_server__ferm__dependent_rules[0].daddr = {{ docker_server__resolved_address }}
+docker_server__ferm__dependent_rules[0].dport = 53
+docker_server__ferm__dependent_rules[0].saddr = {{ docker_server__resolved_networks }}
+docker_server__ferm__dependent_rules[0].protocol = udp
+docker_server__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if (docker_server__resolved_integration | bool)
+                    else "absent" }}
+
+docker_server__ferm__dependent_rules[1].name = docker_server_swarm_manager
+docker_server__ferm__dependent_rules[1].type = accept
+docker_server__ferm__dependent_rules[1].saddr = {{ docker_server__swarm_networks }}
+docker_server__ferm__dependent_rules[1].dport = docker-manager
+docker_server__ferm__dependent_rules[1].protocol = tcp
+docker_server__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (docker_server__swarm_support | bool)
+                    else "absent" }}
+
+docker_server__ferm__dependent_rules[2].name = docker_server_swarm_discovery
+docker_server__ferm__dependent_rules[2].type = accept
+docker_server__ferm__dependent_rules[2].saddr = {{ docker_server__swarm_networks }}
+docker_server__ferm__dependent_rules[2].dport = docker-discovery
+docker_server__ferm__dependent_rules[2].protocol[0] = tcp
+docker_server__ferm__dependent_rules[2].protocol[1] = udp
+docker_server__ferm__dependent_rules[2].rule_state = {{ "present"
+                    if (docker_server__swarm_support | bool)
+                    else "absent" }}
+
+docker_server__ferm__dependent_rules[3].name = docker_server_swarm_overlay
+docker_server__ferm__dependent_rules[3].type = accept
+docker_server__ferm__dependent_rules[3].saddr = {{ docker_server__swarm_networks }}
+docker_server__ferm__dependent_rules[3].dport = docker-overlay
+docker_server__ferm__dependent_rules[3].protocol = udp
+docker_server__ferm__dependent_rules[3].rule_state = {{ "present"
+                    if (docker_server__swarm_support | bool)
+                    else "absent" }}
+

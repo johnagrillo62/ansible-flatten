@@ -1,0 +1,49 @@
+java__install_jdk = False
+java__base_packages[0] = default-jre-headless
+java__base_packages[1] = ca-certificates-java
+java__jdk_packages = {{ (["default-jdk"]
+                         if (ansible_distribution_release in ["trusty"])
+                         else ["default-jdk-headless"])
+                        if java__install_jdk | bool else [] }}
+
+java__version = {{ ansible_local.java.version | d("0.0.0") }}
+java__major_version = {{ ansible_local.java.major_version | d("0") }}
+java__alternatives = 
+java__security_policy_path = {{ "/etc/java-" + java__major_version + "-openjdk/security/java.policy" }}
+java__default_security_policy = // default permissions granted to all domains
+grant {
+    // allows anyone to listen on dynamic ports
+    permission java.net.SocketPermission "localhost:0", "listen";
+
+    // "standard" properties that can be read by anyone
+    permission java.util.PropertyPermission "java.version", "read";
+    permission java.util.PropertyPermission "java.vendor", "read";
+    permission java.util.PropertyPermission "java.vendor.url", "read";
+    permission java.util.PropertyPermission "java.class.version", "read";
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "os.version", "read";
+    permission java.util.PropertyPermission "os.arch", "read";
+    permission java.util.PropertyPermission "file.separator", "read";
+    permission java.util.PropertyPermission "path.separator", "read";
+    permission java.util.PropertyPermission "line.separator", "read";
+    permission java.util.PropertyPermission
+                   "java.specification.version", "read";
+    permission java.util.PropertyPermission "java.specification.vendor", "read";
+    permission java.util.PropertyPermission "java.specification.name", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.version", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.vendor", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.name", "read";
+    permission java.util.PropertyPermission "java.vm.version", "read";
+    permission java.util.PropertyPermission "java.vm.vendor", "read";
+    permission java.util.PropertyPermission "java.vm.name", "read";
+
+    // Permit access to DebOps PKI infrastructure and system-wide certificate store
+    permission java.io.FilePermission "{{ ansible_local.pki.base_path | d('/etc/pki/realms') }}/-", "read";
+    permission java.io.FilePermission "{{ ansible_local.pki.base_path | d('/etc/pki/realms') }}/", "read";
+    permission java.io.FilePermission "/etc/ssl/certs/-", "read";
+    permission java.io.FilePermission "/etc/ssl/certs/", "read";
+};
+

@@ -1,0 +1,14 @@
+[0].name = Install Mysql package
+[0].yum = name={{ item }} state=present
+[0].with_items[0] = mysql-server
+[0].with_items[1] = MySQL-python
+[0].with_items[2] = libselinux-python
+[0].with_items[3] = libsemanage-python
+[1].name = Configure SELinux to start mysql on any port
+[1].seboolean = name=mysql_connect_any state=true persistent=yes
+[1].when = ansible_selinux.status == "enabled"
+[2].name = Create Mysql configuration file
+[2].template = src=my.cnf.j2 dest=/etc/my.cnf
+[2].notify[0] = restart mysql
+[3].name = Start Mysql Service
+[3].service = name=mysqld state=started enabled=yes

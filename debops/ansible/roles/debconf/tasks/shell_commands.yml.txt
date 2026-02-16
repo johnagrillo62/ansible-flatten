@@ -1,0 +1,10 @@
+~d0.name = '{{ item.name }}'  # noqa name[casing]
+~d1.ansible.builtin.shell = '{{ item.script | d(item.shell | d(item.command)) }}'  # noqa command-instead-of-shell
+~d1.args = 
+~d2.chdir = '{{ item.chdir | d(omit) }}'
+~d2.creates = '{{ item.creates | d(omit) }}'
+~d2.removes = '{{ item.removes | d(omit) }}'
+~d2.executable = '{{ item.executable | d("bash") }}'
+~d1.when = item.name | d() and item.state not in ['absent', 'ignore']
+~d1.no_log = '{{ debops__no_log | d(item.no_log) | d(False) }}'
+~d1.tags = [ 'role::late_tasks:commands' ]

@@ -1,0 +1,14 @@
+~d0.name = Install and manage MiniDLNA
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_minidlna' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = etc_services
+~d3.tags = [ 'role::etc_services', 'skip::etc_services' ]
+~d3.etc_services__dependent_list = 
+~d2.role = ferm
+~d3.tags = [ 'role::ferm', 'skip::ferm' ]
+~d3.ferm__dependent_rules = 
+~d2.role = minidlna
+~d3.tags = [ 'role::minidlna', 'skip::minidlna' ]

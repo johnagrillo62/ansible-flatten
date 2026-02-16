@@ -1,0 +1,6 @@
+[0].name = Install IIS
+[0].win_feature.name = Web-Server
+[0].win_feature.state = present
+[0].win_feature.restart = yes
+[0].win_feature.include_sub_features = yes
+[0].win_feature.include_management_tools = yes

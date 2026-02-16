@@ -1,0 +1,100 @@
+cron__enabled = True
+cron__base_packages[0] = cron
+cron__crontab_deploy_state = present
+cron__crontab_seed = {{ inventory_hostname }}
+cron__crontab_offset_seeds = {{ ansible_local.cron.crontab_offset_seeds
+                                if (ansible_local.cron.crontab_offset_seeds | d())
+                                else ((ansible_all_ipv4_addresses
+                                       + ansible_all_ipv6_addresses
+                                       + (ansible_default_ipv4.values() | d([])) | list
+                                       + [ansible_machine_id | d(), ansible_memtotal_mb]
+                                       + [ansible_product_name, ansible_product_version]
+                                       + [ansible_kernel])
+                                      | map("regex_replace", "^(.*)$",
+                                            (ansible_date_time.epoch | string + "\1"))
+                                      | map("hash", "sha256") | list | unique) }}
+
+cron__crontab_hours[0] = 0
+cron__crontab_hours[1] = 1
+cron__crontab_hours[2] = 2
+cron__crontab_hours[3] = 3
+cron__crontab_hours[4] = 4
+cron__crontab_hours[5] = 5
+cron__crontab_hours[6] = 6
+cron__crontab_hours[7] = 18
+cron__crontab_hours[8] = 19
+cron__crontab_hours[9] = 20
+cron__crontab_hours[10] = 21
+cron__crontab_hours[11] = 22
+cron__crontab_hours[12] = 23
+cron__crontab_weekday_days[0] = 6
+cron__crontab_weekday_days[1] = 7
+cron__crontab_day_ranges[0] = 1
+cron__crontab_day_ranges[1] = 7
+cron__crontab_default_environment.SHELL = /bin/sh
+cron__crontab_default_environment.PATH = /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+cron__crontab_combined_environment = {{ cron__crontab_default_environment
+                                        | combine(cron__crontab_environment,
+                                                  cron__crontab_group_environment,
+                                                  cron__crontab_host_environment) }}
+
+cron__crontab_default_jobs[0].name = crontab-hourly
+cron__crontab_default_jobs[0].minute = {{ 59 | random(seed=(cron__crontab_seed
+                                  + (cron__crontab_offset_seeds
+                                     | random(seed=cron__crontab_offset_seeds[0])))) }}
+
+cron__crontab_default_jobs[0].user = root
+cron__crontab_default_jobs[0].job = cd / && run-parts --report /etc/cron.hourly
+cron__crontab_default_jobs[1].name = crontab-daily
+cron__crontab_default_jobs[1].minute = {{ 59 | random(seed=(cron__crontab_seed
+                                  + (cron__crontab_offset_seeds
+                                     | random(seed=cron__crontab_offset_seeds[1])))) }}
+
+cron__crontab_default_jobs[1].hour = {{ cron__crontab_hours | random(seed=(cron__crontab_seed
+                                                 + (cron__crontab_offset_seeds
+                                                    | random(seed=cron__crontab_offset_seeds[2])))) }}
+
+cron__crontab_default_jobs[1].user = root
+cron__crontab_default_jobs[1].job = test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+cron__crontab_default_jobs[2].name = crontab-weekly
+cron__crontab_default_jobs[2].minute = {{ 59 | random(seed=(cron__crontab_seed
+                                  + (cron__crontab_offset_seeds
+                                     | random(seed=cron__crontab_offset_seeds[3])))) }}
+
+cron__crontab_default_jobs[2].hour = {{ cron__crontab_hours | random(seed=(cron__crontab_seed
+                                                 + (cron__crontab_offset_seeds
+                                                    | random(seed=cron__crontab_offset_seeds[4])))) }}
+
+cron__crontab_default_jobs[2].weekday = {{ cron__crontab_weekday_days
+                 | random(seed=(cron__crontab_seed
+                                + (cron__crontab_offset_seeds
+                                   | random(seed=cron__crontab_offset_seeds[5])))) }}
+
+cron__crontab_default_jobs[2].user = root
+cron__crontab_default_jobs[2].job = test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+cron__crontab_default_jobs[3].name = crontab-monthly
+cron__crontab_default_jobs[3].minute = {{ 59 | random(seed=(cron__crontab_seed
+                                  + (cron__crontab_offset_seeds
+                                     | random(seed=cron__crontab_offset_seeds[6])))) }}
+
+cron__crontab_default_jobs[3].hour = {{ cron__crontab_hours | random(seed=(cron__crontab_seed
+                                                 + (cron__crontab_offset_seeds
+                                                    | random(seed=cron__crontab_offset_seeds[7])))) }}
+
+cron__crontab_default_jobs[3].day = {{ cron__crontab_day_ranges[1]
+             | random(start=cron__crontab_day_ranges[0],
+                      seed=(cron__crontab_seed
+                            + (cron__crontab_offset_seeds
+                               | random(seed=cron__crontab_offset_seeds[8])))) }}
+
+cron__crontab_default_jobs[3].user = root
+cron__crontab_default_jobs[3].job = test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+cron__crontab_combined_jobs = {{ cron__crontab_default_jobs
+                                 + cron__crontab_jobs
+                                 + cron__crontab_group_jobs
+                                 + cron__crontab_host_jobs }}
+
+cron__combined_jobs = {{ lookup("template",
+                         "lookup/cron__combined_jobs.j2",
+                         convert_data=False) | from_yaml }}
+

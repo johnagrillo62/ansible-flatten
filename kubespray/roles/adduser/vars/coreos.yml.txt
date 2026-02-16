@@ -1,0 +1,6 @@
+addusers[0].name = kube
+addusers[0].comment = Kubernetes user
+addusers[0].shell = /sbin/nologin
+addusers[0].system = true
+addusers[0].group = {{ kube_cert_group }}
+addusers[0].create_home = false

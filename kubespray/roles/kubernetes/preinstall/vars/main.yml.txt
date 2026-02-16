@@ -1,0 +1,15 @@
+~d0.coredns_server_by_mode = 
+~d1.coredns = "{{ [skydns_server] }}"
+~d1.coredns_dual = "{{ [skydns_server, skydns_server_secondary] }}"
+~d1.manual = "{{ manual_dns_server.split(',') }}"
+~d1.none = []
+~d0.coredns_server = "{{ upstream_dns_servers if dns_early else coredns_server_by_mode[dns_mode] }}"
+~d0._nameserverentries = 
+~d1.late = 
+~d1.early = 
+~d0.nameserverentries = "{{ ((_nameserverentries['late'] if not dns_early else []) + _nameserverentries['early']) | flatten | unique }}"
+~d0.dhclient_supersede = 
+~d1.domain-name-servers = "{{ ([nameservers, cloud_resolver] | flatten | unique) if dns_early else nameserverentries }}"
+~d1.domain-name = "{{ [dns_domain] }}"
+~d1.domain-search = "{{ default_searchdomains + searchdomains }}"
+~d0.configured_nameservers = "{{ (resolvconf_slurp.content | b64decode | regex_findall('^nameserver\\s*(\\S*)', multiline=True) | ansible.utils.ipaddr)

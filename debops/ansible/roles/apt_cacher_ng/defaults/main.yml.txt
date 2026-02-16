@@ -1,0 +1,112 @@
+apt_cacher_ng__base_packages[0] = apt-cacher-ng
+apt_cacher_ng__enabled = True
+apt_cacher_ng__deploy_state = present
+apt_cacher_ng__configuration_files[0].path = /etc/apt-cacher-ng/backends_debian
+apt_cacher_ng__configuration_files[0].mode = 0644
+apt_cacher_ng__configuration_files[1].path = /etc/apt-cacher-ng/backends_ubuntu
+apt_cacher_ng__configuration_files[1].mode = 0644
+apt_cacher_ng__configuration_files[2].path = /etc/apt-cacher-ng/backends_gentoo
+apt_cacher_ng__configuration_files[2].mode = 0644
+apt_cacher_ng__configuration_files[2].divert = False
+apt_cacher_ng__configuration_files[3].path = /etc/apt-cacher-ng/acng.conf
+apt_cacher_ng__configuration_files[3].mode = 0644
+apt_cacher_ng__configuration_files[4].path = /etc/apt-cacher-ng/security.conf
+apt_cacher_ng__configuration_files[4].group = apt-cacher-ng
+apt_cacher_ng__configuration_files[4].mode = 0640
+apt_cacher_ng__configuration_files[5].path = /etc/apt-cacher-ng/userinfo.html
+apt_cacher_ng__configuration_files[5].mode = 0644
+apt_cacher_ng__configuration_files[5].divert = False
+apt_cacher_ng__port = 3142
+apt_cacher_ng__fqdn = software-cache.{{ ansible_domain }}
+apt_cacher_ng__proxy = 
+apt_cacher_ng__offline_mode = False
+apt_cacher_ng__network_timeout = 60
+apt_cacher_ng__max_download_speed_kib = 
+apt_cacher_ng__upstream_mirror_debian = {{ ansible_local.apt.default_sources_map.Debian[0]
+                                            | d("http://deb.debian.org/debian") }} 
+apt_cacher_ng__upstream_mirror_ubuntu = {{ ansible_local.apt.default_sources_map.Ubuntu[0]
+                                            | d("http://archive.ubuntu.com/ubuntu") }} 
+apt_cacher_ng__upstream_mirror_gentoo = {{ ansible_local.apt.default_sources_map.Gentoo[0] | d("") }}
+apt_cacher_ng__cache_dir = /var/cache/apt-cacher-ng
+apt_cacher_ng__cache_dir_owner = apt-cacher-ng
+apt_cacher_ng__cache_dir_group = apt-cacher-ng
+apt_cacher_ng__dir_perms = 02755
+apt_cacher_ng__file_perms = 00644
+apt_cacher_ng__cache_dir_enforce_permissions = lazy
+apt_cacher_ng__user = admin
+apt_cacher_ng__password = {{ lookup("password", secret + "/credentials/" +
+                             inventory_hostname + "/apt_cacher_ng/" +
+                             apt_cacher_ng__user + "/password length=24") }}
+
+apt_cacher_ng__log_dir = /var/log/apt-cacher-ng
+apt_cacher_ng__support_dir = /usr/lib/apt-cacher-ng
+apt_cacher_ng__debug = 0
+apt_cacher_ng__verbose_log = True
+apt_cacher_ng__force_managed = False
+apt_cacher_ng__expiration_threshold = 4
+apt_cacher_ng__expiration_abort_on_problems = default
+apt_cacher_ng__dns_cache_seconds = 1800
+apt_cacher_ng__log_submitted_origin = True
+apt_cacher_ng__user_agent = default
+apt_cacher_ng__recompress_bz2 = False
+apt_cacher_ng__custom = 
+apt_cacher_ng__etc_services__dependent_list[0].name = acng
+apt_cacher_ng__etc_services__dependent_list[0].port = {{ apt_cacher_ng__port }}
+apt_cacher_ng__etc_services__dependent_list[0].comment = Apt-Cacher NG caching proxy server
+apt_cacher_ng__etc_services__dependent_list[0].delete = {{ apt_cacher_ng__deploy_state != "present" }}
+apt_cacher_ng__ferm__dependent_rules[0].type = accept
+apt_cacher_ng__ferm__dependent_rules[0].dport[0] = acng
+apt_cacher_ng__ferm__dependent_rules[0].saddr = {{ (apt_cacher_ng__allow | d([]) | list) +
+               (apt_cacher_ng__group_allow | d([]) | list) +
+               (apt_cacher_ng__host_allow | d([]) | list) }}
+
+apt_cacher_ng__ferm__dependent_rules[0].accept_any = True
+apt_cacher_ng__ferm__dependent_rules[0].interface = {{ apt_cacher_ng__interfaces }}
+apt_cacher_ng__ferm__dependent_rules[0].weight = 40
+apt_cacher_ng__ferm__dependent_rules[0].by_role = debops.apt_cacher_ng
+apt_cacher_ng__ferm__dependent_rules[0].name = http_proxy
+apt_cacher_ng__ferm__dependent_rules[0].rule_state = {{ apt_cacher_ng__deploy_state }}
+apt_cacher_ng__apparmor__dependent_config["usr.sbin.apt-cacher-ng"][0].comment = Allow Apt-Cacher-Ng access to the cache directory
+apt_cacher_ng__apparmor__dependent_config["usr.sbin.apt-cacher-ng"][0].by_role = debops.apt_cacher_ng
+apt_cacher_ng__apparmor__dependent_config["usr.sbin.apt-cacher-ng"][0].delete = {{ apt_cacher_ng__deploy_state != "present" }}
+apt_cacher_ng__apparmor__dependent_config["usr.sbin.apt-cacher-ng"][0].rules[0] = {{ apt_cacher_ng__cache_dir }}/ r
+apt_cacher_ng__apparmor__dependent_config["usr.sbin.apt-cacher-ng"][0].rules[1] = {{ apt_cacher_ng__cache_dir }}/** rw
+apt_cacher_ng__upstream_servers[0] = localhost:{{ apt_cacher_ng__port }}
+apt_cacher_ng__nginx__upstream.enabled = True
+apt_cacher_ng__nginx__upstream.name = apt-cacher-ng
+apt_cacher_ng__nginx__upstream.server = {{ apt_cacher_ng__upstream_servers }}
+apt_cacher_ng__nginx__servers[0].by_role = debops.apt_cacher_ng
+apt_cacher_ng__nginx__servers[0].name[0] = {{ apt_cacher_ng__fqdn }}
+apt_cacher_ng__nginx__servers[0].filename = debops.apt_cacher_ng_http
+apt_cacher_ng__nginx__servers[0].enabled = True
+apt_cacher_ng__nginx__servers[0].allow = {{ apt_cacher_ng__allow + apt_cacher_ng__group_allow + apt_cacher_ng__host_allow }}
+apt_cacher_ng__nginx__servers[0].ssl = False
+apt_cacher_ng__nginx__servers[0].webroot_create = False
+apt_cacher_ng__nginx__servers[0].type = proxy
+apt_cacher_ng__nginx__servers[0].proxy_pass = http://apt-cacher-ng
+apt_cacher_ng__nginx__servers[0].proxy_options = if ($request_uri !~ "^/.*(\.js|\.css|\.html|\.ico)(.*)?$") {
+        rewrite ^/(.*)$ /$host/$1 break;
+}
+proxy_redirect off;
+proxy_buffering off;
+
+apt_cacher_ng__nginx__servers[0].options = location ~ /acng-report.html {
+        return 307 https://$host$request_uri;
+}
+
+apt_cacher_ng__nginx__servers[1].by_role = debops.apt_cacher_ng
+apt_cacher_ng__nginx__servers[1].name[0] = {{ apt_cacher_ng__fqdn }}
+apt_cacher_ng__nginx__servers[1].filename = debops.apt_cacher_ng_https
+apt_cacher_ng__nginx__servers[1].enabled = True
+apt_cacher_ng__nginx__servers[1].allow = {{ apt_cacher_ng__allow + apt_cacher_ng__group_allow + apt_cacher_ng__host_allow }}
+apt_cacher_ng__nginx__servers[1].state = {{ "present" if (ansible_local.pki | d()) else "absent" }}
+apt_cacher_ng__nginx__servers[1].listen = False
+apt_cacher_ng__nginx__servers[1].webroot_create = False
+apt_cacher_ng__nginx__servers[1].type = proxy
+apt_cacher_ng__nginx__servers[1].proxy_pass = http://apt-cacher-ng
+apt_cacher_ng__nginx__servers[1].proxy_options = if ($request_uri !~ "^/.*(\.js|\.css|\.html|\.ico)(.*)?$") {
+        rewrite ^/(.*)$ /$host/$1 break;
+}
+proxy_redirect off;
+proxy_buffering off;
+

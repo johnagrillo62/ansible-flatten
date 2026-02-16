@@ -1,0 +1,53 @@
+---
+# tasks/FreeBSD/main.yml: FreeBSD specific set-up
+# This takes care of base prerequisites for FreeBSD
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: setup
+
+- name: Ensure the Sensu group is present
+  tags: setup
+  group:
+    name: "{{ sensu_group_name }}"
+    state: present
+
+- name: Ensure the Sensu user is present
+  tags: setup
+  user:
+    name: "{{ sensu_user_name }}"
+    group: "{{ sensu_group_name }}"
+    shell: /bin/false
+    home: "{{ sensu_config_path }}"
+    createhome: true
+    state: present
+
+- name: Ensure pkgng custom repo config directory exists
+  tags: setup
+  file:
+    path: /usr/local/etc/pkg/repos/
+    state: directory
+
+- name: Ensure Sensu repo is configured
+  tags: setup
+  template:
+    src: sensu-freebsd-repo.conf.j2
+    dest: /usr/local/etc/pkg/repos/sensu.conf
+  notify:
+    - Update pkgng database
+
+- name: Ensure prerequisite packages are installed
+  tags: setup
+  pkgng:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - bash
+    - ca_root_nss
+
+- name: Ensure Sensu is installed
+  tags: setup
+  pkgng:
+    name: "{{ sensu_package }}"
+    state: "{{ sensu_pkg_state }}"

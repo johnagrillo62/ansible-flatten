@@ -1,0 +1,15 @@
+[0].name = Crictl | Download crictl
+[0].include_tasks = ../../../download/tasks/download_file.yml
+[0].vars.download = {{ download_defaults | combine(downloads.crictl) }}
+[1].name = Install crictl config
+[1].template.src = crictl.yaml.j2
+[1].template.dest = /etc/crictl.yaml
+[1].template.owner = root
+[1].template.mode = 0644
+[2].name = Copy crictl binary from download dir
+[2].copy.src = {{ local_release_dir }}/crictl
+[2].copy.dest = {{ bin_dir }}/crictl
+[2].copy.mode = 0755
+[2].copy.remote_src = true
+[2].notify[0] = Get crictl completion
+[2].notify[1] = Install crictl completion

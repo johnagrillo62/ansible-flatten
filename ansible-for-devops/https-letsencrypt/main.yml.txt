@@ -1,0 +1,20 @@
+[0].hosts = letsencrypt
+[0].become = true
+[0].vars_files[0] = vars/main.yml
+[0].pre_tasks[0].name = Ensure apt cache is updated.
+[0].pre_tasks[0].apt = update_cache=true cache_valid_time=600
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.nginx
+[0].roles[2] = geerlingguy.certbot
+[0].tasks[0].name = Ensure docroot exists.
+[0].tasks[0].file.path = {{ nginx_docroot }}
+[0].tasks[0].file.state = directory
+[0].tasks[1].name = Copy example index.html file in place.
+[0].tasks[1].copy.src = files/index.html
+[0].tasks[1].copy.dest = {{ nginx_docroot }}/index.html
+[0].tasks[1].copy.mode = 0755
+[0].tasks[2].name = Copy Nginx server configuration in place.
+[0].tasks[2].template.src = templates/https-letsencrypt.conf.j2
+[0].tasks[2].template.dest = /etc/nginx/sites-enabled/https-letsencrypt.conf
+[0].tasks[2].template.mode = 0644
+[0].tasks[2].notify = restart nginx

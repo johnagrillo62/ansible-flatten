@@ -1,0 +1,10 @@
+application__postfix__dependent_packages[0] = postfix-pgsql
+application__postfix__dependent_maincf[0].name = application_destination_recipient_limit
+application__postfix__dependent_maincf[0].value = 1
+application__postfix__dependent_mastercf[0].name = application
+application__postfix__dependent_mastercf[0].type = unix
+application__postfix__dependent_mastercf[0].unpriv = False
+application__postfix__dependent_mastercf[0].chroot = False
+application__postfix__dependent_mastercf[0].command = pipe
+application__postfix__dependent_mastercf[0].args = flags=FR user=application argv=/usr/local/lib/application/bin/in-pipe
+${nexthop} ${user}

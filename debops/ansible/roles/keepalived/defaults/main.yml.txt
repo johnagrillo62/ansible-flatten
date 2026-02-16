@@ -1,0 +1,37 @@
+keepalived__base_packages[0] = keepalived
+keepalived__host_group = debops_service_keepalived
+keepalived__host_count = {{ (groups[keepalived__host_group] | count - 1) }}
+keepalived__host_index = {{ groups[keepalived__host_group].index(inventory_hostname) }}
+keepalived__default_configuration[0].name = global_defs
+keepalived__default_configuration[0].raw = global_defs {
+    process_names
+    router_id {{ ansible_hostname }}
+}
+
+keepalived__default_configuration[0].state = present
+keepalived__combined_configuration = {{ keepalived__default_configuration
+                                        + keepalived__configuration
+                                        + keepalived__group_configuration
+                                        + keepalived__host_configuration }}
+
+keepalived__sysctl__dependent_parameters[0].name = keepalived
+keepalived__sysctl__dependent_parameters[0].weight = 80
+keepalived__sysctl__dependent_parameters[0].options[0].name = net.ipv4.ip_nonlocal_bind
+keepalived__sysctl__dependent_parameters[0].options[0].comment = This parameter allows processes to bind to IPv4 addresses that are
+not local to permit failover.
+
+keepalived__sysctl__dependent_parameters[0].options[0].value = 1
+keepalived__sysctl__dependent_parameters[0].options[1].name = net.ipv6.ip_nonlocal_bind
+keepalived__sysctl__dependent_parameters[0].options[1].comment = This parameter allows processes to bind to IPv6 addresses that are
+not local to permit failover.
+
+keepalived__sysctl__dependent_parameters[0].options[1].value = 1
+keepalived__ferm__dependent_rules[0].name = accept_vrrp_keepalived
+keepalived__ferm__dependent_rules[0].type = accept
+keepalived__ferm__dependent_rules[0].protocol = vrrp
+keepalived__ferm__dependent_rules[0].saddr = {{ keepalived__allow + keepalived__group_allow + keepalived__host_allow }}
+keepalived__ferm__dependent_rules[0].daddr[0] = 224.0.0.18
+keepalived__ferm__dependent_rules[0].daddr[1] = ff02::12
+keepalived__ferm__dependent_rules[0].accept_any = False
+keepalived__ferm__dependent_rules[0].weight = 50
+keepalived__ferm__dependent_rules[0].by_role = debops.keepalived

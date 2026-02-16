@@ -1,0 +1,11 @@
+doc[0][0].name = Create the ELB in AWS
+doc[0][0].ec2_elb_lb.name = ansible-windows-demo-lb
+doc[0][0].ec2_elb_lb.state = present
+doc[0][0].ec2_elb_lb.region = us-east-1
+doc[0][0].ec2_elb_lb.zones[0] = us-east-1b
+doc[0][0].ec2_elb_lb.zones[1] = us-east-1d
+doc[0][0].ec2_elb_lb.zones[2] = us-east-1e
+doc[0][0].ec2_elb_lb.listeners[0].protocol = http
+doc[0][0].ec2_elb_lb.listeners[0].load_balancer_port = 80
+doc[0][0].ec2_elb_lb.listeners[0].instance_port = 80
+doc[1] = 

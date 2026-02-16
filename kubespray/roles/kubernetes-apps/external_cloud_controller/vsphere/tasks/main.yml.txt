@@ -1,0 +1,35 @@
+~d0.name = External vSphere Cloud Controller | Check vsphere credentials
+~d1.include_tasks = vsphere-credentials-check.yml
+~d0.name = External vSphere Cloud Controller | Generate CPI cloud-config
+~d1.template = 
+~d2.src = "{{ item }}.j2"
+~d2.dest = "{{ kube_config_dir }}/{{ item }}"
+~d2.mode = "0640"
+~d1.with_items = 
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = External vSphere Cloud Controller | Generate Manifests
+~d1.template = 
+~d2.src = "{{ item }}.j2"
+~d2.dest = "{{ kube_config_dir }}/{{ item }}"
+~d2.mode = "0644"
+~d1.with_items = 
+~d1.register = external_vsphere_manifests
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = External vSphere Cloud Provider Interface | Create a CPI configMap manifest
+~d1.command = "{{ bin_dir }}/kubectl create configmap cloud-config --from-file=vsphere.conf={{ kube_config_dir }}/external-vsphere-cpi-cloud-config -n kube-system --dry-run --save-config -o yaml"
+~d1.register = external_vsphere_configmap_manifest
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = External vSphere Cloud Provider Interface | Apply a CPI configMap manifest
+~d1.command = 
+~d2.cmd = "{{ bin_dir }}/kubectl apply -f -"
+~d2.stdin = "{{ external_vsphere_configmap_manifest.stdout }}"
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = External vSphere Cloud Controller | Apply Manifests
+~d1.kube = 
+~d2.kubectl = "{{ bin_dir }}/kubectl"
+~d2.filename = "{{ kube_config_dir }}/{{ item.item }}"
+~d2.state = "latest"
+~d1.with_items = 
+~d1.when = 
+~d1.loop_control = 
+~d2.label = "{{ item.item }}"

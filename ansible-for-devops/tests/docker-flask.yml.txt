@@ -1,0 +1,8 @@
+~d0.hosts = all
+~d1.pre_tasks = 
+~d2.name = Update the apt cache.
+~d3.apt = update_cache=yes cache_valid_time=600
+~d1.roles = 
+~d0.import_playbook = ../docker-flask/provisioning/main.yml
+~d1.vars = 
+~d2.build_root = "{{ playbook_dir }}"

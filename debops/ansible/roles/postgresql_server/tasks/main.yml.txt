@@ -1,0 +1,81 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = secret
+[2].name = Get default PostgreSQL version
+[2].environment.LC_ALL = C
+[2]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && apt-cache policy postgresql | grep -E '^\s+Candidate:\s+' | awk '{print $2}' | cut -d+ -f1
+[2].args.executable = bash
+[2].register = postgresql_server__register_version
+[2].changed_when = False
+[2].check_mode = False
+[2].tags[0] = role::postgresql_server:packages
+[2].tags[1] = role::postgresql_server:config
+[2].tags[2] = role::postgresql_server:auto_backup
+[3].name = Set default PostgreSQL version variable
+[3]["ansible.builtin.set_fact"].postgresql_server__version = {{ (ansible_local.postgresql.version
+                                     if (ansible_local.postgresql.version | d())
+                                     else (postgresql_server__preferred_version
+                                           if postgresql_server__preferred_version | d()
+                                           else postgresql_server__register_version.stdout)) }}
+
+[3].tags[0] = role::postgresql_server:packages
+[3].tags[1] = role::postgresql_server:config
+[3].tags[2] = role::postgresql_server:auto_backup
+[4].name = Install PostgreSQL database service
+[4]["ansible.builtin.include_tasks"] = install_postgresql.yml
+[4].tags[0] = role::postgresql_server:packages
+[5].name = Configure custom PostgreSQL data directory
+[5]["ansible.builtin.lineinfile"].path = /etc/postgresql-common/createcluster.conf
+[5]["ansible.builtin.lineinfile"].regexp = ^data_directory\s+=
+[5]["ansible.builtin.lineinfile"].line = data_directory = '{{ postgresql_server__data_directory }}/%v/%c'
+[5]["ansible.builtin.lineinfile"].mode = 0644
+[5].when = postgresql_server__data_directory != '/var/lib/postgresql'
+[6].name = Make sure that custom PostgreSQL data directory exists
+[6]["ansible.builtin.file"].path = {{ postgresql_server__data_directory }}
+[6]["ansible.builtin.file"].state = directory
+[6]["ansible.builtin.file"].owner = {{ postgresql_server__user }}
+[6]["ansible.builtin.file"].group = {{ postgresql_server__group }}
+[6]["ansible.builtin.file"].mode = 0750
+[6].when = postgresql_server__data_directory != '/var/lib/postgresql'
+[7].name = Make sure that custom PostgreSQL Log directory exists
+[7]["ansible.builtin.file"].path = {{ postgresql_server__log_directory }}
+[7]["ansible.builtin.file"].state = directory
+[7]["ansible.builtin.file"].owner = {{ "postgres" if (postgresql_server__pgbadger_logs | bool) else "root" }}
+[7]["ansible.builtin.file"].group = {{ "adm" if (postgresql_server__pgbadger_logs | bool) else "postgres" }}
+[7]["ansible.builtin.file"].mode = {{ "u=rwx,g=rxs,o=rxt" if (postgresql_server__pgbadger_logs | bool) else "u=rwx,g=rwx,o=rxt" }}
+[7].when = postgresql_server__log_directory
+[8].name = Count number of currently configured clusters
+[8]["ansible.builtin.set_fact"].postgresql_server__fact_cluster_count = {{ (postgresql_server__clusters | length | int) * 1 }}
+[8].tags[0] = role::postgresql_server:config
+[9].name = Get current maximum shared memory value
+[9]["ansible.builtin.command"] = cat /proc/sys/kernel/shmmax
+[9].register = postgresql_server__register_sysctl_shmmax
+[9].changed_when = False
+[9].check_mode = False
+[9].tags[0] = role::postgresql_server:config
+[10].name = Manage PostgreSQL clusters
+[10]["ansible.builtin.include_tasks"] = manage_clusters.yml
+[11].name = Secure PostgreSQL installation
+[11]["ansible.builtin.include_tasks"] = secure_installation.yml
+[12].name = Manage AutoPostgreSQLBackup script
+[12]["ansible.builtin.include_tasks"] = manage_autopostgresqlbackup.yml
+[12].when = postgresql_server__autopostgresqlbackup | bool
+[12].tags[0] = role::postgresql_server:auto_backup
+[13].name = Make sure that Ansible local fact directory exists
+[13]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[13]["ansible.builtin.file"].state = directory
+[13]["ansible.builtin.file"].owner = root
+[13]["ansible.builtin.file"].group = root
+[13]["ansible.builtin.file"].mode = 0755
+[14].name = Save PostgreSQL local facts
+[14]["ansible.builtin.template"].src = etc/ansible/facts.d/postgresql.fact.j2
+[14]["ansible.builtin.template"].dest = /etc/ansible/facts.d/postgresql.fact
+[14]["ansible.builtin.template"].owner = root
+[14]["ansible.builtin.template"].group = root
+[14]["ansible.builtin.template"].mode = 0644
+[14].notify[0] = Refresh host facts
+[14].tags[0] = meta::facts
+[14].tags[1] = role::postgresql_server:config
+[15].name = Re-read local facts if they have been modified
+[15]["ansible.builtin.meta"] = flush_handlers

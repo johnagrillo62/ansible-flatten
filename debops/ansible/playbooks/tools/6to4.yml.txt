@@ -1,0 +1,27 @@
+[0].name = Configure and enable IPv6 6to4 tunnel
+[0].hosts = debops_6to4
+[0].become = True
+[0].vars.debops_6to4_var_iface = {{ debops_6to4_iface | default("6to4") }}
+[0].vars.debops_6to4_var_ipv4_interface = {{ debops_6to4_ipv4_interface | default(ansible_default_ipv4.interface) }}
+[0].vars.debops_6to4_var_ipv6_address = {{ hostvars[inventory_hostname]["ansible_" + debops_6to4_var_ipv4_interface].ipv4.address | ansible.utils.ipv4("6to4") }}
+[0].pre_tasks[0].name = Make sure that host has a public IPv4 address
+[0].pre_tasks[0]["ansible.builtin.assert"].that[0] = {{ debops_6to4_var_ipv6_address != "False" }}
+[0].roles[0].role = ifupdown
+[0].roles[0].tags = ifupdown
+[0].roles[0].ifupdown_dependent_interfaces[0].iface = {{ debops_6to4_var_iface }}
+[0].roles[0].ifupdown_dependent_interfaces[0].type = 6to4
+[0].roles[0].ifupdown_dependent_interfaces[0].tunnel_6to4_ipv4_interface = {{ debops_6to4_var_ipv4_interface }}
+[0].roles[0].ifupdown_dependent_interfaces[0].filename = debops_6to4_tunnel_{{ debops_6to4_var_ipv4_interface }}
+[0].roles[0].ifupdown_dependent_interfaces[0].weight = 30
+[0].roles[1].role = ferm
+[0].roles[1].tags = ferm
+[0].roles[1].ferm_input_dependent_list[0].type = custom
+[0].roles[1].ferm_input_dependent_list[0].by_role = DebOps playbook: net/ipv6/6to4
+[0].roles[1].ferm_input_dependent_list[0].filename = debops_6to4_tunnel_{{ debops_6to4_var_ipv4_interface }}
+[0].roles[1].ferm_input_dependent_list[0].weight = 30
+[0].roles[1].ferm_input_dependent_list[0].rules = {% if debops_6to4_var_ipv6_address is defined and debops_6to4_var_ipv6_address %}
+# Allow IPv6-in-IPv4 traffic
+@if @eq($DOMAIN, ip) protocol ipv6 interface {{ debops_6to4_var_ipv4_interface }} ACCEPT;
+{% else %}
+# IPv6-in-IPv4 traffic not allowed
+{% endif %}

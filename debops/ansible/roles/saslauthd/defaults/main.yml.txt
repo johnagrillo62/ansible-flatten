@@ -1,0 +1,129 @@
+saslauthd__default_mechanism = {{ "ldap" if saslauthd__ldap_device_dn | d() else "pam" }}
+saslauthd__base_packages[0] = sasl2-bin
+saslauthd__base_packages[1] = libsasl2-modules
+saslauthd__default_instances[0].name = smtpd
+saslauthd__default_instances[0].group = postfix
+saslauthd__default_instances[0].description = Postfix SASL Authentication Daemon
+saslauthd__default_instances[0].config_path = /etc/postfix/sasl/smtpd.conf
+saslauthd__default_instances[0].config_group = postfix
+saslauthd__default_instances[0].config_raw = pwcheck_method: saslauthd
+mech_list: PLAIN LOGIN
+
+saslauthd__default_instances[0].socket_path = /var/spool/postfix/var/run/saslauthd
+saslauthd__default_instances[0].socket_group = postfix
+saslauthd__default_instances[0].ldap_profile = smtpd
+saslauthd__default_instances[0].state = {{ "present"
+               if ((ansible_local | d() and ansible_local.postfix | d() and
+                    (ansible_local.postfix.installed | d()) | bool) or
+                   ("debops_service_postfix" in group_names))
+               else "ignore" }}
+
+saslauthd__combined_instances = {{ q("flattened", (saslauthd__default_instances
+                                                  + saslauthd__instances
+                                                  + saslauthd__group_instances
+                                                  + saslauthd__host_instances
+                                                  + saslauthd__dependent_instances)) }}
+
+saslauthd__ldap_enabled = {{ ansible_local.ldap.enabled
+                             if (ansible_local | d() and ansible_local.ldap | d() and
+                                 ansible_local.ldap.enabled is defined)
+                             else False }}
+
+saslauthd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+saslauthd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+saslauthd__ldap_self_rdn = uid=saslauthd
+saslauthd__ldap_self_object_classes[0] = account
+saslauthd__ldap_self_object_classes[1] = simpleSecurityObject
+saslauthd__ldap_self_attributes.uid = {{ saslauthd__ldap_self_rdn.split("=")[1] }}
+saslauthd__ldap_self_attributes.userPassword = {{ saslauthd__ldap_bindpw }}
+saslauthd__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+saslauthd__ldap_self_attributes.description = Account used by the "saslauthd" service to access the LDAP directory
+saslauthd__ldap_binddn = {{ ([saslauthd__ldap_self_rdn] + saslauthd__ldap_device_dn) | join(",") }}
+saslauthd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                    + saslauthd__ldap_binddn | to_uuid + ".password length=32"))
+                            if saslauthd__ldap_enabled | bool
+                            else "" }}
+
+saslauthd__ldap_default_profiles[0].name = global
+saslauthd__ldap_default_profiles[0].state = {{ "present" if saslauthd__ldap_device_dn | d() else "ignore" }}
+saslauthd__ldap_default_profiles[0].options[0].name = ldap_servers
+saslauthd__ldap_default_profiles[0].options[0].value = {{ ansible_local.ldap.uri | d("") }}
+saslauthd__ldap_default_profiles[0].options[1].name = ldap_bind_dn
+saslauthd__ldap_default_profiles[0].options[1].value = {{ saslauthd__ldap_binddn }}
+saslauthd__ldap_default_profiles[0].options[2].name = ldap_password
+saslauthd__ldap_default_profiles[0].options[2].value = {{ saslauthd__ldap_bindpw }}
+saslauthd__ldap_default_profiles[0].options[3].name = ldap_search_base
+saslauthd__ldap_default_profiles[0].options[3].value = {{ (["ou=People"] + saslauthd__ldap_base_dn) | join(",") }}
+saslauthd__ldap_default_profiles[0].options[4].name = ldap_filter
+saslauthd__ldap_default_profiles[0].options[4].value = (& (objectClass=inetOrgPerson) (uid=%u) )
+saslauthd__ldap_default_profiles[0].options[5].name = ldap_scope
+saslauthd__ldap_default_profiles[0].options[5].value = sub
+saslauthd__ldap_default_profiles[0].options[6].name = ldap_start_tls
+saslauthd__ldap_default_profiles[0].options[6].value = yes
+saslauthd__ldap_default_profiles[0].options[7].name = ldap_tls_check_peer
+saslauthd__ldap_default_profiles[0].options[7].value = yes
+saslauthd__ldap_default_profiles[0].options[8].name = ldap_tls_cacert_file
+saslauthd__ldap_default_profiles[0].options[8].value = /etc/ssl/certs/ca-certificates.crt
+saslauthd__ldap_default_profiles[1].name = slapd
+saslauthd__ldap_default_profiles[1].state = {{ "present"
+               if (saslauthd__ldap_device_dn | d() and
+                   ((ansible_local | d() and ansible_local.slapd | d() and
+                     (ansible_local.slapd.installed | d()) | bool) or
+                    ("debops_service_slapd" in group_names)))
+               else "ignore" }}
+
+saslauthd__ldap_default_profiles[1].options[0].name = ldap_servers
+saslauthd__ldap_default_profiles[1].options[0].value = {{ ansible_local.ldap.uri | d("") }}
+saslauthd__ldap_default_profiles[1].options[1].name = ldap_bind_dn
+saslauthd__ldap_default_profiles[1].options[1].value = {{ saslauthd__ldap_binddn }}
+saslauthd__ldap_default_profiles[1].options[2].name = ldap_password
+saslauthd__ldap_default_profiles[1].options[2].value = {{ saslauthd__ldap_bindpw }}
+saslauthd__ldap_default_profiles[1].options[3].name = ldap_search_base
+saslauthd__ldap_default_profiles[1].options[3].value = {{ saslauthd__ldap_base_dn | join(",") }}
+saslauthd__ldap_default_profiles[1].options[4].name = ldap_filter
+saslauthd__ldap_default_profiles[1].options[4].value = (| (& (objectClass=inetOrgPerson) (uid=%u) ) (& (objectClass=account) (uid=%U) (host=%r) ) )
+saslauthd__ldap_default_profiles[1].options[5].name = ldap_scope
+saslauthd__ldap_default_profiles[1].options[5].value = sub
+saslauthd__ldap_default_profiles[1].options[6].name = ldap_start_tls
+saslauthd__ldap_default_profiles[1].options[6].value = yes
+saslauthd__ldap_default_profiles[1].options[7].name = ldap_tls_check_peer
+saslauthd__ldap_default_profiles[1].options[7].value = yes
+saslauthd__ldap_default_profiles[1].options[8].name = ldap_tls_cacert_file
+saslauthd__ldap_default_profiles[1].options[8].value = /etc/ssl/certs/ca-certificates.crt
+saslauthd__ldap_default_profiles[2].name = smtpd
+saslauthd__ldap_default_profiles[2].state = {{ "present"
+               if (saslauthd__ldap_device_dn | d() and
+                   ((ansible_local | d() and ansible_local.postfix | d() and
+                     (ansible_local.postfix.installed | d()) | bool) or
+                    ("debops_service_postfix" in group_names)))
+               else "ignore" }}
+
+saslauthd__ldap_default_profiles[2].options[0].name = ldap_servers
+saslauthd__ldap_default_profiles[2].options[0].value = {{ ansible_local.ldap.uri | d("") }}
+saslauthd__ldap_default_profiles[2].options[1].name = ldap_bind_dn
+saslauthd__ldap_default_profiles[2].options[1].value = {{ saslauthd__ldap_binddn }}
+saslauthd__ldap_default_profiles[2].options[2].name = ldap_password
+saslauthd__ldap_default_profiles[2].options[2].value = {{ saslauthd__ldap_bindpw }}
+saslauthd__ldap_default_profiles[2].options[3].name = ldap_search_base
+saslauthd__ldap_default_profiles[2].options[3].value = {{ saslauthd__ldap_base_dn | join(",") }}
+saslauthd__ldap_default_profiles[2].options[4].name = ldap_filter
+saslauthd__ldap_default_profiles[2].options[4].value = (| (& (objectClass=mailRecipient) (| (uid=%u) (mailAddress=%U@%r) (mailAlternateAddress=%U@%r) ) (| (authorizedService=all) (authorizedService=mail:send) ) ) (& (objectClass=account) (uid=%U) (host=%r) (| (authorizedService=all) (authorizedService=mail:send) ) ) )
+saslauthd__ldap_default_profiles[2].options[5].name = ldap_scope
+saslauthd__ldap_default_profiles[2].options[5].value = sub
+saslauthd__ldap_default_profiles[2].options[6].name = ldap_start_tls
+saslauthd__ldap_default_profiles[2].options[6].value = yes
+saslauthd__ldap_default_profiles[2].options[7].name = ldap_tls_check_peer
+saslauthd__ldap_default_profiles[2].options[7].value = yes
+saslauthd__ldap_default_profiles[2].options[8].name = ldap_tls_cacert_file
+saslauthd__ldap_default_profiles[2].options[8].value = /etc/ssl/certs/ca-certificates.crt
+saslauthd__ldap_combined_profiles = {{ saslauthd__ldap_default_profiles
+                                       + saslauthd__ldap_profiles
+                                       + saslauthd__ldap_group_profiles
+                                       + saslauthd__ldap_host_profiles }}
+
+saslauthd__ldap__dependent_tasks[0].name = Create saslauthd account for {{ saslauthd__ldap_device_dn | join(",") }}
+saslauthd__ldap__dependent_tasks[0].dn = {{ saslauthd__ldap_binddn }}
+saslauthd__ldap__dependent_tasks[0].objectClass = {{ saslauthd__ldap_self_object_classes }}
+saslauthd__ldap__dependent_tasks[0].attributes = {{ saslauthd__ldap_self_attributes }}
+saslauthd__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+saslauthd__ldap__dependent_tasks[0].state = {{ "present" if saslauthd__ldap_device_dn | d() else "ignore" }}

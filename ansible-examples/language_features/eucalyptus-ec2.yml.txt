@@ -1,0 +1,28 @@
+[0].name = Stage instance(s)
+[0].hosts = local
+[0].connection = local
+[0].remote_user = root
+[0].gather_facts = false
+[0].vars.keypair = mykeypair
+[0].vars.instance_type = m1.small
+[0].vars.security_group = default
+[0].vars.image = emi-048B3A37
+[0].tasks[0].name = Launch instance
+[0].tasks[0].ec2 = keypair={{keypair}} group={{security_group}} instance_type={{instance_type}} image={{image}} wait=true count=5
+[0].tasks[0].register = ec2
+[0].tasks[1].name = Add new instances to host group
+[0].tasks[1].add_host = hostname={{item.public_ip}} groupname=deploy
+[0].tasks[1].with_items = ec2.instances
+[0].tasks[2].name = Wait for the instances to boot by checking the ssh port
+[0].tasks[2].wait_for = host={{item.public_dns_name}} port=22 delay=60 timeout=320 state=started
+[0].tasks[2].with_items = ec2.instances
+[0].tasks[3].name = Create a volume and attach
+[0].tasks[3].ec2_vol = volume_size=20 instance={{item.id}}
+[0].tasks[3].with_items = ec2.instances
+[1].name = Configure instance
+[1].hosts = deploy
+[1].remote_user = root
+[1].tasks[0].name = Ensure NTP is up and running
+[1].tasks[0].service = name=ntpd state=started
+[1].tasks[1].name = Install Apache Web Server
+[1].tasks[1].yum = pkg=httpd state=latest

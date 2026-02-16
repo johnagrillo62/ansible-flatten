@@ -1,0 +1,8 @@
+~d0.etcd_owner = etcd
+~d0.etcd_cert_alt_names = 
+~d0.etcd_cert_alt_ips = []
+~d0.etcd_heartbeat_interval = "250"
+~d0.etcd_election_timeout = "5000"
+~d0.etcd_metrics = "basic"
+~d0.etcd_extra_vars = {}
+~d0.etcd_compaction_retention = "8"

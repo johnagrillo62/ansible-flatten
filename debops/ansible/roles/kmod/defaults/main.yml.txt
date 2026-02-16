@@ -1,0 +1,26 @@
+kmod__enabled = {{ True
+                   if (kmod__register_modprobe.stat.exists | bool)
+                   else False }}
+
+kmod__default_modules[0].name = blacklist-firewire-thunderbolt
+kmod__default_modules[0].state = config
+kmod__default_modules[0].comment = Protection against Firewire DMA attacks
+https://security.stackexchange.com/a/49158/79474
+https://github.com/lfit/itpol/blob/master/linux-workstation-security.md#blacklisting-modules
+
+kmod__default_modules[0].blacklist[0] = firewire_sbp2
+kmod__default_modules[0].blacklist[1] = firewire_ohci
+kmod__default_modules[0].blacklist[2] = firewire_core
+kmod__default_modules[0].blacklist[3] = thunderbolt
+kmod__combined_modules = {{ kmod__default_modules
+                            + lookup("flattened", kmod__dependent_modules, wantlist=True)
+                            + kmod__modules
+                            + kmod__group_modules
+                            + kmod__host_modules }}
+
+kmod__combined_load = {{ lookup("flattened", kmod__dependent_load, wantlist=True)
+                         + kmod__load
+                         + kmod__group_load
+                         + kmod__host_load }}
+
+kmod__python__dependent_packages2[0] = python-kmodpy

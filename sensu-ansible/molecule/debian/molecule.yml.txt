@@ -1,0 +1,15 @@
+scenario.name = debian
+platforms[0].name = debian-8
+platforms[0].image = dokken/debian-8
+platforms[0].command = /lib/systemd/systemd
+platforms[0].privileged = yes
+platforms[0].volumes[0] = /sys/fs/cgroup:/sys/fs/cgroup:ro
+platforms[0].groups[0] = sensu_checks
+platforms[1].name = debian-9
+platforms[1].image = dokken/debian-9
+platforms[1].command = /lib/systemd/systemd
+platforms[1].capabilities[0] = SYS_ADMIN
+platforms[1].volumes[0] = /sys/fs/cgroup:/sys/fs/cgroup:ro
+platforms[1].groups[0] = sensu_checks
+provisioner.inventory.host_vars.debian-8.inspec_version = ubuntu1604
+provisioner.inventory.host_vars.debian-9.inspec_version = ubuntu1604

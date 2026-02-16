@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].tasks[0].name = Update the apt cache so we can install ufw.
+[0].tasks[0].apt = update_cache=yes cache_valid_time=600
+[0].tasks[1].name = Install ufw so we can disable it in the playbook.
+[0].tasks[1].apt = name=ufw state=present
+[1].import_playbook = ../includes/provisioning/playbook.yml

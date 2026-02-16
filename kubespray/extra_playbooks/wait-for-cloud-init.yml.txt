@@ -1,0 +1,4 @@
+[0].name = Wait for cloud-init to finish
+[0].hosts = all
+[0].tasks[0].name = Wait for cloud-init to finish
+[0].tasks[0].command = cloud-init status --wait

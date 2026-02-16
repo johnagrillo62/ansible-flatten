@@ -1,0 +1,4 @@
+[0].import_tasks = gitolite.yml
+[0].tags = gitolite
+[1].import_tasks = cgit.yml
+[1].tags = cgit

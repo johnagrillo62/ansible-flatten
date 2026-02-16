@@ -1,0 +1,9 @@
+[0].name = Download Composer installer.
+[0].get_url.url = https://getcomposer.org/installer
+[0].get_url.dest = /tmp/composer-installer.php
+[0].get_url.mode = 0755
+[1].name = Run Composer installer.
+[1].command = php composer-installer.php chdir=/tmp creates=/usr/local/bin/composer
+
+[2].name = Move Composer into globally-accessible location.
+[2].command = mv /tmp/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer

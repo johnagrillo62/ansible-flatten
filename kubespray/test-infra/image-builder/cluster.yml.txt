@@ -1,0 +1,4 @@
+[0].name = Build kubevirt images
+[0].hosts = image-builder
+[0].gather_facts = false
+[0].roles[0] = kubevirt-images

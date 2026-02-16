@@ -1,0 +1,15 @@
+doc[0][0].import_tasks = postfix.yml
+doc[0][0].tags = postfix
+doc[0][1].import_tasks = dovecot.yml
+doc[0][1].tags = dovecot
+doc[0][2].import_tasks = rspamd.yml
+doc[0][2].tags = rspamd
+doc[0][3].import_tasks = solr.yml
+doc[0][3].tags = solr
+doc[0][4].import_tasks = checkrbl.yml
+doc[0][4].tags = checkrbl
+doc[0][5].import_tasks = z-push.yml
+doc[0][5].tags = zpush
+doc[0][6].import_tasks = autoconfig.yml
+doc[0][6].tags = autoconfig
+doc[1] = 

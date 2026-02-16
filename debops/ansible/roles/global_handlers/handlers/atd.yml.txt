@@ -1,0 +1,7 @@
+[0].name = Reload systemd units
+[0]["ansible.builtin.systemd"].daemon_reload = True
+[0].when = ansible_service_mgr == 'systemd'
+[1].name = Restart atd
+[1]["ansible.builtin.service"].name = atd
+[1]["ansible.builtin.service"].state = restarted
+[1].when = not ansible_check_mode

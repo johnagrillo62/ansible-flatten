@@ -1,0 +1,118 @@
+foodsoft__base_packages[0] = {{ ["ruby2.0", "ruby2.0-dev"] if (ansible_distribution == "Ubuntu" and ansible_distribution_release in ["trusty"]) else [] }}
+foodsoft__base_packages[1] = libcurl3-dev
+foodsoft__base_packages[2] = libxml2-dev
+foodsoft__base_packages[3] = libxslt-dev
+foodsoft__base_packages[4] = libffi-dev
+foodsoft__base_packages[5] = libreadline-dev
+foodsoft__base_packages[6] = g++
+foodsoft__base_packages[7] = libicu-dev
+foodsoft__base_packages[8] = pkg-config
+foodsoft__base_packages[9] = libmagickwand-dev
+foodsoft__base_packages[10] = ruby-magic
+foodsoft__base_packages[11] = libmagic-dev
+foodsoft__base_packages[12] = {{ ["libsqlite3-dev"] if (foodsoft__database in ["sqlite"]) else [] }}
+foodsoft__base_packages[13] = {{ ["libmysqlclient-dev", "libmariadbd-dev"] if (foodsoft__database in ["mariadb"]) else [] }}
+foodsoft__deploy_state = present
+foodsoft__fqdn = foodsoft.{{ foodsoft__domain }}
+foodsoft__domain = {{ ansible_domain }}
+foodsoft__database = {{ ansible_local.foodsoft.database
+                        if (ansible_local.foodsoft.database | d())
+                        else ("mariadb"
+                              if (ansible_local | d() and ansible_local.mariadb is defined)
+                              else ("postgresql"
+                                    if (ansible_local | d() and ansible_local.postgresql is defined)
+                                    else "no-database-detected")) }}
+
+foodsoft__database_server = {{ ansible_local[foodsoft__database].server }}
+foodsoft__database_port = {{ ansible_local[foodsoft__database].port }}
+foodsoft__database_name = foodsoft
+foodsoft__database_user = foodsoft
+foodsoft__database_password_path = {{ secret + "/" + foodsoft__database + "/"
+                                      + ansible_local[foodsoft__database].delegate_to
+                                      + (("/" + ansible_local[foodsoft__database].port)
+                                         if (foodsoft__database == "postgresql")
+                                         else "")
+                                      + "/credentials/" + foodsoft__database_user + "/password" }}
+
+foodsoft__database_password = {{ lookup("password", foodsoft__database_password_path + " length=48 chars=ascii_letters,digits,.:-_") }}
+foodsoft__database_name_map.mariadb = mysql2
+foodsoft__database_name_map.sqlite = sqlite3
+foodsoft__database_name_map.mysql = mysql2
+foodsoft__database_config.production.adapter = {{ foodsoft__database_name_map[foodsoft__database] }}
+foodsoft__database_config.production.host = {{ foodsoft__database_server }}
+foodsoft__database_config.production.reconnect = False
+foodsoft__database_config.production.pool = 5
+foodsoft__database_config.production.username = {{ foodsoft__database_user }}
+foodsoft__database_config.production.password = {{ foodsoft__database_password }}
+foodsoft__database_config.production.database = {{ foodsoft__database_name }}
+foodsoft__database_config.production.encoding = utf8
+foodsoft__webserver = {{ ansible_local.foodsoft.webserver
+                         if (ansible_local.foodsoft.webserver | d())
+                         else ("nginx"
+                               if (ansible_local.nginx.enabled | d() | bool)
+                               else ("apache"
+                                     if (ansible_local.apache.enabled | d() | bool)
+                                     else "no-webserver-detected")) }}
+
+foodsoft__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
+foodsoft__home_path = {{ ansible_local.nginx.www | d("/srv/www") + "/" + foodsoft__user }}
+foodsoft__www_path = {{ foodsoft__git_dest + "/public" }}
+foodsoft__user = foodsoft
+foodsoft__group = foodsoft
+foodsoft__gecos = Foodsoft
+foodsoft__shell = /usr/sbin/nologin
+foodsoft__git_repo = https://github.com/foodcoops/foodsoft.git
+foodsoft__git_version = a7b6b0c803ca4a79ddab7cea92545b8cc188f952
+foodsoft__git_dest = {{ foodsoft__home_path + "/foodcoops-foodsoft" }}
+foodsoft__git_update = True
+foodsoft__bundler_exclude_groups[0] = test
+foodsoft__bundler_exclude_groups[1] = development
+foodsoft__name = Foodcoop
+foodsoft__contact.street = Grüne Straße 23
+foodsoft__contact.zip_code = 12323
+foodsoft__contact.city = Berlin
+foodsoft__contact.country = Deutschland
+foodsoft__contact.email = {{ foodsoft__email_sender }}
+foodsoft__contact.phone = 030 323 232323
+foodsoft__default_scope = f
+foodsoft__homepage = https://{{ foodsoft__fqdn }}/{{ foodsoft__default_scope }}
+foodsoft__page_footer = <a href="{{ foodsoft__homepage }}/">{{ foodsoft__name }}</a>, setup by <a href="https://debops.org/">DebOps</a>.
+foodsoft__email_sender = foodsoft@{{ foodsoft__domain }}
+foodsoft__error_recipients[0] = admin@{{ foodsoft__domain }}
+foodsoft__multi_coop_install = False
+foodsoft__upstream_config = {{ lookup("file", "vars/sample_app_config.yml") | from_yaml }}
+foodsoft__role_config.multi_coop_install = {{ foodsoft__multi_coop_install | bool }}
+foodsoft__role_config.default_scope = {{ foodsoft__default_scope }}
+foodsoft__role_config.name = {{ foodsoft__name }}
+foodsoft__role_config.contact = {{ foodsoft__contact }}
+foodsoft__role_config.homepage = {{ foodsoft__homepage }}
+foodsoft__role_config.page_footer = {{ foodsoft__page_footer }}
+foodsoft__role_config.email_sender = {{ foodsoft__email_sender }}
+foodsoft__role_config.notification.error_recipients = {{ foodsoft__error_recipients }}
+foodsoft__role_config.notification.sender_address = "Foodsoft Error" <{{ foodsoft__email_sender }}>
+foodsoft__role_config.notification.email_prefix = [Foodsoft]
+foodsoft__combined_config = {{ foodsoft__upstream_config.default
+                               | combine(foodsoft__role_config)
+                               | combine(foodsoft__config)
+                               | combine(foodsoft__group_config)
+                               | combine(foodsoft__host_config) }}
+
+foodsoft__mariadb__dependent_databases[0].database = {{ foodsoft__database_name }}
+foodsoft__mariadb__dependent_databases[0].state = {{ "present" if (foodsoft__deploy_state != "purged") else "absent" }}
+foodsoft__mariadb__dependent_users[0].database = {{ foodsoft__database_name }}
+foodsoft__mariadb__dependent_users[0].state = {{ "present" if (foodsoft__deploy_state == "present") else "absent" }}
+foodsoft__mariadb__dependent_users[0].user = {{ foodsoft__database_user }}
+foodsoft__mariadb__dependent_users[0].password = {{ foodsoft__database_password }}
+foodsoft__nginx__dependent_servers[0].name = {{ foodsoft__fqdn }}
+foodsoft__nginx__dependent_servers[0].filename = debops.foodsoft
+foodsoft__nginx__dependent_servers[0].by_role = debops-contrib.foodsoft
+foodsoft__nginx__dependent_servers[0].enabled = True
+foodsoft__nginx__dependent_servers[0].type = rails
+foodsoft__nginx__dependent_servers[0].root = {{ foodsoft__www_path }}
+foodsoft__nginx__dependent_servers[0].webroot_create = False
+foodsoft__nginx__dependent_servers[0].hsts_enabled = False
+foodsoft__nginx__dependent_servers[0].frame_options = False
+foodsoft__nginx__dependent_servers[0].content_type_options = False
+foodsoft__nginx__dependent_servers[0].xss_protection = {{ omit }}
+foodsoft__nginx__dependent_servers[0].passenger_user = {{ foodsoft__user }}
+foodsoft__nginx__dependent_servers[0].passenger_group = {{ foodsoft__group }}

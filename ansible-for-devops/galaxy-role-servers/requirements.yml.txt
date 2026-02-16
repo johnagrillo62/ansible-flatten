@@ -1,0 +1,6 @@
+roles[0].name = geerlingguy.mysql
+roles[1].name = geerlingguy.apache
+roles[2].name = geerlingguy.php
+roles[3].name = geerlingguy.php-mysql
+roles[4].name = geerlingguy.java
+roles[5].name = geerlingguy.solr

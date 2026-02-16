@@ -1,0 +1,9 @@
+~d0.name = Start kibana
+~d1.ansible.builtin.service = 
+~d2.name = 'kibana'
+~d2.state = 'started'
+~d2.enabled = True
+~d0.name = Restart kibana
+~d1.ansible.builtin.service = 
+~d2.name = 'kibana'
+~d2.state = 'restarted'

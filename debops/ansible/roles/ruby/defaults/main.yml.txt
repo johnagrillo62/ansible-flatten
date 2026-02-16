@@ -1,0 +1,13 @@
+ruby__base_packages[0] = ruby
+ruby__base_packages[1] = libruby
+ruby__base_packages[2] = rubygems-integration
+ruby__base_packages[3] = ruby-bundler
+ruby__dev_packages = {{ ["ruby-dev", "build-essential"]
+	                if (ruby__dev_support | bool or
+	                    ruby__gems or ruby__group_gems or
+	                    ruby__host_gems or ruby__dependent_gems or
+	                    ruby__user_gems or ruby__group_user_gems or
+	                    ruby__host_user_gems or ruby__dependent_user_gems)
+	                else [] }}
+
+ruby__dev_support = False

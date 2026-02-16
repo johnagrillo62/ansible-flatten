@@ -1,0 +1,4 @@
+[0].name = Apply ifupdown configuration
+[0].environment.LC_ALL = C
+[0]["ansible.builtin.script"] = script/ifupdown-reconfigure-interfaces
+[0].when = ifupdown__reconfigure_auto | bool

@@ -1,0 +1,7 @@
+rabbitmq_server__config[0].name = rabbit
+rabbitmq_server__config[0].options[0].example_option = value
+rabbitmq_server__config[0].options[1].tcp_listeners[0] = 5672
+rabbitmq_server__config[0].options[2].reverse_dns_lookups = True
+rabbitmq_server__config[0].options[3].vm_memory_high_watermark = 0.4
+rabbitmq_server__config[0].options[4].tcp_listeners = [{"127.0.0.1", 5672},
+ {"::1",       5672}]

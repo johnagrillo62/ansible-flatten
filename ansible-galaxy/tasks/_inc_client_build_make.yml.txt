@@ -1,0 +1,15 @@
+[0].name = Build client
+[0].make.chdir = {{ galaxy_server_dir }}
+[0].make.target = {{ galaxy_client_make_target }}
+[0].environment.PATH = {{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}
+[0].environment.VIRTUAL_ENV = {{ galaxy_venv_dir }}
+[0].environment.COREPACK_ENABLE_DOWNLOAD_PROMPT = 0
+[1].name = Fetch client version
+[1].slurp.src = {{ galaxy_static_dir }}/client_build_hash.txt
+[1].register = __galaxy_client_build_version_result
+[2].name = Set client build version fact
+[2].set_fact.__galaxy_client_build_version = {{ __galaxy_client_build_version_result.content | b64decode | trim }}
+[3].name = Ensure that client update succeeded
+[3].assert.that[0] = __galaxy_client_build_version == __galaxy_current_commit_id
+[3].assert.msg = Client build version does not match repo version after building: {{ __galaxy_client_build_version }} != {{ __galaxy_current_commit_id }}
+[3].when = __galaxy_from_git.stat.exists

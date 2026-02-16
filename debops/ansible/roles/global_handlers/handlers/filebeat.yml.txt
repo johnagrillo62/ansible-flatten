@@ -1,0 +1,17 @@
+[0].name = Test filebeat configuration and restart
+[0]["ansible.builtin.command"] = filebeat test config
+[0].register = global_handlers__filebeat_register_test_config
+[0].changed_when = global_handlers__filebeat_register_test_config.changed | bool
+[0].notify[0] = Restart filebeat
+[0].notify[1] = Commit changes in etckeeper
+[0].when = (ansible_local.filebeat.installed | d()) | bool
+[1].name = Test filebeat output and restart
+[1]["ansible.builtin.command"] = filebeat test output
+[1].register = global_handlers__filebeat_register_test_output
+[1].changed_when = global_handlers__filebeat_register_test_output.changed | bool
+[1].notify[0] = Restart filebeat
+[1].when = (ansible_local.filebeat.installed | d()) | bool
+[2].name = Restart filebeat
+[2]["ansible.builtin.service"].name = filebeat
+[2]["ansible.builtin.service"].state = restarted
+[2].when = (ansible_local.filebeat.installed | d()) | bool

@@ -1,0 +1,13 @@
+aliases.job_templates.ask_tags_on_launch[0] = ask_tags
+aliases.job_templates.ask_verbosity_on_launch[0] = ask_verbosity
+aliases.job_templates.ask_diff_mode_on_launch[0] = ask_diff_mode
+aliases.job_templates.allow_simultaneous[0] = concurrent_jobs_enabled
+aliases.job_templates.diff_mode[0] = diff_mode_enabled
+aliases.job_templates.ask_inventory_on_launch[0] = ask_inventory
+aliases.job_templates.limit[0] = ask_limit
+aliases.job_templates.force_handlers[0] = force_handlers_enabled
+aliases.job_templates.ask_job_type_on_launch[0] = ask_job_type
+aliases.job_templates.ask_skip_tags_on_launch[0] = ask_skip_tags
+aliases.job_templates.use_fact_cache[0] = fact_caching_enabled
+aliases.job_templates.extra_vars[0] = ask_extra_vars
+aliases.job_templates.ask_credential_on_launch[0] = ask_credential

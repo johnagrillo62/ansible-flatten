@@ -1,0 +1,4 @@
+~d0.networkd__host_units = 
+~d1.name = '20-bridge-slave-interface-vlan.network'
+~d2.raw = |
+~d2.state = 'present'

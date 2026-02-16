@@ -1,0 +1,38 @@
+[0].name = Install required packages
+[0]["ansible.builtin.package"].name = {{ q("flattened", (controller__base_packages
+                              + controller__packages)) }} 
+[0]["ansible.builtin.package"].state = present
+[0].register = controller__register_packages
+[0].until = controller__register_packages is succeeded
+[1].name = Install DebOps from PyPI
+[1]["ansible.builtin.pip"].name = {{ q("flattened", controller__pip_packages) }}
+[1]["ansible.builtin.pip"].state = present
+[1].register = controller__register_pip_install
+[1].until = controller__register_pip_install is succeeded
+[1].notify = {{ ["Update DebOps in the background with " + controller__update_method]
+              if not controller__update_method == "sync" else omit }} 
+[2].name = Configure system-wide DebOps scripts
+[2]["ansible.builtin.template"].src = etc/debops.cfg.j2
+[2]["ansible.builtin.template"].dest = /etc/debops.cfg
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = root
+[2]["ansible.builtin.template"].mode = 0644
+[2].when = controller__install_systemwide | bool
+[3].name = Update roles and playbooks
+[3].become = {{ controller__install_systemwide | bool }}
+[3]["ansible.builtin.command"] = debops-update
+[3].register = controller__register_update
+[3].changed_when = controller__register_update.changed | bool
+[3].when = controller__update_method == 'sync'
+[4].name = Clone project repository
+[4].become = {{ controller__install_systemwide | bool }}
+[4]["ansible.builtin.git"].repo = {{ controller__project_git_repo }}
+[4]["ansible.builtin.git"].dest = {{ controller__project_name if controller__project_name else controller__project_git_repo | basename }}
+[4]["ansible.builtin.git"].version = master
+[4]["ansible.builtin.git"].update = True
+[4].when = controller__project_git_repo | d()
+[5].name = Initialize new project
+[5].become = {{ controller__install_systemwide | bool }}
+[5]["ansible.builtin.command"] = debops-init '{{ controller__project_name }}'
+[5].args.creates = {{ controller__project_name }}/.debops.cfg
+[5].when = controller__project_name | d() and not controller__project_git_repo | d()

@@ -1,0 +1,17 @@
+[0].name = Cri-dockerd | reload systemd
+[0].systemd_service.name = cri-dockerd
+[0].systemd_service.daemon_reload = true
+[0].systemd_service.masked = false
+[0].listen = Restart and enable cri-dockerd
+[1].name = Cri-dockerd | reload cri-dockerd.socket
+[1].service.name = cri-dockerd.socket
+[1].service.state = restarted
+[1].listen = Restart and enable cri-dockerd
+[2].name = Cri-dockerd | reload cri-dockerd.service
+[2].service.name = cri-dockerd.service
+[2].service.state = restarted
+[2].listen = Restart and enable cri-dockerd
+[3].name = Cri-dockerd | enable cri-dockerd service
+[3].service.name = cri-dockerd.service
+[3].service.enabled = true
+[3].listen = Restart and enable cri-dockerd

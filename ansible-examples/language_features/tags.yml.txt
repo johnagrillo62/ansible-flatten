@@ -1,0 +1,16 @@
+doc[0][0].name = example play one
+doc[0][0].hosts = all
+doc[0][0].remote_user = root
+doc[0][0].tags[0] = extra
+doc[0][0].tasks[0].name = hi
+doc[0][0].tasks[0].tags[0] = foo
+doc[0][0].tasks[0].shell = echo "first task ran"
+doc[0][1].name = example play two
+doc[0][1].hosts = all
+doc[0][1].remote_user = root
+doc[0][1].tasks[0].name = hi
+doc[0][1].tasks[0].tags[0] = bar
+doc[0][1].tasks[0].shell = echo "second task ran"
+doc[0][1].tasks[1].include = tasks/base.yml
+doc[0][1].tasks[1].tags[0] = base
+doc[1] = 

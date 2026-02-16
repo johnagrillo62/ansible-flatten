@@ -1,0 +1,31 @@
+~d0.name = Ensure a valid state for profile {{ item.name }}
+~d1.ansible.builtin.assert = 
+~d2.that = item.state | d() in [ "enforce", "complain", "disable", "ignore" ]
+~d2.quiet = True
+~d1.tags = [ 'role::apparmor:profiles' ]
+~d0.name = Check presence of profile {{ item.name }}
+~d1.ansible.builtin.stat = 
+~d2.path = '{{ "/etc/apparmor.d/" + item.name }}'
+~d1.register = apparmor__stat_profile
+~d1.when = item.state != "ignore"
+~d1.tags = [ 'role::apparmor:profiles' ]
+~d0.name = Ensure existence of profile {{ item.name }}
+~d1.ansible.builtin.assert = 
+~d2.that = apparmor__stat_profile.stat.exists | d(False)
+~d2.quiet = True
+~d1.when = item.state != "ignore"
+~d1.tags = [ 'apparmor:profiles' ]
+~d0.name = Register current AppArmor state
+~d1.ansible.builtin.command = aa-status --json
+~d1.register = apparmor__register_old_status
+~d1.changed_when = False
+~d1.when = item.state != "ignore"
+~d1.tags = [ 'role::apparmor:profiles' ]
+~d0.name = Set profile {{ item.name + " to " + item.state }}
+~d1.ansible.builtin.shell = set -o nounset -o pipefail -o errexit &&
+~d1.args = 
+~d2.executable = bash
+~d1.register = apparmor__register_new_status
+~d1.changed_when = apparmor__register_new_status.stdout != apparmor__register_old_status.stdout
+~d1.when = item.state != "ignore"
+~d1.tags = [ 'role::apparmor:profiles' ]

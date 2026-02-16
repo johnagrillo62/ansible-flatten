@@ -1,0 +1,43 @@
+[0].name = Install Postfix and related packages
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = libsasl2-modules
+[0].with_items[1] = postfix
+[0].with_items[2] = postfix-pcre
+[0].with_items[3] = postfix-pgsql
+[0].with_items[4] = postgrey
+[0].with_items[5] = python-psycopg2
+[0].with_items[6] = sasl2-bin
+[0].tags[0] = dependencies
+[1].name = Create database user for mail server
+[1].postgresql_user = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ mail_db_username }} password="{{ mail_db_password }}" encrypted=yes state=present
+[1].notify = import sql postfix
+[2].name = Create database for mail server
+[2].postgresql_db = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ mail_db_database }} state=present owner={{ mail_db_username }}
+[2].notify = import sql postfix
+[3].name = Copy import.sql
+[3].template = src=mailserver.sql.j2 dest=/etc/postfix/import.sql owner=root group=root mode=0600
+[3].notify = import sql postfix
+[4].name = Create postfix maps directory
+[4].file = path=/etc/postfix/maps state=directory owner=root group=root
+[4].when = mail_header_privacy == 1
+[5].name = Copy smtp_header_checks.pcre
+[5].copy = src=etc_postfix_maps_smtp_header_checks.pcre dest=/etc/postfix/maps/smtp_header_checks.pcre owner=root group=root
+[5].when = mail_header_privacy == 1
+[6].name = Copy main.cf
+[6].template = src=etc_postfix_main.cf.j2 dest=/etc/postfix/main.cf owner=root group=root
+[6].notify = restart postfix
+[7].name = Copy master.cf
+[7].copy = src=etc_postfix_master.cf dest=/etc/postfix/master.cf owner=root group=root
+[7].notify = restart postfix
+[8].name = Copy additional postfix configuration files
+[8].template = src=etc_postfix_{{ item }}.j2 dest=/etc/postfix/{{ item }} owner=root group=root
+[8].with_items[0] = pgsql-virtual-alias-maps.cf
+[8].with_items[1] = pgsql-virtual-mailbox-domains.cf
+[8].with_items[2] = pgsql-virtual-mailbox-maps.cf
+[8].notify = restart postfix
+[9].name = Set firewall rules for postfix
+[9].ufw = rule=allow port={{ item }} proto=tcp
+[9].with_items[0] = smtp
+[9].with_items[1] = ssmtp
+[9].with_items[2] = submission
+[9].tags = ufw

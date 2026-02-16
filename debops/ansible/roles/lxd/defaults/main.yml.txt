@@ -1,0 +1,121 @@
+lxd__upstream_enabled = True
+lxd__upstream_type = {{ "apt"
+                        if (ansible_distribution == "Ubuntu")
+                        else "git" }}
+
+lxd__upstream_gpg_key[0] = 602F 5676 63E5 93BC BD14  F338 C638 974D 6479 2D67
+lxd__upstream_gpg_key[1] = 5DE3 E050 9C47 EA3C F04A  42D3 4AEE 18F8 3AFD EB23
+lxd__upstream_git_repository = https://github.com/lxc/lxd
+lxd__upstream_git_release = stable-4.0
+lxd__golang_gosrc = {{ ansible_local.golang.gosrc | d("") }}
+lxd__binary = {{ ansible_local.golang.binaries["lxd"]
+                 if (ansible_local.golang.binaries.lxd | d())
+                 else "/usr/bin/lxd" }}
+
+lxd__base_packages[0] = dnsmasq-base
+lxd__base_packages[1] = lxcfs
+lxd__base_packages[2] = squashfs-tools
+lxd__group = lxd
+lxd__admin_accounts = {{ ansible_local.core.admin_users | d([]) }}
+lxd__default_preseed[0].name = server-default
+lxd__default_preseed[1].name = network-default
+lxd__default_preseed[1].seed.networks[0].name = lxdbr0
+lxd__default_preseed[1].seed.networks[0].config["ipv4.address"] = auto
+lxd__default_preseed[1].seed.networks[0].config["ipv6.address"] = auto
+lxd__default_preseed[1].seed.networks[0].description = 
+lxd__default_preseed[1].seed.networks[0].type = 
+lxd__default_preseed[2].name = storage-default
+lxd__default_preseed[2].seed.storage_pools[0].name = default
+lxd__default_preseed[2].seed.storage_pools[0].description = 
+lxd__default_preseed[2].seed.storage_pools[0].driver = dir
+lxd__default_preseed[3].name = profile-default
+lxd__default_preseed[3].seed.profiles[0].name = default
+lxd__default_preseed[3].seed.profiles[0].description = 
+lxd__default_preseed[3].seed.profiles[0].devices.eth0.name = eth0
+lxd__default_preseed[3].seed.profiles[0].devices.eth0.nictype = bridged
+lxd__default_preseed[3].seed.profiles[0].devices.eth0.parent = lxdbr0
+lxd__default_preseed[3].seed.profiles[0].devices.eth0.type = nic
+lxd__default_preseed[3].seed.profiles[0].devices.root.path = /
+lxd__default_preseed[3].seed.profiles[0].devices.root.pool = default
+lxd__default_preseed[3].seed.profiles[0].devices.root.type = disk
+lxd__default_preseed[4].name = cluster-default
+lxd__default_preseed[4].seed.cluster = null
+lxd__combined_preseed = {{ lxd__default_preseed
+                           + lxd__preseed
+                           + lxd__group_preseed
+                           + lxd__host_preseed }}
+
+lxd__init_preseed = {{ False
+                       if (ansible_local | d() and ansible_local.lxd | d() and
+                           (ansible_local.lxd.installed | d()) | bool)
+                       else True }}
+
+lxd__preseed_data = {{ lookup("template", "lookup/lxd__preseed_data.j2") }}
+lxd__golang__dependent_packages[0].name = lxd
+lxd__golang__dependent_packages[0].state = {{ "present" if lxd__upstream_enabled | bool else "absent" }}
+lxd__golang__dependent_packages[0].upstream_type = {{ lxd__upstream_type }}
+lxd__golang__dependent_packages[0].apt_packages[0] = lxd
+lxd__golang__dependent_packages[0].apt_packages[1] = lxd-client
+lxd__golang__dependent_packages[0].apt_dev_packages[0] = autoconf
+lxd__golang__dependent_packages[0].apt_dev_packages[1] = automake
+lxd__golang__dependent_packages[0].apt_dev_packages[2] = tcl
+lxd__golang__dependent_packages[0].apt_dev_packages[3] = libacl1-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[4] = libcap-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[5] = liblxc1
+lxd__golang__dependent_packages[0].apt_dev_packages[6] = lxc-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[7] = libtool
+lxd__golang__dependent_packages[0].apt_dev_packages[8] = libuv1-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[9] = make
+lxd__golang__dependent_packages[0].apt_dev_packages[10] = pkg-config
+lxd__golang__dependent_packages[0].apt_dev_packages[11] = libapparmor-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[12] = libseccomp-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[13] = libcap-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[14] = libudev-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[15] = libsqlite3-dev
+lxd__golang__dependent_packages[0].apt_dev_packages[16] = liblz4-dev
+lxd__golang__dependent_packages[0].gpg = {{ lxd__upstream_gpg_key }}
+lxd__golang__dependent_packages[0].git[0].repo = {{ lxd__upstream_git_repository }}
+lxd__golang__dependent_packages[0].git[0].version = {{ lxd__upstream_git_release }}
+lxd__golang__dependent_packages[0].git[0].depth = 50
+lxd__golang__dependent_packages[0].git[0].build_script = export GOPATH="${HOME}/go"
+make deps
+export CGO_CFLAGS="-I${HOME}/go/deps/sqlite/ -I${HOME}/go/deps/libco/ -I${HOME}/go/deps/raft/include/ -I${HOME}/go/deps/dqlite/include/"
+export CGO_LDFLAGS="-L${HOME}/go/deps/sqlite/.libs/ -L${HOME}/go/deps/libco/ -L${HOME}/go/deps/raft/.libs -L${HOME}/go/deps/dqlite/.libs/"
+export LD_LIBRARY_PATH="${HOME}/go/deps/sqlite/.libs/:${HOME}/go/deps/libco/:${HOME}/go/deps/raft/.libs/:${HOME}/go/deps/dqlite/.libs/"
+export CGO_LDFLAGS_ALLOW="(-Wl,-wrap,pthread_create)|(-Wl,-z,now)"
+make
+
+lxd__golang__dependent_packages[0].git_binaries[0].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxd" }}
+lxd__golang__dependent_packages[0].git_binaries[0].dest = lxd
+lxd__golang__dependent_packages[0].git_binaries[1].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxd-agent" }}
+lxd__golang__dependent_packages[0].git_binaries[1].dest = lxd-agent
+lxd__golang__dependent_packages[0].git_binaries[2].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxd-benchmark" }}
+lxd__golang__dependent_packages[0].git_binaries[2].dest = lxd-benchmark
+lxd__golang__dependent_packages[0].git_binaries[3].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxd-p2c" }}
+lxd__golang__dependent_packages[0].git_binaries[3].dest = lxd-p2c
+lxd__golang__dependent_packages[0].git_binaries[4].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxc" }}
+lxd__golang__dependent_packages[0].git_binaries[4].dest = lxc
+lxd__golang__dependent_packages[0].git_binaries[5].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/lxc-to-lxd" }}
+lxd__golang__dependent_packages[0].git_binaries[5].dest = lxc-to-lxd
+lxd__golang__dependent_packages[0].git_binaries[6].src = {{ lxd__upstream_git_repository.split("://")[1] + "/../../../../bin/fuidshift" }}
+lxd__golang__dependent_packages[0].git_binaries[6].dest = fuidshift
+lxd__logrotate__dependent_config[0].filename = lxd
+lxd__logrotate__dependent_config[0].divert = {{ False if lxd__upstream_enabled | bool else True }}
+lxd__logrotate__dependent_config[0].log = /var/log/lxd/lxd.log
+lxd__logrotate__dependent_config[0].options = copytruncate
+daily
+rotate 7
+delaycompress
+compress
+notifempty
+missingok
+
+lxd__logrotate__dependent_config[0].state = present
+lxd__sysctl__dependent_parameters[0].name = lxd-inotify
+lxd__sysctl__dependent_parameters[0].divert = {{ False if lxd__upstream_enabled | bool else True }}
+lxd__sysctl__dependent_parameters[0].weight = 10
+lxd__sysctl__dependent_parameters[0].options[0].name = fs.inotify.max_user_instances
+lxd__sysctl__dependent_parameters[0].options[0].comment = Increase the user inotify instance limit to allow for about
+100 containers to run before the limit is hit again
+
+lxd__sysctl__dependent_parameters[0].options[0].value = 1024

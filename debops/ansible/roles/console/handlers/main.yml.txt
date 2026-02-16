@@ -1,0 +1,4 @@
+[0].name = Reload sysvinit
+[0]["ansible.builtin.command"] = telinit q
+[0].register = console__register_telinit
+[0].changed_when = console__register_telinit.changed | bool

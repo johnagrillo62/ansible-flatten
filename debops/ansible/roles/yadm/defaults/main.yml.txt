@@ -1,0 +1,46 @@
+yadm__enabled = True
+yadm__dotfiles_enabled = False
+yadm__dotfiles_root = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                         + "/yadm" }} 
+yadm__dotfiles_host = github.com
+yadm__dotfiles_owner = drybjed
+yadm__dotfiles_path = {{ (yadm__dotfiles_root + "/" + yadm__dotfiles_host + "/"
+                          + yadm__dotfiles_owner + "/dotfiles.git")
+                         if yadm__dotfiles_enabled | bool
+                         else "" }}
+
+yadm__base_packages[0] = git
+yadm__base_packages[1] = less
+yadm__base_packages[2] = ncurses-term
+yadm__base_packages[3] = tmux
+yadm__base_packages[4] = {{ [] if yadm__upstream_enabled | bool else "yadm" }}
+yadm__upstream_enabled = {{ True
+                            if (ansible_distribution_release in
+                                ["trusty", "xenial"])
+                            else False }}
+
+yadm__upstream_gpg_id = 31B9 62F7 CC57 473B 0329  CB9A 6CBE 24C2 FD8C F76E
+yadm__upstream_repo = https://github.com/TheLocehiliosan/yadm
+yadm__upstream_dest = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                          + "/yadm/" + yadm__upstream_repo.split("://")[1] }} 
+yadm__upstream_version = 1.12.0
+yadm__upstream_link = /usr/local/bin/yadm
+yadm__default_dotfiles[0].name = drybjed
+yadm__default_dotfiles[0].gpg = 2706 7A91 D620 EE91 D503  09D9 2DCC F53E 9BC7 4BEC
+yadm__default_dotfiles[0].git = https://github.com/drybjed/dotfiles
+yadm__combined_dotfiles = {{ yadm__default_dotfiles
+                             + yadm__dotfiles
+                             + yadm__group_dotfiles
+                             + yadm__host_dotfiles }}
+
+yadm__apt_preferences__dependent_list[0].package = yadm
+yadm__apt_preferences__dependent_list[0].backports[0] = stretch
+yadm__apt_preferences__dependent_list[0].reason = Version parity with Debian Buster
+yadm__apt_preferences__dependent_list[0].by_role = debops.yadm
+yadm__keyring__dependent_gpg_keys[0].id = {{ yadm__upstream_gpg_id }}
+yadm__keyring__dependent_gpg_keys[0].state = {{ "present" if yadm__upstream_enabled | bool else "absent" }}
+yadm__keyring__dependent_gpg_keys[1] = {{ (yadm__combined_dotfiles | debops.debops.parse_kv_items
+         | selectattr("gpg", "defined") | selectattr("state", "equalto", "present")
+         | map(attribute="gpg") | list)
+        if yadm__dotfiles_enabled | bool else [] }}
+

@@ -1,0 +1,95 @@
+~d0.name = Import custom Ansible plugins
+~d1.ansible.builtin.import_role = 
+~d2.name = 'ansible_plugins'
+~d0.name = Import DebOps global handlers
+~d1.ansible.builtin.import_role = 
+~d2.name = 'global_handlers'
+~d0.name = Import DebOps secret role
+~d1.ansible.builtin.import_role = 
+~d2.name = 'secret'
+~d0.name = Install Zabbix agent packages
+~d1.ansible.builtin.apt = 
+~d2.name = '{{ (zabbix_agent__base_packages
+~d2.state = '{{ zabbix_agent__deploy_state }}'
+~d2.purge = True
+~d1.register = zabbix_agent__register_packages
+~d1.until = zabbix_agent__register_packages is succeeded
+~d0.name = Add Zabbix UNIX account to required groups
+~d1.ansible.builtin.user = 
+~d2.name = '{{ zabbix_agent__user }}'
+~d2.groups = '{{ zabbix_agent__additional_groups | flatten | join(",") }}'
+~d2.state = 'present'
+~d2.append = True
+~d1.notify = [ 'Check zabbix-agent and restart', 'Check zabbix-agent2 and restart' ]
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d0.name = Divert Zabbix agent configuration file
+~d1.debops.debops.dpkg_divert = 
+~d2.path = '{{ zabbix_agent__conf_file_path }}'
+~d2.state = 'present'
+~d1.notify = [ 'Check zabbix-agent and restart', 'Check zabbix-agent2 and restart' ]
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d0.name = Generate Zabbix agent configuration file
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/zabbix/zabbix_agentd.conf.j2'
+~d2.dest = '{{ zabbix_agent__conf_file_path }}'
+~d2.owner = 'root'
+~d2.group = '{{ zabbix_agent__group }}'
+~d2.mode = '0640'
+~d2.unsafe_writes = '{{ True if (core__unsafe_writes | d(ansible_local.core.unsafe_writes | d()) | bool) else omit }}'
+~d1.notify = [ 'Check zabbix-agent and restart', 'Check zabbix-agent2 and restart' ]
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d0.name = Install secret key
+~d1.ansible.builtin.copy = 
+~d2.content = '{{ zabbix_agent__tls_psk_secret }}'
+~d2.dest = '/etc/zabbix/secret.key'
+~d2.owner = 'root'
+~d2.group = '{{ zabbix_agent__group }}'
+~d2.mode = '0640'
+~d1.no_log = '{{ debops__no_log | d(True) }}'
+~d1.notify = [ 'Check zabbix-agent and restart', 'Check zabbix-agent2 and restart' ]
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d0.name = Ensure configuration folder exists
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/zabbix/zabbix_agentd.conf.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d1.when = zabbix_agent__deploy_state != 'absent' and
+~d0.name = Ensure log folder exists
+~d1.ansible.builtin.file = 
+~d2.path = '/var/log/zabbix-agent'
+~d2.state = 'directory'
+~d2.owner = '{{ zabbix_agent__user }}'
+~d2.group = '{{ zabbix_agent__group }}'
+~d2.mode = '0755'
+~d1.when = zabbix_agent__deploy_state != 'absent' and
+~d0.name = Make sure that Ansible local fact directory exists
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/ansible/facts.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d0.name = Create local facts of Zabbix agent
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/ansible/facts.d/zabbix_agent.fact.j2'
+~d2.dest = '/etc/ansible/facts.d/zabbix_agent.fact'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d2.unsafe_writes = '{{ True if (core__unsafe_writes | d(ansible_local.core.unsafe_writes | d()) | bool) else omit }}'
+~d1.notify = [ 'Refresh host facts' ]
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Prepare cleanup during package removal
+~d1.ansible.builtin.import_role = 
+~d2.name = 'dpkg_cleanup'
+~d1.vars = 
+~d2.dpkg_cleanup__dependent_packages = 
+~d1.when = zabbix_agent__deploy_state != 'absent'
+~d1.tags = [ 'role::dpkg_cleanup', 'skip::dpkg_cleanup',
+~d5.'role = :zabbix_agent:dpkg_cleanup' ]
+~d0.name = Reload facts if they were modified
+~d1.ansible.builtin.meta = 'flush_handlers'

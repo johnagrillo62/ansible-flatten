@@ -1,0 +1,52 @@
+[0].name = Generate a random string for test
+[0].set_fact.test_id = {{ lookup('password', '/dev/null chars=ascii_letters length=16') }}
+[0].when = test_id is not defined
+[1].name = Generate a unique name
+[1].set_fact.bulk_job_name = AWX-Collection-tests-bulk_job_launch-{{ test_id }}
+[2].name = Get our collection package
+[2].controller_meta = null
+[2].register = controller_meta
+[3].name = Generate the name of our plugin
+[3].set_fact.plugin_name = {{ controller_meta.prefix }}.controller_api
+[4].name = Get Inventory
+[4].set_fact.inventory_id = {{ lookup(plugin_name, 'inventories', query_params={'name': 'Demo Inventory'}, return_ids=True ) }}
+[5].name = Create a Job Template
+[5].job_template.name = {{ bulk_job_name }}
+[5].job_template.copy_from = Demo Job Template
+[5].job_template.ask_variables_on_launch = true
+[5].job_template.ask_inventory_on_launch = true
+[5].job_template.ask_skip_tags_on_launch = true
+[5].job_template.allow_simultaneous = true
+[5].job_template.state = present
+[5].register = jt_result
+[6].name = Create Bulk Job
+[6].bulk_job_launch.name = {{ bulk_job_name }}
+[6].bulk_job_launch.jobs[0].unified_job_template = {{ jt_result.id }}
+[6].bulk_job_launch.jobs[0].inventory = {{ inventory_id }}
+[6].bulk_job_launch.jobs[0].skip_tags = skipfoo,skipbar
+[6].bulk_job_launch.jobs[0].extra_data.animal = fish
+[6].bulk_job_launch.jobs[0].extra_data.color = orange
+[6].bulk_job_launch.jobs[1].unified_job_template = {{ jt_result.id }}
+[6].bulk_job_launch.extra_vars.animal = bear
+[6].bulk_job_launch.extra_vars.food = carrot
+[6].bulk_job_launch.skip_tags = skipbaz
+[6].bulk_job_launch.job_tags = Hello World
+[6].bulk_job_launch.limit = localhost
+[6].bulk_job_launch.wait = True
+[6].bulk_job_launch.inventory = Demo Inventory
+[6].bulk_job_launch.organization = Default
+[6].register = result
+[7].assert.that[0] = result is not failed
+[7].assert.that[1] = 'id' in result
+[7].assert.that[2] = result['job_info']['skip_tags'] == "skipbaz"
+[7].assert.that[3] = result['job_info']['limit'] == "localhost"
+[7].assert.that[4] = result['job_info']['job_tags'] == "Hello World"
+[7].assert.that[5] = result['job_info']['inventory'] == inventory_id | int
+[7].assert.that[6] = result['job_info']['extra_vars'] == '{"animal": "bear", "food": "carrot"}'
+[8].name = Delete Job Template
+[8].job_template.name = {{ bulk_job_name }}
+[8].job_template.state = absent
+[8].register = del_res
+[8].until = del_res is succeeded
+[8].retries = 5
+[8].delay = 3

@@ -1,0 +1,801 @@
+postfix__base_packages[0] = postfix
+postfix__base_packages[1] = postfix-pcre
+postfix__base_packages[2] = bsd-mailx
+postfix__base_packages[3] = make
+postfix__base_packages[4] = ssl-cert
+postfix__base_packages[5] = ca-certificates
+postfix__purge_packages[0] = exim4-base
+postfix__purge_packages[1] = exim4-config
+postfix__purge_packages[2] = exim4-daemon-light
+postfix__purge_packages[3] = nullmailer
+postfix__version = {{ ansible_local.postfix.version | d("0.0.0") }}
+postfix__doc_installed = {{ ansible_local.postfix.doc_installed
+                            if (ansible_local | d() and ansible_local.postfix | d() and
+                                ansible_local.postfix.doc_installed is defined)
+                            else False }}
+
+postfix__fqdn = {{ ansible_fqdn }}
+postfix__domain = {{ ansible_domain }}
+postfix__relayhost = 
+postfix__mailname = {{ postfix__fqdn }}
+postfix__accept_any = True
+postfix__pki = {{ ansible_local.pki.enabled | d() | bool }}
+postfix__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+postfix__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+postfix__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
+postfix__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
+postfix__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+postfix__tls_ca_file = /etc/ssl/certs/ca-certificates.crt
+postfix__tls_cert_file = {{ (postfix__pki_path + "/" + postfix__pki_realm + "/" + postfix__pki_crt)
+                            if postfix__pki | bool else "/etc/ssl/certs/ssl-cert-snakeoil.pem" }} 
+postfix__tls_key_file = {{ (postfix__pki_path + "/" + postfix__pki_realm + "/" + postfix__pki_key)
+                           if postfix__pki | bool else "/etc/ssl/private/ssl-cert-snakeoil.key" }} 
+postfix__pki_hook_name = postfix
+postfix__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
+postfix__pki_hook_action = reload
+postfix__dhparam = {{ ansible_local.dhparam.enabled
+                      if (ansible_local | d() and ansible_local.dhparam | d() and
+                          ansible_local.dhparam.enabled is defined)
+                      else False }}
+
+postfix__dhparam_set = default
+postfix__tls_dh1024_param_file = {{ ansible_local.dhparam[postfix__dhparam_set]
+                                    if (ansible_local | d() and ansible_local.dhparam | d() and
+                                        ansible_local.dhparam[postfix__dhparam_set] | d())
+                                    else "" }}
+
+postfix__tls_dh512_param_file = {{ ansible_local.dhparam[postfix__dhparam_set]
+                                   if (ansible_local | d() and ansible_local.dhparam | d() and
+                                       ansible_local.dhparam[postfix__dhparam_set] | d())
+                                   else "" }}
+
+postfix__original_maincf[0].name = myorigin_example
+postfix__original_maincf[0].option = myorigin
+postfix__original_maincf[0].value = /etc/mailname
+postfix__original_maincf[0].comment = Debian specific:  Specifying a file name will cause the first
+line of that file to be used as the name.  The Debian default
+is /etc/mailname.
+
+postfix__original_maincf[0].state = comment
+postfix__original_maincf[0].section = base
+postfix__original_maincf[1].name = smtpd_banner
+postfix__original_maincf[1].value = $myhostname ESMTP $mail_name (Debian/GNU)
+postfix__original_maincf[1].section = base
+postfix__original_maincf[2].name = biff
+postfix__original_maincf[2].value = False
+postfix__original_maincf[2].section = base
+postfix__original_maincf[3].name = append_dot_mydomain
+postfix__original_maincf[3].value = False
+postfix__original_maincf[3].comment = appending .domain is the MUA's job.
+postfix__original_maincf[3].section = base
+postfix__original_maincf[4].name = delay_warning_time
+postfix__original_maincf[4].value = 4h
+postfix__original_maincf[4].comment = Uncomment the next line to generate "delayed mail" warnings
+postfix__original_maincf[4].state = comment
+postfix__original_maincf[4].section = base
+postfix__original_maincf[5].name = readme_directory
+postfix__original_maincf[5].value = {{ "/usr/share/doc/postfix"
+               if postfix__doc_installed | bool
+               else False }}
+
+postfix__original_maincf[5].section = base
+postfix__original_maincf[6].name = compatibility_level
+postfix__original_maincf[6].value = 2
+postfix__original_maincf[6].comment = See http://www.postfix.org/COMPATIBILITY_README.html -- default to 2 on
+fresh installs.
+
+postfix__original_maincf[6].section = base
+postfix__original_maincf[6].state = {{ "present"
+               if (postfix__version is version_compare("3.0.0", ">="))
+               else "ignore" }}
+
+postfix__original_maincf[7].name = smtpd_tls_cert_file
+postfix__original_maincf[7].value = {{ postfix__tls_cert_file }}
+postfix__original_maincf[7].comment = TLS parameters
+postfix__original_maincf[7].section = base
+postfix__original_maincf[8].name = smtpd_tls_key_file
+postfix__original_maincf[8].value = {{ postfix__tls_key_file }}
+postfix__original_maincf[8].section = base
+postfix__original_maincf[9].name = smtpd_use_tls
+postfix__original_maincf[9].value = True
+postfix__original_maincf[9].section = base
+postfix__original_maincf[10].name = smtpd_tls_session_cache_database
+postfix__original_maincf[10].value = btree:${data_directory}/smtpd_scache
+postfix__original_maincf[10].section = base
+postfix__original_maincf[11].name = smtp_tls_session_cache_database
+postfix__original_maincf[11].value = btree:${data_directory}/smtp_scache
+postfix__original_maincf[11].section = base
+postfix__original_maincf[12].name = smtp_tls_client_comment
+postfix__original_maincf[12].comment = See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+information on enabling SSL in the smtp client.
+
+postfix__original_maincf[12].state = hidden
+postfix__original_maincf[12].section = base
+postfix__original_maincf[13].name = smtpd_relay_restrictions
+postfix__original_maincf[13].section = base
+postfix__original_maincf[13].state = {{ "present"
+               if (postfix__version is version_compare("2.10.0", ">="))
+               else "ignore" }}
+
+postfix__original_maincf[13].value[0].name = permit_mynetworks
+postfix__original_maincf[13].value[0].weight = -300
+postfix__original_maincf[13].value[1].name = permit_sasl_authenticated
+postfix__original_maincf[13].value[1].weight = -200
+postfix__original_maincf[13].value[2].name = defer_unauth_destination
+postfix__original_maincf[13].value[2].weight = -100
+postfix__original_maincf[14].name = myhostname
+postfix__original_maincf[14].value = {{ postfix__fqdn }}
+postfix__original_maincf[14].section = base
+postfix__original_maincf[15].name = alias_maps
+postfix__original_maincf[15].value[0] = hash:/etc/aliases
+postfix__original_maincf[15].section = base
+postfix__original_maincf[16].name = alias_database
+postfix__original_maincf[16].value[0] = hash:/etc/aliases
+postfix__original_maincf[16].section = base
+postfix__original_maincf[17].name = myorigin
+postfix__original_maincf[17].value = /etc/mailname
+postfix__original_maincf[17].section = base
+postfix__original_maincf[18].name = mydestination
+postfix__original_maincf[18].section = base
+postfix__original_maincf[18].value[0] = {{ postfix__fqdn }}
+postfix__original_maincf[18].value[1].name = localhost.{{ postfix__domain }}
+postfix__original_maincf[18].value[1].weight = 190
+postfix__original_maincf[18].value[2].name = localhost
+postfix__original_maincf[18].value[2].weight = 200
+postfix__original_maincf[19].name = relayhost
+postfix__original_maincf[19].value = {{ postfix__relayhost }}
+postfix__original_maincf[19].section = base
+postfix__original_maincf[20].name = mynetworks
+postfix__original_maincf[20].section = base
+postfix__original_maincf[20].value[0].name = 127.0.0.0/8
+postfix__original_maincf[20].value[0].weight = 100
+postfix__original_maincf[20].value[1].name = ::ffff:127.0.0.0/104
+postfix__original_maincf[20].value[1].weight = 100
+postfix__original_maincf[20].value[2].name = ::1/128
+postfix__original_maincf[20].value[2].weight = 100
+postfix__original_maincf[21].name = mailbox_size_limit
+postfix__original_maincf[21].value = 0
+postfix__original_maincf[21].section = base
+postfix__original_maincf[22].name = recipient_delimiter
+postfix__original_maincf[22].value = +
+postfix__original_maincf[22].section = base
+postfix__original_maincf[23].name = inet_interfaces
+postfix__original_maincf[23].value = all
+postfix__original_maincf[23].section = base
+postfix__original_maincf[24].name = inet_protocols
+postfix__original_maincf[24].value = all
+postfix__original_maincf[24].section = base
+postfix__original_maincf[24].state = {{ "present"
+               if (ansible_distribution_release == "stretch")
+               else "ignore" }}
+
+postfix__original_maincf[25].name = html_directory
+postfix__original_maincf[25].value = {{ "/usr/share/doc/postfix/html"
+               if postfix__doc_installed | bool
+               else False }}
+
+postfix__original_maincf[25].section = base
+postfix__default_maincf[0].name = smtpd_banner
+postfix__default_maincf[0].value = $myhostname ESMTP
+postfix__default_maincf[1].name = enable_long_queue_ids
+postfix__default_maincf[1].value = True
+postfix__default_maincf[1].section = base
+postfix__default_maincf[1].state = {{ "present"
+               if (postfix__version is version_compare("2.9.0", ">="))
+               else "ignore" }}
+
+postfix__tls_maincf[0].name = smtp_tls_client_comment
+postfix__tls_maincf[0].state = absent
+postfix__tls_maincf[1].name = smtpd_use_tls
+postfix__tls_maincf[1].section = smtpd-tls
+postfix__tls_maincf[1].weight = -500
+postfix__tls_maincf[2].name = smtpd_tls_cert_file
+postfix__tls_maincf[2].section = smtpd-tls
+postfix__tls_maincf[2].comment = 
+postfix__tls_maincf[3].name = smtpd_tls_key_file
+postfix__tls_maincf[3].section = smtpd-tls
+postfix__tls_maincf[4].name = smtpd_tls_CAfile
+postfix__tls_maincf[4].value = {{ postfix__tls_ca_file }}
+postfix__tls_maincf[4].section = smtpd-tls
+postfix__tls_maincf[5].name = smtp_tls_CAfile
+postfix__tls_maincf[5].value = {{ postfix__tls_ca_file }}
+postfix__tls_maincf[5].section = smtp-tls
+postfix__tls_maincf[6].name = lmtp_tls_CAfile
+postfix__tls_maincf[6].value = {{ postfix__tls_ca_file }}
+postfix__tls_maincf[6].section = lmtp-tls
+postfix__tls_maincf[7].name = smtpd_tls_session_cache_database
+postfix__tls_maincf[7].section = smtpd-tls
+postfix__tls_maincf[8].name = smtp_tls_session_cache_database
+postfix__tls_maincf[8].section = smtp-tls
+postfix__tls_maincf[9].name = lmtp_tls_session_cache_database
+postfix__tls_maincf[9].value = btree:${data_directory}/lmtp_scache
+postfix__tls_maincf[9].section = lmtp-tls
+postfix__tls_maincf[10].name = smtpd_tls_dh1024_param_file
+postfix__tls_maincf[10].value = {{ postfix__tls_dh1024_param_file }}
+postfix__tls_maincf[10].state = {{ "present" if postfix__dhparam | bool else "ignore" }}
+postfix__tls_maincf[10].section = smtpd-tls
+postfix__tls_maincf[11].name = smtpd_tls_dh512_param_file
+postfix__tls_maincf[11].value = {{ postfix__tls_dh512_param_file }}
+postfix__tls_maincf[11].state = {{ "present" if postfix__dhparam | bool else "ignore" }}
+postfix__tls_maincf[11].section = smtpd-tls
+postfix__tls_maincf[12].name = smtpd_tls_loglevel
+postfix__tls_maincf[12].value = 1
+postfix__tls_maincf[12].section = smtpd-tls
+postfix__tls_maincf[13].name = smtp_tls_loglevel
+postfix__tls_maincf[13].value = 1
+postfix__tls_maincf[13].section = smtp-tls
+postfix__tls_maincf[14].name = lmtp_tls_loglevel
+postfix__tls_maincf[14].value = 1
+postfix__tls_maincf[14].section = lmtp-tls
+postfix__tls_maincf[15].name = smtpd_tls_security_level
+postfix__tls_maincf[15].value = may
+postfix__tls_maincf[15].section = smtpd-tls
+postfix__tls_maincf[15].weight = -500
+postfix__tls_maincf[16].name = smtp_tls_security_level
+postfix__tls_maincf[16].value = may
+postfix__tls_maincf[16].section = smtp-tls
+postfix__tls_maincf[16].weight = -500
+postfix__tls_maincf[17].name = lmtp_tls_security_level
+postfix__tls_maincf[17].value = may
+postfix__tls_maincf[17].section = lmtp-tls
+postfix__tls_maincf[17].weight = -500
+postfix__tls_maincf[18].name = smtpd_tls_auth_only
+postfix__tls_maincf[18].value = True
+postfix__tls_maincf[18].section = smtpd-tls
+postfix__tls_maincf[19].name = smtpd_tls_protocols
+postfix__tls_maincf[19].value[0] = !SSLv2
+postfix__tls_maincf[19].value[1] = !SSLv3
+postfix__tls_maincf[19].value[2] = !TLSv1
+postfix__tls_maincf[19].value[3] = TLSv1.1
+postfix__tls_maincf[19].value[4] = TLSv1.2
+postfix__tls_maincf[19].section = smtpd-tls
+postfix__tls_maincf[20].name = smtp_tls_protocols
+postfix__tls_maincf[20].value[0] = !SSLv2
+postfix__tls_maincf[20].value[1] = !SSLv3
+postfix__tls_maincf[20].value[2] = !TLSv1
+postfix__tls_maincf[20].value[3] = TLSv1.1
+postfix__tls_maincf[20].value[4] = TLSv1.2
+postfix__tls_maincf[20].section = smtp-tls
+postfix__tls_maincf[21].name = lmtp_tls_protocols
+postfix__tls_maincf[21].value[0] = !SSLv2
+postfix__tls_maincf[21].value[1] = !SSLv3
+postfix__tls_maincf[21].value[2] = !TLSv1
+postfix__tls_maincf[21].value[3] = TLSv1.1
+postfix__tls_maincf[21].value[4] = TLSv1.2
+postfix__tls_maincf[21].section = lmtp-tls
+postfix__tls_maincf[22].name = smtpd_tls_mandatory_protocols
+postfix__tls_maincf[22].value[0] = !SSLv2
+postfix__tls_maincf[22].value[1] = !SSLv3
+postfix__tls_maincf[22].value[2] = !TLSv1
+postfix__tls_maincf[22].value[3] = TLSv1.1
+postfix__tls_maincf[22].value[4] = TLSv1.2
+postfix__tls_maincf[22].section = smtpd-tls
+postfix__tls_maincf[23].name = smtp_tls_mandatory_protocols
+postfix__tls_maincf[23].value[0] = !SSLv2
+postfix__tls_maincf[23].value[1] = !SSLv3
+postfix__tls_maincf[23].value[2] = !TLSv1
+postfix__tls_maincf[23].value[3] = TLSv1.1
+postfix__tls_maincf[23].value[4] = TLSv1.2
+postfix__tls_maincf[23].section = smtp-tls
+postfix__tls_maincf[24].name = lmtp_tls_mandatory_protocols
+postfix__tls_maincf[24].value[0] = !SSLv2
+postfix__tls_maincf[24].value[1] = !SSLv3
+postfix__tls_maincf[24].value[2] = !TLSv1
+postfix__tls_maincf[24].value[3] = TLSv1.1
+postfix__tls_maincf[24].value[4] = TLSv1.2
+postfix__tls_maincf[24].section = lmtp-tls
+postfix__tls_maincf[25].name = smtpd_tls_ciphers
+postfix__tls_maincf[25].value = high
+postfix__tls_maincf[25].section = smtpd-tls
+postfix__tls_maincf[26].name = smtp_tls_ciphers
+postfix__tls_maincf[26].value = high
+postfix__tls_maincf[26].section = smtp-tls
+postfix__tls_maincf[27].name = lmtp_tls_ciphers
+postfix__tls_maincf[27].value = high
+postfix__tls_maincf[27].section = lmtp-tls
+postfix__tls_maincf[28].name = smtpd_tls_mandatory_ciphers
+postfix__tls_maincf[28].value = high
+postfix__tls_maincf[28].section = smtpd-tls
+postfix__tls_maincf[29].name = smtp_tls_mandatory_ciphers
+postfix__tls_maincf[29].value = high
+postfix__tls_maincf[29].section = smtp-tls
+postfix__tls_maincf[30].name = lmtp_tls_mandatory_ciphers
+postfix__tls_maincf[30].value = high
+postfix__tls_maincf[30].section = lmtp-tls
+postfix__tls_maincf[31].name = smtpd_tls_exclude_ciphers
+postfix__tls_maincf[31].value[0] = aNULL
+postfix__tls_maincf[31].value[1] = RC4
+postfix__tls_maincf[31].value[2] = MD5
+postfix__tls_maincf[31].value[3] = DES
+postfix__tls_maincf[31].value[4] = 3DES
+postfix__tls_maincf[31].value[5] = RSA
+postfix__tls_maincf[31].value[6] = SHA
+postfix__tls_maincf[31].section = smtpd-tls
+postfix__tls_maincf[32].name = smtp_tls_exclude_ciphers
+postfix__tls_maincf[32].value[0] = aNULL
+postfix__tls_maincf[32].value[1] = RC4
+postfix__tls_maincf[32].value[2] = MD5
+postfix__tls_maincf[32].value[3] = DES
+postfix__tls_maincf[32].value[4] = 3DES
+postfix__tls_maincf[32].value[5] = RSA
+postfix__tls_maincf[32].value[6] = SHA
+postfix__tls_maincf[32].section = smtp-tls
+postfix__tls_maincf[33].name = lmtp_tls_exclude_ciphers
+postfix__tls_maincf[33].value[0] = aNULL
+postfix__tls_maincf[33].value[1] = RC4
+postfix__tls_maincf[33].value[2] = MD5
+postfix__tls_maincf[33].value[3] = DES
+postfix__tls_maincf[33].value[4] = 3DES
+postfix__tls_maincf[33].value[5] = RSA
+postfix__tls_maincf[33].value[6] = SHA
+postfix__tls_maincf[33].section = lmtp-tls
+postfix__tls_maincf[34].name = smtpd_tls_eecdh_grade
+postfix__tls_maincf[34].value = ultra
+postfix__tls_maincf[34].section = smtpd-tls
+postfix__tls_maincf[35].name = smtpd_tls_received_header
+postfix__tls_maincf[35].value = True
+postfix__tls_maincf[35].section = smtpd-tls
+postfix__tls_maincf[36].name = smtp_tls_note_starttls_offer
+postfix__tls_maincf[36].value = True
+postfix__tls_maincf[36].section = smtp-tls
+postfix__tls_maincf[37].name = lmtp_tls_note_starttls_offer
+postfix__tls_maincf[37].value = True
+postfix__tls_maincf[37].section = lmtp-tls
+postfix__tls_maincf[38].name = tls_preempt_cipherlist
+postfix__tls_maincf[38].value = True
+postfix__tls_maincf[38].section = tls
+postfix__tls_maincf[39].name = tls_ssl_options
+postfix__tls_maincf[39].value = NO_COMPRESSION
+postfix__tls_maincf[39].section = tls
+postfix__tls_maincf[39].state = {{ "present"
+              if (postfix__version is version_compare("2.11.0", ">="))
+              else "ignore" }}
+
+postfix__restrictions_maincf[0].name = smtpd_helo_required
+postfix__restrictions_maincf[0].value = True
+postfix__restrictions_maincf[0].section = restrictions
+postfix__restrictions_maincf[1].name = strict_rfc821_envelopes
+postfix__restrictions_maincf[1].value = True
+postfix__restrictions_maincf[1].section = restrictions
+postfix__restrictions_maincf[2].name = smtpd_reject_unlisted_sender
+postfix__restrictions_maincf[2].value = True
+postfix__restrictions_maincf[2].section = restrictions
+postfix__restrictions_maincf[3].name = disable_vrfy_command
+postfix__restrictions_maincf[3].value = True
+postfix__restrictions_maincf[3].section = restrictions
+postfix__restrictions_maincf[4].name = smtpd_client_restrictions
+postfix__restrictions_maincf[4].section = restrictions
+postfix__restrictions_maincf[4].weight = 10
+postfix__restrictions_maincf[4].separator = True
+postfix__restrictions_maincf[5].name = smtpd_helo_restrictions
+postfix__restrictions_maincf[5].section = restrictions
+postfix__restrictions_maincf[5].weight = 20
+postfix__restrictions_maincf[5].value[0].name = permit_mynetworks
+postfix__restrictions_maincf[5].value[0].weight = -400
+postfix__restrictions_maincf[5].value[1].name = reject_invalid_helo_hostname
+postfix__restrictions_maincf[5].value[1].weight = -300
+postfix__restrictions_maincf[5].value[2].name = reject_non_fqdn_helo_hostname
+postfix__restrictions_maincf[5].value[2].weight = -200
+postfix__restrictions_maincf[5].value[3].name = reject_unknown_helo_hostname
+postfix__restrictions_maincf[5].value[3].weight = -100
+postfix__restrictions_maincf[6].name = smtpd_sender_restrictions
+postfix__restrictions_maincf[6].section = restrictions
+postfix__restrictions_maincf[6].weight = 30
+postfix__restrictions_maincf[6].value[0].name = reject_non_fqdn_sender
+postfix__restrictions_maincf[6].value[0].weight = -200
+postfix__restrictions_maincf[6].value[1].name = reject_unknown_sender_domain
+postfix__restrictions_maincf[6].value[1].weight = -100
+postfix__restrictions_maincf[6].value[2].name = permit_mynetworks
+postfix__restrictions_maincf[7].name = smtpd_relay_restrictions
+postfix__restrictions_maincf[7].section = restrictions
+postfix__restrictions_maincf[7].copy_id_from = smtpd_sender_restrictions
+postfix__restrictions_maincf[7].weight = 40
+postfix__restrictions_maincf[7].state = {{ "present"
+               if (postfix__version is version_compare("2.10.0", ">="))
+               else "ignore" }}
+
+postfix__restrictions_maincf[8].name = smtpd_recipient_restrictions
+postfix__restrictions_maincf[8].section = restrictions
+postfix__restrictions_maincf[8].weight = 50
+postfix__restrictions_maincf[8].value[0].name = reject_non_fqdn_recipient
+postfix__restrictions_maincf[8].value[0].weight = -200
+postfix__restrictions_maincf[8].value[1].name = reject_unknown_recipient_domain
+postfix__restrictions_maincf[8].value[1].weight = -100
+postfix__restrictions_maincf[9].name = smtpd_data_restrictions
+postfix__restrictions_maincf[9].section = restrictions
+postfix__restrictions_maincf[9].weight = 60
+postfix__restrictions_maincf[9].value[0].name = reject_unauth_pipelining
+postfix__restrictions_maincf[9].value[0].weight = -200
+postfix__restrictions_maincf[9].value[1].name = reject_multi_recipient_bounce
+postfix__restrictions_maincf[9].value[1].weight = -100
+postfix__restrictions_maincf[10].name = smtpd_discard_ehlo_keywords
+postfix__restrictions_maincf[10].section = restrictions
+postfix__restrictions_maincf[10].value[0] = dsn
+postfix__restrictions_maincf[10].value[1] = etrn
+postfix__combined_maincf = {{ postfix__original_maincf
+                              + postfix__default_maincf
+                              + postfix__tls_maincf
+                              + postfix__restrictions_maincf
+                              + postfix__env_persistent_maincf
+                              + postfix__maincf
+                              + postfix__group_maincf
+                              + postfix__host_maincf }}
+
+postfix__init_maincf = {{ lookup("template",
+                          "lookup/postfix__init_maincf.j2") }} 
+postfix__maincf_sections[0].name = base
+postfix__maincf_sections[1].name = auth
+postfix__maincf_sections[1].title = Authentication and authorization
+postfix__maincf_sections[2].name = route
+postfix__maincf_sections[2].title = Message routing
+postfix__maincf_sections[3].name = virtual
+postfix__maincf_sections[3].title = Virtual mail configuration
+postfix__maincf_sections[4].name = tls
+postfix__maincf_sections[4].title = TLS/SSL configuration
+postfix__maincf_sections[5].name = smtpd-tls
+postfix__maincf_sections[5].title = SMTP Server (smtpd) TLS configuration
+postfix__maincf_sections[6].name = smtp-tls
+postfix__maincf_sections[6].title = SMTP Client (smtp) TLS configuration
+postfix__maincf_sections[7].name = lmtp-tls
+postfix__maincf_sections[7].title = Local Mail Transfer Protocol (lmtp) TLS configuration
+postfix__maincf_sections[8].name = postscreen
+postfix__maincf_sections[8].title = postscreen options
+postfix__maincf_sections[9].name = restrictions
+postfix__maincf_sections[9].title = SMTP Server (smtpd) restrictions
+postfix__maincf_sections[10].name = filter
+postfix__maincf_sections[10].title = Mail filtering configuration
+postfix__maincf_sections[11].name = limit
+postfix__maincf_sections[11].title = Rate limits
+postfix__maincf_sections[12].name = unknown
+postfix__maincf_sections[12].title = Other options
+postfix__original_mastercf[0].name = smtp
+postfix__original_mastercf[0].type = inet
+postfix__original_mastercf[0].private = False
+postfix__original_mastercf[0].chroot = True
+postfix__original_mastercf[0].command = smtpd
+postfix__original_mastercf[1].name = postscreen
+postfix__original_mastercf[1].service = smtp
+postfix__original_mastercf[1].type = inet
+postfix__original_mastercf[1].private = False
+postfix__original_mastercf[1].chroot = True
+postfix__original_mastercf[1].maxproc = 1
+postfix__original_mastercf[1].command = postscreen
+postfix__original_mastercf[1].state = comment
+postfix__original_mastercf[2].name = smtpd
+postfix__original_mastercf[2].type = pass
+postfix__original_mastercf[2].chroot = True
+postfix__original_mastercf[2].state = comment
+postfix__original_mastercf[3].name = dnsblog
+postfix__original_mastercf[3].type = unix
+postfix__original_mastercf[3].chroot = True
+postfix__original_mastercf[3].maxproc = 0
+postfix__original_mastercf[3].state = comment
+postfix__original_mastercf[4].name = tlsproxy
+postfix__original_mastercf[4].type = unix
+postfix__original_mastercf[4].chroot = True
+postfix__original_mastercf[4].maxproc = 0
+postfix__original_mastercf[4].state = comment
+postfix__original_mastercf[5].name = submission
+postfix__original_mastercf[5].type = inet
+postfix__original_mastercf[5].private = False
+postfix__original_mastercf[5].chroot = True
+postfix__original_mastercf[5].command = smtpd
+postfix__original_mastercf[5].state = comment
+postfix__original_mastercf[5].options[0].syslog_name = postfix/submission
+postfix__original_mastercf[5].options[1].smtpd_tls_security_level = encrypt
+postfix__original_mastercf[5].options[2].smtpd_sasl_auth_enable = True
+postfix__original_mastercf[5].options[3].smtpd_reject_unlisted_recipient = False
+postfix__original_mastercf[5].options[4].name = smtpd_client_restrictions
+postfix__original_mastercf[5].options[4].value = $mua_client_restrictions
+postfix__original_mastercf[5].options[4].state = comment
+postfix__original_mastercf[5].options[5].name = smtpd_helo_restrictions
+postfix__original_mastercf[5].options[5].value = $mua_helo_restrictions
+postfix__original_mastercf[5].options[5].state = comment
+postfix__original_mastercf[5].options[6].name = smtpd_sender_restrictions
+postfix__original_mastercf[5].options[6].value = $mua_sender_restrictions
+postfix__original_mastercf[5].options[6].state = comment
+postfix__original_mastercf[5].options[7].smtpd_recipient_restrictions = 
+postfix__original_mastercf[5].options[8].name = smtpd_relay_restrictions
+postfix__original_mastercf[5].options[8].value[0] = permit_sasl_authenticated
+postfix__original_mastercf[5].options[8].value[1] = reject
+postfix__original_mastercf[5].options[8].state = {{ "present"
+                  if (postfix__version is version_compare("2.10.0", ">="))
+                  else "ignore" }}
+
+postfix__original_mastercf[5].options[9].milter_macro_daemon_name = ORIGINATING
+postfix__original_mastercf[6].name = smtps
+postfix__original_mastercf[6].type = inet
+postfix__original_mastercf[6].private = False
+postfix__original_mastercf[6].chroot = True
+postfix__original_mastercf[6].command = smtpd
+postfix__original_mastercf[6].state = comment
+postfix__original_mastercf[6].options[0].syslog_name = postfix/smtps
+postfix__original_mastercf[6].options[1].smtpd_tls_wrappermode = True
+postfix__original_mastercf[6].options[2].smtpd_sasl_auth_enable = True
+postfix__original_mastercf[6].options[3].smtpd_reject_unlisted_recipient = False
+postfix__original_mastercf[6].options[4].name = smtpd_client_restrictions
+postfix__original_mastercf[6].options[4].value = $mua_client_restrictions
+postfix__original_mastercf[6].options[4].state = comment
+postfix__original_mastercf[6].options[5].name = smtpd_helo_restrictions
+postfix__original_mastercf[6].options[5].value = $mua_helo_restrictions
+postfix__original_mastercf[6].options[5].state = comment
+postfix__original_mastercf[6].options[6].name = smtpd_sender_restrictions
+postfix__original_mastercf[6].options[6].value = $mua_sender_restrictions
+postfix__original_mastercf[6].options[6].state = comment
+postfix__original_mastercf[6].options[7].smtpd_recipient_restrictions = 
+postfix__original_mastercf[6].options[8].name = smtpd_relay_restrictions
+postfix__original_mastercf[6].options[8].value[0] = permit_sasl_authenticated
+postfix__original_mastercf[6].options[8].value[1] = reject
+postfix__original_mastercf[6].options[8].state = {{ "present"
+                  if (postfix__version is version_compare("2.10.0", ">="))
+                  else "ignore" }}
+
+postfix__original_mastercf[6].options[9].milter_macro_daemon_name = ORIGINATING
+postfix__original_mastercf[7].name = qmqp
+postfix__original_mastercf[7].service = 628
+postfix__original_mastercf[7].type = inet
+postfix__original_mastercf[7].private = False
+postfix__original_mastercf[7].chroot = True
+postfix__original_mastercf[7].command = qmqpd
+postfix__original_mastercf[7].state = comment
+postfix__original_mastercf[8].name = pickup
+postfix__original_mastercf[8].type = unix
+postfix__original_mastercf[8].private = False
+postfix__original_mastercf[8].chroot = True
+postfix__original_mastercf[8].wakeup = 60
+postfix__original_mastercf[8].maxproc = 1
+postfix__original_mastercf[9].name = cleanup
+postfix__original_mastercf[9].type = unix
+postfix__original_mastercf[9].private = False
+postfix__original_mastercf[9].chroot = True
+postfix__original_mastercf[9].maxproc = 0
+postfix__original_mastercf[10].name = qmgr
+postfix__original_mastercf[10].type = unix
+postfix__original_mastercf[10].private = False
+postfix__original_mastercf[10].chroot = False
+postfix__original_mastercf[10].wakeup = 300
+postfix__original_mastercf[10].maxproc = 1
+postfix__original_mastercf[11].name = oqmgr
+postfix__original_mastercf[11].service = qmgr
+postfix__original_mastercf[11].type = unix
+postfix__original_mastercf[11].private = False
+postfix__original_mastercf[11].chroot = False
+postfix__original_mastercf[11].wakeup = 300
+postfix__original_mastercf[11].maxproc = 1
+postfix__original_mastercf[11].command = oqmgr
+postfix__original_mastercf[11].state = comment
+postfix__original_mastercf[12].name = tlsmgr
+postfix__original_mastercf[12].type = unix
+postfix__original_mastercf[12].chroot = True
+postfix__original_mastercf[12].wakeup = 1000?
+postfix__original_mastercf[12].maxproc = 1
+postfix__original_mastercf[13].name = rewrite
+postfix__original_mastercf[13].type = unix
+postfix__original_mastercf[13].chroot = True
+postfix__original_mastercf[13].command = trivial-rewrite
+postfix__original_mastercf[14].name = bounce
+postfix__original_mastercf[14].type = unix
+postfix__original_mastercf[14].chroot = True
+postfix__original_mastercf[14].maxproc = 0
+postfix__original_mastercf[15].name = defer
+postfix__original_mastercf[15].type = unix
+postfix__original_mastercf[15].chroot = True
+postfix__original_mastercf[15].maxproc = 0
+postfix__original_mastercf[15].command = bounce
+postfix__original_mastercf[16].name = trace
+postfix__original_mastercf[16].type = unix
+postfix__original_mastercf[16].chroot = True
+postfix__original_mastercf[16].maxproc = 0
+postfix__original_mastercf[16].command = bounce
+postfix__original_mastercf[17].name = verify
+postfix__original_mastercf[17].type = unix
+postfix__original_mastercf[17].chroot = True
+postfix__original_mastercf[17].maxproc = 1
+postfix__original_mastercf[18].name = flush
+postfix__original_mastercf[18].type = unix
+postfix__original_mastercf[18].private = False
+postfix__original_mastercf[18].chroot = True
+postfix__original_mastercf[18].wakeup = 1000?
+postfix__original_mastercf[18].maxproc = 0
+postfix__original_mastercf[19].name = proxymap
+postfix__original_mastercf[19].type = unix
+postfix__original_mastercf[19].chroot = False
+postfix__original_mastercf[20].name = proxywrite
+postfix__original_mastercf[20].type = unix
+postfix__original_mastercf[20].chroot = False
+postfix__original_mastercf[20].maxproc = 1
+postfix__original_mastercf[20].command = proxymap
+postfix__original_mastercf[21].name = smtp_unix
+postfix__original_mastercf[21].service = smtp
+postfix__original_mastercf[21].type = unix
+postfix__original_mastercf[21].chroot = True
+postfix__original_mastercf[21].command = smtp
+postfix__original_mastercf[22].name = relay
+postfix__original_mastercf[22].type = unix
+postfix__original_mastercf[22].chroot = True
+postfix__original_mastercf[22].command = smtp
+postfix__original_mastercf[22].options[0].name = smtp_helo_timeout
+postfix__original_mastercf[22].options[0].value = 5
+postfix__original_mastercf[22].options[0].state = comment
+postfix__original_mastercf[22].options[1].name = smtp_connect_timeout
+postfix__original_mastercf[22].options[1].value = 5
+postfix__original_mastercf[22].options[1].state = comment
+postfix__original_mastercf[23].name = showq
+postfix__original_mastercf[23].type = unix
+postfix__original_mastercf[23].chroot = True
+postfix__original_mastercf[23].private = False
+postfix__original_mastercf[24].name = error
+postfix__original_mastercf[24].type = unix
+postfix__original_mastercf[24].chroot = True
+postfix__original_mastercf[25].name = retry
+postfix__original_mastercf[25].type = unix
+postfix__original_mastercf[25].chroot = True
+postfix__original_mastercf[25].command = error
+postfix__original_mastercf[26].name = discard
+postfix__original_mastercf[26].type = unix
+postfix__original_mastercf[26].chroot = True
+postfix__original_mastercf[27].name = local
+postfix__original_mastercf[27].type = unix
+postfix__original_mastercf[27].unpriv = False
+postfix__original_mastercf[27].chroot = False
+postfix__original_mastercf[28].name = virtual
+postfix__original_mastercf[28].type = unix
+postfix__original_mastercf[28].unpriv = False
+postfix__original_mastercf[28].chroot = False
+postfix__original_mastercf[29].name = lmtp
+postfix__original_mastercf[29].type = unix
+postfix__original_mastercf[29].chroot = True
+postfix__original_mastercf[30].name = anvil
+postfix__original_mastercf[30].type = unix
+postfix__original_mastercf[30].chroot = True
+postfix__original_mastercf[30].maxproc = 1
+postfix__original_mastercf[31].name = scache
+postfix__original_mastercf[31].type = unix
+postfix__original_mastercf[31].chroot = True
+postfix__original_mastercf[31].maxproc = 1
+postfix__original_mastercf[32].name = non-postfix-sftware
+postfix__original_mastercf[32].comment = ====================================================================
+Interfaces to non-Postfix software. Be sure to examine the manual
+pages of the non-Postfix software to find out what options it wants.
+
+Many of the following services use the Postfix pipe(8) delivery
+agent.  See the pipe(8) man page for information about ${recipient}
+and other message envelope options.
+====================================================================
+
+postfix__original_mastercf[32].state = hidden
+postfix__original_mastercf[33].name = maildrop
+postfix__original_mastercf[33].comment = maildrop. See the Postfix MAILDROP_README file for details.
+Also specify in main.cf: maildrop_destination_recipient_limit=1
+
+postfix__original_mastercf[33].type = unix
+postfix__original_mastercf[33].unpriv = False
+postfix__original_mastercf[33].chroot = False
+postfix__original_mastercf[33].command = pipe
+postfix__original_mastercf[33].args = flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+postfix__original_mastercf[34].name = cyrus-lmtp-note
+postfix__original_mastercf[34].comment = ====================================================================
+
+Recent Cyrus versions can use the existing "lmtp" master.cf entry.
+
+Specify in cyrus.conf:
+  lmtp    cmd="lmtpd -a" listen="localhost:lmtp" proto=tcp4
+
+Specify in main.cf one or more of the following:
+ mailbox_transport = lmtp:inet:localhost
+ virtual_transport = lmtp:inet:localhost
+
+====================================================================
+
+postfix__original_mastercf[34].state = hidden
+postfix__original_mastercf[35].name = cyrus
+postfix__original_mastercf[35].comment = Cyrus 2.1.5 (Amos Gouaux)
+Also specify in main.cf: cyrus_destination_recipient_limit=1
+
+postfix__original_mastercf[35].type = unix
+postfix__original_mastercf[35].unpriv = False
+postfix__original_mastercf[35].chroot = False
+postfix__original_mastercf[35].command = pipe
+postfix__original_mastercf[35].args = user=cyrus argv=/cyrus/bin/deliver -e -r ${sender} -m ${extension} ${user}
+postfix__original_mastercf[35].state = comment
+postfix__original_mastercf[36].name = old-cyrus
+postfix__original_mastercf[36].comment = ====================================================================
+Old example of delivery via Cyrus.
+
+postfix__original_mastercf[36].type = unix
+postfix__original_mastercf[36].unpriv = False
+postfix__original_mastercf[36].chroot = False
+postfix__original_mastercf[36].command = pipe
+postfix__original_mastercf[36].args = flags=R user=cyrus argv=/cyrus/bin/deliver -e -m ${extension} ${user}
+postfix__original_mastercf[36].state = comment
+postfix__original_mastercf[37].name = uucp
+postfix__original_mastercf[37].comment = ====================================================================
+
+See the Postfix UUCP_README file for configuration details.
+
+postfix__original_mastercf[37].type = unix
+postfix__original_mastercf[37].unpriv = False
+postfix__original_mastercf[37].chroot = False
+postfix__original_mastercf[37].command = pipe
+postfix__original_mastercf[37].args = flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
+postfix__original_mastercf[38].name = other-delivery-methods
+postfix__original_mastercf[38].comment = Other external delivery methods.
+postfix__original_mastercf[38].state = hidden
+postfix__original_mastercf[39].name = ifmail
+postfix__original_mastercf[39].type = unix
+postfix__original_mastercf[39].unpriv = False
+postfix__original_mastercf[39].chroot = False
+postfix__original_mastercf[39].command = pipe
+postfix__original_mastercf[39].args = flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r $nexthop ($recipient)
+postfix__original_mastercf[40].name = bsmtp
+postfix__original_mastercf[40].type = unix
+postfix__original_mastercf[40].unpriv = False
+postfix__original_mastercf[40].chroot = False
+postfix__original_mastercf[40].command = pipe
+postfix__original_mastercf[40].args = flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t$nexthop -f$sender $recipient
+postfix__original_mastercf[41].name = scalemail-backend
+postfix__original_mastercf[41].type = unix
+postfix__original_mastercf[41].unpriv = False
+postfix__original_mastercf[41].chroot = False
+postfix__original_mastercf[41].maxproc = 2
+postfix__original_mastercf[41].command = pipe
+postfix__original_mastercf[41].args = flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store ${nexthop} ${user} ${extension}
+postfix__original_mastercf[42].name = mailman
+postfix__original_mastercf[42].type = unix
+postfix__original_mastercf[42].unpriv = False
+postfix__original_mastercf[42].chroot = False
+postfix__original_mastercf[42].args = flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
+${nexthop} ${user}
+
+postfix__original_mastercf[42].command = pipe
+postfix__tls_mastercf[0].name = submission
+postfix__tls_mastercf[0].options[0].tls_preempt_cipherlist = True
+postfix__tls_mastercf[1].name = smtps
+postfix__tls_mastercf[1].options[0].tls_preempt_cipherlist = True
+postfix__combined_mastercf = {{ postfix__original_mastercf
+                                + postfix__default_mastercf
+                                + postfix__tls_mastercf
+                                + postfix__env_persistent_mastercf
+                                + postfix__mastercf
+                                + postfix__group_mastercf
+                                + postfix__host_mastercf }}
+
+postfix__dependent_lookup_tables_filter = {{ lookup("flattened",
+                                             postfix__dependent_lookup_tables) }} 
+postfix__combined_lookup_tables = {{ ([postfix__dependent_lookup_tables_filter]
+                                      if postfix__dependent_lookup_tables_filter is mapping
+                                      else postfix__dependent_lookup_tables_filter)
+                                     + postfix__lookup_tables
+                                     + postfix__group_lookup_tables
+                                     + postfix__host_lookup_tables }}
+
+postfix__ferm__dependent_rules[0].name = postfix_smtp
+postfix__ferm__dependent_rules[0].type = accept
+postfix__ferm__dependent_rules[0].by_role = debops.postfix
+postfix__ferm__dependent_rules[0].dport[0] = smtp
+postfix__ferm__dependent_rules[0].saddr = {{ postfix__allow_smtp }}
+postfix__ferm__dependent_rules[0].accept_any = {{ postfix__accept_any }}
+postfix__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if ("smtp" in postfix__env_active_services | d([]))
+                    else "absent" }}
+
+postfix__ferm__dependent_rules[1].name = postfix_smtps
+postfix__ferm__dependent_rules[1].type = accept
+postfix__ferm__dependent_rules[1].by_role = debops.postfix
+postfix__ferm__dependent_rules[1].dport[0] = smtps
+postfix__ferm__dependent_rules[1].saddr = {{ postfix__allow_smtps }}
+postfix__ferm__dependent_rules[1].accept_any = {{ postfix__accept_any }}
+postfix__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if ("smtps" in postfix__env_active_services | d([]))
+                    else "absent" }}
+
+postfix__ferm__dependent_rules[2].name = postfix_submission
+postfix__ferm__dependent_rules[2].type = accept
+postfix__ferm__dependent_rules[2].by_role = debops.postfix
+postfix__ferm__dependent_rules[2].dport[0] = submission
+postfix__ferm__dependent_rules[2].saddr = {{ postfix__allow_submission }}
+postfix__ferm__dependent_rules[2].accept_any = {{ postfix__accept_any }}
+postfix__ferm__dependent_rules[2].rule_state = {{ "present"
+                    if ("submission" in postfix__env_active_services | d([]))
+                    else "absent" }}
+

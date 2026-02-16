@@ -1,0 +1,45 @@
+~d0.name = Import DebOps global handlers
+~d1.ansible.builtin.import_role = 
+~d2.name = 'global_handlers'
+~d0.name = Install locale packages
+~d1.ansible.builtin.package = 
+~d2.name = '{{ q("flattened", (locales__base_packages
+~d2.state = 'present'
+~d1.register = locales__register_packages
+~d1.until = locales__register_packages is succeeded
+~d0.name = Ensure that specified locales exist
+~d1.community.general.locale_gen = 
+~d2.name = '{{ item.name | d(item) }}'
+~d2.state = '{{ item.state | d("present") }}'
+~d1.loop = '{{ q("flattened", locales__default_list
+~d0.name = Set default system locale
+~d1.ansible.builtin.debconf = 
+~d2.name = 'locales'
+~d2.question = 'locales/default_environment_locale'
+~d2.vtype = 'string'
+~d2.value = '{{ locales__system_lang }}'
+~d1.register = locales__register_system_lang
+~d1.when = ansible_pkg_mgr == 'apt' and locales__system_lang | d()
+~d0.name = Update /etc/default/locale
+~d1.ansible.builtin.command = 'update-locale LANG={{ locales__system_lang }}'  # noqa no-handler
+~d1.register = locales__register_update_locale
+~d1.changed_when = locales__register_update_locale.changed | bool
+~d1.when = ansible_pkg_mgr == 'apt' and locales__register_system_lang is changed
+~d0.name = Make sure that Ansible local facts directory exists
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/ansible/facts.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d0.name = Save locale local facts
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/ansible/facts.d/locales.fact.j2'
+~d2.dest = '/etc/ansible/facts.d/locales.fact'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d1.notify = [ 'Refresh host facts' ]
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Update Ansible facts if they were modified
+~d1.ansible.builtin.meta = 'flush_handlers'

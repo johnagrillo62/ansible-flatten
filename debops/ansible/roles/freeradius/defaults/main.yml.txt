@@ -1,0 +1,126 @@
+freeradius__base_packages[0] = freeradius
+freeradius__base_packages[1] = freeradius-utils
+freeradius__version = {{ ansible_local.freeradius.version | d("0.0.0") }}
+freeradius__user = freerad
+freeradius__group = freerad
+freeradius__conf_base_path = /etc/freeradius/3.0
+freeradius__default_ports[0] = radius
+freeradius__default_ports[1] = radius-acct
+freeradius__accept_any = False
+freeradius__public_accept_any = True
+freeradius__default_configuration[0].name = sites-enabled/control-socket
+freeradius__default_configuration[0].link_src = ../sites-available/control-socket
+freeradius__combined_configuration = {{ freeradius__default_configuration
+                                        + freeradius__configuration
+                                        + freeradius__group_configuration
+                                        + freeradius__host_configuration }}
+
+freeradius__ferm__dependent_rules[0].type = accept
+freeradius__ferm__dependent_rules[0].dport = {{ freeradius__default_ports
+               + freeradius__ports
+               + freeradius__group_ports
+               + freeradius__host_ports }}
+
+freeradius__ferm__dependent_rules[0].saddr = {{ freeradius__allow
+               + freeradius__group_allow
+               + freeradius__host_allow }}
+
+freeradius__ferm__dependent_rules[0].protocols[0] = tcp
+freeradius__ferm__dependent_rules[0].protocols[1] = udp
+freeradius__ferm__dependent_rules[0].accept_any = {{ freeradius__accept_any }}
+freeradius__ferm__dependent_rules[0].weight = 50
+freeradius__ferm__dependent_rules[0].by_role = debops.freeradius
+freeradius__ferm__dependent_rules[0].name = radius_internal
+freeradius__ferm__dependent_rules[0].multiport = True
+freeradius__ferm__dependent_rules[1].type = accept
+freeradius__ferm__dependent_rules[1].dport = {{ freeradius__public_ports
+               + freeradius__public_group_ports
+               + freeradius__public_host_ports }}
+
+freeradius__ferm__dependent_rules[1].saddr = {{ freeradius__public_allow
+               + freeradius__public_group_allow
+               + freeradius__public_host_allow }}
+
+freeradius__ferm__dependent_rules[1].protocols[0] = tcp
+freeradius__ferm__dependent_rules[1].protocols[1] = udp
+freeradius__ferm__dependent_rules[1].accept_any = {{ freeradius__public_accept_any }}
+freeradius__ferm__dependent_rules[1].weight = 50
+freeradius__ferm__dependent_rules[1].by_role = debops.freeradius
+freeradius__ferm__dependent_rules[1].name = radius_public
+freeradius__ferm__dependent_rules[1].multiport = True
+freeradius__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (freeradius__public_ports
+                        + freeradius__public_group_ports
+                        + freeradius__public_host_ports)
+                    else "absent" }}
+
+freeradius__logrotate__dependent_config[0].filename = freeradius
+freeradius__logrotate__dependent_config[0].divert = True
+freeradius__logrotate__dependent_config[0].log = /var/log/freeradius/radius.log
+freeradius__logrotate__dependent_config[0].comment = The main server log
+freeradius__logrotate__dependent_config[0].options = daily
+rotate 52
+missingok
+compress
+delaycompress
+notifempty
+copytruncate
+
+freeradius__logrotate__dependent_config[0].state = present
+freeradius__logrotate__dependent_config[1].filename = freeradius-monitor
+freeradius__logrotate__dependent_config[1].logs[0] = /var/log/freeradius/checkrad.log
+freeradius__logrotate__dependent_config[1].logs[1] = /var/log/freeradius/radwatch.log
+freeradius__logrotate__dependent_config[1].comment = Session monitoring utilities
+freeradius__logrotate__dependent_config[1].options = daily
+rotate 52
+missingok
+compress
+delaycompress
+notifempty
+nocreate
+
+freeradius__logrotate__dependent_config[1].state = present
+freeradius__logrotate__dependent_config[2].filename = freeradius-session
+freeradius__logrotate__dependent_config[2].logs[0] = /var/log/freeradius/radutmp
+freeradius__logrotate__dependent_config[2].logs[1] = /var/log/freeradius/radwtmp
+freeradius__logrotate__dependent_config[2].comment = Session database modules
+freeradius__logrotate__dependent_config[2].options = daily
+rotate 52
+missingok
+compress
+delaycompress
+notifempty
+nocreate
+
+freeradius__logrotate__dependent_config[2].state = present
+freeradius__logrotate__dependent_config[3].filename = freeradius-sql
+freeradius__logrotate__dependent_config[3].log = /var/log/freeradius/sqllog.sql
+freeradius__logrotate__dependent_config[3].comment = SQL log files
+freeradius__logrotate__dependent_config[3].options = daily
+rotate 52
+missingok
+compress
+delaycompress
+notifempty
+nocreate
+
+freeradius__logrotate__dependent_config[3].state = present
+freeradius__logrotate__dependent_config[4].filename = freeradius-detail
+freeradius__logrotate__dependent_config[4].log = /var/log/freeradius/radacct/*/detail
+freeradius__logrotate__dependent_config[4].comment = There are different detail-rotating strategies you can use.  One is
+to write to a single detail file per IP and use the rotate config
+below.  Another is to write to a daily detail file per IP with:
+    detailfile = ${radacctdir}/%{Client-IP-Address}/%Y%m%d-detail
+(or similar) in radiusd.conf, without rotation.  If you go with the
+second technique, you will need another cron job that removes old
+detail files.  You do not need to comment out the below for method #2.
+
+freeradius__logrotate__dependent_config[4].options = weekly
+rotate 260
+missingok
+compress
+delaycompress
+notifempty
+nocreate
+
+freeradius__logrotate__dependent_config[4].state = present

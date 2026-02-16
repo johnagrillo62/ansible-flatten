@@ -1,0 +1,4 @@
+application__deploy_state = present
+application__elasticsearch__dependent_configuration[0].name = application.option
+application__elasticsearch__dependent_configuration[0].value = True
+application__elasticsearch__dependent_configuration[1]["application.other.option"] = False

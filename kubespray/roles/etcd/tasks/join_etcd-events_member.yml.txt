@@ -1,0 +1,37 @@
+[0].name = Join Member | Add member to etcd-events cluster
+[0].command = {{ bin_dir }}/etcdctl member add {{ etcd_member_name }} --peer-urls={{ etcd_events_peer_url }}
+[0].register = member_add_result
+[0].until = member_add_result.rc == 0
+[0].retries = {{ etcd_retries }}
+[0].delay = {{ retry_stagger | random + 3 }}
+[0].environment.ETCDCTL_API = 3
+[0].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[0].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[0].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[0].environment.ETCDCTL_ENDPOINTS = {{ etcd_events_access_addresses }}
+[1].name = Join Member | Refresh etcd config
+[1].include_tasks = refresh_config.yml
+[1].vars.etcd_events_peer_addresses = {% for host in groups['etcd'] -%}
+  {%- if hostvars[host]['etcd_events_member_in_cluster'].rc == 0 -%}
+    {{ "etcd" + loop.index | string }}=https://{{ hostvars[host].etcd_events_access_address | default(hostvars[host]['main_ip']) | ansible.utils.ipwrap }}:2382,
+  {%- endif -%}
+  {%- if loop.last -%}
+    {{ etcd_member_name }}={{ etcd_events_peer_url }}
+  {%- endif -%}
+{%- endfor -%}
+[2].name = Join Member | Ensure member is in etcd-events cluster
+[2].shell = set -o pipefail && {{ bin_dir }}/etcdctl member list | grep -w {{ etcd_events_access_address }} >/dev/null
+[2].args.executable = /bin/bash
+[2].register = etcd_events_member_in_cluster
+[2].changed_when = false
+[2].check_mode = false
+[2].tags[0] = facts
+[2].environment.ETCDCTL_API = 3
+[2].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[2].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[2].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[2].environment.ETCDCTL_ENDPOINTS = {{ etcd_events_access_addresses }}
+[3].name = Configure | Ensure etcd-events is running
+[3].service.name = etcd-events
+[3].service.state = started
+[3].service.enabled = true

@@ -1,0 +1,24 @@
+~d0.name = Wait for apiserver
+~d1.command = "{{ kubectl }} get nodes"
+~d1.environment = 
+~d2.KUBECONFIG = "{{ ansible_env.HOME | default('/root') }}/.kube/config"
+~d1.register = apiserver_is_ready
+~d1.until = apiserver_is_ready.rc == 0
+~d1.retries = 6
+~d1.delay = 10
+~d1.changed_when = false
+~d1.when = groups['broken_kube_control_plane']
+~d0.name = Delete broken kube_control_plane nodes from cluster
+~d1.command = "{{ kubectl }} delete node {{ item }}"
+~d1.environment = 
+~d2.KUBECONFIG = "{{ ansible_env.HOME | default('/root') }}/.kube/config"
+~d1.with_items = "{{ groups['broken_kube_control_plane'] }}"
+~d1.register = delete_broken_kube_control_plane_nodes
+~d1.failed_when = false
+~d1.when = groups['broken_kube_control_plane']
+~d0.name = Fail if unable to delete broken kube_control_plane nodes from cluster
+~d1.fail = 
+~d2.msg = "Unable to delete broken kube_control_plane node: {{ item.item }}"
+~d1.loop = "{{ delete_broken_kube_control_plane_nodes.results }}"
+~d1.changed_when = false
+~d1.when = 

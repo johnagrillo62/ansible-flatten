@@ -1,0 +1,14 @@
+[0].name = Containerd | restart containerd
+[0].systemd_service.name = containerd
+[0].systemd_service.state = restarted
+[0].systemd_service.enabled = true
+[0].systemd_service.daemon-reload = true
+[0].systemd_service.masked = false
+[0].listen = Restart containerd
+[1].name = Containerd | wait for containerd
+[1].command = {{ containerd_bin_dir }}/ctr images ls -q
+[1].register = containerd_ready
+[1].retries = 8
+[1].delay = 4
+[1].until = containerd_ready.rc == 0
+[1].listen = Restart containerd

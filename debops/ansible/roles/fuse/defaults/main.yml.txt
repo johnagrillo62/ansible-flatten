@@ -1,0 +1,6 @@
+fuse_base_packages[0] = fuse
+fuse_mount_max = default
+fuse_user_allow_other = False
+fuse_restrict_access = False
+fuse_group = fuse
+fuse_permissions = 0660

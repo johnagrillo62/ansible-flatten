@@ -1,0 +1,81 @@
+netbase__enabled = {{ False
+                      if (ansible_virtualization_type == "docker" and
+                          ansible_virtualization_role == "guest")
+                      else True }}
+
+netbase__base_packages[0] = netbase
+netbase__base_packages[1] = libcap2-bin
+netbase__base_packages[2] = dbus
+netbase__hostname_config_enabled = {{ True
+                                      if ((((ansible_system_capabilities_enforced | d()) | bool and
+                                           "cap_sys_admin" in ansible_system_capabilities) or
+                                          not (ansible_system_capabilities_enforced | d(True)) | bool) and
+                                          (ansible_virtualization_type is undefined or
+                                           ansible_virtualization_type not in ["lxc", "docker", "openvz"]))
+                                      else False }}
+
+netbase__hostname = {{ (inventory_hostname_short | d(inventory_hostname.split(".")[0]))
+                       if (inventory_hostname_short | d(inventory_hostname.split(".")[0]) != "localhost")
+                       else ansible_hostname }}
+
+netbase__domain = {{ ""
+                     if (ansible_local | d() and ansible_local.netbase | d() and
+                         (((ansible_local.netbase.self_address | d()) != "127.0.1.1" and
+                           (not ansible_local.netbase.self_local_hostname | d()) | bool) or
+                          ((ansible_local.netbase.self_address | d()) == "127.0.1.1" and
+                            ansible_local.netbase.self_domain | d() and
+                            ansible_local.netbase.self_domain_source in ["dns"])))
+                     else (ansible_local.netbase.self_domain
+                           if (ansible_local | d() and ansible_local.netbase | d() and
+                               (ansible_local.netbase.self_domain | d()) and
+                               (ansible_local.netbase.self_local_hostname | d()) | bool)
+                           else ((ansible_host | d(ansible_ssh_host | d("0"))).split(".")[1:] | join(".")
+                                 if (not (ansible_host | d(ansible_ssh_host | d("0"))) | ansible.utils.ipaddr)
+                                 else (inventory_hostname.split(".")[1:] | join(".")
+                                       if (inventory_hostname.split(".") | count > 1)
+                                       else ""))) }}
+
+netbase__aliases = {{ ([netbase__hostname]
+                       + ansible_local.netbase.self_aliases | d([]) | unique) }} 
+netbase__host_ipv4_address = {{ (ansible_default_ipv4.address | d())
+                                if (ansible_domain | d() and
+                                    ansible_local | d() and ansible_local.netbase | d() and
+                                    ansible_local.netbase.self_domain_source in ["dns"])
+                                else ansible_local.netbase.self_address | d("127.0.1.1") }}
+
+netbase__host_ipv6_address = {{ ansible_default_ipv6.address | d() }}
+netbase__domain_host_entry = {{ ([netbase__hostname + "." + netbase__domain] + netbase__aliases)
+                                if netbase__domain | d()
+                                else (netbase__hostname
+                                      if (not ansible_domain | d())
+                                      else []) }}
+
+netbase__hosts_config_type = {{ "template"
+                                if ((netbase__hosts
+                                     | combine(netbase__group_hosts, netbase__host_hosts)).keys()
+                                    | count > 15)
+                                else "lineinfile" }}
+
+netbase__default_hosts[0]["127.0.0.1"][0] = localhost
+netbase__default_hosts[2].::1[0] = localhost
+netbase__default_hosts[2].::1[1] = ip6-localhost
+netbase__default_hosts[2].::1[2] = ip6-loopback
+netbase__default_hosts[3].ff02::1[0] = ip6-allnodes
+netbase__default_hosts[4].ff02::2[0] = ip6-allrouters
+netbase__default_hosts[5].name = {{ netbase__host_ipv4_address }}
+netbase__default_hosts[5].value = {{ netbase__domain_host_entry }}
+netbase__default_hosts[5].separator = {{ True
+                   if (netbase__host_ipv4_address == "127.0.1.1" and
+                       (ansible_local | d() and ansible_local.netbase | d() and
+                        ansible_local.netbase.self_domain_source not in ["dns"]))
+                   else False }}
+
+netbase__default_hosts[6].name = {{ netbase__host_ipv6_address }}
+netbase__default_hosts[6].value = {{ netbase__domain_host_entry }}
+netbase__combined_hosts = {{ netbase__default_hosts
+                            + netbase__hosts
+                            + netbase__group_hosts
+                            + netbase__host_hosts }}
+
+netbase__python__dependent_packages3[0] = python3-dnspython
+netbase__python__dependent_packages2[0] = python-dnspython

@@ -1,0 +1,3 @@
+~d0.name = Prepare Redis Sentinel role environment
+~d1.ansible.builtin.set_fact = 
+~d2.redis_sentinel__env_ports = '{{ lookup("template", "lookup/redis_sentinel__env_ports.j2") | from_yaml }}'

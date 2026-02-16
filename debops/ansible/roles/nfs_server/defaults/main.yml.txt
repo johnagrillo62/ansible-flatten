@@ -1,0 +1,69 @@
+nfs_server__base_packages[0] = nfs-kernel-server
+nfs_server__base_packages[1] = acl
+nfs_server__accept_any = False
+nfs_server__firewall_protocols = {{ ["tcp", "udp"] if nfs_server__v3 | bool else "tcp" }}
+nfs_server__anchor_port = 3550
+nfs_server__service_ports["rpc.nfs-cb"] = {{ (nfs_server__anchor_port | int + 0) }}
+nfs_server__service_ports["rpc.lockd"] = {{ (nfs_server__anchor_port | int + 1) }}
+nfs_server__service_ports["rpc.mountd"] = {{ (nfs_server__anchor_port | int + 2) }}
+nfs_server__service_ports["rpc.statd"] = {{ (nfs_server__anchor_port | int + 3) }}
+nfs_server__service_ports["rpc.statd-bc"] = {{ (nfs_server__anchor_port | int + 4) }}
+nfs_server__firewall_ports = {{ (["nfs", "sunrpc"] + (nfs_server__service_ports.keys() | list))
+                                if nfs_server__v3 | bool else ["nfs"] }} 
+nfs_server__v3 = False
+nfs_server__threads = {{ ansible_processor_vcpus | int * 2 }}
+nfs_server__priority = 0
+nfs_server__mountd_options = --manage-gids --port {{ nfs_server__service_ports["rpc.mountd"] }}
+nfs_server__kerberos = False
+nfs_server__svcgssd_options = 
+nfs_server__root_path = {{ (ansible_local.fhs.data | d("/srv"))
+                           + "/nfs" }} 
+nfs_server__root_options[0] = rw
+nfs_server__root_options[1] = fsid=root
+nfs_server__root_options[2] = sync
+nfs_server__root_options[3] = subtree_check
+nfs_server__root_options[4] = crossmnt
+nfs_server__root_security_options = {{ ["sec=krb5p"] if nfs_server__kerberos | bool else [] }}
+nfs_server__root_acl = {{ "*" if nfs_server__accept_any | bool else nfs_server__allow }}
+nfs_server__default_exports[0].path = {{ nfs_server__root_path }}
+nfs_server__default_exports[0].acl = {{ nfs_server__root_acl }}
+nfs_server__default_exports[0].options = {{ (nfs_server__root_security_options.split(",")
+                  if nfs_server__root_security_options is string
+                  else nfs_server__root_security_options) +
+                 (nfs_server__root_options.split(",")
+                  if nfs_server__root_options is string
+                  else nfs_server__root_options) }}
+
+nfs_server__combined_exports = {{ lookup("flattened", nfs_server__default_exports
+                                  + nfs_server__exports + nfs_server__group_exports
+                                  + nfs_server__host_exports) }}
+
+nfs_server__etc_services__dependent_list[0].name = rpc.nfs-cb
+nfs_server__etc_services__dependent_list[0].port = {{ nfs_server__service_ports["rpc.nfs-cb"] }}
+nfs_server__etc_services__dependent_list[0].comment = RPC NFS callback
+nfs_server__etc_services__dependent_list[1].name = rpc.lockd
+nfs_server__etc_services__dependent_list[1].port = {{ nfs_server__service_ports["rpc.lockd"] }}
+nfs_server__etc_services__dependent_list[1].comment = RPC lockd
+nfs_server__etc_services__dependent_list[2].name = rpc.mountd
+nfs_server__etc_services__dependent_list[2].port = {{ nfs_server__service_ports["rpc.mountd"] }}
+nfs_server__etc_services__dependent_list[2].comment = RPC mountd
+nfs_server__etc_services__dependent_list[3].name = rpc.statd
+nfs_server__etc_services__dependent_list[3].port = {{ nfs_server__service_ports["rpc.statd"] }}
+nfs_server__etc_services__dependent_list[3].comment = RPC statd
+nfs_server__etc_services__dependent_list[4].name = rpc.statd-bc
+nfs_server__etc_services__dependent_list[4].port = {{ nfs_server__service_ports["rpc.statd-bc"] }}
+nfs_server__etc_services__dependent_list[4].comment = RPC statd broadcast
+nfs_server__tcpwrappers__dependent_allow[0].daemon[0] = rpcbind
+nfs_server__tcpwrappers__dependent_allow[0].daemon[1] = mountd
+nfs_server__tcpwrappers__dependent_allow[0].daemon[2] = lockd
+nfs_server__tcpwrappers__dependent_allow[0].daemon[3] = statd
+nfs_server__tcpwrappers__dependent_allow[0].client = {{ nfs_server__allow }}
+nfs_server__tcpwrappers__dependent_allow[0].accept_any = {{ nfs_server__accept_any }}
+nfs_server__tcpwrappers__dependent_allow[0].filename = nfs-server
+nfs_server__tcpwrappers__dependent_allow[0].state = {{ "present" if nfs_server__v3 | bool else "absent" }}
+nfs_server__ferm__dependent_rules[0].name = nfs_server
+nfs_server__ferm__dependent_rules[0].type = accept
+nfs_server__ferm__dependent_rules[0].dport = {{ nfs_server__firewall_ports }}
+nfs_server__ferm__dependent_rules[0].protocol = {{ nfs_server__firewall_protocols }}
+nfs_server__ferm__dependent_rules[0].saddr = {{ nfs_server__allow }}
+nfs_server__ferm__dependent_rules[0].accept_any = {{ nfs_server__accept_any }}

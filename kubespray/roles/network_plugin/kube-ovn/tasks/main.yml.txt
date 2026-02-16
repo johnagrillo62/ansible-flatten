@@ -1,0 +1,22 @@
+[0].name = Kube-OVN | Label ovn-db node
+[0].command = {{ kubectl }} label --overwrite node {{ item }} kube-ovn/role=master
+[0].loop = {{ kube_ovn_central_hosts }}
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Kube-OVN | Create Kube-OVN manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = kube-ovn-crd
+[1].with_items[0].file = cni-kube-ovn-crd.yml
+[1].with_items[1].name = ovn
+[1].with_items[1].file = cni-ovn.yml
+[1].with_items[2].name = kube-ovn
+[1].with_items[2].file = cni-kube-ovn.yml
+[1].register = kube_ovn_node_manifests
+[2].name = Kube-OVN | Start Resources
+[2].kube.name = {{ item.item.name }}
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[2].kube.state = latest
+[2].with_items = {{ kube_ovn_node_manifests.results }}
+[2].when = inventory_hostname == groups['kube_control_plane'][0] and not item is skipped

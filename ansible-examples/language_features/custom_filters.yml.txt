@@ -1,0 +1,3 @@
+[0].name = Demonstrate custom jinja2 filters
+[0].hosts = all
+[0].tasks[0].template = src=templates/custom-filters.j2 dest=/tmp/custom-filters.txt

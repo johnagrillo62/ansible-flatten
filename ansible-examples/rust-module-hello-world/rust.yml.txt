@@ -1,0 +1,28 @@
+[0].hosts = localhost
+[0].tasks[0].debug.msg = Testing a binary module written in Rust
+[0].tasks[1].debug.var = ansible_system
+[0].tasks[2].name = ping
+[0].tasks[2].ping = null
+[0].tasks[3].name = Hello, World!
+[0].tasks[3].rust_helloworld = null
+[0].tasks[3].register = hello_world
+[0].tasks[4].assert.that[0] = hello_world.msg == "Hello, World!"
+
+[0].tasks[5].name = Hello, Ansible!
+[0].tasks[5].rust_helloworld.name = Ansible
+[0].tasks[5].register = hello_ansible
+[0].tasks[6].assert.that[0] = hello_ansible.msg == "Hello, Ansible!"
+
+[0].tasks[7].name = Async Hello, World!
+[0].tasks[7].rust_helloworld = null
+[0].tasks[7].async = 10
+[0].tasks[7].poll = 1
+[0].tasks[7].register = async_hello_world
+[0].tasks[8].assert.that[0] = async_hello_world.msg == "Hello, World!"
+
+[0].tasks[9].name = Async Hello, Ansible!
+[0].tasks[9].rust_helloworld.name = Ansible
+[0].tasks[9].async = 10
+[0].tasks[9].poll = 1
+[0].tasks[9].register = async_hello_ansible
+[0].tasks[10].assert.that[0] = async_hello_ansible.msg == "Hello, Ansible!"

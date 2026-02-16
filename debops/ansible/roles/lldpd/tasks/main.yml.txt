@@ -1,0 +1,56 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Install required packages
+[2]["ansible.builtin.package"].name = {{ q("flattened", (lldpd__base_packages
+                              + lldpd__packages)) }} 
+[2]["ansible.builtin.package"].state = present
+[2].register = lldpd__register_packages
+[2].until = lldpd__register_packages is succeeded
+[2].when = lldpd__enabled | bool
+[3].name = Make sure that Ansible local facts directory exists
+[3]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].mode = 0755
+[3].when = lldpd__enabled | bool
+[4].name = Save lldpd local facts
+[4]["ansible.builtin.template"].src = etc/ansible/facts.d/lldpd.fact.j2
+[4]["ansible.builtin.template"].dest = /etc/ansible/facts.d/lldpd.fact
+[4]["ansible.builtin.template"].mode = 0755
+[4].notify[0] = Refresh host facts
+[4].when = lldpd__enabled | bool
+[4].tags[0] = meta::facts
+[5].name = Update Ansible facts if they were modified
+[5]["ansible.builtin.meta"] = flush_handlers
+[6].name = Divert daemon configuration file if requested
+[6]["debops.debops.dpkg_divert"].path = /etc/default/lldpd
+[6]["debops.debops.dpkg_divert"].state = {{ "present"
+               if ((lldpd__default_daemon_arguments
+                    + lldpd__daemon_arguments) | flatten) | d()
+               else "absent" }}
+
+[6]["debops.debops.dpkg_divert"].delete = True
+[6].notify[0] = Restart lldpd
+[6].when = lldpd__enabled | bool
+[7].name = Generate daemon environment configuration
+[7]["ansible.builtin.template"].src = etc/default/lldpd.j2
+[7]["ansible.builtin.template"].dest = /etc/default/lldpd
+[7]["ansible.builtin.template"].mode = 0644
+[7].notify[0] = Restart lldpd
+[7].when = lldpd__enabled | bool and (lldpd__default_daemon_arguments + lldpd__daemon_arguments) | flatten | d()
+[8].name = Remove lldpd configuration files if requested
+[8]["ansible.builtin.file"].path = {{ "/etc/lldpd.d/" + item.name + ".conf" }}
+[8]["ansible.builtin.file"].state = absent
+[8].loop = {{ lldpd__combined_configuration | debops.debops.parse_kv_items }}
+[8].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[8].notify[0] = Restart lldpd
+[8].when = lldpd__enabled | bool and item.state | d('present') in ['absent']
+[9].name = Generate lldpd configuration files
+[9]["ansible.builtin.template"].src = etc/lldpd.d/template.conf.j2
+[9]["ansible.builtin.template"].dest = {{ "/etc/lldpd.d/" + item.name + ".conf" }}
+[9]["ansible.builtin.template"].mode = 0644
+[9].loop = {{ lldpd__combined_configuration | debops.debops.parse_kv_items }}
+[9].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[9].notify[0] = Restart lldpd
+[9].when = lldpd__enabled | bool and item.state | d('present') not in ['absent', 'init', 'ignore']

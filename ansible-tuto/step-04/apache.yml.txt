@@ -1,0 +1,5 @@
+[0].hosts = web
+[0].tasks[0].name = Installs apache web server
+[0].tasks[0].apt.pkg = apache2
+[0].tasks[0].apt.state = present
+[0].tasks[0].apt.update_cache = true

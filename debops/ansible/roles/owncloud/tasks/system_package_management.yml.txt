@@ -1,0 +1,30 @@
+[0].name = Configure ownCloud APT repository
+[0]["ansible.builtin.template"].src = etc/apt/sources.list.d/debops_owncloud.list.j2
+[0]["ansible.builtin.template"].dest = /etc/apt/sources.list.d/debops_owncloud.list
+[0]["ansible.builtin.template"].owner = root
+[0]["ansible.builtin.template"].group = root
+[0]["ansible.builtin.template"].mode = 0644
+[0].register = owncloud__register_apt_repository
+[0].when = (owncloud__variant in ["owncloud"])
+[1].name = Update APT repository cache
+[1]["ansible.builtin.apt"].update_cache = True
+[1].register = owncloud__register_apt_cache
+[1].until = owncloud__register_apt_cache is succeeded
+[1].when = owncloud__register_apt_repository is changed
+[2].name = Ensure specified packages are in there desired state
+[2]["ansible.builtin.package"].name = {{ q("flattened", (owncloud__base_packages
+                              + owncloud__packages
+                              + owncloud__group_packages
+                              + owncloud__host_packages
+                              + owncloud__dependent_packages)) }}
+
+[2]["ansible.builtin.package"].state = {{ "absent"
+               if (owncloud__deploy_state in ["absent"])
+               else ("latest"
+                     if (ansible_local | d() and ansible_local.owncloud | d() and
+                         ((ansible_local.owncloud.release | d(owncloud__release) != owncloud__release) or
+                          (ansible_local.owncloud.auto_security_updates_enabled | d() | bool)))
+                     else "present") }}
+
+[2].register = owncloud__register_apt_install
+[2].until = owncloud__register_apt_install is succeeded

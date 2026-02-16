@@ -1,0 +1,1 @@
+is_fedora_coreos = true

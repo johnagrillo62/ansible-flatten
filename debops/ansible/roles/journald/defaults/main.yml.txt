@@ -1,0 +1,114 @@
+journald__enabled = {{ True
+                       if (ansible_service_mgr == "systemd")
+                       else False }}
+
+journald__version = {{ ansible_local.journald.version | d("0") }}
+journald__storage = auto
+journald__persistent_state = {{ "absent"
+                                if (journald__storage == "none")
+                                else ("present"
+                                      if (ansible_local.journald.persistent | d()) | bool
+                                      else "absent") }}
+
+journald__fss_enabled = {{ True
+                           if (journald__persistent_state == "present")
+                           else False }}
+
+journald__fss_interval = 15min
+journald__fss_verify_key_path = {{ "journald/fss/" + inventory_hostname + "/verify_key" }}
+journald__fss_verify_key = {{ lookup("file", secret + "/" + journald__fss_verify_key_path) }}
+journald__default_configuration[0].name = Storage
+journald__default_configuration[0].value = {{ journald__storage }}
+journald__default_configuration[0].state = {{ "init"
+               if (journald__storage == "auto")
+               else "present" }}
+
+journald__default_configuration[1].name = Compress
+journald__default_configuration[1].value = True
+journald__default_configuration[1].state = init
+journald__default_configuration[2].name = Seal
+journald__default_configuration[2].value = {{ journald__fss_enabled }}
+journald__default_configuration[2].state = {{ "init" if journald__fss_enabled | bool else "present" }}
+journald__default_configuration[3].name = SplitMode
+journald__default_configuration[3].value = uid
+journald__default_configuration[3].state = init
+journald__default_configuration[4].name = SyncIntervalSec
+journald__default_configuration[4].value = 5m
+journald__default_configuration[4].state = init
+journald__default_configuration[5].name = RateLimitIntervalSec
+journald__default_configuration[5].value = 30s
+journald__default_configuration[5].state = init
+journald__default_configuration[6].name = RateLimitBurst
+journald__default_configuration[6].value = 10000
+journald__default_configuration[6].state = init
+journald__default_configuration[7].name = SystemMaxUse
+journald__default_configuration[7].value = 
+journald__default_configuration[7].state = init
+journald__default_configuration[8].name = SystemKeepFree
+journald__default_configuration[8].value = 
+journald__default_configuration[8].state = init
+journald__default_configuration[9].name = SystemMaxFileSize
+journald__default_configuration[9].value = 
+journald__default_configuration[9].state = init
+journald__default_configuration[10].name = SystemMaxFiles
+journald__default_configuration[10].value = 100
+journald__default_configuration[10].state = init
+journald__default_configuration[11].name = RuntimeMaxUse
+journald__default_configuration[11].value = 
+journald__default_configuration[11].state = init
+journald__default_configuration[12].name = RuntimeKeepFree
+journald__default_configuration[12].value = 
+journald__default_configuration[12].state = init
+journald__default_configuration[13].name = RuntimeMaxFileSize
+journald__default_configuration[13].value = 
+journald__default_configuration[13].state = init
+journald__default_configuration[14].name = RuntimeMaxFiles
+journald__default_configuration[14].value = 100
+journald__default_configuration[14].state = init
+journald__default_configuration[15].name = MaxRetentionSec
+journald__default_configuration[15].value = 
+journald__default_configuration[15].state = init
+journald__default_configuration[16].name = MaxFileSec
+journald__default_configuration[16].value = 1month
+journald__default_configuration[16].state = init
+journald__default_configuration[17].name = ForwardToSyslog
+journald__default_configuration[17].value = True
+journald__default_configuration[17].state = init
+journald__default_configuration[18].name = ForwardToKMsg
+journald__default_configuration[18].value = False
+journald__default_configuration[18].state = init
+journald__default_configuration[19].name = ForwardToConsole
+journald__default_configuration[19].value = False
+journald__default_configuration[19].state = init
+journald__default_configuration[20].name = ForwardToWall
+journald__default_configuration[20].value = True
+journald__default_configuration[20].state = init
+journald__default_configuration[21].name = TTYPath
+journald__default_configuration[21].value = /dev/console
+journald__default_configuration[21].state = init
+journald__default_configuration[22].name = MaxLevelStore
+journald__default_configuration[22].value = debug
+journald__default_configuration[22].state = init
+journald__default_configuration[23].name = MaxLevelSyslog
+journald__default_configuration[23].value = debug
+journald__default_configuration[23].state = init
+journald__default_configuration[24].name = MaxLevelKMsg
+journald__default_configuration[24].value = notice
+journald__default_configuration[24].state = init
+journald__default_configuration[25].name = MaxLevelConsole
+journald__default_configuration[25].value = info
+journald__default_configuration[25].state = init
+journald__default_configuration[26].name = MaxLevelWall
+journald__default_configuration[26].value = emerg
+journald__default_configuration[26].state = init
+journald__default_configuration[27].name = LineMax
+journald__default_configuration[27].value = 48K
+journald__default_configuration[27].state = init
+journald__default_configuration[28].name = ReadKMsg
+journald__default_configuration[28].value = True
+journald__default_configuration[28].state = init
+journald__combined_configuration = {{ journald__default_configuration
+                                      + journald__configuration
+                                      + journald__group_configuration
+                                      + journald__host_configuration }}
+

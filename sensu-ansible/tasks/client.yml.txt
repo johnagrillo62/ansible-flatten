@@ -1,0 +1,19 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = client
+[1].name = Deploy Sensu client service configuration
+[1].tags = client
+[1].template.dest = {{ sensu_config_path }}/conf.d/client.json
+[1].template.owner = {{ sensu_user_name }}
+[1].template.group = {{ sensu_group_name }}
+[1].template.src = {{ sensu_client_config  }}
+[1].template.mode = 0640
+[1].notify = restart sensu-client service
+[2].include_tasks = {{ role_path }}/tasks/SmartOS/client.yml
+[2].tags = client
+[2].when = ansible_distribution == "SmartOS"
+[3].name = Ensure Sensu client service is running
+[3].tags = client
+[3].service.name = {{ sensu_client_service_name }}
+[3].service.state = started
+[3].service.enabled = yes

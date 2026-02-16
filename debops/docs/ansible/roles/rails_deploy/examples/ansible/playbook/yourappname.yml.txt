@@ -1,0 +1,5 @@
+[0].name = Support yourappname
+[0].hosts = debops_rails_yourappname
+[0].become = true
+[0].roles[0].role = rails_deploy
+[0].roles[0].tags = yourappname

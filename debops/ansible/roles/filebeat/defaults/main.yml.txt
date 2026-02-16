@@ -1,0 +1,234 @@
+filebeat__base_packages[0] = filebeat
+filebeat__version = {{ ansible_local.filebeat.version | d("0.0.0") }}
+filebeat__original_configuration[0].name = filebeat_inputs
+filebeat__original_configuration[0].config["filebeat.inputs"][0].type = log
+filebeat__original_configuration[0].config["filebeat.inputs"][0].enabled = False
+filebeat__original_configuration[0].config["filebeat.inputs"][0].paths[0] = /var/log/*.log
+filebeat__original_configuration[1].name = filebeat_config_modules
+filebeat__original_configuration[1].config["filebeat.config.modules"].path = ${path.config}/modules.d/*.yml
+filebeat__original_configuration[1].config["filebeat.config.modules"]["reload.enabled"] = False
+filebeat__original_configuration[2].name = setup_template_settings
+filebeat__original_configuration[2].config["setup.template.settings"]["index.number_of_shards"] = 3
+filebeat__original_configuration[3].name = setup_kibana
+filebeat__original_configuration[3].config["setup.kibana"] = null
+filebeat__original_configuration[4].name = output_elasticsearch
+filebeat__original_configuration[4].config["output.elasticsearch"].hosts[0] = localhost:9200
+filebeat__original_configuration[5].name = processors
+filebeat__original_configuration[5].config.processors[0].add_host_metadata = null
+filebeat__original_configuration[5].config.processors[1].add_cloud_metadata = null
+filebeat__default_configuration[0].name = filebeat_inputs
+filebeat__default_configuration[0].config["filebeat.inputs"][0].type = log
+filebeat__default_configuration[0].config["filebeat.inputs"][0].enabled = True
+filebeat__default_configuration[0].config["filebeat.inputs"][0].paths[0] = /var/log/*.log
+filebeat__default_configuration[0].config["filebeat.inputs"][0].paths[1] = /var/log/messages
+filebeat__default_configuration[1].name = filebeat_config_inputs
+filebeat__default_configuration[1].config["filebeat.config.inputs"].path = ${path.config}/inputs.d/*.yml
+filebeat__default_configuration[1].config["filebeat.config.inputs"]["reload.enabled"] = True
+filebeat__default_configuration[1].config["filebeat.config.inputs"]["reload.period"] = 30s
+filebeat__default_configuration[2].name = filebeat_config_modules
+filebeat__default_configuration[2].config["filebeat.config.modules"].path = ${path.config}/modules.d/*.yml
+filebeat__default_configuration[2].config["filebeat.config.modules"]["reload.enabled"] = True
+filebeat__default_configuration[2].config["filebeat.config.modules"]["reload.period"] = 30s
+filebeat__combined_configuration = {{ filebeat__original_configuration
+                                      + filebeat__default_configuration
+                                      + filebeat__configuration
+                                      + filebeat__group_configuration
+                                      + filebeat__host_configuration }}
+
+filebeat__default_snippets[0].name = inputs.d/ceph.yml
+filebeat__default_snippets[0].state = {{ "present"
+               if ansible_local.ceph.installed | d() | bool
+               else "absent" }}
+
+filebeat__default_snippets[0].config[0].type = log
+filebeat__default_snippets[0].config[0].enabled = True
+filebeat__default_snippets[0].config[0].paths[0] = /var/log/ceph/ceph-osd.*.log
+filebeat__default_snippets[0].config[0].ignore_older = 1h
+filebeat__default_snippets[0].config[0].fields["ceph.daemon"] = osd
+filebeat__default_snippets[0].config[0].fields_under_root = True
+filebeat__default_snippets[0].config[1].type = log
+filebeat__default_snippets[0].config[1].enabled = True
+filebeat__default_snippets[0].config[1].paths[0] = /var/log/ceph/ceph-mgr.*.log
+filebeat__default_snippets[0].config[1].ignore_older = 1h
+filebeat__default_snippets[0].config[1].fields["ceph.daemon"] = mgr
+filebeat__default_snippets[0].config[1].fields_under_root = True
+filebeat__default_snippets[0].config[2].type = log
+filebeat__default_snippets[0].config[2].enabled = True
+filebeat__default_snippets[0].config[2].paths[0] = /var/log/ceph/ceph-mon.*.log
+filebeat__default_snippets[0].config[2].ignore_older = 1h
+filebeat__default_snippets[0].config[2].fields["ceph.daemon"] = mon
+filebeat__default_snippets[0].config[2].fields_under_root = True
+filebeat__default_snippets[0].config[3].type = log
+filebeat__default_snippets[0].config[3].enabled = True
+filebeat__default_snippets[0].config[3].paths[0] = /var/log/ceph/ceph.log
+filebeat__default_snippets[0].config[3].ignore_older = 1h
+filebeat__default_snippets[0].config[3].fields["ceph.daemon"] = ceph
+filebeat__default_snippets[0].config[3].fields_under_root = True
+filebeat__default_snippets[0].config[4].type = log
+filebeat__default_snippets[0].config[4].enabled = True
+filebeat__default_snippets[0].config[4].paths[0] = /var/log/ceph/ceph.audit.log
+filebeat__default_snippets[0].config[4].ignore_older = 1h
+filebeat__default_snippets[0].config[4].fields["ceph.daemon"] = audit
+filebeat__default_snippets[0].config[4].fields_under_root = True
+filebeat__default_snippets[1].name = inputs.d/libvirt.yml
+filebeat__default_snippets[1].state = {{ "present"
+               if ansible_local.libvirtd.installed | d() | bool
+               else "absent" }}
+
+filebeat__default_snippets[1].config.type = log
+filebeat__default_snippets[1].config.enabled = True
+filebeat__default_snippets[1].config.paths[0] = /var/log/libvirt/*.log
+filebeat__default_snippets[1].config.paths[1] = /var/log/libvirt/qemu/*.log
+filebeat__default_snippets[1].config.ignore_older = 1h
+filebeat__default_snippets[1].config.fields.libvirt = True
+filebeat__default_snippets[1].config.fields_under_root = True
+filebeat__default_snippets[2].name = inputs.d/named.yml
+filebeat__default_snippets[2].state = {{ "present"
+               if ansible_local.bind.installed | d() | bool
+               else "absent" }}
+
+filebeat__default_snippets[2].config[0].type = log
+filebeat__default_snippets[2].config[0].enabled = True
+filebeat__default_snippets[2].config[0].paths[0] = /var/log/named/named.log
+filebeat__default_snippets[2].config[0].ignore_older = 1h
+filebeat__default_snippets[2].config[0].fields["named.type"] = general
+filebeat__default_snippets[2].config[0].files_under_root = True
+filebeat__default_snippets[2].config[1].type = log
+filebeat__default_snippets[2].config[1].enabled = True
+filebeat__default_snippets[2].config[1].paths[0] = /var/log/named/lame.log
+filebeat__default_snippets[2].config[1].ignore_older = 1h
+filebeat__default_snippets[2].config[1].fields["named.type"] = lame
+filebeat__default_snippets[2].config[1].files_under_root = True
+filebeat__default_snippets[2].config[2].type = log
+filebeat__default_snippets[2].config[2].enabled = True
+filebeat__default_snippets[2].config[2].paths[0] = /var/log/named/query.log
+filebeat__default_snippets[2].config[2].ignore_older = 1h
+filebeat__default_snippets[2].config[2].fields["named.type"] = query
+filebeat__default_snippets[2].config[2].files_under_root = True
+filebeat__default_snippets[2].config[3].type = log
+filebeat__default_snippets[2].config[3].enabled = True
+filebeat__default_snippets[2].config[3].paths[0] = /var/log/named/query-errors.log
+filebeat__default_snippets[2].config[3].ignore_older = 1h
+filebeat__default_snippets[2].config[3].fields["named.type"] = query-errors
+filebeat__default_snippets[2].config[3].files_under_root = True
+filebeat__default_snippets[3].name = inputs.d/openstack.yml
+filebeat__default_snippets[3].state = {{ "present"
+               if ansible_local.openstack.installed | d() | bool
+               else "absent" }}
+
+filebeat__default_snippets[3].config[0].type = log
+filebeat__default_snippets[3].config[0].enabled = True
+filebeat__default_snippets[3].config[0].paths[0] = /var/log/nova/*.log
+filebeat__default_snippets[3].config[0].ignore_older = 1h
+filebeat__default_snippets[3].config[0].fields["openstack.component"] = nova
+filebeat__default_snippets[3].config[0].fields_under_root = True
+filebeat__default_snippets[3].config[0].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[0].multiline.negate = False
+filebeat__default_snippets[3].config[0].multiline.match = after
+filebeat__default_snippets[3].config[1].type = log
+filebeat__default_snippets[3].config[1].enabled = True
+filebeat__default_snippets[3].config[1].paths[0] = /var/log/neutron/*.log
+filebeat__default_snippets[3].config[1].ignore_older = 1h
+filebeat__default_snippets[3].config[1].fields["openstack.component"] = neutron
+filebeat__default_snippets[3].config[1].fields_under_root = True
+filebeat__default_snippets[3].config[1].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[1].multiline.negate = False
+filebeat__default_snippets[3].config[1].multiline.match = after
+filebeat__default_snippets[3].config[2].type = log
+filebeat__default_snippets[3].config[2].enabled = True
+filebeat__default_snippets[3].config[2].paths[0] = /var/log/glance/*.log
+filebeat__default_snippets[3].config[2].ignore_older = 1h
+filebeat__default_snippets[3].config[2].fields["openstack.component"] = glance
+filebeat__default_snippets[3].config[2].fields_under_root = True
+filebeat__default_snippets[3].config[2].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[2].multiline.negate = False
+filebeat__default_snippets[3].config[2].multiline.match = after
+filebeat__default_snippets[3].config[3].type = log
+filebeat__default_snippets[3].config[3].enabled = True
+filebeat__default_snippets[3].config[3].paths[0] = /var/log/cinder/*.log
+filebeat__default_snippets[3].config[3].ignore_older = 1h
+filebeat__default_snippets[3].config[3].fields["openstack.component"] = cinder
+filebeat__default_snippets[3].config[3].fields_under_root = True
+filebeat__default_snippets[3].config[3].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[3].multiline.negate = False
+filebeat__default_snippets[3].config[3].multiline.match = after
+filebeat__default_snippets[3].config[4].type = log
+filebeat__default_snippets[3].config[4].enabled = True
+filebeat__default_snippets[3].config[4].paths[0] = /var/log/keystone/*.log
+filebeat__default_snippets[3].config[4].ignore_older = 1h
+filebeat__default_snippets[3].config[4].fields["openstack.component"] = keystone
+filebeat__default_snippets[3].config[4].fields_under_root = True
+filebeat__default_snippets[3].config[4].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[4].multiline.negate = False
+filebeat__default_snippets[3].config[4].multiline.match = after
+filebeat__default_snippets[3].config[5].type = log
+filebeat__default_snippets[3].config[5].enabled = True
+filebeat__default_snippets[3].config[5].paths[0] = /var/log/ironic/*.log
+filebeat__default_snippets[3].config[5].paths[1] = /var/log/ironic-inspector/*.log
+filebeat__default_snippets[3].config[5].ignore_older = 1h
+filebeat__default_snippets[3].config[5].fields["openstack.component"] = ironic
+filebeat__default_snippets[3].config[5].fields_under_root = True
+filebeat__default_snippets[3].config[5].multiline.pattern = ^.*(ERROR).*[[:space:]]{3}.*
+filebeat__default_snippets[3].config[5].multiline.negate = False
+filebeat__default_snippets[3].config[5].multiline.match = after
+filebeat__default_snippets[4].name = modules.d/apache2.yml
+filebeat__default_snippets[4].config.module = apache2
+filebeat__default_snippets[4].config.access.enabled = True
+filebeat__default_snippets[4].config.error.enabled = True
+filebeat__default_snippets[4].state = {{ "present"
+               if (ansible_local.apache.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[5].name = modules.d/auditd.yml
+filebeat__default_snippets[5].config.module = auditd
+filebeat__default_snippets[5].config.log.enabled = True
+filebeat__default_snippets[5].state = {{ "present"
+               if (ansible_local.auditd.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[6].name = modules.d/icinga.yml
+filebeat__default_snippets[6].config.module = icinga
+filebeat__default_snippets[6].config.main.enabled = True
+filebeat__default_snippets[6].config.debug.enabled = True
+filebeat__default_snippets[6].config.startup.enabled = True
+filebeat__default_snippets[6].state = {{ "present"
+               if (ansible_local.icinga.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[7].name = modules.d/mysql.yml
+filebeat__default_snippets[7].config.module = mysql
+filebeat__default_snippets[7].config.error.enabled = True
+filebeat__default_snippets[7].config.slowlog.enabled = True
+filebeat__default_snippets[7].state = {{ "present"
+               if (ansible_local.mariadb.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[8].name = modules.d/nginx.yml
+filebeat__default_snippets[8].config.module = nginx
+filebeat__default_snippets[8].config.access.enabled = True
+filebeat__default_snippets[8].config.error.enabled = True
+filebeat__default_snippets[8].state = {{ "present"
+               if (ansible_local.nginx.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[9].name = modules.d/postgresql.yml
+filebeat__default_snippets[9].config.module = postgresql
+filebeat__default_snippets[9].config.log.enabled = True
+filebeat__default_snippets[9].state = {{ "present"
+               if (ansible_local.postgresql.installed | d() | bool)
+               else "ignore" }}
+
+filebeat__default_snippets[10].name = modules.d/system.yml
+filebeat__default_snippets[10].config.module = system
+filebeat__default_snippets[10].config.syslog.enabled = True
+filebeat__default_snippets[10].config.auth.enabled = True
+filebeat__combined_snippets = {{ filebeat__default_snippets
+                                 + filebeat__snippets
+                                 + filebeat__group_snippets
+                                 + filebeat__host_snippets }}
+
+filebeat__combined_keys = {{ filebeat__keys
+                             + filebeat__group_keys
+                             + filebeat__host_keys }}
+
+filebeat__extrepo__dependent_sources[0] = elastic

@@ -1,0 +1,12 @@
+[0].name = Ovn4nfv | Label control-plane node
+[0].command = {{ kubectl }} label --overwrite node {{ groups['kube_control_plane'] | first }} ovn4nfv-k8s-plugin=ovn-control-plane
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Ovn4nfv | Create ovn4nfv-k8s manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = ovn-daemonset
+[1].with_items[0].file = ovn-daemonset.yml
+[1].with_items[1].name = ovn4nfv-k8s-plugin
+[1].with_items[1].file = ovn4nfv-k8s-plugin.yml
+[1].register = ovn4nfv_node_manifests

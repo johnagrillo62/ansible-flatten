@@ -1,0 +1,17 @@
+[0].name = Reload systemd daemon (netbox)
+[0]["ansible.builtin.systemd"].daemon_reload = True
+[0].when = ansible_service_mgr == 'systemd'
+[1].name = Restart gunicorn for netbox
+[1]["ansible.builtin.service"].name = gunicorn@netbox
+[1]["ansible.builtin.service"].state = restarted
+[1].when = (not netbox__app_internal_appserver | bool and ansible_local.gunicorn.installed | d() | bool)
+[2].name = Restart netbox internal appserver
+[2]["ansible.builtin.service"].name = netbox
+[2]["ansible.builtin.service"].state = restarted
+[2]["ansible.builtin.service"].enabled = True
+[2].when = netbox__app_internal_appserver | bool
+[3].name = Restart netbox Request Queue Worker
+[3]["ansible.builtin.service"].name = netbox-rq
+[3]["ansible.builtin.service"].state = restarted
+[3]["ansible.builtin.service"].enabled = True
+[3].when = netbox__app_internal_appserver | bool

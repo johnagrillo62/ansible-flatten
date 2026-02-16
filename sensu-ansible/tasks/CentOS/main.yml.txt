@@ -1,0 +1,64 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = setup
+[1].name = Ensure the Sensu Core Yum repo is present
+[1].tags = setup
+[1].yum_repository.name = sensu
+[1].yum_repository.description = The Sensu Core yum repository
+[1].yum_repository.baseurl = {{ sensu_yum_repo_url }}
+[1].yum_repository.gpgkey = {{ sensu_yum_key_url }}
+[1].yum_repository.gpgcheck = {{ (
+      (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and
+      ansible_distribution_major_version == '5'
+      ) | ternary('no', 'yes') }}
+
+[1].yum_repository.enabled = yes
+[2].name = Ensure the epel present for OracleLinux
+[2].tags = setup
+[2].yum_repository.name = epel
+[2].yum_repository.description = EPEL YUM repo
+[2].yum_repository.baseurl = {{ sensu_ol_yum_repo_url }}
+[2].yum_repository.gpgkey = {{ sensu_ol_yum_key_url }}
+[2].yum_repository.enabled = yes
+[2].when = ansible_distribution == 'OracleLinux'
+[3].name = Ensure that credential is supplied if installing Sensu Enterprise
+[3].tags = setup
+[3].assert.that[0] = se_user
+[3].assert.that[1] = se_pass
+[3].assert.msg = Sensu enterprise credential must not be empty. Did you forget to set se_user and se_pass?
+[3].when = se_enterprise
+[4].name = Ensure the Sensu Enterprise repo is present
+[4].tags = setup
+[4].copy.dest = /etc/yum.repos.d/sensu-enterprise.repo
+[4].copy.content = [sensu-enterprise]
+name=sensu-enterprise
+baseurl=http://{{ se_user }}:{{ se_pass }}@enterprise.sensuapp.com/yum/noarch/
+gpgcheck=0
+enabled=1
+
+[4].copy.owner = root
+[4].copy.group = root
+[4].copy.mode = 0644
+[4].when = se_enterprise
+[5].name = Ensure the Sensu Enterprise Dashboard repo is present
+[5].tags = setup
+[5].copy.dest = /etc/yum.repos.d/sensu-enterprise-dashboard.repo
+[5].copy.content = [sensu-enterprise-dashboard]
+name=sensu-enterprise-dashboard
+baseurl=http://{{ se_user }}:{{ se_pass }}@enterprise.sensuapp.com/yum/\$basearch/
+gpgcheck=0
+enabled=1
+
+[5].copy.owner = root
+[5].copy.group = root
+[5].copy.mode = 0644
+[5].when = se_enterprise
+[6].name = Ensure Sensu is installed
+[6].tags = setup
+[6].package.name = {{ sensu_package }}
+[6].package.state = {{ sensu_pkg_state }}
+[7].name = Ensure Sensu Enterprise is installed
+[7].tags = setup
+[7].package.name = {{ sensu_enterprise_package }}
+[7].package.state = {{ sensu_pkg_state }}
+[7].when = se_enterprise

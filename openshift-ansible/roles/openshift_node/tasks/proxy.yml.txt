@@ -1,0 +1,38 @@
+[0].name = Check for cluster http proxy
+[0].command = oc get proxies.config.openshift.io cluster --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.status.httpProxy}'
+
+[0].register = oc_get_http_proxy
+[0].delegate_to = localhost
+[1].name = Set http proxy
+[1].set_fact.http_proxy = {{ oc_get_http_proxy.stdout }}
+[1].when = oc_get_http_proxy.stdout | length > 0
+[2].name = Check for cluster https proxy
+[2].command = oc get proxies.config.openshift.io cluster --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.status.httpsProxy}'
+
+[2].register = oc_get_https_proxy
+[2].delegate_to = localhost
+[3].name = Set https proxy
+[3].set_fact.https_proxy = {{ oc_get_https_proxy.stdout }}
+[3].when = oc_get_https_proxy.stdout | length > 0
+[4].name = Check for cluster no proxy
+[4].command = oc get proxies.config.openshift.io cluster --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.status.noProxy}'
+
+[4].register = oc_get_no_proxy
+[4].delegate_to = localhost
+[5].name = Set no proxy
+[5].set_fact.no_proxy = {{ oc_get_no_proxy.stdout }}
+[5].when = oc_get_no_proxy.stdout | length > 0
+[6].name = Check for additional trust bundle
+[6].command = oc get configmap user-ca-bundle -n openshift-config --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.data.ca-bundle\.crt}'
+
+[6].register = oc_get_additional_trust_bundle
+[6].delegate_to = localhost
+[6].failed_when = false
+[7].when = oc_get_additional_trust_bundle.stdout | length > 0
+[7].block[0].name = Set additional trust bundle
+[7].block[0].set_fact.l_additional_trust_bundle = {{ oc_get_additional_trust_bundle.stdout }}
+[7].block[1].name = Copy additional trust bundle to system CA trust
+[7].block[1].copy.content = {{ l_additional_trust_bundle }}
+[7].block[1].copy.dest = /etc/pki/ca-trust/source/anchors/ca-bundle.crt
+[7].block[2].name = Update CA trust
+[7].block[2].command = update-ca-trust extract

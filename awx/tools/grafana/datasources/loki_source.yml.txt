@@ -1,0 +1,7 @@
+apiVersion = 1
+datasources[0].name = Loki
+datasources[0].type = loki
+datasources[0].access = proxy
+datasources[0].url = http://loki:3100
+datasources[0].jsonData.timeout = 60
+datasources[0].jsonData.maxLines = 100000

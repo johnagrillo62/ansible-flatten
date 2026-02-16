@@ -1,0 +1,33 @@
+[0].name = Remove-node | List nodes
+[0].command = {{ kubectl }} get nodes -o go-template={% raw %}'{{ range .items }}{{ .metadata.name }}{{ "\n" }}{{ end }}'{% endraw %}
+[0].register = nodes
+[0].when[0] = groups['kube_control_plane'] | length > 0
+[0].delegate_to = {{ groups['kube_control_plane'] | first }}
+[0].changed_when = false
+[0].run_once = true
+[1].name = Remove-node | Drain node except daemonsets resource
+[1].command = {{ kubectl }} drain
+  --force
+  --ignore-daemonsets
+  --grace-period {{ drain_grace_period }}
+  --timeout {{ drain_timeout }}
+  --delete-emptydir-data {{ kube_override_hostname }}
+[1].when[0] = groups['kube_control_plane'] | length > 0
+[1].when[1] = kube_override_hostname in nodes.stdout_lines
+[1].register = result
+[1].failed_when = result.rc != 0 and not allow_ungraceful_removal
+[1].delegate_to = {{ groups['kube_control_plane'] | first }}
+[1].until = result.rc == 0 or allow_ungraceful_removal
+[1].retries = {{ drain_retries }}
+[1].delay = {{ drain_retry_delay_seconds }}
+[2].name = Remove-node | Wait until Volumes will be detached from the node
+[2].command = {{ kubectl }} get volumeattachments -o go-template={% raw %}'{{ range .items }}{{ .spec.nodeName }}{{ "\n" }}{{ end }}'{% endraw %}
+[2].register = nodes_with_volumes
+[2].delegate_to = {{ groups['kube_control_plane'] | first }}
+[2].changed_when = false
+[2].until = not (kube_override_hostname in nodes_with_volumes.stdout_lines)
+[2].retries = 3
+[2].delay = {{ drain_grace_period }}
+[2].when[0] = groups['kube_control_plane'] | length > 0
+[2].when[1] = not allow_ungraceful_removal
+[2].when[2] = kube_override_hostname in nodes.stdout_lines

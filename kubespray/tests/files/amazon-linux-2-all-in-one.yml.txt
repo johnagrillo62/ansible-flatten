@@ -1,0 +1,3 @@
+cloud_image = amazon-linux-2
+mode = all-in-one
+kubeadm_ignore_preflight_errors[0] = SystemVerification

@@ -1,0 +1,10 @@
+~d0.networkd__units = 
+~d1.name = 'br0.netdev'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = 'br0.network'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = 'enp1s0.network'
+~d2.raw = |
+~d2.state = 'present'

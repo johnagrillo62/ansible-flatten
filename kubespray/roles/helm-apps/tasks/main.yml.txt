@@ -1,0 +1,14 @@
+~d0.name = Add Helm repositories
+~d1.kubernetes.core.helm_repository = "{{ helm_repository_defaults | combine(item) }}"  # noqa args[module]
+~d1.loop = "{{ repositories }}"
+~d0.name = Update Helm repositories
+~d1.kubernetes.core.helm = 
+~d2.state = absent
+~d2.binary_path = "{{ bin_dir }}/helm"
+~d2.release_name = dummy  # trick needed to refresh in separate step
+~d2.release_namespace = kube-system
+~d2.update_repo_cache = true
+~d1.when = 
+~d0.name = Install Helm Applications
+~d1.kubernetes.core.helm = "{{ helm_defaults | combine(release_common_opts, item) }}"  # noqa args[module]
+~d1.loop = "{{ releases }}"

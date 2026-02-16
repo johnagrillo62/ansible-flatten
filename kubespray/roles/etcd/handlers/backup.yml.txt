@@ -1,0 +1,50 @@
+[0].name = Refresh Time Fact
+[0].setup.filter = ansible_date_time
+[0].listen = Restart etcd
+[0].when = etcd_cluster_is_healthy.rc == 0
+[1].name = Set Backup Directory
+[1].set_fact.etcd_backup_directory = {{ etcd_backup_prefix }}/etcd-{{ ansible_date_time.date }}_{{ ansible_date_time.time }}
+[1].listen = Restart etcd
+[2].name = Create Backup Directory
+[2].file.path = {{ etcd_backup_directory }}
+[2].file.state = directory
+[2].file.owner = root
+[2].file.group = root
+[2].file.mode = 0600
+[2].listen = Restart etcd
+[2].when = etcd_cluster_is_healthy.rc == 0
+[3].name = Stat etcd v2 data directory
+[3].stat.path = {{ etcd_data_dir }}/member
+[3].stat.get_attributes = false
+[3].stat.get_checksum = false
+[3].stat.get_mime = false
+[3].register = etcd_data_dir_member
+[3].listen = Restart etcd
+[3].when = etcd_cluster_is_healthy.rc == 0
+[4].name = Backup etcd v2 data
+[4].when[0] = etcd_data_dir_member.stat.exists
+[4].when[1] = etcd_cluster_is_healthy.rc == 0
+[4].when[2] = etcd_version is version('3.6.0', '<')
+[4].command = {{ bin_dir }}/etcdctl backup
+  --data-dir {{ etcd_data_dir }}
+  --backup-dir {{ etcd_backup_directory }}
+[4].environment.ETCDCTL_API = 2
+[4].retries = 3
+[4].register = backup_v2_command
+[4].until = backup_v2_command.rc == 0
+[4].delay = {{ retry_stagger | random + 3 }}
+[4].listen = Restart etcd
+[5].name = Backup etcd v3 data
+[5].command = {{ bin_dir }}/etcdctl
+  snapshot save {{ etcd_backup_directory }}/snapshot.db
+[5].environment.ETCDCTL_API = 3
+[5].environment.ETCDCTL_ENDPOINTS = {{ etcd_access_addresses.split(',') | first }}
+[5].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[5].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[5].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[5].retries = 3
+[5].register = etcd_backup_v3_command
+[5].until = etcd_backup_v3_command.rc == 0
+[5].delay = {{ retry_stagger | random + 3 }}
+[5].listen = Restart etcd
+[5].when = etcd_cluster_is_healthy.rc == 0

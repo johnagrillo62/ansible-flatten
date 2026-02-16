@@ -1,0 +1,13 @@
+roles[0].name = geerlingguy.java
+roles[1].name = geerlingguy.nginx
+roles[2].name = geerlingguy.pip
+roles[3].name = geerlingguy.elasticsearch
+roles[3].version = 5.0.0
+roles[4].name = geerlingguy.elasticsearch-curator
+roles[4].version = 2.1.0
+roles[5].name = geerlingguy.kibana
+roles[5].version = 4.0.0
+roles[6].name = geerlingguy.logstash
+roles[6].version = 5.1.0
+roles[7].name = geerlingguy.filebeat
+roles[7].version = 3.0.1

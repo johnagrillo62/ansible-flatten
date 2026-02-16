@@ -1,0 +1,36 @@
+timesyncd__enabled = {{ True
+                       if (ansible_service_mgr == "systemd" and
+                           timesyncd__fact_service_state == "present")
+                       else False }}
+
+timesyncd__deploy_state = absent
+timesyncd__base_packages[0] = systemd-timesyncd
+timesyncd__skip_packages[0] = openntpd
+timesyncd__skip_packages[1] = ntpsec
+timesyncd__skip_packages[2] = ntp
+timesyncd__skip_packages[3] = chrony
+timesyncd__version = {{ ansible_local.timesyncd.version | d("0") }}
+timesyncd__default_configuration[0].name = NTP
+timesyncd__default_configuration[0].state = init
+timesyncd__default_configuration[1].name = FallbackNTP
+timesyncd__default_configuration[1].value[0] = 0.debian.pool.ntp.org
+timesyncd__default_configuration[1].value[1] = 1.debian.pool.ntp.org
+timesyncd__default_configuration[1].value[2] = 2.debian.pool.ntp.org
+timesyncd__default_configuration[1].value[3] = 3.debian.pool.ntp.org
+timesyncd__default_configuration[1].state = init
+timesyncd__default_configuration[2].name = RootDistanceMaxSec
+timesyncd__default_configuration[2].value = 5
+timesyncd__default_configuration[2].state = init
+timesyncd__default_configuration[3].name = PollIntervalMinSec
+timesyncd__default_configuration[3].value = 32
+timesyncd__default_configuration[3].state = init
+timesyncd__default_configuration[4].name = PollIntervalMaxSec
+timesyncd__default_configuration[4].value = 2048
+timesyncd__default_configuration[4].state = init
+timesyncd__combined_configuration = {{ timesyncd__default_configuration
+                                       + timesyncd__configuration
+                                       + timesyncd__group_configuration
+                                       + timesyncd__host_configuration }}
+
+timesyncd__dpkg_cleanup__dependent_packages[0].name = systemd-timesyncd
+timesyncd__dpkg_cleanup__dependent_packages[0].ansible_fact = timesyncd

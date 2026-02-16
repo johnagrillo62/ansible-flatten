@@ -1,0 +1,22 @@
+[0].name = Check status of built-in users via Elasticsearch API
+[0]["ansible.builtin.uri"].url = {{ elasticsearch__api_base_url + "/_security/user/elastic" }}
+[0]["ansible.builtin.uri"].user = {{ elasticsearch__api_username }}
+[0]["ansible.builtin.uri"].password = {{ elasticsearch__api_password }}
+[0]["ansible.builtin.uri"].force_basic_auth = True
+[0]["ansible.builtin.uri"].method = GET
+[0]["ansible.builtin.uri"].status_code[0] = 200
+[0]["ansible.builtin.uri"].status_code[1] = 401
+[0].register = elasticsearch__register_api_builtin_users
+[0].until = elasticsearch__register_api_builtin_users.status in [200, 401]
+[0].retries = 10
+[0].delay = 5
+[0].no_log = {{ debops__no_log | d(True) }}
+[1].name = Set passwords for built-in Elasticsearch user accounts
+[1]["ansible.builtin.include_tasks"] = reset_password.yml
+[1].loop[0] = elastic
+[1].loop[1] = kibana_system
+[1].loop[2] = logstash_system
+[1].loop[3] = beats_system
+[1].loop[4] = apm_system
+[1].loop[5] = remote_monitoring_user
+[1].when = ((not (ansible_local.elasticsearch.configured | d()) | bool) or elasticsearch__register_api_builtin_users.status == 401)

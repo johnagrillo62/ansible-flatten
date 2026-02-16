@@ -1,0 +1,25 @@
+[0].hosts = lamp_www
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.repo-epel
+[0].roles[2] = geerlingguy.apache
+[0].roles[3] = geerlingguy.php
+[0].roles[4] = geerlingguy.php-mysql
+[0].roles[5] = geerlingguy.php-memcached
+[0].tasks[0].name = Remove the Apache test page.
+[0].tasks[0].file.path = /var/www/html/index.html
+[0].tasks[0].file.state = absent
+[0].tasks[1].name = Copy our fancy server-specific home page.
+[0].tasks[1].template.src = templates/index.php.j2
+[0].tasks[1].template.dest = /var/www/html/index.php
+[0].tasks[2].name = Ensure required SELinux dependency is installed.
+[0].tasks[2].package.name = libsemanage-python
+[0].tasks[2].package.state = present
+[0].tasks[3].name = Configure SELinux to allow HTTPD connections.
+[0].tasks[3].seboolean.name = {{ item }}
+[0].tasks[3].seboolean.state = true
+[0].tasks[3].seboolean.persistent = true
+[0].tasks[3].with_items[0] = httpd_can_network_connect_db
+[0].tasks[3].with_items[1] = httpd_can_network_memcache
+[0].tasks[3].when = ansible_selinux.status == 'enabled'

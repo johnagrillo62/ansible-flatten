@@ -1,0 +1,8 @@
+~d0.name = Reboot DebOps hosts
+~d1.hosts = [ 'debops_all_hosts' ]
+~d1.become = True
+~d1.gather_facts = False
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = reboot
+~d3.tags = [ 'role::reboot', 'skip::reboot' ]

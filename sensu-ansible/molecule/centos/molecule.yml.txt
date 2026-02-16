@@ -1,0 +1,14 @@
+scenario.name = centos
+platforms[0].name = centos-6
+platforms[0].image = dokken/centos-6
+platforms[0].command = /sbin/init
+platforms[0].capabilities[0] = SYS_ADMIN
+platforms[0].groups[0] = sensu_checks
+platforms[1].name = centos-7
+platforms[1].image = dokken/centos-7
+platforms[1].command = /usr/lib/systemd/systemd
+platforms[1].capabilities[0] = SYS_ADMIN
+platforms[1].groups[0] = sensu_checks
+platforms[1].volumes[0] = /sys/fs/cgroup:/sys/fs/cgroup:ro
+provisioner.inventory.host_vars.centos-6.inspec_version = el6
+provisioner.inventory.host_vars.centos-7.inspec_version = el7

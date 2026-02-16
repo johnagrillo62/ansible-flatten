@@ -1,0 +1,70 @@
+[0].name = Update apt cache
+[0].apt = update_cache=yes
+[0].tags[0] = dependencies
+[1].name = Upgrade all safe packages
+[1].apt = upgrade=safe
+[1].tags[0] = dependencies
+[2].name = Install necessities and nice-to-haves
+[2].apt = pkg={{ item }} state=present
+[2].with_items[0] = apache2
+[2].with_items[1] = apt-transport-https
+[2].with_items[2] = apticron
+[2].with_items[3] = build-essential
+[2].with_items[4] = debian-goodies
+[2].with_items[5] = git
+[2].with_items[6] = htop
+[2].with_items[7] = iftop
+[2].with_items[8] = iotop
+[2].with_items[9] = molly-guard
+[2].with_items[10] = mosh
+[2].with_items[11] = python3-software-properties
+[2].with_items[12] = ruby
+[2].with_items[13] = screen
+[2].with_items[14] = sudo
+[2].with_items[15] = unattended-upgrades
+[2].with_items[16] = vim
+[2].with_items[17] = zsh
+[2].tags[0] = dependencies
+[3].name = timezone - configure /etc/timezone
+[3].copy.content = {{ common_timezone | regex_replace('$', '\n') }}
+[3].copy.dest = /etc/timezone
+[3].copy.owner = root
+[3].copy.group = root
+[3].copy.mode = 0644
+[3].register = common_timezone_config
+[4].name = timezone - Set localtime to UTC
+[4].file = src=/usr/share/zoneinfo/Etc/UTC dest=/etc/localtime
+[4].when = common_timezone_config.changed
+[4].tags[0] = skip_ansible_lint
+[5].name = timezone - reconfigure tzdata
+[5].command = dpkg-reconfigure --frontend noninteractive tzdata
+[5].when = common_timezone_config.changed
+[5].tags[0] = skip_ansible_lint
+[6].name = Apticron email configuration
+[6].template = src=apticron.conf.j2 dest=/etc/apticron/apticron.conf
+[7].name = Create decrypted directory (even if encfs isn't used)
+[7].file = state=directory path=/decrypted
+[8].name = Set decrypted directory permissions
+[8].file = state=directory path=/decrypted group=mail mode=0775
+[9].name = Ensure locale en_US.UTF-8 locale is present
+[9].locale_gen.name = en_US.UTF-8
+[9].locale_gen.state = present
+[10].import_tasks = encfs.yml
+[10].tags = encfs
+[11].import_tasks = users.yml
+[11].tags = users
+[12].import_tasks = apache.yml
+[12].tags = apache
+[13].import_tasks = ssl.yml
+[13].tags = ssl
+[14].import_tasks = letsencrypt.yml
+[14].tags = letsencrypt
+[15].import_tasks = ufw.yml
+[15].tags = ufw
+[16].import_tasks = security.yml
+[16].tags = security
+[17].import_tasks = ntp.yml
+[17].tags = ntp
+[18].import_tasks = google_auth.yml
+[18].tags = google_auth
+[19].import_tasks = postgres.yml

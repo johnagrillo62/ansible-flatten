@@ -1,0 +1,20 @@
+[0].name = Provision Packet VMs
+[0].hosts = localhost
+[0].gather_facts = false
+[0].become = true
+[0].tasks[0].name = Create Kubevirt VMs
+[0].tasks[0].import_role.name = packet-ci
+[0].tasks[1].name = Update inventory for Molecule
+[0].tasks[1].meta = refresh_inventory
+[1].name = Wait until SSH is available
+[1].hosts = all
+[1].become = false
+[1].gather_facts = false
+[1].tasks[0].name = Wait until SSH is available
+[1].tasks[0].command = ssh -i "{{ lookup('env', 'ANSIBLE_PRIVATE_KEY_FILE') }}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=3 "{{ lookup('env', 'ANSIBLE_REMOTE_USER') }}@{{ ansible_host }}"
+
+[1].tasks[0].register = ssh_command
+[1].tasks[0].delay = 0
+[1].tasks[0].until = ssh_command.rc != 255
+[1].tasks[0].retries = 60
+[1].tasks[0].delegate_to = localhost

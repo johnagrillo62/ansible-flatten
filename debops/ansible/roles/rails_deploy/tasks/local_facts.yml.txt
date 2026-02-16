@@ -1,0 +1,12 @@
+[0].name = Create Ansible facts directory
+[0]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[0].when = rails_deploy_database_force_migrate or rails_deploy_git_location is defined and rails_deploy_git_location
+[1].name = Create local facts
+[1]["ansible.builtin.template"].src = etc/ansible/facts.d/rails_deploy.fact.j2
+[1]["ansible.builtin.template"].dest = /etc/ansible/facts.d/rails_deploy.fact
+[1]["ansible.builtin.template"].mode = 0644
+[1].when = rails_deploy_database_force_migrate or rails_deploy_git_location is defined and rails_deploy_git_location

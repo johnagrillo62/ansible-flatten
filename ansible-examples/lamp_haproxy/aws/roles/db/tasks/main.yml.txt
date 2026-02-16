@@ -1,0 +1,27 @@
+[0].name = Install Mysql package
+[0].yum.name = {{ item }}
+[0].yum.state = present
+[0].with_items[0] = mysql-server
+[0].with_items[1] = MySQL-python
+[1].name = Configure SELinux to start mysql on any port
+[1].seboolean.name = mysql_connect_any
+[1].seboolean.state = true
+[1].seboolean.persistent = yes
+[1].when = sestatus.rc != 0
+[2].name = Create Mysql configuration file
+[2].template.src = my.cnf.j2
+[2].template.dest = /etc/my.cnf
+[2].notify[0] = restart mysql
+[3].name = Start Mysql Service
+[3].service.name = mysqld
+[3].service.state = started
+[3].service.enabled = yes
+[4].name = Create Application Database
+[4].mysql_db.name = {{ dbname }}
+[4].mysql_db.state = present
+[5].name = Create Application DB User
+[5].mysql_user.name = {{ dbuser }}
+[5].mysql_user.password = {{ upassword }}
+[5].mysql_user.priv = *.*:ALL
+[5].mysql_user.host = %
+[5].mysql_user.state = present

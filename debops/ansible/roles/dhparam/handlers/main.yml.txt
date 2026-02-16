@@ -1,0 +1,12 @@
+[0].name = Execute DH parameter hooks
+[0]["ansible.builtin.command"] = run-parts {{ dhparam__hook_path }}
+[0].register = dhparam__register_hooks
+[0].changed_when = dhparam__register_hooks.changed | bool
+[1].name = Regenerate DH parameters on first install
+[1]["ansible.posix.at"].command = test -x {{ dhparam__generate_params }} \
+&& (echo 'nice {{ dhparam__generate_params }} run' | batch > /dev/null 2>&1) || true
+
+[1]["ansible.posix.at"].count = {{ dhparam__generate_init_count }}
+[1]["ansible.posix.at"].units = {{ dhparam__generate_init_units }}
+[1]["ansible.posix.at"].unique = True
+[1].when = (dhparam__generate_init | bool and (ansible_local | d() and ansible_local.atd | d() and ansible_local.atd.enabled | bool))

@@ -1,0 +1,12 @@
+[0].name = Kubeadm | Create directory to store kubeadm patches
+[0].file.path = {{ kubeadm_patches_dir }}
+[0].file.state = directory
+[0].file.mode = 0640
+[0].when = kubeadm_patches | length > 0
+[1].name = Kubeadm | Copy kubeadm patches from inventory files
+[1].copy.content = {{ item.patch | to_yaml }}
+[1].copy.dest = {{ kubeadm_patches_dir }}/{{ item.target }}{{ suffix }}+{{ item.type | d('strategic') }}.yaml
+[1].copy.owner = root
+[1].copy.mode = 0644
+[1].loop = {{ kubeadm_patches }}
+[1].loop_control.index_var = suffix

@@ -1,0 +1,34 @@
+ansible__deploy_type = {{ "upstream"
+                          if (ansible_distribution_release in
+                              ["trusty", "xenial"])
+                          else "system" }}
+
+ansible__upstream_apt_key = 6125 E2A8 C77F 2818 FB7B D15B 93C4 A3FD 7BB9 C367
+ansible__upstream_apt_repository = deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
+ansible__base_packages[0] = {{ "ansible"
+        if (ansible__deploy_type in ["system", "upstream"])
+        else [] }}
+
+ansible__bootstrap_version = devel
+ansible__apt_preferences__dependent_list[0].package = ansible
+ansible__apt_preferences__dependent_list[0].backports[0] = stretch
+ansible__apt_preferences__dependent_list[0].backports[1] = buster
+ansible__apt_preferences__dependent_list[0].reason = Compatibility with upstream release
+ansible__apt_preferences__dependent_list[0].by_role = debops_ansible
+ansible__apt_preferences__dependent_list[0].state = {{ "absent"
+               if (ansible__deploy_type == "upstream")
+               else "present" }}
+
+ansible__apt_preferences__dependent_list[1].package = ansible
+ansible__apt_preferences__dependent_list[1].pin = release o=LP-PPA-ansible-ansible
+ansible__apt_preferences__dependent_list[1].priority = 600
+ansible__apt_preferences__dependent_list[1].by_role = debops_ansible
+ansible__apt_preferences__dependent_list[1].filename = debops_ansible_upstream.pref
+ansible__apt_preferences__dependent_list[1].reason = Recent version from upstream PPA
+ansible__apt_preferences__dependent_list[1].state = {{ "present"
+               if (ansible__deploy_type == "upstream")
+               else "absent" }}
+
+ansible__keyring__dependent_apt_keys[0].id = {{ ansible__upstream_apt_key }}
+ansible__keyring__dependent_apt_keys[0].repo = {{ ansible__upstream_apt_repository }}
+ansible__keyring__dependent_apt_keys[0].state = {{ "present" if (ansible__deploy_type == "upstream") else "absent" }}

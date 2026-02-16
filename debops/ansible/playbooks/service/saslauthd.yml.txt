@@ -1,0 +1,15 @@
+~d0.name = Manage Cyrus SASL authentication service
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_saslauthd' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = python
+~d3.tags = [ 'role::python', 'skip::python', 'role::ldap' ]
+~d3.python__dependent_packages3 = 
+~d3.python__dependent_packages2 = 
+~d2.role = ldap
+~d3.tags = [ 'role::ldap', 'skip::ldap' ]
+~d3.ldap__dependent_tasks = 
+~d2.role = saslauthd
+~d3.tags = [ 'role::saslauthd', 'skip::saslauthd' ]

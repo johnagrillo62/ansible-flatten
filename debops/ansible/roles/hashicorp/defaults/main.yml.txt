@@ -1,0 +1,66 @@
+hashicorp__base_packages[0] = rsync
+hashicorp__base_packages[1] = openssl
+hashicorp__base_packages[2] = ca-certificates
+hashicorp__base_packages[3] = unzip
+hashicorp__user = hashicorp
+hashicorp__group = hashicorp
+hashicorp__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                     + "/" + hashicorp__user }} 
+hashicorp__comment = HashiCorp Application Manager
+hashicorp__shell = /usr/sbin/nologin
+hashicorp__gpg_key_id = C874 011F 0AB4 0511 0D02 1055 3436 5D94 72D7 468F
+hashicorp__keyserver = {{ ansible_local.keyring.keyserver | d("hkp://keyserver.ubuntu.com") }}
+hashicorp__default_version_map.atlas-upload-cli = 0.2.0
+hashicorp__default_version_map.consul = 0.8.3
+hashicorp__default_version_map.consul-replicate = 0.3.1
+hashicorp__default_version_map.consul-template = 0.18.3
+hashicorp__default_version_map.docker-base = 0.0.4
+hashicorp__default_version_map.docker-basetool = 0.0.3
+hashicorp__default_version_map.envconsul = 0.6.2
+hashicorp__default_version_map.nomad = 0.5.6
+hashicorp__default_version_map.otto = 0.2.0
+hashicorp__default_version_map.packer = 1.0.0
+hashicorp__default_version_map.serf = 0.8.1
+hashicorp__default_version_map.terraform = 0.9.5
+hashicorp__default_version_map.vault = 0.7.2
+hashicorp__default_version_map.vault-ssh-helper = 0.1.3
+hashicorp__combined_version_map = {{ hashicorp__default_version_map
+                                     | combine(hashicorp__version_map) }} 
+hashicorp__default_binary_map.atlas-upload-cli = atlas-upload
+hashicorp__default_binary_map.docker-base[0] = bin/dumb-init
+hashicorp__default_binary_map.docker-base[1] = bin/gosu
+hashicorp__combined_binary_map = {{ hashicorp__default_binary_map
+                                    | combine(hashicorp__binary_map) }} 
+hashicorp__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                    + "/" + hashicorp__user + "/" +
+                     (hashicorp__base_url.split("://") | last | split("/") | first) }}
+
+hashicorp__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
+                    + "/" + hashicorp__user }} 
+hashicorp__bin = {{ ansible_local.fhs.bin | d("/usr/local/bin") }}
+hashicorp__base_url = https://releases.hashicorp.com/
+hashicorp__platform = {{ ansible_system | lower }}
+hashicorp__architecture = {{ ansible_architecture }}
+hashicorp__architecture_map.x86_64 = amd64
+hashicorp__architecture_map.i386 = 386
+hashicorp__architecture_map.armhf = arm
+hashicorp__tar_suffix = {{ hashicorp__platform + "_"
+                           + hashicorp__architecture_map[hashicorp__architecture]
+                           + ".zip" }}
+
+hashicorp__hash_suffix = SHA256SUMS
+hashicorp__sig_suffix = {{ hashicorp__hash_suffix + ".sig" }}
+hashicorp__consul_webui = {{ ansible_local.hashicorp.consul_webui | d(False) | bool }}
+hashicorp__consul_webui_suffix = web_ui.zip
+hashicorp__consul_webui_path = {{ ansible_local.nginx.www | d("/srv/www") + "/consul/sites/public" }}
+hashicorp__keyring__dependent_gpg_keys[0].user = {{ hashicorp__user }}
+hashicorp__keyring__dependent_gpg_keys[0].group = {{ hashicorp__group }}
+hashicorp__keyring__dependent_gpg_keys[0].home = {{ hashicorp__home }}
+hashicorp__keyring__dependent_gpg_keys[0].id = {{ hashicorp__gpg_key_id }}
+hashicorp__keyring__dependent_gpg_keys[0].state = {{ "present"
+               if (hashicorp__applications or hashicorp__dependent_applications)
+               else "absent" }}
+
+hashicorp__keyring__dependent_gpg_keys[1].user = {{ hashicorp__user }}
+hashicorp__keyring__dependent_gpg_keys[1].id = 91A6 E7F8 5D05 C656 30BE F189 5185 2D87 348F FC4C
+hashicorp__keyring__dependent_gpg_keys[1].state = absent

@@ -1,0 +1,58 @@
+[0].name = Calico | Set label for groups nodes
+[0].command = {{ bin_dir }}/calicoctl.sh label node  {{ inventory_hostname }} calico-group-id={{ calico_group_id }} --overwrite
+[0].changed_when = false
+[0].register = calico_group_id_label
+[0].until = calico_group_id_label is succeeded
+[0].delay = {{ retry_stagger | random + 3 }}
+[0].retries = 10
+[0].when[0] = calico_group_id is defined
+[1].name = Calico | Configure peering with route reflectors at global scope
+[1].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[1].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[1].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "BGPPeer", "metadata": {
+  "name": "{{ calico_rr_id }}-to-node"
+}, "spec": {
+  "peerSelector": "calico-rr-id == '{{ calico_rr_id }}'",
+  "nodeSelector": "calico-group-id == '{{ calico_group_id }}'"
+}}
+
+[1].register = output
+[1].retries = 4
+[1].until = output.rc == 0
+[1].delay = {{ retry_stagger | random + 3 }}
+[1].when[0] = calico_rr_id is defined
+[1].when[1] = calico_group_id is defined
+[1].when[2] = ('calico_rr' in group_names)
+[2].name = Calico | Configure peering with route reflectors at global scope
+[2].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[2].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[2].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "BGPPeer", "metadata": {
+  "name": "peer-to-rrs"
+}, "spec": {
+  "nodeSelector": "!has(i-am-a-route-reflector)",
+  "peerSelector": "has(i-am-a-route-reflector)"
+}}
+
+[2].register = output
+[2].retries = 4
+[2].until = output.rc == 0
+[2].delay = {{ retry_stagger | random + 3 }}
+[2].with_items[0] = {{ groups['calico_rr'] | default([]) }}
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[2].when[1] = calico_rr_id is not defined or calico_group_id is not defined
+[3].name = Calico | Configure route reflectors to peer with each other
+[3].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[3].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[3].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "BGPPeer", "metadata": {
+  "name": "rr-mesh"
+}, "spec": {
+  "nodeSelector": "has(i-am-a-route-reflector)",
+  "peerSelector": "has(i-am-a-route-reflector)"
+}}
+
+[3].register = output
+[3].retries = 4
+[3].until = output.rc == 0
+[3].delay = {{ retry_stagger | random + 3 }}
+[3].with_items[0] = {{ groups['calico_rr'] | default([]) }}
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]

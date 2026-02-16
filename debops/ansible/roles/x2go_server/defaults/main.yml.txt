@@ -1,0 +1,15 @@
+x2go_server__base_packages[0] = {{ ["x2go-keyring"] if (ansible_distribution in ["Debian"]) else [] }}
+x2go_server__base_packages[1] = x2goserver
+x2go_server__base_packages[2] = x2goserver-xsession
+x2go_server__deploy_state = present
+x2go_server__apt_repo_key_fingerprint = 972FD88FA0BAFB578D0476DFE1F958385BFE2B6E
+x2go_server__upstream_release_channel = main
+x2go_server__upstream_mirror_url = http://packages.x2go.org/{{ ansible_distribution | lower }}/
+x2go_server__upstream_repository_map.Ubuntu = ppa:x2go/{{ x2go_server__ppa_release_channel_map[x2go_server__upstream_release_channel] }}
+x2go_server__upstream_repository_map.Linuxmint = ppa:x2go/{{ x2go_server__ppa_release_channel_map[x2go_server__upstream_release_channel] }}
+x2go_server__upstream_repository_map.default = deb {{ x2go_server__upstream_mirror_url }} {{ ansible_distribution_release }} {{ x2go_server__upstream_release_channel }}
+x2go_server__ppa_release_channel_map.main = stable
+x2go_server__keyring__dependent_apt_keys[0].id = {{ x2go_server__apt_repo_key_fingerprint }}
+x2go_server__keyring__dependent_apt_keys[0].repo = {{ x2go_server__upstream_repository_map[ansible_distribution]
+              | d(x2go_server__upstream_repository_map["default"]) }} 
+x2go_server__keyring__dependent_apt_keys[0].state = {{ "present" if (x2go_server__deploy_state == "present") else "absent" }}

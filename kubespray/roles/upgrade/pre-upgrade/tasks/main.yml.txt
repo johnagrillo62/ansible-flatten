@@ -1,0 +1,56 @@
+[0].name = Confirm node upgrade
+[0].pause.echo = true
+[0].pause.prompt = Ready to upgrade node {{ kube_override_hostname | default(inventory_hostname) }}? (Press Enter to continue or Ctrl+C for other options)
+[0].when[0] = upgrade_node_confirm
+[1].name = Wait before upgrade node
+[1].pause.seconds = {{ upgrade_node_pause_seconds }}
+[1].when[0] = not upgrade_node_confirm
+[1].when[1] = upgrade_node_pause_seconds != 0
+[2].name = See if node is in ready state
+[2].command = {{ kubectl }} get node {{ kube_override_hostname | default(inventory_hostname) }} -o jsonpath='{ range .status.conditions[?(@.type == "Ready")].status }{ @ }{ end }'
+
+[2].register = kubectl_node_ready
+[2].delegate_to = {{ groups['kube_control_plane'][0] }}
+[2].failed_when = false
+[2].changed_when = false
+[3].name = See if node is schedulable
+[3].command = {{ kubectl }} get node {{ kube_override_hostname | default(inventory_hostname) }} -o jsonpath='{ .spec.unschedulable }'
+
+[3].register = kubectl_node_unschedulable
+[3].delegate_to = {{ groups['kube_control_plane'][0] }}
+[3].failed_when = false
+[3].changed_when = false
+[4].name = Set if node needs cordoning
+[4].set_fact.needs_cordoning = {{ (kubectl_node_ready.stdout == 'True' and not kubectl_node_unschedulable.stdout) or upgrade_node_always_cordon }}
+[5].name = Node draining
+[5].delegate_to = {{ groups['kube_control_plane'][0] }}
+[5].when[0] = needs_cordoning
+[5].block[0].name = Cordon node
+[5].block[0].command = {{ kubectl }} cordon {{ kube_override_hostname | default(inventory_hostname) }}
+[5].block[0].delegate_to = {{ groups['kube_control_plane'][0] }}
+[5].block[0].changed_when = true
+[5].block[1].name = Drain node
+[5].block[1].command = {{ kubectl }} drain --force --ignore-daemonsets --grace-period {{ drain_grace_period }} --timeout {{ drain_timeout }} --delete-emptydir-data {{ kube_override_hostname | default(inventory_hostname) }} {% if drain_pod_selector %}--pod-selector '{{ drain_pod_selector }}'{% endif %}
+[5].block[1].when = drain_nodes
+[5].block[1].register = result
+[5].block[1].failed_when[0] = result.rc != 0
+[5].block[1].failed_when[1] = not drain_fallback_enabled
+[5].block[1].until = result.rc == 0
+[5].block[1].retries = {{ drain_retries }}
+[5].block[1].delay = {{ drain_retry_delay_seconds }}
+[5].block[2].name = Drain node - fallback with disabled eviction
+[5].block[2].when[0] = drain_nodes
+[5].block[2].when[1] = drain_fallback_enabled
+[5].block[2].when[2] = result.rc != 0
+[5].block[2].command = {{ kubectl }} drain --force --ignore-daemonsets --grace-period {{ drain_fallback_grace_period }} --timeout {{ drain_fallback_timeout }} --delete-emptydir-data {{ kube_override_hostname | default(inventory_hostname) }} {% if drain_pod_selector %}--pod-selector '{{ drain_pod_selector }}'{% endif %} --disable-eviction
+[5].block[2].register = drain_fallback_result
+[5].block[2].until = drain_fallback_result.rc == 0
+[5].block[2].retries = {{ drain_fallback_retries }}
+[5].block[2].delay = {{ drain_fallback_retry_delay_seconds }}
+[5].block[2].changed_when = drain_fallback_result.rc == 0
+[5].rescue[0].name = Set node back to schedulable
+[5].rescue[0].command = {{ kubectl }} uncordon {{ kube_override_hostname | default(inventory_hostname) }}
+[5].rescue[0].when = upgrade_node_uncordon_after_drain_failure
+[5].rescue[1].name = Fail after rescue
+[5].rescue[1].fail.msg = Failed to drain node {{ kube_override_hostname | default(inventory_hostname) }}
+[5].rescue[1].when = upgrade_node_fail_if_drain_fails

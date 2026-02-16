@@ -1,0 +1,4 @@
+[0].name = Restart Home Assistant
+[0]["ansible.builtin.systemd"].name = home-assistant
+[0]["ansible.builtin.systemd"].state = restarted
+[0].when = (ansible_distribution_release not in ["trusty"])

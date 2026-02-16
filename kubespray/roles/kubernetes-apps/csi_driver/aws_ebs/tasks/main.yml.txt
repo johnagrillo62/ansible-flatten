@@ -1,0 +1,21 @@
+~d0.name = AWS CSI Driver | Generate Manifests
+~d1.template = 
+~d2.src = "{{ item.file }}.j2"
+~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
+~d2.mode = "0644"
+~d1.with_items = 
+~d2.{name = aws-ebs-csi-driver, file: aws-ebs-csi-driver.yml}
+~d2.{name = aws-ebs-csi-controllerservice, file: aws-ebs-csi-controllerservice-rbac.yml}
+~d2.{name = aws-ebs-csi-controllerservice, file: aws-ebs-csi-controllerservice.yml}
+~d2.{name = aws-ebs-csi-nodeservice, file: aws-ebs-csi-nodeservice.yml}
+~d1.register = aws_csi_manifests
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = AWS CSI Driver | Apply Manifests
+~d1.kube = 
+~d2.kubectl = "{{ bin_dir }}/kubectl"
+~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
+~d2.state = "latest"
+~d1.with_items = 
+~d1.when = 
+~d1.loop_control = 
+~d2.label = "{{ item.item.file }}"

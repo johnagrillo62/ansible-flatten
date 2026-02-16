@@ -1,0 +1,2 @@
+restrict_az_provisioning = false
+aws_ebs_availability_zones[0] = eu-west-3c

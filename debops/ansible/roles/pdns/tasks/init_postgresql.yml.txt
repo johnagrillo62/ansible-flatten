@@ -1,0 +1,13 @@
+[0].name = Create PostgreSQL database
+[0]["community.postgresql.postgresql_db"].name = {{ pdns__postgresql_database }}
+[0]["community.postgresql.postgresql_db"].owner = {{ pdns__postgresql_role }}
+[0]["community.postgresql.postgresql_db"].state = present
+[0].delegate_to = {{ pdns__postgresql_delegate_to }}
+[0].register = pdns__register_postgresql_status
+[1].name = Import initial database schema
+[1]["community.postgresql.postgresql_db"].login_user = {{ pdns__postgresql_role }}
+[1]["community.postgresql.postgresql_db"].login_password = {{ pdns__postgresql_password }}
+[1]["community.postgresql.postgresql_db"].name = {{ pdns__postgresql_database }}
+[1]["community.postgresql.postgresql_db"].target = {{ pdns__postgresql_schema }}
+[1]["community.postgresql.postgresql_db"].state = restore
+[1].when = pdns__register_postgresql_status is changed

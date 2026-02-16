@@ -1,0 +1,229 @@
+dokuwiki__fqdn = wiki.{{ ansible_domain }}
+dokuwiki__domains = {{ [dokuwiki__fqdn] +
+                       dokuwiki__farm_animals | d([]) }} 
+dokuwiki__nginx_auth_realm = Wiki access is restricted
+dokuwiki__nginx_access_policy = 
+dokuwiki__nginx_filename = debops.dokuwiki
+dokuwiki__user = dokuwiki
+dokuwiki__group = dokuwiki
+dokuwiki__home = {{ ansible_local.nginx.www | d("/srv/www") + "/" + dokuwiki__user }}
+dokuwiki__shell = /bin/false
+dokuwiki__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                   + "/" + dokuwiki__user }} 
+dokuwiki__www = {{ ansible_local.nginx.www | d("/srv/www") + "/" + dokuwiki__user }}
+dokuwiki__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
+dokuwiki__git_repo = https://github.com/splitbrain/dokuwiki.git
+dokuwiki__git_dest = {{ dokuwiki__src + "/" + dokuwiki__git_repo.split("://")[1] }}
+dokuwiki__git_version = stable
+dokuwiki__git_checkout = {{ dokuwiki__www + "/sites/" + dokuwiki__domains[0] + "/public" }}
+dokuwiki__ldap_enabled = {{ True
+                            if (ansible_local | d() and ansible_local.ldap | d() and
+                                (ansible_local.ldap.enabled | d()) | bool)
+                            else False }}
+
+dokuwiki__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+dokuwiki__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+dokuwiki__ldap_self_rdn = uid=dokuwiki
+dokuwiki__ldap_self_object_classes[0] = account
+dokuwiki__ldap_self_object_classes[1] = simpleSecurityObject
+dokuwiki__ldap_self_attributes.uid = {{ dokuwiki__ldap_self_rdn.split("=")[1] }}
+dokuwiki__ldap_self_attributes.userPassword = {{ dokuwiki__ldap_bindpw }}
+dokuwiki__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+dokuwiki__ldap_self_attributes.description = Account used by the "DokuWiki" service to access the LDAP directory
+dokuwiki__ldap_binddn = {{ ([dokuwiki__ldap_self_rdn] + dokuwiki__ldap_device_dn) | join(",") }}
+dokuwiki__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                   + dokuwiki__ldap_binddn | to_uuid + ".password length=32"))
+                           if dokuwiki__ldap_enabled | bool
+                           else "" }}
+
+dokuwiki__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
+dokuwiki__ldap_people_dn = {{ [dokuwiki__ldap_people_rdn] + dokuwiki__ldap_base_dn }}
+dokuwiki__ldap_private_groups = True
+dokuwiki__ldap_groups_rdn = {{ ansible_local.ldap.groups_rdn | d("ou=Groups") }}
+dokuwiki__ldap_groups_dn = {{ ([dokuwiki__ldap_groups_rdn, dokuwiki__ldap_self_rdn]
+                               + dokuwiki__ldap_device_dn)
+                              if dokuwiki__ldap_private_groups | bool
+                              else ([dokuwiki__ldap_groups_rdn] + dokuwiki__ldap_base_dn) }}
+
+dokuwiki__ldap_admin_group_rdn = cn=DokuWiki Administrators
+dokuwiki__ldap_admin_group_dn = {{ [dokuwiki__ldap_admin_group_rdn]
+                                   + dokuwiki__ldap_groups_dn }} 
+dokuwiki__ldap_object_owner_rdn = uid={{ lookup("env", "USER") }}
+dokuwiki__ldap_object_ownerdn = {{ ([dokuwiki__ldap_object_owner_rdn, dokuwiki__ldap_people_rdn]
+                                    + dokuwiki__ldap_base_dn) | join(",") }} 
+dokuwiki__ldap_server_uri = {{ ansible_local.ldap.uri | d([""]) | first }}
+dokuwiki__ldap_server_port = {{ ansible_local.ldap.port | d("389" if dokuwiki__ldap_start_tls | bool else "636") }}
+dokuwiki__ldap_start_tls = {{ ansible_local.ldap.start_tls
+                              if (ansible_local | d() and ansible_local.ldap | d() and
+                                  (ansible_local.ldap.start_tls | d()) | bool)
+                              else True }}
+
+dokuwiki__ldap_user_filter = (& (objectClass=inetOrgPerson) (| (uid=%{user}) (mail=%{user}) ) (| (authorizedService=all) (authorizedService=dokuwiki) (authorizedService=web:public) ) )
+dokuwiki__ldap_group_filter = (& (objectClass=groupOfNames) (member=%{dn}) )
+dokuwiki__ldap_configuration = $conf['useacl'] = 1;
+$conf['authtype'] = 'authldap';
+$conf['superuser'] = '{{ "@" + dokuwiki__ldap_admin_group_rdn.split("=")[1] }}';
+$conf['plugin']['authldap']['server'] = '{{ dokuwiki__ldap_server_uri }}';
+$conf['plugin']['authldap']['port'] = '{{ dokuwiki__ldap_server_port }}';
+$conf['plugin']['authldap']['usertree'] = '{{ dokuwiki__ldap_people_dn | join(",") }}';
+$conf['plugin']['authldap']['grouptree'] = '{{ dokuwiki__ldap_groups_dn | join(",") }}';
+$conf['plugin']['authldap']['userfilter'] = '{{ dokuwiki__ldap_user_filter }}';
+$conf['plugin']['authldap']['groupfilter'] = '{{ dokuwiki__ldap_group_filter }}';
+$conf['plugin']['authldap']['version'] = 3;
+$conf['plugin']['authldap']['starttls'] = {{ "1" if dokuwiki__ldap_start_tls | bool else "0" }};
+$conf['plugin']['authldap']['referrals'] = '0';
+$conf['plugin']['authldap']['deref'] = '0';
+$conf['plugin']['authldap']['binddn'] = '{{ dokuwiki__ldap_binddn }}';
+$conf['plugin']['authldap']['bindpw'] = '{{ dokuwiki__ldap_bindpw }}';
+$conf['plugin']['authldap']['userscope'] = 'sub';
+$conf['plugin']['authldap']['groupscope'] = 'sub';
+$conf['plugin']['authldap']['userkey'] = 'uid';
+$conf['plugin']['authldap']['groupkey'] = 'cn';
+$conf['plugin']['authldap']['debug'] = 0;
+$conf['plugin']['authldap']['modPass'] = 0;
+
+dokuwiki__protected_conf_php = {% if dokuwiki__ldap_enabled | bool %}
+{{ dokuwiki__ldap_configuration }}
+{% endif %}
+
+dokuwiki__protected_plugins_php = {% if dokuwiki__ldap_enabled | bool %}
+$plugins['authldap'] = 1;
+{% endif %}
+
+dokuwiki__local_mime_types_conf = # Extra allowed MIME Types
+txt     text/plain
+tex     text/plain
+conf    text/plain
+xml     text/xml
+csv     text/csv
+svg     image/svg+xml
+epub    application/epub+zip
+
+dokuwiki__base_packages[0] = curl
+dokuwiki__plugins_enabled = True
+dokuwiki__default_plugins = {{ dokuwiki__plugins_editor +
+                               dokuwiki__plugins_syntax +
+                               dokuwiki__plugins_git }}
+
+dokuwiki__plugins_editor[0].repo = https://github.com/cosmocode/edittable.git
+dokuwiki__plugins_editor[0].dest = edittable
+dokuwiki__plugins_editor[1].repo = https://gitlab.com/albertgasset/dokuwiki-plugin-codemirror.git
+dokuwiki__plugins_editor[1].dest = codemirror
+dokuwiki__plugins_syntax[0].repo = https://github.com/cosmocode/dig.git
+dokuwiki__plugins_syntax[0].dest = dig
+dokuwiki__plugins_syntax[1].repo = https://github.com/grantemsley/dokuwiki-plugin-patchpanel.git
+dokuwiki__plugins_syntax[1].dest = patchpanel
+dokuwiki__plugins_syntax[1].state = absent
+dokuwiki__plugins_syntax[2].repo = https://github.com/GreenItSolutions/dokuwiki-plugin-switchpanel.git
+dokuwiki__plugins_syntax[2].dest = switchpanel
+dokuwiki__plugins_syntax[3].repo = https://github.com/ashrafhasson/dokuwiki-plugin-advrack.git
+dokuwiki__plugins_syntax[3].dest = advrack
+dokuwiki__plugins_syntax[3].state = absent
+dokuwiki__plugins_syntax[4].repo = https://github.com/glensc/dokuwiki-plugin-pageredirect.git
+dokuwiki__plugins_syntax[4].dest = pageredirect
+dokuwiki__plugins_syntax[5].repo = https://github.com/selfthinker/dokuwiki_plugin_wrap
+dokuwiki__plugins_syntax[5].dest = wrap
+dokuwiki__plugins_syntax[6].repo = https://github.com/splitbrain/dokuwiki-plugin-graphviz.git
+dokuwiki__plugins_syntax[6].dest = graphviz
+dokuwiki__plugins_syntax[7].repo = https://github.com/leibler/dokuwiki-plugin-todo.git
+dokuwiki__plugins_syntax[7].dest = todo
+dokuwiki__plugins_syntax[8].repo = https://github.com/splitbrain/dokuwiki-plugin-gallery
+dokuwiki__plugins_syntax[8].dest = gallery
+dokuwiki__plugins_syntax[9].repo = https://github.com/dokufreaks/plugin-tag
+dokuwiki__plugins_syntax[9].dest = tag
+dokuwiki__plugins_syntax[10].repo = https://github.com/dokufreaks/plugin-pagelist
+dokuwiki__plugins_syntax[10].dest = pagelist
+dokuwiki__plugins_syntax[11].repo = https://github.com/tgarc/dokuwiki-plugin-rst
+dokuwiki__plugins_syntax[11].dest = rst
+dokuwiki__plugins_syntax[11].state = absent
+dokuwiki__plugins_git[0].repo = https://github.com/kossmac/dokuwiki-plugin-gitlab
+dokuwiki__plugins_git[0].dest = gitlab
+dokuwiki__plugins_git[0].state = absent
+dokuwiki__plugins_git[1].repo = https://github.com/ZJ/ghissues.git
+dokuwiki__plugins_git[1].dest = ghissues
+dokuwiki__plugins_git[1].state = absent
+dokuwiki__plugins_git[2].repo = https://github.com/splitbrain/dokuwiki-plugin-gh.git
+dokuwiki__plugins_git[2].dest = gh
+dokuwiki__default_templates = {{ dokuwiki__templates_vector }}
+dokuwiki__templates_vector[0].repo = https://github.com/arsava/dokuwiki-template-vector
+dokuwiki__templates_vector[0].dest = vector
+dokuwiki__farm = True
+dokuwiki__farm_path = {{ dokuwiki__www + "/farm" }}
+dokuwiki__max_file_size = 30
+dokuwiki__python__dependent_packages3[0] = python3-docutils
+dokuwiki__python__dependent_packages2[0] = python-docutils
+dokuwiki__ldap__dependent_tasks[0].name = Create DokuWiki account for {{ dokuwiki__ldap_device_dn | join(",") }}
+dokuwiki__ldap__dependent_tasks[0].dn = {{ dokuwiki__ldap_binddn }}
+dokuwiki__ldap__dependent_tasks[0].objectClass = {{ dokuwiki__ldap_self_object_classes }}
+dokuwiki__ldap__dependent_tasks[0].attributes = {{ dokuwiki__ldap_self_attributes }}
+dokuwiki__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+dokuwiki__ldap__dependent_tasks[0].state = {{ "present" if dokuwiki__ldap_device_dn | d() else "ignore" }}
+dokuwiki__ldap__dependent_tasks[1].name = Create DokuWiki group container for {{ dokuwiki__ldap_device_dn | join(",") }}
+dokuwiki__ldap__dependent_tasks[1].dn = {{ dokuwiki__ldap_groups_dn }}
+dokuwiki__ldap__dependent_tasks[1].objectClass = organizationalStructure
+dokuwiki__ldap__dependent_tasks[1].attributes.ou = {{ dokuwiki__ldap_groups_rdn.split("=")[1] }}
+dokuwiki__ldap__dependent_tasks[1].attributes.description = User groups used in DokuWiki
+dokuwiki__ldap__dependent_tasks[1].state = {{ "present"
+               if (dokuwiki__ldap_device_dn | d() and
+                   dokuwiki__ldap_private_groups | bool)
+               else "ignore" }}
+
+dokuwiki__ldap__dependent_tasks[2].name = Create DokuWiki admin group for {{ dokuwiki__ldap_device_dn | join(",") }}
+dokuwiki__ldap__dependent_tasks[2].dn = {{ dokuwiki__ldap_admin_group_dn }}
+dokuwiki__ldap__dependent_tasks[2].objectClass = groupOfNames
+dokuwiki__ldap__dependent_tasks[2].attributes.cn = {{ dokuwiki__ldap_admin_group_rdn.split("=")[1] }}
+dokuwiki__ldap__dependent_tasks[2].attributes.owner = {{ dokuwiki__ldap_object_ownerdn }}
+dokuwiki__ldap__dependent_tasks[2].attributes.member = {{ dokuwiki__ldap_object_ownerdn }}
+dokuwiki__ldap__dependent_tasks[2].state = {{ "present" if dokuwiki__ldap_device_dn | d() else "ignore" }}
+dokuwiki__php__dependent_packages[0][0] = gmp
+dokuwiki__php__dependent_packages[0][1] = curl
+dokuwiki__php__dependent_packages[0][2] = ldap
+dokuwiki__php__dependent_packages[0][3] = xml
+dokuwiki__php__dependent_pools[0].name = dokuwiki
+dokuwiki__php__dependent_pools[0].user = {{ dokuwiki__user }}
+dokuwiki__php__dependent_pools[0].group = {{ dokuwiki__group }}
+dokuwiki__php__dependent_pools[0].owner = {{ dokuwiki__user }}
+dokuwiki__php__dependent_pools[0].home = {{ dokuwiki__home }}
+dokuwiki__php__dependent_pools[0].php_admin_values.post_max_size = {{ dokuwiki__max_file_size }}M
+dokuwiki__php__dependent_pools[0].php_admin_values.upload_max_filesize = {{ dokuwiki__max_file_size }}M
+dokuwiki__nginx__dependent_upstreams[0].name = php_dokuwiki
+dokuwiki__nginx__dependent_upstreams[0].type = php
+dokuwiki__nginx__dependent_upstreams[0].php_pool = dokuwiki
+dokuwiki__nginx__dependent_servers[0].name = {{ dokuwiki__domains }}
+dokuwiki__nginx__dependent_servers[0].filename = {{ dokuwiki__nginx_filename }}
+dokuwiki__nginx__dependent_servers[0].by_role = debops.dokuwiki
+dokuwiki__nginx__dependent_servers[0].type = php
+dokuwiki__nginx__dependent_servers[0].root = {{ dokuwiki__git_checkout }}
+dokuwiki__nginx__dependent_servers[0].webroot_create = False
+dokuwiki__nginx__dependent_servers[0].access_policy = {{ dokuwiki__nginx_access_policy }}
+dokuwiki__nginx__dependent_servers[0].auth_basic_realm = {{ dokuwiki__nginx_auth_realm }}
+dokuwiki__nginx__dependent_servers[0].index = index.html index.htm index.php doku.php
+dokuwiki__nginx__dependent_servers[0].options = autoindex off;
+client_max_body_size {{ dokuwiki__max_file_size }}M;
+client_body_buffer_size 128k;
+
+dokuwiki__nginx__dependent_servers[0].location./ = try_files $uri $uri/ @dokuwiki;
+
+dokuwiki__nginx__dependent_servers[0].location.@dokuwiki = rewrite ^/_media/(.*)           /lib/exe/fetch.php?media=$1   last;
+rewrite ^/_detail/(.*)          /lib/exe/detail.php?media=$1  last;
+rewrite ^/_export/([^/]+)/(.*)  /doku.php?do=export_$1&id=$2  last;
+rewrite ^/(.*)                  /doku.php?id=$1               last;
+
+dokuwiki__nginx__dependent_servers[0].location["~ ^/lib.*\.(gif|png|ico|jpg)$"] = expires 31536000s;
+add_header Pragma "public";
+add_header Cache-Control "max-age=31536000, public, must-revalidate, proxy-revalidate";
+log_not_found off;
+
+dokuwiki__nginx__dependent_servers[0].location["~ /(data|conf|bin|inc|install.php)/"] = deny all;
+
+dokuwiki__nginx__dependent_servers[0].php_upstream = php_dokuwiki
+dokuwiki__nginx__dependent_servers[0].php_options = fastcgi_intercept_errors        on;
+fastcgi_ignore_client_abort     off;
+fastcgi_connect_timeout         60;
+fastcgi_send_timeout            180;
+fastcgi_read_timeout            180;
+fastcgi_buffer_size             128k;
+fastcgi_buffers               4 256k;
+fastcgi_busy_buffers_size       256k;
+fastcgi_temp_file_write_size    256k;
+

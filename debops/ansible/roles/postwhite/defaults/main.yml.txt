@@ -1,0 +1,45 @@
+postwhite__base_packages[0] = curl
+postwhite__user = postwhite
+postwhite__group = postwhite
+postwhite__shell = /usr/sbin/nologin
+postwhite__gecos = Postscreen SPF Whitelist
+postwhite__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                     + "/" + postwhite__user }} 
+postwhite__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                    + "/" + postwhite__user }} 
+postwhite__spftools_git_repo = https://github.com/jsarenik/spf-tools
+postwhite__spftools_git_version = master
+postwhite__spftools_git_dest = {{ postwhite__src + "/"
+                                  + postwhite__spftools_git_repo.split("://")[1] }} 
+postwhite__git_repo = https://github.com/stevejenkins/postwhite
+postwhite__git_version = master
+postwhite__git_dest = {{ postwhite__src + "/"
+                         + postwhite__git_repo.split("://")[1] }} 
+postwhite__software_stack[0].git_repo = {{ postwhite__spftools_git_repo }}
+postwhite__software_stack[0].git_dest = {{ postwhite__spftools_git_dest }}
+postwhite__software_stack[0].git_version = {{ postwhite__spftools_git_version }}
+postwhite__software_stack[1].git_repo = {{ postwhite__git_repo }}
+postwhite__software_stack[1].git_dest = {{ postwhite__git_dest }}
+postwhite__software_stack[1].git_version = {{ postwhite__git_version }}
+postwhite__spf_whitelist_path = {{ postwhite__home + "/postscreen_spf_whitelist.cidr" }}
+postwhite__spf_blacklist_path = {{ postwhite__home + "/postscreen_spf_blacklist.cidr" }}
+postwhite__include_yahoo = True
+postwhite__blacklist = {{ True if postwhite__blacklist_hosts | d() else False }}
+postwhite__invalid_ipv4 = remove
+postwhite__simplify = False
+postwhite__reload_postfix = False
+postwhite__cron_whitelist_update_frequency = daily
+postwhite__cron_yahoo_update_frequency = weekly
+postwhite__initial_update_method = {{ "batch"
+                                     if (ansible_local | d() and ansible_local.atd | d() and
+                                         (ansible_local.atd.enabled | d()) | bool)
+                                     else "async" }}
+
+postwhite__postfix__dependent_maincf[0].name = postscreen_access_list
+postwhite__postfix__dependent_maincf[0].state = append
+postwhite__postfix__dependent_maincf[0].value[0].name = cidr:{{ postwhite__spf_whitelist_path }}
+postwhite__postfix__dependent_maincf[0].value[0].state = present
+postwhite__postfix__dependent_maincf[0].value[0].weight = 100
+postwhite__postfix__dependent_maincf[0].value[1].name = cidr:{{ postwhite__spf_blacklist_path }}
+postwhite__postfix__dependent_maincf[0].value[1].weight = 110
+postwhite__postfix__dependent_maincf[0].value[1].state = {{ "present" if postwhite__blacklist | bool else "ignore" }}

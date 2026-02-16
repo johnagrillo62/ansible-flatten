@@ -1,0 +1,1 @@
+[0].import_playbook = ../first-ansible-playbook/playbook.yml

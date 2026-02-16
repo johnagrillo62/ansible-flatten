@@ -1,0 +1,50 @@
+[0].name = Create temporary resolveconf cloud init file
+[0].command = cp -f /etc/resolv.conf "{{ resolvconffile }}"
+[0].when = ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]
+[1].name = Add domain/search/nameservers/options to resolv.conf
+[1].blockinfile.path = {{ resolvconffile }}
+[1].blockinfile.block = domain {{ dns_domain }}
+search {{ (default_searchdomains + searchdomains) | join(' ') }}
+{% for item in nameserverentries %}
+nameserver {{ item }}
+{% endfor %}
+options ndots:{{ ndots }} timeout:{{ dns_timeout | default('2') }} attempts:{{ dns_attempts | default('2') }}
+[1].blockinfile.state = present
+[1].blockinfile.insertbefore = BOF
+[1].blockinfile.create = true
+[1].blockinfile.backup = {{ not resolvconf_stat.stat.islnk }}
+[1].blockinfile.marker = # Ansible entries {mark}
+[1].blockinfile.mode = 0644
+[1].notify = Preinstall | propagate resolvconf to k8s components
+[2].name = Remove search/domain/nameserver options before block
+[2].replace.path = {{ item[0] }}
+[2].replace.regexp = ^{{ item[1] }}[^#]*(?=# Ansible entries BEGIN)
+[2].replace.backup = {{ not resolvconf_stat.stat.islnk }}
+[2].with_nested[0] = {{ [resolvconffile, base | default(''), head | default('')] | difference(['']) }}
+[2].with_nested[1][0] = search\s
+[2].with_nested[1][1] = nameserver\s
+[2].with_nested[1][2] = domain\s
+[2].with_nested[1][3] = options\s
+[2].notify = Preinstall | propagate resolvconf to k8s components
+[3].name = Remove search/domain/nameserver options after block
+[3].replace.path = {{ item[0] }}
+[3].replace.regexp = (# Ansible entries END\n(?:(?!^{{ item[1] }}).*\n)*)(?:^{{ item[1] }}.*\n?)+
+[3].replace.replace = \1
+[3].replace.backup = {{ not resolvconf_stat.stat.islnk }}
+[3].with_nested[0] = {{ [resolvconffile, base | default(''), head | default('')] | difference(['']) }}
+[3].with_nested[1][0] = search\s
+[3].with_nested[1][1] = nameserver\s
+[3].with_nested[1][2] = domain\s
+[3].with_nested[1][3] = options\s
+[3].notify = Preinstall | propagate resolvconf to k8s components
+[4].name = Get temporary resolveconf cloud init file content
+[4].command = cat {{ resolvconffile }}
+[4].register = cloud_config
+[4].when = ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]
+[5].name = Persist resolvconf cloud init file
+[5].template.dest = {{ resolveconf_cloud_init_conf }}
+[5].template.src = resolvconf.j2
+[5].template.owner = root
+[5].template.mode = 0644
+[5].notify = Preinstall | update resolvconf for Flatcar Container Linux by Kinvolk
+[5].when = ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]

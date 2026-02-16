@@ -1,0 +1,5 @@
+[0].hosts = all
+[0].tasks[0].name = Ensure apt cache is updated.
+[0].tasks[0].apt = update_cache=true cache_valid_time=600
+[1].import_playbook = ../https-self-signed/provisioning/main.yml
+[1].vars.firewall_enable_ipv6 = false

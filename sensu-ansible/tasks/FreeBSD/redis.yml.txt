@@ -1,0 +1,15 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = redis
+[1].name = Ensure redis is installed
+[1].tags = redis
+[1].pkgng.name = {{ sensu_redis_pkg_name }}
+[1].pkgng.state = {{ sensu_redis_pkg_state }}
+[2].name = Ensure redis binds to accessible IP
+[2].tags = redis
+[2].lineinfile.dest = /usr/local/etc/redis.conf
+[2].lineinfile.regexp = ^bind
+[2].lineinfile.line = bind 0.0.0.0
+[2].notify = restart redis service
+[3].meta = flush_handlers
+[3].tags = redis

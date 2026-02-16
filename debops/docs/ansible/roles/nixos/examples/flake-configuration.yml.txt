@@ -1,0 +1,6 @@
+~d0.nixos__configuration = 
+~d1.name = 'flake.nix'
+~d2.raw = |
+~d5.nixpkgs.url = "github = NixOS/nixpkgs/nixos-24.05";
+~d4.outputs = { self, nixpkgs, ... }@inputs = {
+~d2.state = 'present'

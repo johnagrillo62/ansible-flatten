@@ -1,0 +1,13 @@
+~d0.name = Configure iSCSI Initiator
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_iscsi' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = unattended_upgrades
+~d3.tags = [ 'role::unattended_upgrades', 'skip::unattended_upgrades' ]
+~d3.unattended_upgrades__dependent_blacklist = '{{ iscsi__unattended_upgrades__dependent_blacklist }}'
+~d2.role = lvm
+~d3.tags = [ 'role::lvm', 'skip::lvm' ]
+~d2.role = iscsi
+~d3.tags = [ 'role::iscsi', 'skip::iscsi' ]

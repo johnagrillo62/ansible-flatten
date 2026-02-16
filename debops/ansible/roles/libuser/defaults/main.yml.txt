@@ -1,0 +1,174 @@
+libuser__enabled = True
+libuser__base_packages[0] = libuser
+libuser__original_configuration[0].name = import
+libuser__original_configuration[0].options[0].name = login_defs
+libuser__original_configuration[0].options[0].comment = Data from these files is used when libuser.conf does not define a value.
+The mapping is documented in the man page.
+
+libuser__original_configuration[0].options[0].value = /etc/login.defs
+libuser__original_configuration[0].options[0].state = present
+libuser__original_configuration[0].options[1].name = default_useradd
+libuser__original_configuration[0].options[1].value = /etc/default/useradd
+libuser__original_configuration[0].options[1].state = present
+libuser__original_configuration[1].name = defaults
+libuser__original_configuration[1].options[0].name = moduledir
+libuser__original_configuration[1].options[0].comment = The default (/usr/lib*/libuser) is usually correct
+libuser__original_configuration[1].options[0].value = /your/custom/directory
+libuser__original_configuration[1].options[0].state = comment
+libuser__original_configuration[1].options[1].name = skeleton
+libuser__original_configuration[1].options[1].comment = The following variables are usually imported:
+libuser__original_configuration[1].options[1].value = /etc/skel
+libuser__original_configuration[1].options[1].state = comment
+libuser__original_configuration[1].options[1].separator = True
+libuser__original_configuration[1].options[2].name = mailspooldir
+libuser__original_configuration[1].options[2].value = /var/mail
+libuser__original_configuration[1].options[2].state = comment
+libuser__original_configuration[1].options[3].name = crypt_style
+libuser__original_configuration[1].options[3].value = sha512
+libuser__original_configuration[1].options[3].state = present
+libuser__original_configuration[1].options[3].separator = True
+libuser__original_configuration[1].options[4].name = modules
+libuser__original_configuration[1].options[4].value = files shadow
+libuser__original_configuration[1].options[4].state = present
+libuser__original_configuration[1].options[5].name = create_modules
+libuser__original_configuration[1].options[5].value = files shadow
+libuser__original_configuration[1].options[5].state = present
+libuser__original_configuration[1].options[6].name = modules_with_ldap
+libuser__original_configuration[1].options[6].option = modules
+libuser__original_configuration[1].options[6].value = files shadow ldap
+libuser__original_configuration[1].options[6].state = comment
+libuser__original_configuration[1].options[7].name = create_modules_with_ldap
+libuser__original_configuration[1].options[7].option = create_modules
+libuser__original_configuration[1].options[7].value = ldap
+libuser__original_configuration[1].options[7].state = comment
+libuser__original_configuration[2].name = userdefaults
+libuser__original_configuration[2].options[0].name = LU_USERNAME
+libuser__original_configuration[2].options[0].value = %n
+libuser__original_configuration[2].options[0].state = present
+libuser__original_configuration[2].options[1].name = LU_UIDNUMBER
+libuser__original_configuration[2].options[1].comment = This is better imported from /etc/login.defs:
+libuser__original_configuration[2].options[1].value = 500
+libuser__original_configuration[2].options[1].state = comment
+libuser__original_configuration[2].options[2].name = LU_GIDNUMBER
+libuser__original_configuration[2].options[2].value = %u
+libuser__original_configuration[2].options[2].state = present
+libuser__original_configuration[2].options[3].name = LU_USERPASSWORD
+libuser__original_configuration[2].options[3].value = !!
+libuser__original_configuration[2].options[3].state = comment
+libuser__original_configuration[2].options[4].name = LU_GECOS
+libuser__original_configuration[2].options[4].value = %n
+libuser__original_configuration[2].options[4].state = comment
+libuser__original_configuration[2].options[5].name = LU_HOMEDIRECTORY
+libuser__original_configuration[2].options[5].value = /home/%n
+libuser__original_configuration[2].options[5].state = comment
+libuser__original_configuration[2].options[6].name = LU_LOGINSHELL
+libuser__original_configuration[2].options[6].value = /bin/bash
+libuser__original_configuration[2].options[6].state = comment
+libuser__original_configuration[2].options[7].name = LU_SHADOWNAME
+libuser__original_configuration[2].options[7].value = %n
+libuser__original_configuration[2].options[7].state = comment
+libuser__original_configuration[2].options[7].separator = True
+libuser__original_configuration[2].options[8].name = LU_SHADOWPASSWORD
+libuser__original_configuration[2].options[8].value = !!
+libuser__original_configuration[2].options[8].state = comment
+libuser__original_configuration[2].options[9].name = LU_SHADOWLASTCHANGE
+libuser__original_configuration[2].options[9].value = %d
+libuser__original_configuration[2].options[9].state = comment
+libuser__original_configuration[2].options[10].name = LU_SHADOWMIN
+libuser__original_configuration[2].options[10].value = 0
+libuser__original_configuration[2].options[10].state = comment
+libuser__original_configuration[2].options[11].name = LU_SHADOWMAX
+libuser__original_configuration[2].options[11].value = 99999
+libuser__original_configuration[2].options[11].state = comment
+libuser__original_configuration[2].options[12].name = LU_SHADOWWARNING
+libuser__original_configuration[2].options[12].value = 7
+libuser__original_configuration[2].options[12].state = comment
+libuser__original_configuration[2].options[13].name = LU_SHADOWINACTIVE
+libuser__original_configuration[2].options[13].value = -1
+libuser__original_configuration[2].options[13].state = comment
+libuser__original_configuration[2].options[14].name = LU_SHADOWEXPIRE
+libuser__original_configuration[2].options[14].value = -1
+libuser__original_configuration[2].options[14].state = comment
+libuser__original_configuration[2].options[15].name = LU_SHADOWFLAG
+libuser__original_configuration[2].options[15].value = -1
+libuser__original_configuration[2].options[15].state = comment
+libuser__original_configuration[3].name = groupdefaults
+libuser__original_configuration[3].options[0].name = LU_GROUPNAME
+libuser__original_configuration[3].options[0].value = %n
+libuser__original_configuration[3].options[0].state = present
+libuser__original_configuration[3].options[1].name = LU_GIDNUMBER
+libuser__original_configuration[3].options[1].comment = This is better imported from /etc/login.defs:
+libuser__original_configuration[3].options[1].value = 500
+libuser__original_configuration[3].options[1].state = comment
+libuser__original_configuration[3].options[2].name = LU_GROUPPASSWORD
+libuser__original_configuration[3].options[2].value = !!
+libuser__original_configuration[3].options[2].state = comment
+libuser__original_configuration[3].options[2].separator = True
+libuser__original_configuration[3].options[3].name = LU_MEMBERUID
+libuser__original_configuration[3].options[3].state = comment
+libuser__original_configuration[3].options[4].name = LU_ADMINISTRATORUID
+libuser__original_configuration[3].options[4].state = comment
+libuser__original_configuration[4].name = files
+libuser__original_configuration[4].options[0].name = directory
+libuser__original_configuration[4].options[0].comment = This is useful for the case where some master files are used to
+populate a different NSS mechanism which this workstation uses.
+
+libuser__original_configuration[4].options[0].value = /etc
+libuser__original_configuration[4].options[0].state = comment
+libuser__original_configuration[5].name = shadow
+libuser__original_configuration[5].options[0].name = directory
+libuser__original_configuration[5].options[0].comment = This is useful for the case where some master files are used to
+populate a different NSS mechanism which this workstation uses.
+
+libuser__original_configuration[5].options[0].value = /etc
+libuser__original_configuration[5].options[0].state = comment
+libuser__original_configuration[6].name = ldap
+libuser__original_configuration[6].options[0].name = server
+libuser__original_configuration[6].options[0].comment = Setting these is always necessary.
+libuser__original_configuration[6].options[0].value = ldap
+libuser__original_configuration[6].options[0].state = comment
+libuser__original_configuration[6].options[1].name = basedn
+libuser__original_configuration[6].options[1].value = dc=example,dc=com
+libuser__original_configuration[6].options[1].state = comment
+libuser__original_configuration[6].options[2].name = userBranch
+libuser__original_configuration[6].options[2].comment = Setting these is rarely necessary, since it's usually correct.
+libuser__original_configuration[6].options[2].value = ou=People
+libuser__original_configuration[6].options[2].state = comment
+libuser__original_configuration[6].options[2].separator = True
+libuser__original_configuration[6].options[3].name = groupBranch
+libuser__original_configuration[6].options[3].value = ou=Group
+libuser__original_configuration[6].options[3].state = comment
+libuser__original_configuration[6].options[4].name = binddn
+libuser__original_configuration[6].options[4].comment = Set only if your administrative user uses simple bind operations to
+connect to the server.
+
+libuser__original_configuration[6].options[4].value = cn=Manager,dc=example,dc=com
+libuser__original_configuration[6].options[4].state = comment
+libuser__original_configuration[6].options[4].separator = True
+libuser__original_configuration[6].options[5].name = user
+libuser__original_configuration[6].options[5].comment = Set this only if the default user (as determined by SASL) is incorrect
+for SASL bind operations.  Usually, it's correct, so you'll rarely need
+to set these.
+
+libuser__original_configuration[6].options[5].value = Manager
+libuser__original_configuration[6].options[5].state = comment
+libuser__original_configuration[6].options[5].separator = True
+libuser__original_configuration[6].options[6].name = authuser
+libuser__original_configuration[6].options[6].value = Manager
+libuser__original_configuration[6].options[6].state = comment
+libuser__original_configuration[7].name = sasl
+libuser__original_configuration[7].options[0].name = appname
+libuser__original_configuration[7].options[0].comment = Set these only if your sasldb is only used by a particular application, and
+in a particular domain.  The default (all applications, all domains) is
+probably correct for most installations.
+
+libuser__original_configuration[7].options[0].value = imap
+libuser__original_configuration[7].options[0].state = comment
+libuser__original_configuration[7].options[1].name = domain
+libuser__original_configuration[7].options[1].value = EXAMPLE.COM
+libuser__original_configuration[7].options[1].state = comment
+libuser__combined_configuration = {{ libuser__original_configuration
+                                     + libuser__configuration
+                                     + libuser__group_configuration
+                                     + libuser__host_configuration }}
+

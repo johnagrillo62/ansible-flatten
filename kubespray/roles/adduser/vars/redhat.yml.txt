@@ -1,0 +1,13 @@
+~d0.addusers = 
+~d1.name = etcd
+~d2.comment = "Etcd user"
+~d2.create_home = true
+~d2.home = "{{ etcd_data_dir }}"
+~d2.system = true
+~d2.shell = /sbin/nologin
+~d1.name = kube
+~d2.comment = "Kubernetes user"
+~d2.create_home = false
+~d2.system = true
+~d2.shell = /sbin/nologin
+~d2.group = "{{ kube_cert_group }}"

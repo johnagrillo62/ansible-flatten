@@ -1,0 +1,4 @@
+[0].name = Debug host variables
+[0].hosts = all
+[0].tasks[0].name = Display all variables/facts known for a host
+[0].tasks[0]["ansible.builtin.debug"].var = hostvars[inventory_hostname]

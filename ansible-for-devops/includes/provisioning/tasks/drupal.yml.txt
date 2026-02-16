@@ -1,0 +1,20 @@
+[0].name = Check out Drupal Core to the Apache docroot.
+[0].git.repo = https://git.drupal.org/project/drupal.git
+[0].git.version = {{ drupal_core_version }}
+[0].git.dest = {{ drupal_core_path }}
+[0].register = git_checkout
+[1].name = Ensure Drupal codebase is owned by www-data.
+[1].file.path = {{ drupal_core_path }}
+[1].file.owner = www-data
+[1].file.group = www-data
+[1].file.recurse = true
+[1].when = git_checkout.changed | bool
+[2].name = Install Drupal dependencies with Composer.
+[2].command = /usr/local/bin/composer install chdir={{ drupal_core_path }} creates={{ drupal_core_path }}/vendor/autoload.php
+
+[2].become_user = www-data
+[3].name = Install Drupal.
+[3].command = drush si -y --site-name="{{ drupal_site_name }}" --account-name=admin --account-pass=admin --db-url=mysql://{{ domain }}:1234@localhost/{{ domain }} --root={{ drupal_core_path }} creates={{ drupal_core_path }}/sites/default/settings.php
+
+[3].notify = restart apache
+[3].become_user = www-data

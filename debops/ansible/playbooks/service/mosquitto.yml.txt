@@ -1,0 +1,4 @@
+~d0.name = Manage regular Mosquitto installation
+~d1.import_playbook = 'mosquitto-plain.yml'
+~d0.name = Manage Mosquitto service with nginx frontend
+~d1.import_playbook = 'mosquitto-nginx.yml'

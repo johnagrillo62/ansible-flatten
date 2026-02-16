@@ -1,0 +1,2 @@
+[0].import_tasks = openvpn.yml
+[0].tags = openvpn

@@ -1,0 +1,70 @@
+[0].name = Combine theme copy dictionaries
+[0]["ansible.builtin.set_fact"].owncloud__theme_copy_files_combined = {{
+                owncloud__theme_copy_files
+      | combine(owncloud__theme_copy_files_host_group)
+      | combine(owncloud__theme_copy_files_host) }}
+
+[0].tags[0] = role::owncloud:theme:copy
+[1].name = Ensure the theme directory is present
+[1]["ansible.builtin.file"].path = {{ owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name }}
+[1]["ansible.builtin.file"].state = directory
+[1]["ansible.builtin.file"].mode = 0755
+[1].when = (owncloud__theme_directory_name | d())
+[1].tags[0] = role::owncloud:theme:common_settings
+[2].name = Apply common theming options using the defaults.php file
+[2]["ansible.builtin.template"].src = srv/www/sites/themes/debops-template/defaults.php.j2
+[2]["ansible.builtin.template"].dest = {{ owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name + "/defaults.php" }}
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = {{ owncloud__app_group }}
+[2]["ansible.builtin.template"].mode = 0640
+[2]["ansible.builtin.template"].validate = php -f %s
+[2].when = (owncloud__theme_directory_name | d())
+[2].tags[0] = role::owncloud:theme:common_settings
+[3].name = Ensure that parent directories exist
+[3]["ansible.builtin.file"].path = {{ (owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name + "/" + item.key) | dirname }}
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = {{ item.value.base_directory_owner | d(omit) }}
+[3]["ansible.builtin.file"].group = {{ item.value.base_directory_group | d(omit) }}
+[3]["ansible.builtin.file"].mode = {{ item.value.base_directory_mode | d(omit) }}
+[3].with_dict = {{ owncloud__theme_copy_files_combined }}
+[3].when = (owncloud__theme_directory_name | d() and item.value.state | d("present") == "present")
+[3].tags[0] = role::owncloud:theme:copy
+[4].name = Copy additional theme files
+[4]["ansible.builtin.copy"].dest = {{ (owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name + "/" + item.key)
+                        if (not item.key.startswith("/")) else item.key }} 
+[4]["ansible.builtin.copy"].backup = {{ item.value.backup | d(omit) }}
+[4]["ansible.builtin.copy"].content = {{ item.value.content | d(omit) }}
+[4]["ansible.builtin.copy"].directory_mode = {{ item.value.directory_mode | d(omit) }}
+[4]["ansible.builtin.copy"].follow = {{ item.value.follow | d(omit) }}
+[4]["ansible.builtin.copy"].force = {{ item.value.force | d(omit) }}
+[4]["ansible.builtin.copy"].owner = {{ item.value.owner | d(omit) }}
+[4]["ansible.builtin.copy"].group = {{ item.value.group | d(omit) }}
+[4]["ansible.builtin.copy"].mode = {{ item.value.mode | d(omit) }}
+[4]["ansible.builtin.copy"].selevel = {{ item.value.selevel | d(omit) }}
+[4]["ansible.builtin.copy"].serole = {{ item.value.serole | d(omit) }}
+[4]["ansible.builtin.copy"].setype = {{ item.value.setype | d(omit) }}
+[4]["ansible.builtin.copy"].seuser = {{ item.value.seuser | d(omit) }}
+[4]["ansible.builtin.copy"].src = {{ item.value.src | d(omit) }}
+[4]["ansible.builtin.copy"].validate = {{ item.value.validate | d(omit) }}
+[4].with_dict = {{ owncloud__theme_copy_files_combined }}
+[4].when = (owncloud__theme_directory_name | d() and item.value.state | d("present") == "present")
+[4].tags[0] = role::owncloud:theme:copy
+[5].name = Activate custom theme
+[5]["ansible.builtin.template"].src = srv/www/sites/config/theme.config.php.j2
+[5]["ansible.builtin.template"].dest = {{ owncloud__deploy_path }}/config/theme.config.php
+[5]["ansible.builtin.template"].owner = root
+[5]["ansible.builtin.template"].group = {{ owncloud__app_group }}
+[5]["ansible.builtin.template"].mode = 0640
+[5].when = (owncloud__theme_active | d())
+[5].tags[0] = role::owncloud:theme:activate
+[6].name = Deactivate custom theme
+[6]["ansible.builtin.file"].path = {{ owncloud__deploy_path }}/config/theme.config.php
+[6]["ansible.builtin.file"].state = absent
+[6].when = (not owncloud__theme_active | d())
+[6].tags[0] = role::owncloud:theme:activate
+[7].name = Delete additional theme files
+[7]["ansible.builtin.file"].path = {{ owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name + "/" + item.key }}
+[7]["ansible.builtin.file"].state = absent
+[7].when = (owncloud__theme_directory_name | d() and item.value.state | d("present") == "absent")
+[7].with_dict = {{ owncloud__theme_copy_files_combined }}
+[7].tags[0] = role::owncloud:theme:copy

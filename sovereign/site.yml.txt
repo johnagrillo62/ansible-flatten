@@ -1,0 +1,17 @@
+[0].hosts = all
+[0].user = deploy
+[0].become = True
+[0].gather_facts = True
+[0].roles[0] = common
+[0].roles[1] = mailserver
+[0].roles[2] = webmail
+[0].roles[3] = blog
+[0].roles[4] = ircbouncer
+[0].roles[5] = xmpp
+[0].roles[6] = owncloud
+[0].roles[7] = vpn
+[0].roles[8] = tarsnap
+[0].roles[9] = news
+[0].roles[10] = git
+[0].roles[11] = readlater
+[0].roles[12] = monitoring

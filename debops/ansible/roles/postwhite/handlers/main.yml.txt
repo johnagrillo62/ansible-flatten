@@ -1,0 +1,15 @@
+[0].name = Update Postwhite in the background using async
+[0]["ansible.builtin.command"] = /usr/local/lib/postwhite
+[0].async = 1800
+[0].poll = 0
+[0].register = postwhite__register_async
+[0].changed_when = postwhite__register_async.changed | bool
+[0].when = postwhite__initial_update_method == 'async'
+[1].name = Update Postwhite in the background using batch
+[1]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+echo '/usr/local/lib/postwhite' | batch > /dev/null 2>&1
+
+[1].args.executable = bash
+[1].register = postwhite__register_batch
+[1].changed_when = postwhite__register_batch.changed | bool
+[1].when = postwhite__initial_update_method == 'batch'

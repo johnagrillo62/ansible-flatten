@@ -1,0 +1,8 @@
+[0].name = Assemble services.d
+[0]["ansible.builtin.assemble"].src = /etc/services.d
+[0]["ansible.builtin.assemble"].dest = /etc/services
+[0]["ansible.builtin.assemble"].backup = False
+[0]["ansible.builtin.assemble"].owner = root
+[0]["ansible.builtin.assemble"].group = root
+[0]["ansible.builtin.assemble"].mode = 0644
+[0].when = etc_services__enabled | bool

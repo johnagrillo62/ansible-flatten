@@ -1,0 +1,8 @@
+~d0.name = Check if Kubernetes python module is installed
+~d1.shell = pip freeze | grep openshift
+~d1.register = _pip_openshift
+~d1.ignore_errors = true
+~d0.name = Preflight check - require openshift python module
+~d1.assert = 
+~d2.fail_msg = "The openshift python module was not found. You can either install it via 'pip install openshift' or using your distro package manager."
+~d2.that = 

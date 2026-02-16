@@ -1,0 +1,25 @@
+[0].name = GVisor | Create addon dir
+[0].file.path = {{ kube_config_dir }}/addons/gvisor
+[0].file.owner = root
+[0].file.group = root
+[0].file.mode = 0755
+[0].file.recurse = true
+[1].name = GVisor | Templates List
+[1].set_fact.gvisor_templates[0].name = runtimeclass-gvisor
+[1].set_fact.gvisor_templates[0].file = runtimeclass-gvisor.yml
+[1].set_fact.gvisor_templates[0].type = runtimeclass
+[2].name = GVisort | Create manifests
+[2].template.src = {{ item.file }}.j2
+[2].template.dest = {{ kube_config_dir }}/addons/gvisor/{{ item.file }}
+[2].template.mode = 0644
+[2].with_items = {{ gvisor_templates }}
+[2].register = gvisor_manifests
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = GVisor | Apply manifests
+[3].kube.name = {{ item.item.name }}
+[3].kube.kubectl = {{ bin_dir }}/kubectl
+[3].kube.resource = {{ item.item.type }}
+[3].kube.filename = {{ kube_config_dir }}/addons/gvisor/{{ item.item.file }}
+[3].kube.state = latest
+[3].with_items = {{ gvisor_manifests.results }}
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]

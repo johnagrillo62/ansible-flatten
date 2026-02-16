@@ -1,0 +1,59 @@
+~d0.name = Disable swap files when requested
+~d1.ansible.builtin.shell = test -f {{ item.path | d(item) }} && swapoff {{ item.path | d(item) }} || true
+~d1.changed_when = False
+~d1.with_items = '{{ swapfile__files }}'
+~d1.when = (item.state | d("present") == 'absent' and
+~d0.name = Create swap files
+~d1.ansible.builtin.command = |
+~d1.args = 
+~d2.creates = '{{ item.path | d(item) }}'
+~d1.register = swapfile__register_allocation
+~d1.with_items = '{{ swapfile__files }}'
+~d1.when = (item.state | d("present") != 'absent')
+~d0.name = Enforce permissions
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item.path | d(item) }}'
+~d2.state = 'file'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0600'
+~d1.with_items = '{{ swapfile__files }}'
+~d1.when = (item.state | d("present") != 'absent' and not ansible_check_mode)
+~d0.name = Initialize swap files
+~d1.ansible.builtin.command = 'mkswap {{ item.item.path | d(item.item) }}'  # noqa no-handler
+~d1.register = swapfile__register_init
+~d1.changed_when = swapfile__register_init.changed | bool
+~d1.with_items = '{{ swapfile__register_allocation.results | d([]) }}'
+~d1.when = (item is changed and item.state | d("present") != 'absent')
+~d0.name = Enable swap files
+~d1.ansible.builtin.command = 'swapon -p {{ item.item.priority | d(swapfile__priority) }} {{ item.item.path | d(item.item) }}'  # noqa no-handler
+~d1.with_items = '{{ swapfile__register_allocation.results | d([]) }}'
+~d1.register = swapfile__register_swapon
+~d1.changed_when = swapfile__register_swapon.changed | bool
+~d1.when = (
+~d0.name = Disable swap files
+~d1.ansible.builtin.shell = 'test -f {{ item.path | d(item) }} && swapoff -v {{ item.path | d(item) }} || true'  # noqa no-handler
+~d1.with_items = '{{ swapfile__files }}'
+~d1.register = swapfile__register_swapoff
+~d1.changed_when = swapfile__register_swapoff.stdout == ('swapoff ' + item.path | d(item))
+~d1.when = (
+~d0.name = Manage swap files in /etc/fstab
+~d1.ansible.posix.mount = 
+~d2.src = '{{ item.path | d(item) }}'
+~d2.name = 'none'
+~d2.fstype = 'swap'
+~d2.opts = 'sw,nofail,pri={{ item.priority | d(swapfile__priority) }}'
+~d2.dump = '0'
+~d2.passno = '0'
+~d2.state = '{{ item.state | d("present") }}'
+~d1.with_items = '{{ swapfile__files }}'
+~d0.name = Remove swap files
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item.path | d(item) }}'
+~d2.state = 'absent'
+~d1.with_items = '{{ swapfile__files }}'
+~d1.when = (item.state | d("present") == 'absent')
+~d0.name = Remove legacy kernel parameters file
+~d1.ansible.builtin.file = 
+~d2.path = '{{ swapfile__sysctl_file | d("/etc/sysctl.d/30-debops.swapfile.conf") }}'
+~d2.state = 'absent'

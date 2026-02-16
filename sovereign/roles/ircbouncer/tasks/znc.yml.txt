@@ -1,0 +1,45 @@
+[0].name = Install znc
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = znc
+[0].tags[0] = dependencies
+[1].name = Create znc group
+[1].group = name=znc state=present
+[2].name = Create znc user
+[2].user = name=znc state=present home=/usr/lib/znc system=yes group=znc shell=/usr/sbin/nologin
+[3].name = Ensure pid directory exists
+[3].file = state=directory path=/var/run/znc group=znc owner=znc
+[4].name = Ensure configuration folders exist
+[4].file = state=directory path=/usr/lib/znc/{{ item }} group=znc owner=znc
+[4].with_items[0] = moddata
+[4].with_items[1] = modules
+[4].with_items[2] = users
+[5].name = Copy znc service file into place
+[5].copy = src=etc_systemd_system_znc.service dest=/etc/systemd/system/znc.service mode=0644
+[6].name = Create a combined version of the SSL private key and full certificate chain
+[6].shell = cat /etc/letsencrypt/live/{{ domain }}/privkey.pem /etc/letsencrypt/live/{{ domain }}/fullchain.pem > /usr/lib/znc/znc.pem creates=/usr/lib/znc/znc.pem
+[6].notify = restart znc
+[7].name = Update post-certificate-renewal task
+[7].template.src = etc_letsencrypt_postrenew_znc.sh.j2
+[7].template.dest = /etc/letsencrypt/postrenew/znc.sh
+[7].template.owner = root
+[7].template.group = root
+[7].template.mode = 0755
+[8].name = Ensure znc user and group can read cert
+[8].file = path=/usr/lib/znc/znc.pem group=znc owner=znc mode=0640
+[8].notify = restart znc
+[9].name = Check for existing config file
+[9].command = cat /usr/lib/znc/configs/znc.conf
+[9].register = znc_config
+[9].ignore_errors = True
+[9].changed_when = False
+[10].name = Create znc config directory
+[10].file = state=directory path=/usr/lib/znc/configs group=znc owner=znc
+[11].name = Copy znc configuration file into place
+[11].template = src=usr_lib_znc_configs_znc.conf.j2 dest=/usr/lib/znc/configs/znc.conf owner=znc group=znc
+[11].when = znc_config.rc != 0
+[11].notify = restart znc
+[12].name = Set firewall rule for znc
+[12].ufw = rule=allow port=6697 proto=tcp
+[12].tags = ufw
+[13].name = Ensure znc is a system service
+[13].service = name=znc state=restarted enabled=true

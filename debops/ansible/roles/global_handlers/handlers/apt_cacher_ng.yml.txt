@@ -1,0 +1,4 @@
+~d0.name = Restart apt-cacher-ng
+~d1.ansible.builtin.service = 
+~d2.name = 'apt-cacher-ng'
+~d2.state = 'restarted'

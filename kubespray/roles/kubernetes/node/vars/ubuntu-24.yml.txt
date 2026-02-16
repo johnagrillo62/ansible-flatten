@@ -1,0 +1,1 @@
+~d0.kube_resolv_conf = "/run/systemd/resolve/resolv.conf"

@@ -1,0 +1,2 @@
+[0].import_tasks = tarsnap.yml
+[0].tags = tarsnap

@@ -1,0 +1,5 @@
+~d0.networkd__units = 
+~d1.name = 'wired-dhcp.network'
+~d2.comment = 'Configure any wired Ethernet interface via DHCP'
+~d2.raw = |
+~d2.state = 'present'

@@ -1,0 +1,12 @@
+collections[0] = debops.debops
+galaxy_info.author = Maciej Delmanowski
+galaxy_info.description = Install and configure LLDP service
+galaxy_info.company = DebOps
+galaxy_info.license = GPL-3.0-or-later
+galaxy_info.min_ansible_version = 2.9.0
+galaxy_info.platforms[0].name = Debian
+galaxy_info.platforms[0].versions[0] = buster
+galaxy_info.platforms[0].versions[1] = bullseye
+galaxy_info.galaxy_tags[0] = networking
+galaxy_info.galaxy_tags[1] = lldp
+galaxy_info.galaxy_tags[2] = cdp

@@ -1,0 +1,17 @@
+~d0.name = Set bastion host IP and port
+~d1.set_fact = 
+~d2.bastion_ip = "{{ hostvars[groups['bastion'][0]]['ansible_host'] | d(hostvars[groups['bastion'][0]]['ansible_ssh_host']) }}"
+~d2.bastion_port = "{{ hostvars[groups['bastion'][0]]['ansible_port'] | d(hostvars[groups['bastion'][0]]['ansible_ssh_port']) | d(22) }}"
+~d1.delegate_to = localhost
+~d1.connection = local
+~d0.name = Store the current ansible_user in the real_user fact
+~d1.set_fact = 
+~d2.real_user = "{{ ansible_user }}"
+~d0.name = Create ssh bastion conf
+~d1.become = false
+~d1.delegate_to = localhost
+~d1.connection = local
+~d1.template = 
+~d2.src = "{{ ssh_bastion_confing__name }}.j2"
+~d2.dest = "{{ playbook_dir }}/{{ ssh_bastion_confing__name }}"
+~d2.mode = "0640"

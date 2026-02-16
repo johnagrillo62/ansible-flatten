@@ -1,0 +1,9 @@
+~d0.name = Perform an action with a different hostname via aap_hostname
+~d1.inventory = 
+~d2.name = "Demo Inventory"
+~d2.organization = Default
+~d2.aap_hostname = https://foohostbar.invalid
+~d1.ignore_errors = true
+~d1.register = result
+~d0.assert = 
+~d2.that = 

@@ -1,0 +1,4 @@
+[0].name = Generate Azure inventory
+[0].hosts = localhost
+[0].gather_facts = false
+[0].roles[0] = generate-inventory

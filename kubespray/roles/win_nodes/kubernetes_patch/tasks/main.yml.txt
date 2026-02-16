@@ -1,0 +1,25 @@
+[0].name = Ensure that user manifests directory exists
+[0].file.path = {{ kubernetes_user_manifests_path }}/kubernetes
+[0].file.state = directory
+[0].file.recurse = true
+[0].tags[0] = init
+[0].tags[1] = cni
+[1].name = Apply kube-proxy nodeselector
+[1].tags = init
+[1].when[0] = kube_proxy_deployed
+[1].block[0].name = Check current nodeselector for kube-proxy daemonset
+[1].block[0].command = {{ kubectl }} get ds kube-proxy --namespace=kube-system -o jsonpath={.spec.template.spec.nodeSelector.{{ kube_proxy_nodeselector | regex_replace('\.', '\\.') }}}
+[1].block[0].register = current_kube_proxy_state
+[1].block[0].retries = 60
+[1].block[0].delay = 5
+[1].block[0].until = current_kube_proxy_state is succeeded
+[1].block[0].changed_when = false
+[1].block[1].name = Apply nodeselector patch for kube-proxy daemonset
+[1].block[1].command = {{ kubectl }} patch ds kube-proxy --namespace=kube-system --type=strategic -p '{"spec":{"template":{"spec":{"nodeSelector":{"{{ kube_proxy_nodeselector }}":"linux"} }}}}'
+
+[1].block[1].register = patch_kube_proxy_state
+[1].block[1].when = current_kube_proxy_state.stdout | trim | lower != "linux"
+[1].block[2].debug.msg = {{ patch_kube_proxy_state.stdout_lines }}
+[1].block[2].when = patch_kube_proxy_state is not skipped
+[1].block[3].debug.msg = {{ patch_kube_proxy_state.stderr_lines }}
+[1].block[3].when = patch_kube_proxy_state is not skipped

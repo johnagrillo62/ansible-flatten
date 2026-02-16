@@ -1,0 +1,40 @@
+[0].name = Gather cgroups facts for docker
+[0].when = container_manager == 'docker'
+[0].block[0].name = Look up docker cgroup driver
+[0].block[0].shell = set -o pipefail && docker info | grep 'Cgroup Driver' | awk -F': ' '{ print $2; }'
+[0].block[0].args.executable = /bin/bash
+[0].block[0].register = docker_cgroup_driver_result
+[0].block[0].changed_when = false
+[0].block[0].check_mode = false
+[0].block[1].name = Set kubelet_cgroup_driver_detected fact for docker
+[0].block[1].set_fact.kubelet_cgroup_driver_detected = {{ docker_cgroup_driver_result.stdout }}
+[1].name = Gather cgroups facts for crio
+[1].when = container_manager == 'crio'
+[1].block[0].name = Look up crio cgroup driver
+[1].block[0].shell = set -o pipefail && {{ bin_dir }}/{{ crio_status_command }} info | grep 'cgroup driver' | awk -F': ' '{ print $2; }'
+[1].block[0].args.executable = /bin/bash
+[1].block[0].register = crio_cgroup_driver_result
+[1].block[0].changed_when = false
+[1].block[1].name = Set kubelet_cgroup_driver_detected fact for crio
+[1].block[1].set_fact.kubelet_cgroup_driver_detected = {{ crio_cgroup_driver_result.stdout }}
+[2].name = Set kubelet_cgroup_driver_detected fact for containerd
+[2].when = container_manager == 'containerd'
+[2].set_fact.kubelet_cgroup_driver_detected = {%- if containerd_use_systemd_cgroup -%}systemd{%- else -%}cgroupfs{%- endif -%}
+[3].name = Set kubelet_cgroup_driver
+[3].set_fact.kubelet_cgroup_driver = {{ kubelet_cgroup_driver_detected }}
+[3].when = kubelet_cgroup_driver is undefined
+[4].name = Set kubelet_cgroups options when cgroupfs is used
+[4].set_fact.kubelet_runtime_cgroups = {{ kubelet_runtime_cgroups_cgroupfs }}
+[4].set_fact.kubelet_kubelet_cgroups = {{ kubelet_kubelet_cgroups_cgroupfs }}
+[4].when = kubelet_cgroup_driver == 'cgroupfs'
+[5].name = Set kubelet_config_extra_args options when cgroupfs is used
+[5].set_fact.kubelet_config_extra_args = {{ kubelet_config_extra_args | combine(kubelet_config_extra_args_cgroupfs) }}
+[5].when = kubelet_cgroup_driver == 'cgroupfs'
+[6].name = Os specific vars
+[6].include_vars = {{ item }}
+[6].with_first_found[0].files[0] = {{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower | replace('/', '_') }}.yml
+[6].with_first_found[0].files[1] = {{ ansible_distribution | lower }}-{{ ansible_distribution_release }}.yml
+[6].with_first_found[0].files[2] = {{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower | replace('/', '_') }}.yml
+[6].with_first_found[0].files[3] = {{ ansible_distribution | lower }}.yml
+[6].with_first_found[0].files[4] = {{ ansible_os_family | lower }}.yml
+[6].with_first_found[0].skip = true

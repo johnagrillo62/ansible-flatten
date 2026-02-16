@@ -1,0 +1,223 @@
+php__version_preference[0] = php7.4
+php__version_preference[1] = php7.3
+php__version_preference[2] = php
+php__version_preference[3] = php5.6
+php__sury = {{ ansible_local.php.sury
+                | d(ansible_distribution_release in ["stretch", "trusty", "xenial"]) | bool }} 
+php__sury_apt_key_id = {{ php__sury_apt_key_id_map[ansible_distribution] }}
+php__sury_apt_repo = {{ php__sury_apt_repo_map[ansible_distribution] }}
+php__sury_apt_key_id_map.Debian[0].id = 1505 8500 A023 5D97 F5D1  0063 B188 E2B6 95BD 4743
+php__sury_apt_key_id_map.Debian[0].repo = deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main
+php__sury_apt_key_id_map.Debian[0].state = {{ "present" if php__sury | bool else "absent" }}
+php__sury_apt_key_id_map.Debian[1].id = DF3D 585D B8F0 EB65 8690  A554 AC0E 4758 4A7A 714D
+php__sury_apt_key_id_map.Debian[1].state = absent
+php__sury_apt_key_id_map.Ubuntu[0].id = 14AA 40EC 0831 7567 56D7  F66C 4F4E A0AA E526 7A6C
+php__sury_apt_key_id_map.Ubuntu[0].repo = ppa:ondrej/php
+php__sury_apt_key_id_map.Ubuntu[0].state = {{ "present" if php__sury | bool else "absent" }}
+php__sury_apt_repo_map.Debian = deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main
+php__sury_apt_repo_map.Ubuntu = ppa:ondrej/php
+php__server_api_packages[0] = cli
+php__server_api_packages[1] = fpm
+php__base_packages[0] = {{ "php" + php__version }}
+php__base_packages[1] = curl
+php__base_packages[2] = gd
+php__base_packages[3] = {{ [] if php__composer_upstream_enabled | bool else "composer" }}
+php__base_packages[4] = {{ "mcrypt"
+        if (php__version is version_compare("7.2", "<"))
+        else [] }}
+
+php__combined_packages = {{ (lookup("flattened",
+                             php__server_api_packages
+                             + php__base_packages
+                             + php__packages
+                             + php__group_packages
+                             + php__host_packages
+                             + php__dependent_packages).split(",")
+                            | difference(php__included_packages))
+                            | join(" ") }}
+
+php__reset = False
+php__included_packages = {{ php__php_included_packages
+                            if php__sury
+                            else (php__release_included_map[ansible_distribution_release]
+                                  | d(php__php_included_packages)) }}
+
+php__release_included_map.stretch = {{ php__php_included_packages }}
+php__release_included_map.buster = {{ php__php_included_packages }}
+php__release_included_map.bullseye = {{ php__php_included_packages }}
+php__release_included_map.sid = {{ php__php_included_packages }}
+php__release_included_map.trusty = {{ php__php5_included_packages }}
+php__release_included_map.xenial = {{ php__php_included_packages }}
+php__release_included_map.zesty = {{ php__php_included_packages }}
+php__release_included_map.bionic = {{ php__php_included_packages }}
+php__release_included_map.focal = {{ php__php_included_packages }}
+php__release_included_map.groovy = {{ php__php_included_packages }}
+php__php5_included_packages = {{ php__common_included_packages
+                                 + ["bcmath", "bz2", "dba", "dom", "ereg",
+                                    "mbstring", "mhash", "SimpleXML", "soap",
+                                    "wddx", "xml", "xmlreader", "xmlwriter",
+                                    "zip"] }}
+
+php__php_included_packages = {{ php__common_included_packages
+                                + ["sysvsem", "sysvshm"] }} 
+php__common_included_packages[0] = calendar
+php__common_included_packages[1] = ctype
+php__common_included_packages[2] = date
+php__common_included_packages[3] = exif
+php__common_included_packages[4] = fileinfo
+php__common_included_packages[5] = filter
+php__common_included_packages[6] = ftp
+php__common_included_packages[7] = gettext
+php__common_included_packages[8] = hash
+php__common_included_packages[9] = iconv
+php__common_included_packages[10] = libxml
+php__common_included_packages[11] = openssl
+php__common_included_packages[12] = pcntl
+php__common_included_packages[13] = pcre
+php__common_included_packages[14] = PDO
+php__common_included_packages[15] = Phar
+php__common_included_packages[16] = posix
+php__common_included_packages[17] = Reflection
+php__common_included_packages[18] = session
+php__common_included_packages[19] = shmop
+php__common_included_packages[20] = sockets
+php__common_included_packages[21] = SPL
+php__common_included_packages[22] = standard
+php__common_included_packages[23] = sysvmsg
+php__common_included_packages[24] = tokenizer
+php__common_included_packages[25] = zlib
+php__composer_upstream_enabled = {{ True
+                                    if (ansible_distribution_release in
+                                        ["stretch", "trusty", "xenial",
+                                         "bionic", "focal"])
+                                    else False }}
+
+php__composer_upstream_version = 1.8.5
+php__composer_upstream_checksum = sha256:23b29b1a921b56db3c12ba531752dffcfaa3de0fcece3e54974e06990e46bbf9
+php__composer_upstream_url = {{ "https://github.com/composer/composer/releases/download/"
+                                + php__composer_upstream_version + "/composer.phar" }} 
+php__composer_upstream_dest = /usr/local/bin/composer
+php__production = True
+php__ini_cgi_fix_pathinfo = False
+php__ini_max_execution_time = 30
+php__ini_max_input_time = 60
+php__ini_memory_limit = 128M
+php__ini_post_max_size = 8M
+php__ini_file_uploads = True
+php__ini_upload_max_filesize = {{ php__ini_post_max_size }}
+php__ini_max_file_uploads = 20
+php__ini_default_charset = UTF-8
+php__ini_allow_url_fopen = True
+php__ini_date_timezone = {{ ansible_local.tzdata.timezone | d("Etc/UTC") }}
+php__default_configuration[0].filename = 00-ansible
+php__default_configuration[0].name = PHP
+php__default_configuration[0].sections[0].options = max_execution_time =     {{ php__ini_max_execution_time }}
+max_input_time =         {{ php__ini_max_input_time }}
+memory_limit =           {{ php__ini_memory_limit }}
+error_reporting =        {{ (php__production | bool) | ternary('E_ALL & ~E_DEPRECATED & ~E_STRICT', 'E_ALL') }}
+display_errors =         {{ (php__production | bool) | ternary('Off', 'On') }}
+display_startup_errors = {{ (php__production | bool) | ternary('Off', 'On') }}
+{% if php__version is version_compare("7.2", "<") %}
+track_errors =           {{ (php__production | bool) | ternary('Off', 'On') }}
+{% endif %}
+post_max_size =          {{ php__ini_post_max_size }}
+default_charset =        {{ php__ini_default_charset }}
+file_uploads =           {{ (php__ini_file_uploads | bool) | ternary('On', 'Off') }}
+upload_max_filesize =    {{ php__ini_upload_max_filesize }}
+max_file_uploads =       {{ php__ini_max_file_uploads }}
+allow_url_fopen =        {{ (php__ini_allow_url_fopen | bool) | ternary('On', 'Off') }}
+
+php__default_configuration[0].sections[1].name = CGI
+php__default_configuration[0].sections[1].options = cgi.fix_pathinfo =       {{ (php__ini_cgi_fix_pathinfo | bool) | ternary('1', '0') }}
+
+php__default_configuration[0].sections[2].name = Date
+php__default_configuration[0].sections[2].options = date.timezone =          {{ php__ini_date_timezone }}
+
+php__default_configuration[1].filename = ../cli/conf.d/30-memory_limit
+php__default_configuration[1].name = PHP
+php__default_configuration[1].options = ; Don't limit memory for php-cli execution
+memory_limit = -1
+
+php__fpm_privileged_group = webadmins
+php__fpm_syslog = False
+php__fpm_error_log = {{ ("/var/log/php" + php__version + "-fpm.log")
+                        if not php__fpm_syslog | bool else "syslog" }} 
+php__fpm_syslog_ident = php-fpm
+php__fpm_syslog_facility = daemon
+php__fpm_log_level = notice
+php__fpm_emergency_restart_threshold = 0
+php__fpm_emergency_restart_interval = 0
+php__fpm_process_control_timeout = 0
+php__fpm_process_max = 128
+php__fpm_listen_owner = www-data
+php__fpm_listen_group = www-data
+php__fpm_listen_mode = 0660
+php__fpm_listen_backlog = 511
+php__fpm_pm = ondemand
+php__fpm_pm_max_children = {{ ansible_processor_vcpus }}
+php__fpm_pm_start_servers = {{ ansible_processor_cores }}
+php__fpm_pm_min_spare_servers = 1
+php__fpm_pm_max_spare_servers = {{ php__fpm_pm_max_children }}
+php__fpm_pm_process_idle_timeout = 10s
+php__fpm_pm_max_requests = 500
+php__fpm_pm_status = False
+php__fpm_pm_status_path = /status.php
+php__fpm_ping_path = /ping.php
+php__fpm_ping_response = pong
+php__fpm_access_log = False
+php__fpm_request_terminate_timeout = {{ php__ini_max_execution_time }}
+php__fpm_rlimit_files = 1024
+php__fpm_rlimit_core = 0
+php__fpm_catch_workers_output = False
+php__fpm_security_limit_extensions[0] = .php
+php__fpm_clear_env = False
+php__default_pools[0] = {{ php__pool_www_data }}
+php__pool_www_data.name = www-data
+php__apt_preferences__dependent_list[0].package = *
+php__apt_preferences__dependent_list[0].pin = origin "packages.sury.org"
+php__apt_preferences__dependent_list[0].priority = 100
+php__apt_preferences__dependent_list[0].reason = Don't upgrade software automatically using packages from external repository
+php__apt_preferences__dependent_list[0].role = debops.php
+php__apt_preferences__dependent_list[0].suffix = _packages_sury_org
+php__apt_preferences__dependent_list[0].state = {{ "present" if php__sury | bool else "absent" }}
+php__apt_preferences__dependent_list[1].packages[0] = php
+php__apt_preferences__dependent_list[1].packages[1] = php5
+php__apt_preferences__dependent_list[1].packages[2] = php5*
+php__apt_preferences__dependent_list[1].packages[3] = php7*
+php__apt_preferences__dependent_list[1].packages[4] = dh-php
+php__apt_preferences__dependent_list[1].packages[5] = php-*
+php__apt_preferences__dependent_list[1].packages[6] = libpcre2-8-0
+php__apt_preferences__dependent_list[1].packages[7] = libpcre3
+php__apt_preferences__dependent_list[1].packages[8] = libzip4
+php__apt_preferences__dependent_list[1].packages[9] = libpcre16-3
+php__apt_preferences__dependent_list[1].packages[10] = libpcre32-3
+php__apt_preferences__dependent_list[1].packages[11] = libpcrecpp0v5
+php__apt_preferences__dependent_list[1].packages[12] = libpcre3-dev
+php__apt_preferences__dependent_list[1].packages[13] = libapache2-mod-php
+php__apt_preferences__dependent_list[1].packages[14] = libapache2-mod-php*
+php__apt_preferences__dependent_list[1].packages[15] = libsodium23
+php__apt_preferences__dependent_list[1].pin = origin "packages.sury.org"
+php__apt_preferences__dependent_list[1].priority = 500
+php__apt_preferences__dependent_list[1].reason = Prefer PHP packages from the same repository for consistency
+php__apt_preferences__dependent_list[1].role = debops.php
+php__apt_preferences__dependent_list[1].suffix = _packages_sury_org
+php__apt_preferences__dependent_list[1].state = {{ "present" if php__sury | bool else "absent" }}
+php__keyring__dependent_apt_keys[0] = {{ php__sury_apt_key_id }}
+php__logrotate__dependent_config[0].filename = php{{ php__version }}-fpm
+php__logrotate__dependent_config[0].divert = True
+php__logrotate__dependent_config[0].logs[0] = /var/log/php{{ php__version }}-fpm.log
+php__logrotate__dependent_config[0].logs[1] = /var/log/php{{ php__version }}-fpm/*.log
+php__logrotate__dependent_config[0].options = create 0660 root adm
+rotate 12
+missingok
+weekly
+notifempty
+compress
+delaycompress
+
+php__logrotate__dependent_config[0].postrotate = {% if php__long_version is version_compare("5.5", "<") %}
+invoke-rc.d php{{ php__version }}-fpm reopen-logs > /dev/null
+{% else %}
+{{ php__logrotate_lib_base }}/php{{ php__version }}-fpm-reopenlogs
+{% endif %}
+

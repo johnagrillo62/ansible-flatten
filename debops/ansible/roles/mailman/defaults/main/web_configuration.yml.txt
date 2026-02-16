@@ -1,0 +1,346 @@
+mailman__web_original_configuration[0].name = secret_key
+mailman__web_original_configuration[0].comment = SECURITY WARNING: keep the secret key used in production secret!
+mailman__web_original_configuration[0].value = secretkey
+mailman__web_original_configuration[1].name = admins
+mailman__web_original_configuration[1].value[0][0] = Mailman Suite Admin
+mailman__web_original_configuration[1].value[0][1] = root@localhost
+mailman__web_original_configuration[1].type = tuple
+mailman__web_original_configuration[1].separator = True
+mailman__web_original_configuration[1].state = present
+mailman__web_original_configuration[2].name = allowed_hosts
+mailman__web_original_configuration[2].comment = Hosts/domain names that are valid for this site; required if DEBUG is False
+See https://docs.djangoproject.com/en/1.8/ref/settings/#allowed-hosts
+Set to '*' per default in the Deian package to allow all hostnames. Mailman3
+is meant to run behind a webserver reverse proxy anyway.
+
+mailman__web_original_configuration[2].options[0].name = localhost
+mailman__web_original_configuration[2].options[0].comment = Archiving API from Mailman, keep it.
+mailman__web_original_configuration[2].options[0].state = comment
+mailman__web_original_configuration[2].options[1].name = lists.your-domain.org
+mailman__web_original_configuration[2].options[1].state = comment
+mailman__web_original_configuration[2].options[2].name = *
+mailman__web_original_configuration[2].options[2].comment = Add here all production URLs you may have.
+mailman__web_original_configuration[2].options[2].state = present
+mailman__web_original_configuration[3].name = mailman_rest_api_url
+mailman__web_original_configuration[3].comment = Mailman API credentials
+mailman__web_original_configuration[3].value = http://localhost:8001
+mailman__web_original_configuration[4].name = mailman_rest_api_user
+mailman__web_original_configuration[4].value = restadmin
+mailman__web_original_configuration[5].name = mailman_rest_api_pass
+mailman__web_original_configuration[5].value = restpass
+mailman__web_original_configuration[6].name = mailman_archiver_key
+mailman__web_original_configuration[6].value = keypass
+mailman__web_original_configuration[7].name = mailman_archiver_from
+mailman__web_original_configuration[7].value[0] = 127.0.0.1
+mailman__web_original_configuration[7].value[1] = ::1
+mailman__web_original_configuration[7].type = tuple
+mailman__web_original_configuration[8].name = installed_apps
+mailman__web_original_configuration[8].comment = Application definition
+mailman__web_original_configuration[8].type = tuple
+mailman__web_original_configuration[8].options[0] = hyperkitty
+mailman__web_original_configuration[8].options[1] = postorius
+mailman__web_original_configuration[8].options[2] = django_mailman3
+mailman__web_original_configuration[8].options[3].name = django.contrib.admin
+mailman__web_original_configuration[8].options[3].comment = Uncomment the next line to enable the admin:
+mailman__web_original_configuration[8].options[3].state = present
+mailman__web_original_configuration[8].options[4].name = django.contrib.admindocs
+mailman__web_original_configuration[8].options[4].comment = Uncomment the next line to enable admin documentation:
+mailman__web_original_configuration[8].options[4].state = comment
+mailman__web_original_configuration[8].options[5] = django.contrib.auth
+mailman__web_original_configuration[8].options[6] = django.contrib.contenttypes
+mailman__web_original_configuration[8].options[7] = django.contrib.sessions
+mailman__web_original_configuration[8].options[8] = django.contrib.sites
+mailman__web_original_configuration[8].options[9] = django.contrib.messages
+mailman__web_original_configuration[8].options[10] = django.contrib.staticfiles
+mailman__web_original_configuration[8].options[11] = rest_framework
+mailman__web_original_configuration[8].options[12] = django_gravatar
+mailman__web_original_configuration[8].options[13] = compressor
+mailman__web_original_configuration[8].options[14] = haystack
+mailman__web_original_configuration[8].options[15] = django_extensions
+mailman__web_original_configuration[8].options[16] = django_q
+mailman__web_original_configuration[8].options[17] = allauth
+mailman__web_original_configuration[8].options[18] = allauth.account
+mailman__web_original_configuration[8].options[19] = allauth.socialaccount
+mailman__web_original_configuration[8].options[20] = django_mailman3.lib.auth.fedora
+mailman__web_original_configuration[8].options[21].name = allauth.socialaccount.providers.openid
+mailman__web_original_configuration[8].options[21].state = comment
+mailman__web_original_configuration[8].options[22].name = allauth.socialaccount.providers.github
+mailman__web_original_configuration[8].options[22].state = comment
+mailman__web_original_configuration[8].options[23].name = allauth.socialaccount.providers.gitlab
+mailman__web_original_configuration[8].options[23].state = comment
+mailman__web_original_configuration[8].options[24].name = allauth.socialaccount.providers.google
+mailman__web_original_configuration[8].options[24].state = comment
+mailman__web_original_configuration[8].options[25].name = allauth.socialaccount.providers.facebook
+mailman__web_original_configuration[8].options[25].state = comment
+mailman__web_original_configuration[8].options[26].name = allauth.socialaccount.providers.twitter
+mailman__web_original_configuration[8].options[26].state = comment
+mailman__web_original_configuration[8].options[27].name = allauth.socialaccount.providers.stackexchange
+mailman__web_original_configuration[8].options[27].state = comment
+mailman__web_original_configuration[9].name = database_sqlite
+mailman__web_original_configuration[9].option = databases
+mailman__web_original_configuration[9].comment = Database
+https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+
+mailman__web_original_configuration[9].state = {{ "present" if (mailman__database_type == "sqlite") else "ignore" }}
+mailman__web_original_configuration[9].config.default.ENGINE = django.db.backends.sqlite3
+mailman__web_original_configuration[9].config.default.NAME = /var/lib/mailman3/web/mailman3web.db
+mailman__web_original_configuration[9].config.default.USER = 
+mailman__web_original_configuration[9].config.default.PASSWORD = 
+mailman__web_original_configuration[9].config.default.HOST = 
+mailman__web_original_configuration[9].config.default.PORT = 
+mailman__web_original_configuration[10].name = databases_mysql
+mailman__web_original_configuration[10].option = databases
+mailman__web_original_configuration[10].comment = Database
+https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+
+mailman__web_original_configuration[10].state = {{ "present" if (mailman__database_type == "mysql") else "ignore" }}
+mailman__web_original_configuration[10].config.default.ENGINE = django.db.backends.mysql
+mailman__web_original_configuration[10].config.default.NAME = mailman3web
+mailman__web_original_configuration[10].config.default.USER = mailman3web
+mailman__web_original_configuration[10].config.default.PASSWORD = password
+mailman__web_original_configuration[10].config.default.HOST = localhost
+mailman__web_original_configuration[10].config.default.PORT = 
+mailman__web_original_configuration[10].config.default.OPTIONS.init_command = SET sql_mode='STRICT_TRANS_TABLES'
+mailman__web_original_configuration[11].name = use_x_forwarded_host
+mailman__web_original_configuration[11].comment = If you're behind a proxy, use the X-Forwarded-Host header
+See https://docs.djangoproject.com/en/1.8/ref/settings/#use-x-forwarded-host
+
+mailman__web_original_configuration[11].value = True
+mailman__web_original_configuration[12].name = secure_proxy_ssl_header_proto
+mailman__web_original_configuration[12].option = secure_proxy_ssl_header
+mailman__web_original_configuration[12].comment = And if your proxy does your SSL encoding for you, set SECURE_PROXY_SSL_HEADER
+https://docs.djangoproject.com/en/1.8/ref/settings/#secure-proxy-ssl-header
+
+mailman__web_original_configuration[12].value[0] = HTTP_X_FORWARDED_PROTO
+mailman__web_original_configuration[12].value[1] = https
+mailman__web_original_configuration[12].type = tuple
+mailman__web_original_configuration[12].state = comment
+mailman__web_original_configuration[13].name = secure_proxy_ssl_header_scheme
+mailman__web_original_configuration[13].option = secure_proxy_ssl_header
+mailman__web_original_configuration[13].value[0] = HTTP_X_FORWARDED_SCHEME
+mailman__web_original_configuration[13].value[1] = https
+mailman__web_original_configuration[13].type = tuple
+mailman__web_original_configuration[13].state = comment
+mailman__web_original_configuration[14].name = secure_ssl_redirect
+mailman__web_original_configuration[14].comment = Other security settings
+mailman__web_original_configuration[14].value = True
+mailman__web_original_configuration[14].state = comment
+mailman__web_original_configuration[15].name = secure_redirect_exempt
+mailman__web_original_configuration[15].comment = If you set SECURE_SSL_REDIRECT to True, make sure the SECURE_REDIRECT_EXEMPT
+contains at least this line:
+
+mailman__web_original_configuration[15].value[0] = archives/api/mailman/.*
+mailman__web_original_configuration[15].state = comment
+mailman__web_original_configuration[16].name = session_cookie_secure
+mailman__web_original_configuration[16].value = True
+mailman__web_original_configuration[16].state = comment
+mailman__web_original_configuration[17].name = secure_content_type_nosniff
+mailman__web_original_configuration[17].value = True
+mailman__web_original_configuration[17].state = comment
+mailman__web_original_configuration[18].name = secure_browser_xss_filter
+mailman__web_original_configuration[18].value = True
+mailman__web_original_configuration[18].state = comment
+mailman__web_original_configuration[19].name = csrf_cookie_secure
+mailman__web_original_configuration[19].value = True
+mailman__web_original_configuration[19].state = comment
+mailman__web_original_configuration[20].name = csrf_cookie_httponly
+mailman__web_original_configuration[20].value = True
+mailman__web_original_configuration[20].state = comment
+mailman__web_original_configuration[21].name = x_frame_options
+mailman__web_original_configuration[21].value = DENY
+mailman__web_original_configuration[21].state = comment
+mailman__web_original_configuration[22].name = language_code
+mailman__web_original_configuration[22].comment = Internationalization
+https://docs.djangoproject.com/en/1.8/topics/i18n/
+
+mailman__web_original_configuration[22].value = en-us
+mailman__web_original_configuration[23].name = time_zone
+mailman__web_original_configuration[23].value = UTC
+mailman__web_original_configuration[24].name = use_i18n
+mailman__web_original_configuration[24].value = True
+mailman__web_original_configuration[25].name = use_l10n
+mailman__web_original_configuration[25].value = True
+mailman__web_original_configuration[26].name = use_tz
+mailman__web_original_configuration[26].value = True
+mailman__web_original_configuration[27].name = emailname
+mailman__web_original_configuration[27].comment = Set default domain for email addresses.
+mailman__web_original_configuration[27].value = localhost.local
+mailman__web_original_configuration[28].name = default_from_email
+mailman__web_original_configuration[28].comment = If you enable internal authentication, this is the address that the emails
+will appear to be coming from. Make sure you set a valid domain name,
+otherwise the emails may get rejected.
+https://docs.djangoproject.com/en/1.8/ref/settings/#default-from-email
+DEFAULT_FROM_EMAIL = "mailing-lists@you-domain.org"
+
+mailman__web_original_configuration[28].value = 'postorius@{}'.format(EMAILNAME)
+mailman__web_original_configuration[28].type = raw
+mailman__web_original_configuration[29].name = server_email
+mailman__web_original_configuration[29].comment = If you enable email reporting for error messages, this is where those emails
+will appear to be coming from. Make sure you set a valid domain name,
+otherwise the emails may get rejected.
+https://docs.djangoproject.com/en/1.8/ref/settings/#std:setting-SERVER_EMAIL
+SERVER_EMAIL = 'root@your-domain.org'
+
+mailman__web_original_configuration[29].value = 'root@{}'.format(EMAILNAME)
+mailman__web_original_configuration[29].type = raw
+mailman__web_original_configuration[30].name = account_default_http_protocol
+mailman__web_original_configuration[30].comment = Django Allauth
+mailman__web_original_configuration[30].value = https
+mailman__web_original_configuration[31].name = socialaccount_providers
+mailman__web_original_configuration[31].comment = Social auth
+mailman__web_original_configuration[31].state = comment
+mailman__web_original_configuration[31].config.openid.SERVERS[0].id = yahoo
+mailman__web_original_configuration[31].config.openid.SERVERS[0].name = Yahoo
+mailman__web_original_configuration[31].config.openid.SERVERS[0].openid_url = https://me.yahoo.com/
+mailman__web_original_configuration[31].config.google.SCOPE[0] = profile
+mailman__web_original_configuration[31].config.google.SCOPE[1] = email
+mailman__web_original_configuration[31].config.google.AUTH_PARAMS.access_type = online
+mailman__web_original_configuration[31].config.facebook.METHOD = oauth2
+mailman__web_original_configuration[31].config.facebook.SCOPE[0] = email
+mailman__web_original_configuration[31].config.facebook.FIELDS[0] = email
+mailman__web_original_configuration[31].config.facebook.FIELDS[1] = name
+mailman__web_original_configuration[31].config.facebook.FIELDS[2] = first_name
+mailman__web_original_configuration[31].config.facebook.FIELDS[3] = last_name
+mailman__web_original_configuration[31].config.facebook.FIELDS[4] = locale
+mailman__web_original_configuration[31].config.facebook.FIELDS[5] = timezone
+mailman__web_original_configuration[31].config.facebook.VERSION = v2.4
+mailman__web_original_configuration[32].name = compress_offline
+mailman__web_original_configuration[32].comment = On a production setup, setting COMPRESS_OFFLINE to True will bring a
+significant performance improvement, as CSS files will not need to be
+recompiled on each requests. It means running an additional "compress"
+management command after each code upgrade.
+https://django-compressor.readthedocs.io/en/latest/usage/#offline-compression
+
+mailman__web_original_configuration[32].value = True
+mailman__web_original_configuration[33].name = postorius_template_base_url
+mailman__web_original_configuration[33].value = http://localhost/mailman3/
+mailman__web_default_configuration[0].name = installed_apps
+mailman__web_default_configuration[0].options[0].name = django_mailman3.lib.auth.fedora
+mailman__web_default_configuration[0].options[0].state = comment
+mailman__web_default_configuration[1].name = admins
+mailman__web_default_configuration[1].value[0][0] = Mailman Suite Admin
+mailman__web_default_configuration[1].value[0][1] = root@{{ mailman__domain }}
+mailman__web_default_configuration[2].name = secret_key
+mailman__web_default_configuration[2].value = {{ ansible_local.mailman.secret_key | d("secretkey") }}
+mailman__web_default_configuration[3].name = mailman_archiver_key
+mailman__web_default_configuration[3].value = {{ ansible_local.mailman.archiver_key | d("restadmin") }}
+mailman__web_default_configuration[4].name = emailname
+mailman__web_default_configuration[4].value = {{ mailman__fqdn }}
+mailman__web_default_configuration[5].name = mailman_rest_api_pass
+mailman__web_default_configuration[5].value = {{ ansible_local.mailman.webservice_admin_pass | d("restpass") }}
+mailman__web_default_configuration[6].name = databases_mysql
+mailman__web_default_configuration[6].option = databases
+mailman__web_default_configuration[6].copy_id_from = installed_apps
+mailman__web_default_configuration[6].state = {{ "present" if (mailman__database_type == "mysql") else "ignore" }}
+mailman__web_default_configuration[6].config.default.ENGINE = django.db.backends.mysql
+mailman__web_default_configuration[6].config.default.NAME = {{ ansible_local.mailman.web_db_name | d("mailman3web") }}
+mailman__web_default_configuration[6].config.default.USER = {{ ansible_local.mailman.web_db_user | d("mailman3web") }}
+mailman__web_default_configuration[6].config.default.PASSWORD = {{ ansible_local.mailman.web_db_password | d("password") }}
+mailman__web_default_configuration[6].config.default.HOST = {{ ansible_local.mailman.web_db_host | d("localhost") }}
+mailman__web_default_configuration[6].config.default.PORT = {{ ansible_local.mailman.web_db_port | d("") }}
+mailman__web_default_configuration[6].config.default.OPTIONS.init_command = SET sql_mode='STRICT_TRANS_TABLES'
+mailman__web_default_configuration[7].name = databases_postgresql
+mailman__web_default_configuration[7].option = databases
+mailman__web_default_configuration[7].copy_id_from = installed_apps
+mailman__web_default_configuration[7].state = {{ "present" if (mailman__database_type == "postgresql") else "ignore" }}
+mailman__web_default_configuration[7].config.default.ENGINE = django.db.backends.postgresql_psycopg2
+mailman__web_default_configuration[7].config.default.NAME = {{ ansible_local.mailman.web_db_name | d("mailman3web") }}
+mailman__web_default_configuration[7].config.default.USER = {{ ansible_local.mailman.web_db_user | d("mailman3web") }}
+mailman__web_default_configuration[7].config.default.PASSWORD = {{ ansible_local.mailman.web_db_password | d("password") }}
+mailman__web_default_configuration[7].config.default.HOST = {{ ansible_local.mailman.web_db_host | d("localhost") }}
+mailman__web_default_configuration[7].config.default.PORT = {{ ansible_local.mailman.web_db_port | d("") }}
+mailman__web_default_configuration[8].name = socialaccount_providers
+mailman__web_default_configuration[8].comment = Social auth
+mailman__web_default_configuration[8].state = present
+mailman__web_default_configuration[9].name = gravatar_secure_url
+mailman__web_default_configuration[9].value = https://seccdn.libravatar.org/
+mailman__web_default_configuration[10].name = gravatar_default_image
+mailman__web_default_configuration[10].value = {{ ["mm", "identicon", "monsterid", "wavatar", "retro", "robohash", "pagan"]
+               | random(seed=inventory_hostname) }} 
+mailman__web_default_configuration[11].name = gravatar_default_rating
+mailman__web_default_configuration[11].value = g
+mailman__web_default_configuration[12].name = gravatar_default_secure
+mailman__web_default_configuration[12].value = True
+mailman__web_default_configuration[13].name = time_zone
+mailman__web_default_configuration[13].value = {{ "UTC"
+               if ((ansible_local.tzdata.timezone | d("Etc/UTC")) == "Etc/UTC")
+               else ansible_local.tzdata.timezone }}
+
+mailman__web_default_configuration[14].name = postorius_template_base_url
+mailman__web_default_configuration[14].value = {{ "https://" + mailman__fqdn + "/" }}
+mailman__web_default_configuration[15].name = mailman_archiver_from
+mailman__web_default_configuration[15].value = {{ (["127.0.0.1", "::1"]
+                + ansible_all_ipv4_addresses | d([])
+                + ((ansible_all_ipv4_addresses | map("regex_replace", "^", "::ffff:") | list)
+                   if ansible_all_ipv4_addresses | d([]) else [])
+                + (ansible_all_ipv6_addresses | d([])
+                   | difference(ansible_all_ipv6_addresses | d([])
+                   | ansible.utils.ipaddr("link-local"))))
+               | sort | unique }}
+
+mailman__web_ldap_configuration[0].name = ldap_import
+mailman__web_ldap_configuration[0].comment = Enable LDAP authentication support in Django
+mailman__web_ldap_configuration[0].raw = import ldap
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+
+mailman__web_ldap_configuration[0].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[0].copy_id_from = secret_key
+mailman__web_ldap_configuration[0].weight = -200
+mailman__web_ldap_configuration[1].name = auth_ldap_server_uri
+mailman__web_ldap_configuration[1].comment = Integration with the 'django-auth-ldap' library
+https://django-auth-ldap.readthedocs.io/en/latest/reference.html
+
+mailman__web_ldap_configuration[1].value = {{ mailman__ldap_uri | join(" ") }}
+mailman__web_ldap_configuration[1].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[2].name = auth_ldap_start_tls
+mailman__web_ldap_configuration[2].value = {{ mailman__ldap_starttls }}
+mailman__web_ldap_configuration[2].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[3].name = auth_ldap_bind_dn
+mailman__web_ldap_configuration[3].value = {{ mailman__ldap_bind_dn }}
+mailman__web_ldap_configuration[3].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[4].name = auth_ldap_bind_password
+mailman__web_ldap_configuration[4].value = {{ mailman__ldap_bind_password }}
+mailman__web_ldap_configuration[4].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[5].name = auth_ldap_user_search
+mailman__web_ldap_configuration[5].raw = AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    '{{ mailman__ldap_people_dn }}',
+    ldap.SCOPE_SUBTREE,
+    '{{ mailman__ldap_people_filter }}',
+)
+
+mailman__web_ldap_configuration[5].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[6].name = auth_ldap_group_search
+mailman__web_ldap_configuration[6].raw = AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+    '{{ mailman__ldap_groups_dn }}',
+    ldap.SCOPE_SUBTREE,
+    '{{ mailman__ldap_groups_filter }}',
+)
+AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr='cn')
+
+mailman__web_ldap_configuration[6].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[7].name = auth_ldap_user_attr_map
+mailman__web_ldap_configuration[7].config.first_name = givenName
+mailman__web_ldap_configuration[7].config.last_name = sn
+mailman__web_ldap_configuration[7].config.email = mail
+mailman__web_ldap_configuration[7].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[8].name = auth_ldap_user_flags_by_group
+mailman__web_ldap_configuration[8].config.is_staff = {{ mailman__ldap_superusers_group + "," + mailman__ldap_groups_dn }}
+mailman__web_ldap_configuration[8].config.is_superuser = {{ mailman__ldap_superusers_group + "," + mailman__ldap_groups_dn }}
+mailman__web_ldap_configuration[8].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[9].name = auth_ldap_find_group_perms
+mailman__web_ldap_configuration[9].value = True
+mailman__web_ldap_configuration[9].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[10].name = auth_ldap_cache_timeout
+mailman__web_ldap_configuration[10].value = 3600
+mailman__web_ldap_configuration[10].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_ldap_configuration[11].name = authentication_backends
+mailman__web_ldap_configuration[11].value[0] = django_auth_ldap.backend.LDAPBackend
+mailman__web_ldap_configuration[11].value[1] = django.contrib.auth.backends.ModelBackend
+mailman__web_ldap_configuration[11].state = {{ "present" if mailman__ldap_enabled | bool else "ignore" }}
+mailman__web_combined_configuration = {{ mailman__web_original_configuration
+                                         + mailman__web_default_configuration
+                                         + mailman__web_ldap_configuration
+                                         + mailman__web_configuration
+                                         + mailman__web_group_configuration
+                                         + mailman__web_host_configuration }}
+

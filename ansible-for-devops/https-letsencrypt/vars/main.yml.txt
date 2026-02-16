@@ -1,0 +1,9 @@
+~d0.firewall_allowed_tcp_ports = 
+~d0.nginx_vhosts = []
+~d0.nginx_remove_default_vhost = true
+~d0.nginx_ppa_version = stable
+~d0.nginx_docroot = /var/www/html
+~d0.certbot_create_if_missing = true
+~d0.certbot_admin_email = "{{ letsencrypt_email }}"
+~d0.certbot_certs = 
+~d1.domains = 

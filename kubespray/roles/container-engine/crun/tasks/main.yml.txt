@@ -1,0 +1,8 @@
+[0].name = Crun | Download crun binary
+[0].include_tasks = ../../../download/tasks/download_file.yml
+[0].vars.download = {{ download_defaults | combine(downloads.crun) }}
+[1].name = Copy crun binary from download dir
+[1].copy.src = {{ downloads.crun.dest }}
+[1].copy.dest = {{ bin_dir }}/crun
+[1].copy.mode = 0755
+[1].copy.remote_src = true

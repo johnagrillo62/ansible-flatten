@@ -1,0 +1,2 @@
+[0].name = restart mysql
+[0].service = name=mysqld state=restarted

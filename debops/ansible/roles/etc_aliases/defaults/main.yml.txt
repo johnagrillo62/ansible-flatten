@@ -1,0 +1,189 @@
+etc_aliases__rfc2142_compliant = True
+etc_aliases__admin_private_email = {{ ansible_local.core.admin_private_email | d("root@" + etc_aliases__domain) }}
+etc_aliases__domain = {{ ansible_domain }}
+etc_aliases__rfc2142_recipients[0].name = info
+etc_aliases__rfc2142_recipients[0].dest = staff
+etc_aliases__rfc2142_recipients[0].comment = Packaged information about the organization,
+products and/or services, as appropriate.
+
+etc_aliases__rfc2142_recipients[0].section = business
+etc_aliases__rfc2142_recipients[0].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[1].name = marketing
+etc_aliases__rfc2142_recipients[1].dest = staff
+etc_aliases__rfc2142_recipients[1].comment = Product marketing and marketing communications.
+etc_aliases__rfc2142_recipients[1].section = business
+etc_aliases__rfc2142_recipients[1].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[2].name = sales
+etc_aliases__rfc2142_recipients[2].dest = staff
+etc_aliases__rfc2142_recipients[2].comment = Product purchase information.
+etc_aliases__rfc2142_recipients[2].section = business
+etc_aliases__rfc2142_recipients[2].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[3].name = support
+etc_aliases__rfc2142_recipients[3].dest = staff
+etc_aliases__rfc2142_recipients[3].comment = Problems with products or services.
+etc_aliases__rfc2142_recipients[3].section = business
+etc_aliases__rfc2142_recipients[3].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[4].name = abuse
+etc_aliases__rfc2142_recipients[4].dest = root
+etc_aliases__rfc2142_recipients[4].comment = Inappropriate public behaviour.
+etc_aliases__rfc2142_recipients[4].section = network
+etc_aliases__rfc2142_recipients[4].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[5].name = noc
+etc_aliases__rfc2142_recipients[5].to = root
+etc_aliases__rfc2142_recipients[5].comment = Network infrastructure.
+etc_aliases__rfc2142_recipients[5].section = network
+etc_aliases__rfc2142_recipients[5].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[6].alias = security
+etc_aliases__rfc2142_recipients[6].to = root
+etc_aliases__rfc2142_recipients[6].comment = Security bulletins or queries.
+etc_aliases__rfc2142_recipients[6].section = network
+etc_aliases__rfc2142_recipients[6].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[7].name = postmaster
+etc_aliases__rfc2142_recipients[7].dest = root
+etc_aliases__rfc2142_recipients[7].section = support
+etc_aliases__rfc2142_recipients[7].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[8].name = hostmaster
+etc_aliases__rfc2142_recipients[8].dest = root
+etc_aliases__rfc2142_recipients[8].section = support
+etc_aliases__rfc2142_recipients[8].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[9].name = usenet
+etc_aliases__rfc2142_recipients[9].dest = root
+etc_aliases__rfc2142_recipients[9].section = support
+etc_aliases__rfc2142_recipients[9].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[10].name = news
+etc_aliases__rfc2142_recipients[10].dest = usenet
+etc_aliases__rfc2142_recipients[10].section = support
+etc_aliases__rfc2142_recipients[10].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[11].name = webmaster
+etc_aliases__rfc2142_recipients[11].dest = root
+etc_aliases__rfc2142_recipients[11].section = support
+etc_aliases__rfc2142_recipients[11].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[12].name = www
+etc_aliases__rfc2142_recipients[12].dest = webmaster
+etc_aliases__rfc2142_recipients[12].section = support
+etc_aliases__rfc2142_recipients[12].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[13].name = uucp
+etc_aliases__rfc2142_recipients[13].dest = root
+etc_aliases__rfc2142_recipients[13].section = support
+etc_aliases__rfc2142_recipients[13].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__rfc2142_recipients[14].name = ftp
+etc_aliases__rfc2142_recipients[14].dest = root
+etc_aliases__rfc2142_recipients[14].section = support
+etc_aliases__rfc2142_recipients[14].state = {{ "present"
+               if etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__default_recipients[0].name = root
+etc_aliases__default_recipients[0].dest = {{ etc_aliases__admin_private_email }}
+etc_aliases__default_recipients[0].section = admin
+etc_aliases__default_recipients[0].weight = -10
+etc_aliases__default_recipients[1].name = admin
+etc_aliases__default_recipients[1].dest = root
+etc_aliases__default_recipients[1].section = admin
+etc_aliases__default_recipients[1].weight = -8
+etc_aliases__default_recipients[2].name = hostmaster
+etc_aliases__default_recipients[2].dest = root
+etc_aliases__default_recipients[2].section = admin
+etc_aliases__default_recipients[2].weight = -8
+etc_aliases__default_recipients[2].state = {{ "present"
+               if not etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__default_recipients[3].name = operator
+etc_aliases__default_recipients[3].dest = root
+etc_aliases__default_recipients[3].section = admin
+etc_aliases__default_recipients[3].weight = -8
+etc_aliases__default_recipients[4].name = backup
+etc_aliases__default_recipients[4].dest = root
+etc_aliases__default_recipients[4].section = admin
+etc_aliases__default_recipients[4].weight = -5
+etc_aliases__default_recipients[5].name = monitoring
+etc_aliases__default_recipients[5].dest = root
+etc_aliases__default_recipients[5].section = admin
+etc_aliases__default_recipients[5].weight = -5
+etc_aliases__default_recipients[6].name = staff
+etc_aliases__default_recipients[6].dest = root
+etc_aliases__default_recipients[6].section = admin
+etc_aliases__default_recipients[7].name = postmaster
+etc_aliases__default_recipients[7].dest = root
+etc_aliases__default_recipients[7].section = system
+etc_aliases__default_recipients[7].state = {{ "present"
+               if not etc_aliases__rfc2142_compliant | bool
+               else "ignore" }}
+
+etc_aliases__default_recipients[8].name = MAILER-DAEMON
+etc_aliases__default_recipients[8].dest = postmaster
+etc_aliases__default_recipients[8].section = system
+etc_aliases__default_recipients[9].name = noreply
+etc_aliases__default_recipients[9].dest = devnull
+etc_aliases__default_recipients[9].section = system
+etc_aliases__default_recipients[9].weight = 10
+etc_aliases__default_recipients[10].name = devnull
+etc_aliases__default_recipients[10].dest = /dev/null
+etc_aliases__default_recipients[10].section = system
+etc_aliases__default_recipients[10].weight = 20
+etc_aliases__dependent_recipients_filter = {{ lookup("template",
+                                              "lookup/etc_aliases__dependent_recipients_filter.j2")
+                                              | from_yaml }}
+
+etc_aliases__combined_recipients = {{ etc_aliases__rfc2142_recipients
+                                       + etc_aliases__default_recipients
+                                       + etc_aliases__dependent_recipients_filter
+                                       + etc_aliases__recipients
+                                       + etc_aliases__group_recipients
+                                       + etc_aliases__host_recipients }}
+
+etc_aliases__sections[0].name = admin
+etc_aliases__sections[0].title = IT Operations mail aliases
+etc_aliases__sections[1].name = unknown
+etc_aliases__sections[1].title = User mail aliases
+etc_aliases__sections[2].name = business
+etc_aliases__sections[2].title = RFC 2142: Business-related mail aliases
+etc_aliases__sections[3].name = network
+etc_aliases__sections[3].title = RFC 2142: Network Operations mail aliases
+etc_aliases__sections[4].name = support
+etc_aliases__sections[4].title = RFC 2142: Mail aliases for specific host services
+etc_aliases__sections[5].name = system
+etc_aliases__sections[5].title = Internal mail system aliases

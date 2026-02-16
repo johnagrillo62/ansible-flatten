@@ -1,0 +1,330 @@
+postldap__postfix__dependent_packages = {{ ["postfix-ldap"]
+                                           if postldap__ldap_enabled else [] }} 
+postldap__domain = {{ ansible_domain }}
+postldap__domain_rev_pattern = {% set reversed = [] %}
+{% for element in postldap__domain.split(".") %}
+{% set _ = reversed.append("%" + loop.index | string) %}
+{% endfor %}
+{% if reversed | length == 1 %}
+{{ "%d" }}{% else %}
+{{ reversed[0:9][::-1] | join(".") }}{% endif %}
+postldap__tls_ca_cert_dir = /etc/ssl/certs/
+postldap__vmail_posix_user = vmail
+postldap__vmail_posix_uidnumber = {{ ansible_local.postldap.vmail_posix_uidnumber | d(None) }}
+postldap__vmail_posix_group = vmail
+postldap__vmail_posix_gidnumber = {{ ansible_local.postldap.vmail_posix_gidnumber | d(None) }}
+postldap__mailbox_base = /var/vmail
+postldap__virtual_mailbox_maps_attribute = mailAddress
+postldap__virtual_mailbox_maps_format = /%d/%u/Maildir/
+postldap__virtual_alias_maps[0] = $alias_maps
+postldap__virtual_alias_maps[1] = ldap:/etc/postfix/ldap_virtual_forward_maps.cf
+postldap__virtual_alias_maps[2] = ldap:/etc/postfix/ldap_virtual_alias_maps.cf
+postldap__postfix__dependent_maincf[0].name = virtual_mailbox_domains
+postldap__postfix__dependent_maincf[0].value = ldap:/etc/postfix/ldap_virtual_mailbox_domains.cf
+postldap__postfix__dependent_maincf[0].section = virtual
+postldap__postfix__dependent_maincf[0].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[1].name = virtual_alias_maps
+postldap__postfix__dependent_maincf[1].value = {{ postldap__virtual_alias_maps }}
+postldap__postfix__dependent_maincf[1].section = virtual
+postldap__postfix__dependent_maincf[1].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[2].name = virtual_mailbox_base
+postldap__postfix__dependent_maincf[2].value = {{ postldap__mailbox_base }}
+postldap__postfix__dependent_maincf[2].section = virtual
+postldap__postfix__dependent_maincf[2].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[3].name = virtual_mailbox_maps
+postldap__postfix__dependent_maincf[3].value = ldap:/etc/postfix/ldap_virtual_mailbox_maps.cf
+postldap__postfix__dependent_maincf[3].section = virtual
+postldap__postfix__dependent_maincf[3].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[4].name = virtual_uid_maps
+postldap__postfix__dependent_maincf[4].value = static:{{ postldap__vmail_posix_uidnumber | mandatory }}
+postldap__postfix__dependent_maincf[4].section = virtual
+postldap__postfix__dependent_maincf[4].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[5].name = virtual_gid_maps
+postldap__postfix__dependent_maincf[5].value = static:{{ postldap__vmail_posix_gidnumber | mandatory }}
+postldap__postfix__dependent_maincf[5].section = virtual
+postldap__postfix__dependent_maincf[5].state = {{ "present"
+            if (postldap__ldap_enabled | bool and
+                postfix__version is version_compare("2.0", ">="))
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[6].name = virtual_minimum_uid
+postldap__postfix__dependent_maincf[6].value = {{ postldap__vmail_posix_uidnumber | mandatory }}
+postldap__postfix__dependent_maincf[6].section = virtual
+postldap__postfix__dependent_maincf[6].state = absent
+postldap__postfix__dependent_maincf[7].name = smtpd_sender_login_maps
+postldap__postfix__dependent_maincf[7].value[0] = ldap:/etc/postfix/ldap_smtpd_sender_login_maps.cf
+postldap__postfix__dependent_maincf[7].section = base
+postldap__postfix__dependent_maincf[7].state = {{ "present"
+            if (postldap__ldap_enabled | bool)
+            else "absent" }}
+
+postldap__postfix__dependent_maincf[8].name = smtpd_sender_restrictions
+postldap__postfix__dependent_maincf[8].value[0].name = check_sasl_access ldap:${config_directory}/ldap_known_sender_relays.cf
+postldap__postfix__dependent_maincf[8].value[0].copy_id_from = permit_mynetworks
+postldap__postfix__dependent_maincf[8].value[0].weight = 5
+postldap__postfix__dependent_maincf[8].value[1].name = check_sender_access ldap:${config_directory}/ldap_unauth_sender_access.cf
+postldap__postfix__dependent_maincf[8].value[1].copy_id_from = permit_sasl_authenticated
+postldap__postfix__dependent_maincf[8].value[1].weight = 10
+postldap__postfix__dependent_maincf[8].value[2].name = check_sender_access ldap:${config_directory}/ldap_unauth_domain_access.cf
+postldap__postfix__dependent_maincf[8].value[2].copy_id_from = permit_sasl_authenticated
+postldap__postfix__dependent_maincf[8].value[2].weight = 15
+postldap__postfix__dependent_maincf[8].state = {{ "present"
+            if (postldap__ldap_enabled | bool)
+            else "ignore" }}
+
+postldap__postfix__dependent_maincf[9].name = smtpd_relay_restrictions
+postldap__postfix__dependent_maincf[9].value[0].name = check_sasl_access ldap:${config_directory}/ldap_known_sender_relays.cf
+postldap__postfix__dependent_maincf[9].value[0].copy_id_from = permit_mynetworks
+postldap__postfix__dependent_maincf[9].value[0].weight = 5
+postldap__postfix__dependent_maincf[9].state = {{ "present"
+            if (postldap__ldap_enabled | bool)
+            else "ignore" }}
+
+postldap__postfix__dependent_maincf[10].name = smtpd_restriction_classes
+postldap__postfix__dependent_maincf[10].value[0] = smtpd_permit_known_sender_relays
+postldap__postfix__dependent_maincf[10].state = {{ "present"
+            if (postldap__ldap_enabled | bool)
+            else "ignore" }}
+
+postldap__postfix__dependent_maincf[11].name = smtpd_permit_known_sender_relays
+postldap__postfix__dependent_maincf[11].value[0] = reject_unlisted_sender
+postldap__postfix__dependent_maincf[11].value[1] = permit_sasl_authenticated
+postldap__postfix__dependent_maincf[11].value[2] = reject
+postldap__postfix__dependent_maincf[11].state = {{ "present"
+            if (postldap__ldap_enabled | bool)
+            else "ignore" }}
+
+postldap__postfix_ldap_connection.server_host = {{ postldap__ldap_uri }}
+postldap__postfix_ldap_connection.start_tls = {{ "yes"
+                  if (postldap__ldap_start_tls | bool)
+                  else "no" }}
+
+postldap__postfix_ldap_connection.version = 3
+postldap__postfix_ldap_connection.tls_ca_cert_dir = {{ postldap__tls_ca_cert_dir }}
+postldap__postfix_ldap_connection.bind = yes
+postldap__postfix_ldap_connection.bind_dn = {{ postldap__ldap_binddn }}
+postldap__postfix_ldap_connection.bind_pw = {{ postldap__ldap_bindpw }}
+postldap__postfix_ldap_connection.scope = sub
+postldap__postfix__dependent_lookup_tables[0].name = ldap_virtual_alias_maps.cf
+postldap__postfix__dependent_lookup_tables[0].state = present
+postldap__postfix__dependent_lookup_tables[0].comment = The virtual_alias_maps setting is used to find the final delivery address,
+given an alias.
+
+postldap__postfix__dependent_lookup_tables[0].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[0].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[0].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[0].query_filter = (& (objectClass=mailRecipient) (mailAlternateAddress=%s) (| (authorizedService=all) (authorizedService=mail:receive) ) )
+postldap__postfix__dependent_lookup_tables[0].result_attribute = mailAddress
+postldap__postfix__dependent_lookup_tables[1].name = ldap_virtual_forward_maps.cf
+postldap__postfix__dependent_lookup_tables[1].state = present
+postldap__postfix__dependent_lookup_tables[1].comment = The virtual_forward_maps setting is used to find the final delivery address,
+given a distribution list.
+
+postldap__postfix__dependent_lookup_tables[1].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[1].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[1].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[1].query_filter = (& (| (objectClass=mailAlias) (objectClass=mailDistributionList) ) (mailAddress=%s) (| (authorizedService=all) (authorizedService=mail:receive) ) )
+postldap__postfix__dependent_lookup_tables[1].result_attribute = mailForwardTo
+postldap__postfix__dependent_lookup_tables[1].special_result_attribute = member
+postldap__postfix__dependent_lookup_tables[1].leaf_result_attribute = mailAddress
+postldap__postfix__dependent_lookup_tables[2].name = ldap_virtual_mailbox_maps.cf
+postldap__postfix__dependent_lookup_tables[2].state = present
+postldap__postfix__dependent_lookup_tables[2].comment = As we only want to accept mail, where we know the recipients
+(and are responsible for them), the virtual_mailbox_maps configuration is used.
+
+postldap__postfix__dependent_lookup_tables[2].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[2].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[2].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[2].query_filter = (& (objectClass=mailRecipient) (| (mailAddress=%s) ) (| (authorizedService=all) (authorizedService=mail:receive) ) )
+postldap__postfix__dependent_lookup_tables[2].result_attribute = {{ postldap__virtual_mailbox_maps_attribute }}
+postldap__postfix__dependent_lookup_tables[2].result_format = {{ postldap__virtual_mailbox_maps_format }}
+postldap__postfix__dependent_lookup_tables[3].name = ldap_virtual_mailbox_domains.cf
+postldap__postfix__dependent_lookup_tables[3].state = present
+postldap__postfix__dependent_lookup_tables[3].comment = The virtual_mailbox_domains configurations performs a lookup,
+if the postfix is responsible for the given domain.
+
+postldap__postfix__dependent_lookup_tables[3].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[3].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[3].search_base = {{ postldap__ldap_domains_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[3].query_filter = (& (objectClass=dNSDomain) (dc=%s) )
+postldap__postfix__dependent_lookup_tables[3].result_attribute = dc
+postldap__postfix__dependent_lookup_tables[4].name = ldap_smtpd_sender_login_maps.cf
+postldap__postfix__dependent_lookup_tables[4].state = present
+postldap__postfix__dependent_lookup_tables[4].comment = The smtpd_sender_login_maps configurations performs a lookup from an incoming
+email-sender to a username. Postfix first performs a full lookup
+on user@domain, then user and then @domain.
+The later one is also used for catchalls where the mailAlternateAddress
+is set to e.g. @foobar.com
+
+postldap__postfix__dependent_lookup_tables[4].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[4].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[4].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[4].query_filter = (& (| (& (objectClass=mailRecipient) (| (mailAddress=%s) (mailAlternateAddress=%s) ) ) (& (objectClass=account) (uid=%u) (host=%d) ) ) (| (authorizedService=all) (authorizedService=mail:send) ) )
+postldap__postfix__dependent_lookup_tables[4].result_attribute = 
+postldap__postfix__dependent_lookup_tables[4].special_result_attribute = member
+postldap__postfix__dependent_lookup_tables[4].leaf_result_attribute = {{ postldap__virtual_mailbox_maps_attribute }}
+postldap__postfix__dependent_lookup_tables[4].size_limit = 1
+postldap__postfix__dependent_lookup_tables[5].name = ldap_known_sender_relays.cf
+postldap__postfix__dependent_lookup_tables[5].state = present
+postldap__postfix__dependent_lookup_tables[5].comment = This lookup table checks if a given SASL authenticated login specified as
+'user@fqdn' is a service account which can be used to relay e-mails from
+other hosts through Postfix. If such service account is found, the lookup
+table tells Postfix to use a relaxed sender and relay restrictions which
+don't check for sender <-> login mismatch. This is required for accepting
+e-mail messages from trusted SMTP services, for example nullmailer, which
+can send e-mail messages on behalf of other users but cannot authenticate
+as them.
+
+postldap__postfix__dependent_lookup_tables[5].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[5].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[5].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[5].query_filter = (& (objectClass=account) (uid=%u) (host=%d) (| (authorizedService=all) (authorizedService=mail:send) ) )
+postldap__postfix__dependent_lookup_tables[5].result_attribute = uid
+postldap__postfix__dependent_lookup_tables[5].result_format = smtpd_permit_known_sender_relays
+postldap__postfix__dependent_lookup_tables[5].size_limit = 1
+postldap__postfix__dependent_lookup_tables[6].name = ldap_unauth_sender_access.cf
+postldap__postfix__dependent_lookup_tables[6].state = present
+postldap__postfix__dependent_lookup_tables[6].comment = This lookup table is used to check if a sender exists after authenticated
+sender has been accepted. If a sender exists, it means that the sender has
+not been authenticated properly, or perhaps somebody tries to send e-mail
+as one of our own users which is not allowed without authentication. In
+such cases, the mail will be rejected with a sensible response indicating
+that the sender needs to enable SMTP authentication.
+
+postldap__postfix__dependent_lookup_tables[6].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[6].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[6].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[6].query_filter = (| (& (objectClass=mailRecipient) (| (mailAddress=%s) (mailAlternateAddress=%s) ) ) (& (objectClass=account) (uid=%u) (host=%d) ) )
+postldap__postfix__dependent_lookup_tables[6].result_attribute = uid, mailAddress, mailAlternateAddress
+postldap__postfix__dependent_lookup_tables[6].result_format = 550 Authentication Required
+postldap__postfix__dependent_lookup_tables[7].name = ldap_unauth_domain_access.cf
+postldap__postfix__dependent_lookup_tables[7].state = present
+postldap__postfix__dependent_lookup_tables[7].comment = This lookup table is used to check if a sender domain is one of our own
+domains. This check is performed after authenticated senders have been
+accepted, and if the domain is one of our own domains, it means that
+somebody tries to send an e-mail with our own DNS domain which is not
+allowed. The e-mail will be rejected with a message suggesting that the
+SMTP authentication needs to be enabled.
+
+postldap__postfix__dependent_lookup_tables[7].no_log = {{ debops__no_log | d(True) }}
+postldap__postfix__dependent_lookup_tables[7].connection = {{ postldap__postfix_ldap_connection }}
+postldap__postfix__dependent_lookup_tables[7].search_base = {{ postldap__ldap_base_dn | join(",") }}
+postldap__postfix__dependent_lookup_tables[7].query_filter = (| (& (objectClass=dNSDomain) (| (dc=%d) (dc={{ postldap__domain_rev_pattern }}) ) ) (& (objectClass=domainRelatedObject) ( | (associatedDomain=%d) (associatedDomain={{ postldap__domain_rev_pattern }}) ) ) )
+postldap__postfix__dependent_lookup_tables[7].result_attribute = dc, associatedDomain
+postldap__postfix__dependent_lookup_tables[7].result_format = 550 Domain Authentication Required
+postldap__ldap_enabled = {{ True
+                            if (ansible_local | d() and ansible_local.ldap | d() and
+                               (ansible_local.ldap.enabled | d()) | bool)
+                            else False }}
+
+postldap__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+postldap__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+postldap__ldap_self_rdn = uid=postfix
+postldap__ldap_self_object_classes[0] = account
+postldap__ldap_self_object_classes[1] = simpleSecurityObject
+postldap__ldap_self_object_classes[2] = authorizedServiceObject
+postldap__ldap_self_attributes.uid = {{ postldap__ldap_self_rdn.split("=")[1] }}
+postldap__ldap_self_attributes.userPassword = {{ postldap__ldap_bindpw }}
+postldap__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+postldap__ldap_self_attributes.description = Account used by the "Postfix" service to access the LDAP directory
+postldap__ldap_self_attributes.authorizedService = mail:send
+postldap__ldap_binddn = {{ ([postldap__ldap_self_rdn]
+                            + postldap__ldap_device_dn) | join(",") }} 
+postldap__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                   + postldap__ldap_binddn | to_uuid + ".password length=32 "
+                                   + "chars=ascii_letters,digits,!@_#$%^&*"))
+                           if postldap__ldap_enabled | bool
+                           else "" }}
+
+postldap__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
+postldap__ldap_people_dn = {{ [postldap__ldap_people_rdn]
+                              + postldap__ldap_base_dn }} 
+postldap__ldap_uri = {{ ansible_local.ldap.uri | d([""]) }}
+postldap__ldap_private_subtree = False
+postldap__ldap_groups_rdn = {{ ansible_local.ldap.groups_rdn | d("ou=Groups") }}
+postldap__ldap_domains_rdn = {{ ansible_local.ldap.domains_rdn | d("ou=Domains") }}
+postldap__ldap_groups_dn = {{ ([postldap__ldap_groups_rdn, postldap__ldap_self_rdn]
+                               + postldap__ldap_device_dn)
+                              if postldap__ldap_private_subtree | bool
+                              else ([postldap__ldap_groups_rdn]
+                                    + postldap__ldap_base_dn) }}
+
+postldap__ldap_domains_dn = {{ ([postldap__ldap_domains_rdn, postldap__ldap_self_rdn]
+                                + postldap__ldap_device_dn)
+                               if postldap__ldap_private_subtree | bool
+                               else ([postldap__ldap_domains_rdn]
+                                     + postldap__ldap_base_dn) }}
+
+postldap__ldap_default_virtual_domain_rdn = {{ ansible_domain }}
+postldap__ldap_default_virtual_domain_dn = {{ (["dc="
+                                               + postldap__ldap_default_virtual_domain_rdn]
+                                               + postldap__ldap_domains_dn) | join(",") }}
+
+postldap__ldap_server_uri = {{ ansible_local.ldap.uri | d([""]) | first }}
+postldap__ldap_start_tls = {{ ansible_local.ldap.start_tls | d(True) | bool }}
+postldap__ldap_combined_config = {{ postldap__ldap_default_config
+                                    + postldap__ldap_config
+                                    + postldap__group_ldap_config
+                                    + postldap__host_ldap_config }}
+
+postldap__ldap__dependent_tasks[0].name = Create Postfix account for {{ postldap__ldap_device_dn | join(",") }}
+postldap__ldap__dependent_tasks[0].dn = {{ postldap__ldap_binddn }}
+postldap__ldap__dependent_tasks[0].objectClass = {{ postldap__ldap_self_object_classes }}
+postldap__ldap__dependent_tasks[0].attributes = {{ postldap__ldap_self_attributes }}
+postldap__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+postldap__ldap__dependent_tasks[0].state = {{ "present"
+                if (postldap__ldap_enabled | bool and
+                    postldap__ldap_device_dn | d())
+                else "ignore" }}
+
+postldap__ldap__dependent_tasks[1].name = Create Postfix group container for {{ postldap__ldap_device_dn | join(",") }}
+postldap__ldap__dependent_tasks[1].dn = {{ postldap__ldap_groups_dn }}
+postldap__ldap__dependent_tasks[1].objectClass = organizationalStructure
+postldap__ldap__dependent_tasks[1].attributes.ou = {{ postldap__ldap_groups_rdn.split("=")[1] }}
+postldap__ldap__dependent_tasks[1].attributes.description = User groups used in Postfix
+postldap__ldap__dependent_tasks[1].state = {{ "present"
+               if (postldap__ldap_enabled | bool and
+                   postldap__ldap_device_dn | d() and
+                   postldap__ldap_private_subtree | bool)
+               else "ignore" }}
+
+postldap__ldap__dependent_tasks[2].name = Create Postfix domains container for {{ postldap__ldap_device_dn | join(",") }}
+postldap__ldap__dependent_tasks[2].dn = {{ postldap__ldap_domains_dn }}
+postldap__ldap__dependent_tasks[2].objectClass = organizationalStructure
+postldap__ldap__dependent_tasks[2].attributes.ou = {{ postldap__ldap_domains_rdn.split("=")[1] }}
+postldap__ldap__dependent_tasks[2].attributes.description = Virtual Mail Domains used in Postfix
+postldap__ldap__dependent_tasks[2].state = {{ "present"
+               if (postldap__ldap_enabled | bool and
+                   postldap__ldap_device_dn | d() and
+                   postldap__ldap_private_subtree | bool)
+               else "ignore" }}
+
+postldap__ldap__dependent_tasks[3].name = Create Postfix Default Virtual Mail Domain for {{ postldap__ldap_default_virtual_domain_dn }}
+postldap__ldap__dependent_tasks[3].dn = {{ postldap__ldap_default_virtual_domain_dn }}
+postldap__ldap__dependent_tasks[3].objectClass = dNSDomain
+postldap__ldap__dependent_tasks[3].state = {{ "present"
+               if (postldap__ldap_enabled | bool and
+                   postldap__ldap_device_dn | d() and
+                   postldap__ldap_private_subtree | bool)
+               else "ignore" }}
+

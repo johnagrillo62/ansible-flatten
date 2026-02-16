@@ -1,0 +1,11 @@
+doc[0][0].hosts = all
+doc[0][0].serial = 5
+doc[0][0].tasks[0].name = take the machine out of rotation
+doc[0][0].tasks[0].command = echo taking out of rotation {{inventory_hostname}}
+doc[0][0].tasks[0].delegate_to = 127.0.0.1
+doc[0][0].tasks[1].name = do several things on the actual host
+doc[0][0].tasks[1].command = echo hi mom {{inventory_hostname}}
+doc[0][0].tasks[2].name = put machine back into rotation
+doc[0][0].tasks[2].command = echo inserting into rotation {{inventory_hostname}}
+doc[0][0].tasks[2].delegate_to = 127.0.0.1
+doc[1] = 

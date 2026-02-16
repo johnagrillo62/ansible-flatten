@@ -1,0 +1,2 @@
+[0].name = restart nginx
+[0].service = name=nginx state=restarted

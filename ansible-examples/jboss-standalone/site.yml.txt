@@ -1,0 +1,2 @@
+[0].hosts = all
+[0].roles[0] = jboss-standalone

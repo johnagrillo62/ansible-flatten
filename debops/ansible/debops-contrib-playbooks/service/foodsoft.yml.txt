@@ -1,0 +1,2 @@
+[0].name = Install and configure Foodsoft
+[0].import_playbook = foodsoft-nginx.yml

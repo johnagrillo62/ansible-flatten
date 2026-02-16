@@ -1,0 +1,2 @@
+[0].import_tasks = prosody.yml
+[0].tags = prosody

@@ -1,0 +1,14 @@
+[0].name = Assemble /etc/fail2ban/jail.local
+[0]["ansible.builtin.assemble"].src = /etc/fail2ban/jail.local.d
+[0]["ansible.builtin.assemble"].dest = /etc/fail2ban/jail.local
+[0]["ansible.builtin.assemble"].owner = root
+[0]["ansible.builtin.assemble"].group = root
+[0]["ansible.builtin.assemble"].mode = 0644
+[0].notify[0] = Reload fail2ban jails
+[1].name = Restart fail2ban
+[1]["ansible.builtin.service"].name = fail2ban
+[1]["ansible.builtin.service"].state = restarted
+[2].name = Reload fail2ban jails
+[2]["ansible.builtin.shell"] = type fail2ban-server > /dev/null && (fail2ban-client ping > /dev/null && fail2ban-client reload > /dev/null || true) || true
+[2].register = global_handlers__fail2ban_register_reload
+[2].changed_when = global_handlers__fail2ban_register_reload.changed | bool

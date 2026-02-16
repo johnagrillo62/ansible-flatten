@@ -1,0 +1,17 @@
+kind = ClusterRole
+apiVersion = rbac.authorization.k8s.io/v1
+metadata.name = multus
+rules[0].apiGroups[0] = k8s.cni.cncf.io
+rules[0].resources[0] = *
+rules[0].verbs[0] = *
+rules[1].apiGroups[0] = 
+rules[1].resources[0] = pods
+rules[1].resources[1] = pods/status
+rules[1].verbs[0] = get
+rules[1].verbs[1] = update
+rules[2].apiGroups[0] = 
+rules[2].apiGroups[1] = events.k8s.io
+rules[2].resources[0] = events
+rules[2].verbs[0] = create
+rules[2].verbs[1] = patch
+rules[2].verbs[2] = update

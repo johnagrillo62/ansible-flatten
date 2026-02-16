@@ -1,0 +1,12 @@
+name_to_id_endpoint_resolution.webhook_credential = credentials
+name_to_id_endpoint_resolution.credential = credentials
+name_to_id_endpoint_resolution.credential_type = credential_types
+name_to_id_endpoint_resolution.default_environment = execution_environments
+name_to_id_endpoint_resolution.execution_environment = execution_environments
+name_to_id_endpoint_resolution.inventory = inventories
+name_to_id_endpoint_resolution.organization = organizations
+name_to_id_endpoint_resolution.project = projects
+name_to_id_endpoint_resolution.source_project = projects
+name_to_id_endpoint_resolution.team = teams
+name_to_id_endpoint_resolution.unified_job_template = unified_job_templates
+name_to_id_endpoint_resolution.user = users

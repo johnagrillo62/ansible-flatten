@@ -1,0 +1,3 @@
+roles[0].name = geerlingguy.firewall
+roles[1].name = geerlingguy.certbot
+roles[2].name = geerlingguy.nginx

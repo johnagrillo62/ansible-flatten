@@ -1,0 +1,12 @@
+~d0.name = Match needed groups by their old names or definition
+~d1.vars = 
+~d2.group_mappings = 
+~d3.kube_control_plane = 
+~d3.kube_node = 
+~d3.calico_rr = 
+~d3.no_floating = 
+~d3.k8s_cluster = 
+~d1.group_by = 
+~d2.key = "{{ item.key }}"
+~d1.when = group_names | intersect(item.value) | length > 0
+~d1.loop = "{{ group_mappings | dict2items }}"

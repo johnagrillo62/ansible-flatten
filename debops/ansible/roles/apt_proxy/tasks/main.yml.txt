@@ -1,0 +1,24 @@
+[0].name = Install requested system packages
+[0]["ansible.builtin.package"].name = {{ q("flattened", apt_proxy__base_packages) }}
+[0]["ansible.builtin.package"].state = present
+[0].when = apt_proxy__deploy_state == 'present' and apt_proxy__temporally_avoid_unreachable | bool
+[0].register = apt_proxy__register_packages
+[0].until = apt_proxy__register_packages is succeeded
+[1].name = Copy get-reachable-apt-proxy to remote host
+[1]["ansible.builtin.copy"].dest = {{ apt_proxy__proxy_auto_detect }}
+[1]["ansible.builtin.copy"].src = usr/local/lib/get-reachable-apt-proxy
+[1]["ansible.builtin.copy"].owner = root
+[1]["ansible.builtin.copy"].group = root
+[1]["ansible.builtin.copy"].mode = 0755
+[1].when = apt_proxy__deploy_state == 'present' and apt_proxy__temporally_avoid_unreachable | bool
+[2].name = Remove APT proxy configuration
+[2]["ansible.builtin.file"].path = /etc/apt/apt.conf.d/{{ apt_proxy__filename }}
+[2]["ansible.builtin.file"].state = absent
+[2].when = apt_proxy__deploy_state == 'absent'
+[3].name = Generate APT proxy configuration
+[3]["ansible.builtin.template"].src = etc/apt/apt.conf.d/apt_proxy.conf.j2
+[3]["ansible.builtin.template"].dest = /etc/apt/apt.conf.d/{{ apt_proxy__filename }}
+[3]["ansible.builtin.template"].owner = root
+[3]["ansible.builtin.template"].group = root
+[3]["ansible.builtin.template"].mode = 0644
+[3].when = apt_proxy__deploy_state == 'present'

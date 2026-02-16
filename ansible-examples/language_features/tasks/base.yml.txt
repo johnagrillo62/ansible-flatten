@@ -1,0 +1,6 @@
+[0].name = no selinux
+[0].command = /usr/sbin/setenforce 0
+[1].name = no iptables
+[1].service = name=iptables state=stopped
+[2].name = made up task just to show variables work here
+[2].command = /bin/echo release is $release

@@ -1,0 +1,14 @@
+[0].name = Refresh config | Create etcd config file
+[0].template.src = etcd.env.j2
+[0].template.dest = /etc/etcd.env
+[0].template.mode = 0640
+[0].notify = Restart etcd
+[0].when[0] = ('etcd' in group_names)
+[0].when[1] = etcd_cluster_setup
+[1].name = Refresh config | Create etcd-events config file
+[1].template.src = etcd-events.env.j2
+[1].template.dest = /etc/etcd-events.env
+[1].template.mode = 0640
+[1].notify = Restart etcd-events
+[1].when[0] = ('etcd' in group_names)
+[1].when[1] = etcd_events_cluster_setup

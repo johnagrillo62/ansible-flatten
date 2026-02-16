@@ -1,0 +1,6 @@
+[0].name = restart monit
+[0].service = name=monit state=restarted
+[1].name = restart collectd
+[1].service = name=collectd state=restarted
+[2].name = restart rspamd
+[2].service = name=rspamd state=restarted

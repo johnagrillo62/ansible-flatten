@@ -1,0 +1,39 @@
+[0].name = Ensure repository key for Rspamd is in place
+[0].apt_key = url=https://rspamd.com/apt-stable/gpg.key state=present
+[0].when = ansible_architecture != "armv7l"
+[0].tags[0] = dependencies
+[1].name = Ensure yunohost repository key for Rspamd is in place for ARM
+[1].apt_key = url=http://repo.yunohost.org/debian/yunohost.asc state=present
+[1].when = ansible_architecture == "armv7l"
+[1].tags[0] = dependencies
+[2].name = Add Rspamd repository
+[2].apt_repository = repo="deb https://rspamd.com/apt-stable/ {{ ansible_distribution_release }} main"
+[2].when = ansible_architecture != "armv7l"
+[2].tags[0] = dependencies
+[3].name = Add yunohost Rspamd repository for ARM
+[3].apt_repository = repo="deb http://repo.yunohost.org/debian {{ ansible_distribution_release }} stable"
+[3].when = ansible_architecture == "armv7l"
+[3].tags[0] = dependencies
+[4].name = Install Rspamd and Redis
+[4].apt = pkg={{ item }} state=present update_cache=yes
+[4].with_items[0] = rspamd
+[4].with_items[1] = redis-server
+[4].tags[0] = dependencies
+[5].name = Copy DMARC configuration into place
+[5].template = src=etc_rspamd_local.d_dmarc.conf.j2 dest=/etc/rspamd/local.d/dmarc.conf owner=root group=root mode="0644"
+[5].notify = restart rspamd
+[6].name = Configure Rspamd to use Redis
+[6].copy = src=etc_rspamd_local.d_redis.conf dest=/etc/rspamd/local.d/redis.conf owner=root group=root mode="0644"
+[6].notify = restart rspamd
+[7].name = Copy DKIM configuration into place
+[7].copy = src=etc_rspamd_override.d_dkim_signing.conf dest=/etc/rspamd/override.d/dkim_signing.conf owner=root group=root mode="0644"
+[7].notify = restart rspamd
+[8].name = Create dkim key directory
+[8].file = path=/var/lib/rspamd/dkim state=directory owner=_rspamd group=_rspamd
+[9].name = Generate DKIM keys
+[9].shell = rspamadm dkim_keygen -s default -d {{ item.name }} -k {{ item.name }}.default.key > {{ item.name }}.default.txt
+[9].args.creates = /var/lib/rspamd/dkim/{{ item.name }}.default.key
+[9].args.chdir = /var/lib/rspamd/dkim/
+[9].with_items = {{ mail_virtual_domains }}
+[10].name = Start redis
+[10].service = name=redis-server state=started

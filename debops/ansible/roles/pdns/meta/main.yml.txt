@@ -1,0 +1,12 @@
+~d0.collections = [ 'debops.debops' ]
+~d0.dependencies = []
+~d0.galaxy_info = 
+~d1.company = 'DebOps'
+~d1.author = 'Imre Jonk, CipherMail B.V.'
+~d1.description = 'Manage PowerDNS Authoritative Server'
+~d1.license = 'GPL-3.0-or-later'
+~d1.min_ansible_version = '2.10.0'
+~d1.platforms = 
+~d2.name = 'Debian'
+~d3.versions = 
+~d1.galaxy_tags = 

@@ -1,0 +1,84 @@
+[0].name = Registry | check registry_service_type value
+[0].fail.msg = registry_service_type can only be 'ClusterIP', 'LoadBalancer' or 'NodePort'
+[0].when = registry_service_type not in ['ClusterIP', 'LoadBalancer', 'NodePort']
+[1].name = Registry | Stop if registry_service_cluster_ip is defined when registry_service_type is not 'ClusterIP'
+[1].fail.msg = registry_service_cluster_ip support only compatible with ClusterIP.
+[1].when[0] = registry_service_cluster_ip is defined and registry_service_cluster_ip | length > 0
+[1].when[1] = registry_service_type != "ClusterIP"
+[2].name = Registry | Stop if registry_service_loadbalancer_ip is defined when registry_service_type is not 'LoadBalancer'
+[2].fail.msg = registry_service_loadbalancer_ip support only compatible with LoadBalancer.
+[2].when[0] = registry_service_loadbalancer_ip is defined and registry_service_loadbalancer_ip | length > 0
+[2].when[1] = registry_service_type != "LoadBalancer"
+[3].name = Registry | Stop if registry_service_nodeport is defined when registry_service_type is not 'NodePort'
+[3].fail.msg = registry_service_nodeport support only compatible with NodePort.
+[3].when[0] = registry_service_nodeport is defined and registry_service_nodeport | length > 0
+[3].when[1] = registry_service_type != "NodePort"
+[4].name = Registry | Create addon dir
+[4].file.path = {{ kube_config_dir }}/addons/registry
+[4].file.state = directory
+[4].file.owner = root
+[4].file.group = root
+[4].file.mode = 0755
+[5].name = Registry | Templates list
+[5].set_fact.registry_templates[0].name = registry-ns
+[5].set_fact.registry_templates[0].file = registry-ns.yml
+[5].set_fact.registry_templates[0].type = ns
+[5].set_fact.registry_templates[1].name = registry-sa
+[5].set_fact.registry_templates[1].file = registry-sa.yml
+[5].set_fact.registry_templates[1].type = sa
+[5].set_fact.registry_templates[2].name = registry-svc
+[5].set_fact.registry_templates[2].file = registry-svc.yml
+[5].set_fact.registry_templates[2].type = svc
+[5].set_fact.registry_templates[3].name = registry-secrets
+[5].set_fact.registry_templates[3].file = registry-secrets.yml
+[5].set_fact.registry_templates[3].type = secrets
+[5].set_fact.registry_templates[4].name = registry-cm
+[5].set_fact.registry_templates[4].file = registry-cm.yml
+[5].set_fact.registry_templates[4].type = cm
+[5].set_fact.registry_templates[5].name = registry-rs
+[5].set_fact.registry_templates[5].file = registry-rs.yml
+[5].set_fact.registry_templates[5].type = rs
+[6].name = Registry | Append ingress templates to Registry Templates list when ALB ingress enabled
+[6].set_fact.registry_templates = {{ registry_templates + [item] }}
+[6].with_items[0][0].name = registry-ing
+[6].with_items[0][0].file = registry-ing.yml
+[6].with_items[0][0].type = ing
+[6].when = ingress_alb_enabled
+[7].name = Registry | Create manifests
+[7].template.src = {{ item.file }}.j2
+[7].template.dest = {{ kube_config_dir }}/addons/registry/{{ item.file }}
+[7].template.mode = 0644
+[7].with_items = {{ registry_templates }}
+[7].register = registry_manifests
+[7].when = inventory_hostname == groups['kube_control_plane'][0]
+[8].name = Registry | Apply manifests
+[8].kube.name = {{ item.item.name }}
+[8].kube.namespace = {{ registry_namespace }}
+[8].kube.kubectl = {{ bin_dir }}/kubectl
+[8].kube.resource = {{ item.item.type }}
+[8].kube.filename = {{ kube_config_dir }}/addons/registry/{{ item.item.file }}
+[8].kube.state = latest
+[8].with_items = {{ registry_manifests.results }}
+[8].when = inventory_hostname == groups['kube_control_plane'][0]
+[9].name = Registry | Create PVC manifests
+[9].template.src = {{ item.file }}.j2
+[9].template.dest = {{ kube_config_dir }}/addons/registry/{{ item.file }}
+[9].template.mode = 0644
+[9].with_items[0].name = registry-pvc
+[9].with_items[0].file = registry-pvc.yml
+[9].with_items[0].type = pvc
+[9].register = registry_manifests
+[9].when[0] = registry_storage_class != none and registry_storage_class
+[9].when[1] = registry_disk_size != none and registry_disk_size
+[9].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+[10].name = Registry | Apply PVC manifests
+[10].kube.name = {{ item.item.name }}
+[10].kube.namespace = {{ registry_namespace }}
+[10].kube.kubectl = {{ bin_dir }}/kubectl
+[10].kube.resource = {{ item.item.type }}
+[10].kube.filename = {{ kube_config_dir }}/addons/registry/{{ item.item.file }}
+[10].kube.state = latest
+[10].with_items = {{ registry_manifests.results }}
+[10].when[0] = registry_storage_class != none and registry_storage_class
+[10].when[1] = registry_disk_size != none and registry_disk_size
+[10].when[2] = inventory_hostname == groups['kube_control_plane'][0]

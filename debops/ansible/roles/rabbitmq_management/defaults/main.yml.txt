@@ -1,0 +1,39 @@
+rabbitmq_management__local = True
+rabbitmq_management__deploy_state = present
+rabbitmq_management__fqdn = rabbitmq.{{ rabbitmq_management__domain }}
+rabbitmq_management__domain = {{ ansible_domain }}
+rabbitmq_management__default_plugins[0] = rabbitmq_management
+rabbitmq_management__app_port = 15672
+rabbitmq_management__app_bind = ::
+rabbitmq_management__app_host = {{ ansible_fqdn }}
+rabbitmq_management__app_protocol = {{ "http"
+                                       if rabbitmq_management__local | bool
+                                       else "https" }}
+
+rabbitmq_management__default_config[0].name = rabbitmq_management
+rabbitmq_management__default_config[0].state = {{ rabbitmq_management__deploy_state }}
+rabbitmq_management__default_config[0].options[0].name = listener
+rabbitmq_management__default_config[0].options[0].value = [{port, {{ rabbitmq_management__app_port + '}' }},
+ {ip, "{{ rabbitmq_management__app_bind }}"}]
+
+rabbitmq_management__default_config[0].options[0].comment = Communication with the Management Console is done using
+a reverse proxy at 'https://{{ rabbitmq_management__fqdn }}/'
+
+rabbitmq_management__default_config[0].options[0].type = raw
+rabbitmq_management__etc_services__dependent_list[0].name = rabbitmq-mgmt
+rabbitmq_management__etc_services__dependent_list[0].port = {{ rabbitmq_management__app_port }}
+rabbitmq_management__etc_services__dependent_list[0].comment = RabbitMQ Management Console
+rabbitmq_management__etc_services__dependent_list[0].state = {{ rabbitmq_management__deploy_state }}
+rabbitmq_management__rabbitmq_server__dependent_config[0] = {{ rabbitmq_management__default_config }}
+rabbitmq_management__rabbitmq_server__dependent_config[1] = {{ rabbitmq_management__config }}
+rabbitmq_management__nginx__dependent_servers[0].name = {{ rabbitmq_management__fqdn }}
+rabbitmq_management__nginx__dependent_servers[0].by_role = debops.rabbitmq_management
+rabbitmq_management__nginx__dependent_servers[0].filename = debops.rabbitmq_management
+rabbitmq_management__nginx__dependent_servers[0].state = {{ rabbitmq_management__deploy_state }}
+rabbitmq_management__nginx__dependent_servers[0].type = proxy
+rabbitmq_management__nginx__dependent_servers[0].proxy_pass = {{ rabbitmq_management__app_protocol }}://rabbitmq_management
+rabbitmq_management__nginx__dependent_servers[0].proxy_redirect = default
+rabbitmq_management__nginx__dependent_servers[0].allow = {{ rabbitmq_management__webserver_allow }}
+rabbitmq_management__nginx__dependent_upstreams[0].name = rabbitmq_management
+rabbitmq_management__nginx__dependent_upstreams[0].server = {{ rabbitmq_management__app_host + ":" + rabbitmq_management__app_port }}
+rabbitmq_management__nginx__dependent_upstreams[0].state = {{ rabbitmq_management__deploy_state }}

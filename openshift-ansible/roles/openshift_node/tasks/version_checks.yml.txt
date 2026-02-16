@@ -1,0 +1,17 @@
+[0].name = Get cluster version
+[0].command = oc get clusterversion --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.items[0].status.desired.version}'
+
+[0].delegate_to = localhost
+[0].register = oc_get
+[0].until[0] = oc_get.stdout != ''
+[0].changed_when = false
+[1].name = Set fact l_cluster_version
+[1].set_fact.l_cluster_version = {{ oc_get.stdout | regex_search('^\\d+\\.\\d+') }}
+[2].name = Fail if not using RHEL8 beginning with version 4.10
+[2].fail.msg = As of v4.10, RHEL nodes must be at least version 8.4
+[2].when[0] = l_cluster_version is version('4.10', '>=')
+[2].when[1] = ansible_facts['distribution'] == "RedHat"
+[2].when[2] = ansible_facts['distribution_version'] is version('8.4', '<')
+[3].name = Fail if cluster version is greater than or equal to 4.19
+[3].fail.msg = RHEL nodes in version 4.19 and above are no longer supported
+[3].when = l_cluster_version is version('4.19', '>=')

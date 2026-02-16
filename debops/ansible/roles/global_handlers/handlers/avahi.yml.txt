@@ -1,0 +1,4 @@
+[0].name = Restart avahi-daemon
+[0]["ansible.builtin.service"].name = avahi-daemon
+[0]["ansible.builtin.service"].state = restarted
+[0].when = (ansible_local.avahi.installed | d()) | bool

@@ -1,0 +1,17 @@
+[0].hosts = localhost
+[0].gather_facts = false
+[0].connection = local
+[0].collections[0] = awx.awx
+[0].vars.collection_location = {{ playbook_dir }}/..
+[0].vars.loc_tests = {{ collection_location }}/tests/integration/targets/
+[0].vars.test = ad_hoc_command,host,role
+[0].tasks[0].name = DEBUG - make sure variables are what we expect
+[0].tasks[0]["ansible.builtin.debug"].msg = Running tests at location:
+    {{ loc_tests }}
+Running tests folders:
+    {{ test | trim | split(',') }}
+
+[0].tasks[1].name = Include test targets
+[0].tasks[1]["ansible.builtin.include_tasks"] = {{ loc_tests }}{{ test_name }}/tasks/main.yml
+[0].tasks[1].loop = {{ test | trim | split(',') }}
+[0].tasks[1].loop_control.loop_var = test_name

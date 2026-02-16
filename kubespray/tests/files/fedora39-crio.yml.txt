@@ -1,0 +1,4 @@
+cloud_image = fedora-39
+container_manager = crio
+auto_renew_certificates = true
+preinstall_selinux_state = enforcing

@@ -1,0 +1,13 @@
+[0].hosts = logs
+[0].gather_facts = yes
+[0].vars_files[0] = vars/main.yml
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=86400
+[0].roles[0] = geerlingguy.java
+[0].roles[1] = geerlingguy.nginx
+[0].roles[2] = geerlingguy.pip
+[0].roles[3] = geerlingguy.elasticsearch
+[0].roles[4] = geerlingguy.elasticsearch-curator
+[0].roles[5] = geerlingguy.kibana
+[0].roles[6] = geerlingguy.logstash
+[0].roles[7] = geerlingguy.filebeat

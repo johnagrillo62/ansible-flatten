@@ -1,0 +1,8 @@
+[0].name = Run tasks post startup
+[0].hosts = localhost
+[0].gather_facts = False
+[0].tasks[0].name = Unseal the vault
+[0].tasks[0]["ansible.builtin.include_role"].name = vault
+[0].tasks[0]["ansible.builtin.include_role"].tasks_from = unseal
+[0].tasks[1].name = Display root token
+[0].tasks[1]["ansible.builtin.debug"].var = Initial_Root_Token

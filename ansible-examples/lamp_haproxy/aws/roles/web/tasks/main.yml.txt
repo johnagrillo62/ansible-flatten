@@ -1,0 +1,4 @@
+[0].name = Copy the code from repository
+[0].git.repo = {{ repository }}
+[0].git.version = {{ webapp_version }}
+[0].git.dest = /var/www/html/

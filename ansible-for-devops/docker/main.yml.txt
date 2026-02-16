@@ -1,0 +1,11 @@
+[0].hosts = localhost
+[0].connection = local
+[0].tasks[0].name = Ensure Docker image is built from the test Dockerfile.
+[0].tasks[0].docker_image.name = test
+[0].tasks[0].docker_image.source = build
+[0].tasks[0].docker_image.build.path = test
+[0].tasks[0].docker_image.state = present
+[0].tasks[1].name = Ensure the test container is running.
+[0].tasks[1].docker_container.image = test:latest
+[0].tasks[1].docker_container.name = test
+[0].tasks[1].docker_container.state = started

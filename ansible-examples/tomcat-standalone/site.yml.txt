@@ -1,0 +1,6 @@
+[0].hosts = tomcat-servers
+[0].remote_user = root
+[0].become = yes
+[0].become_method = sudo
+[0].roles[0] = selinux
+[0].roles[1] = tomcat

@@ -1,0 +1,42 @@
+machine__enabled = True
+machine__organization = {{ ansible_domain.split(".")[0] | capitalize }}
+machine__contact = {{ ansible_local.core.admin_public_email[0]
+                      | d("root@" + ansible_domain) }} 
+machine__pretty_hostname = 
+machine__icon_name = 
+machine__chassis = 
+machine__deployment = production
+machine__location = 
+machine__motd = 
+machine__etc_motd_state = {{ "present" if machine__motd | d() else "absent" }}
+machine__motd_update_dir = /etc/update-motd.d
+machine__etc_issue_state = present
+machine__etc_issue_template = etc/issue.j2
+machine__motd_default_scripts[0].name = uname
+machine__motd_default_scripts[0].filename = 10-uname
+machine__motd_default_scripts[0].divert = True
+machine__motd_default_scripts[0].content = #!/bin/sh
+uname -snrvm
+
+machine__motd_default_scripts[0].state = init
+machine__motd_default_scripts[1].name = ansible
+machine__motd_default_scripts[1].weight = 50
+machine__motd_default_scripts[1].src = etc/update-motd.d/ansible
+machine__motd_default_scripts[1].state = present
+machine__motd_default_scripts[2].name = tail
+machine__motd_default_scripts[2].weight = 90
+machine__motd_default_scripts[2].content = #!/bin/sh
+if [ -f /etc/motd.tail ] ; then
+    cat /etc/motd.tail
+fi
+
+machine__motd_default_scripts[2].state = present
+machine__motd_default_scripts[3].name = fortune
+machine__motd_default_scripts[3].weight = 95
+machine__motd_default_scripts[3].src = etc/update-motd.d/fortune
+machine__motd_default_scripts[3].state = init
+machine__motd_combined_scripts = {{ machine__motd_default_scripts
+                                    + machine__motd_scripts
+                                    + machine__motd_group_scripts
+                                    + machine__motd_host_scripts }}
+

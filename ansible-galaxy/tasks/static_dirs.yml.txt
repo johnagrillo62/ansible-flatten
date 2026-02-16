@@ -1,0 +1,17 @@
+[0].name = Create welcome.html directory for basedomain
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].mode = 0755
+[0]["ansible.builtin.file"].owner = {{ __galaxy_privsep_user_name }}
+[0]["ansible.builtin.file"].group = {{ __galaxy_privsep_user_group }}
+[0]["ansible.builtin.file"].path = {{ galaxy_themes_static_path }}/static/welcome.html
+[1].name = Template welcome.html for basedomain
+[1]["ansible.builtin.template"].src = welcome.html.j2
+[1]["ansible.builtin.template"].dest = {{ galaxy_themes_static_path }}/static/welcome.html/index.html
+[1]["ansible.builtin.template"].owner = {{ __galaxy_privsep_user_name }}
+[1]["ansible.builtin.template"].group = {{ __galaxy_privsep_user_group }}
+[1]["ansible.builtin.template"].mode = 0644
+[2].name = Include create subdomain static dirs and link/copy static files
+[2]["ansible.builtin.include_tasks"] = static_subdomain_dirs.yml
+[2].loop = {{ galaxy_themes_subdomains if galaxy_themes_subdomains | length or \
+    galaxy_manage_subdomain_static else [] }} 
+[2].loop_control.loop_var = subdomain

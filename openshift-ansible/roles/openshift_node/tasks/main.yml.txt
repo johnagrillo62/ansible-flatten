@@ -1,0 +1,2 @@
+[0].include_tasks = install.yml
+[1].include_tasks = config.yml

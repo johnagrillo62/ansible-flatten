@@ -1,0 +1,56 @@
+[0].name = Multus | Copy manifest files
+[0].copy.src = {{ item.file }}
+[0].copy.dest = {{ kube_config_dir }}
+[0].copy.mode = 0644
+[0].with_items[0].name = multus-crd
+[0].with_items[0].file = multus-crd.yml
+[0].with_items[0].type = customresourcedefinition
+[0].with_items[1].name = multus-serviceaccount
+[0].with_items[1].file = multus-serviceaccount.yml
+[0].with_items[1].type = serviceaccount
+[0].with_items[2].name = multus-clusterrole
+[0].with_items[2].file = multus-clusterrole.yml
+[0].with_items[2].type = clusterrole
+[0].with_items[3].name = multus-clusterrolebinding
+[0].with_items[3].file = multus-clusterrolebinding.yml
+[0].with_items[3].type = clusterrolebinding
+[0].register = multus_manifest_1
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Multus | Check container engine type
+[1].set_fact.container_manager_types = {{ ansible_play_hosts_all | map('extract', hostvars, ['container_manager']) | list | unique }}
+[2].name = Multus | Copy manifest templates
+[2].template.src = multus-daemonset.yml.j2
+[2].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[2].template.mode = 0644
+[2].with_items[0].name = multus-daemonset-containerd
+[2].with_items[0].file = multus-daemonset-containerd.yml
+[2].with_items[0].type = daemonset
+[2].with_items[0].engine = containerd
+[2].with_items[1].name = multus-daemonset-docker
+[2].with_items[1].file = multus-daemonset-docker.yml
+[2].with_items[1].type = daemonset
+[2].with_items[1].engine = docker
+[2].with_items[2].name = multus-daemonset-crio
+[2].with_items[2].file = multus-daemonset-crio.yml
+[2].with_items[2].type = daemonset
+[2].with_items[2].engine = crio
+[2].register = multus_manifest_2
+[2].vars.host_query = *|[?container_manager=='{{ container_manager }}']|[0].inventory_hostname
+[2].vars.vars_from_node = {{ hostvars | json_query(host_query) }}
+[2].delegate_to = {{ groups['kube_control_plane'][0] }}
+[2].when[0] = item.engine in container_manager_types
+[2].when[1] = hostvars[inventory_hostname].container_manager == item.engine
+[2].when[2] = inventory_hostname == vars_from_node
+[3].name = Multus | Start resources
+[3].kube.name = {{ item.item.name }}
+[3].kube.namespace = kube-system
+[3].kube.kubectl = {{ bin_dir }}/kubectl
+[3].kube.resource = {{ item.item.type }}
+[3].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[3].kube.state = latest
+[3].delegate_to = {{ groups['kube_control_plane'][0] }}
+[3].run_once = true
+[3].with_items = {{ (multus_manifest_1.results | default([])) + (multus_nodes_list | map('extract', hostvars, 'multus_manifest_2') | map('default', []) | list | json_query('[].results')) }}
+[3].loop_control.label = {{ item.item.name if item != None else 'skipped' }}
+[3].vars.multus_nodes_list = {{ groups['k8s_cluster'] if ansible_play_batch | length == ansible_play_hosts_all | length else ansible_play_batch }}
+[3].when[0] = not item is skipped

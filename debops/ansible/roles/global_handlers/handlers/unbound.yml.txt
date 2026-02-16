@@ -1,0 +1,9 @@
+~d0.name = Check unbound configuration and reload
+~d1.ansible.builtin.command = unbound-checkconf /etc/unbound/unbound.conf
+~d1.register = global_handlers__unbound_register_config_test
+~d1.changed_when = global_handlers__unbound_register_config_test.changed | bool
+~d1.notify = [ 'Reload unbound' ]
+~d0.name = Reload unbound
+~d1.ansible.builtin.service = 
+~d2.name = 'unbound'
+~d2.state = 'reloaded'

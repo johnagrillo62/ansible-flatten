@@ -1,0 +1,8 @@
+~d0.name = Manage NFS shares
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_nfs' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = nfs
+~d3.tags = [ 'role::nfs', 'skip::nfs' ]

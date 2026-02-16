@@ -1,0 +1,30 @@
+dependencies[0].role = kubernetes-apps/external_cloud_controller/openstack
+dependencies[0].when[0] = cloud_provider == "external"
+dependencies[0].when[1] = external_cloud_provider == "openstack"
+dependencies[0].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[0].tags[0] = external-cloud-controller
+dependencies[0].tags[1] = external-openstack
+dependencies[1].role = kubernetes-apps/external_cloud_controller/vsphere
+dependencies[1].when[0] = cloud_provider == "external"
+dependencies[1].when[1] = external_cloud_provider == "vsphere"
+dependencies[1].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[1].tags[0] = external-cloud-controller
+dependencies[1].tags[1] = external-vsphere
+dependencies[2].role = kubernetes-apps/external_cloud_controller/hcloud
+dependencies[2].when[0] = cloud_provider == "external"
+dependencies[2].when[1] = external_cloud_provider == "hcloud"
+dependencies[2].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[2].tags[0] = external-cloud-controller
+dependencies[2].tags[1] = external-hcloud
+dependencies[3].role = kubernetes-apps/external_cloud_controller/huaweicloud
+dependencies[3].when[0] = cloud_provider == "external"
+dependencies[3].when[1] = external_cloud_provider == "huaweicloud"
+dependencies[3].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[3].tags[0] = external-cloud-controller
+dependencies[3].tags[1] = external-huaweicloud
+dependencies[4].role = kubernetes-apps/external_cloud_controller/oci
+dependencies[4].when[0] = cloud_provider == "external"
+dependencies[4].when[1] = external_cloud_provider == "oci"
+dependencies[4].when[2] = inventory_hostname == groups['kube_control_plane'][0]
+dependencies[4].tags[0] = external-cloud-controller
+dependencies[4].tags[1] = external-oci

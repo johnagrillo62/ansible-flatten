@@ -1,0 +1,16 @@
+centos_fastestmirror_enabled = false
+rh_subscription_check_timeout = 180
+coreos_locksmithd_disable = false
+epel_enabled = false
+use_oracle_public_repo = true
+ubuntu_kernel_unattended_upgrades_disabled = false
+ubuntu_stop_unattended_upgrades = false
+fedora_coreos_packages[0] = python
+fedora_coreos_packages[1] = python3-libselinux
+fedora_coreos_packages[2] = ethtool
+fedora_coreos_packages[3] = ipset
+fedora_coreos_packages[4] = conntrack-tools
+fedora_coreos_packages[5] = containernetworking-plugins
+override_system_hostname = true
+is_fedora_coreos = false
+skip_http_proxy_on_os_packages = false

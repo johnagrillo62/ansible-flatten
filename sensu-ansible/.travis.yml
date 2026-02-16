@@ -1,0 +1,29 @@
+---
+group: trusty
+language: python
+python: "2.7"
+env:
+  - SCENARIO=debian
+  - SCENARIO=ubuntu
+  - SCENARIO=centos
+  - SCENARIO=oraclelinux
+  - SCENARIO=fedora
+  - SCENARIO=amazonlinux
+services: docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+cache:
+  pip: true
+  directories:
+    - ~/.cache/pipenv
+install:
+  - pip install pipenv
+  - pipenv install --two --dev
+  - gem install rubocop
+script:
+  - pipenv run molecule --base-config molecule/shared/base.yml test --scenario-name $SCENARIO --driver-name docker --destroy always
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/

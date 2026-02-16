@@ -1,0 +1,2 @@
+[0].name = Recover control plane
+[0]["ansible.builtin.import_playbook"] = playbooks/recover_control_plane.yml

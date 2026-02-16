@@ -1,0 +1,10 @@
+rabbitmq_server__config[0].name = rabbit
+rabbitmq_server__config[0].weight = 1
+rabbitmq_server__config[1].name = rabbitmq_management
+rabbitmq_server__config[1].comment = RabbitMQ Management Plugin
+
+See https://www.rabbitmq.com/management.html for details
+
+rabbitmq_server__config[1].weight = 2
+rabbitmq_server__config[2].name = rabbitmq_management_agent
+rabbitmq_server__config[2].weight = 3

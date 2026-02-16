@@ -1,0 +1,42 @@
+salt__upstream = {{ True
+                    if (ansible_distribution_release in ["trusty"])
+                    else False }}
+
+salt__upstream_branch = latest
+salt__upstream_arch_map.x86_64 = amd64
+salt__upstream_arch_map.armhf = armhf
+salt__upstream_apt_key_id = 754A1A7AE731F165D5E6D4BD0E08A149DE57BFBE
+salt__upstream_apt_repo_map.Debian = {{ "deb http://repo.saltstack.com/apt/debian/"
+              + ansible_distribution_major_version + "/" + salt__upstream_arch_map[ansible_architecture]
+              + "/" + salt__upstream_branch + " " + ansible_distribution_release + " main" }}
+
+salt__upstream_apt_repo_map.Ubuntu = {{ "deb http://repo.saltstack.com/apt/ubuntu/"
+              + ansible_distribution_version + "/" + salt__upstream_arch_map[ansible_architecture]
+              + "/" + salt__upstream_branch + " " + ansible_distribution_release + " main" }}
+
+salt__base_packages[0] = salt-master
+salt__configuration = True
+salt__configuration_file = /etc/salt/master.d/ansible.conf
+salt__interface = {{ "::" if salt__ipv6 | bool else "0.0.0.0" }}
+salt__ipv6 = True
+salt__publish_port = 4505
+salt__return_port = 4506
+salt__worker_threads = {{ ansible_processor_vcpus }}
+salt__custom_options = 
+salt__keyring__dependent_apt_keys[0].id = {{ salt__upstream_apt_key_id }}
+salt__keyring__dependent_apt_keys[0].repo = {{ salt__upstream_apt_repo_map[ansible_distribution] }}
+salt__keyring__dependent_apt_keys[0].state = {{ "present" if salt__upstream | bool else "absent" }}
+salt__python__dependent_packages3[0] = python3-tornado
+salt__python__dependent_packages2[0] = python-tornado
+salt__etc_services__dependent_list[0].name = salt-publish
+salt__etc_services__dependent_list[0].port = {{ salt__publish_port }}
+salt__etc_services__dependent_list[0].comment = Salt Master (publish)
+salt__etc_services__dependent_list[1].name = salt-return
+salt__etc_services__dependent_list[1].port = {{ salt__return_port }}
+salt__etc_services__dependent_list[1].comment = Salt Master (return)
+salt__ferm__dependent_rules[0].type = accept
+salt__ferm__dependent_rules[0].dport[0] = salt-publish
+salt__ferm__dependent_rules[0].dport[1] = salt-return
+salt__ferm__dependent_rules[0].saddr = {{ salt__allow }}
+salt__ferm__dependent_rules[0].accept_any = True
+salt__ferm__dependent_rules[0].name = salt_accept

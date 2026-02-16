@@ -1,0 +1,4 @@
+~d0.name = Remove orphaned .pyc files and compile bytecode
+~d1.script = "makepyc.py {{ galaxy_server_dir }}/lib"
+~d1.environment = 
+~d2.PATH = "{{ galaxy_venv_dir }}/bin"

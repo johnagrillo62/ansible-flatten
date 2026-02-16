@@ -1,0 +1,2 @@
+[0].name = restart php-fpm
+[0].service = name=php-fpm state=restarted

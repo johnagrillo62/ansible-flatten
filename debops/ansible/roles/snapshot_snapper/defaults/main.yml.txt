@@ -1,0 +1,6 @@
+snapshot_snapper__base_packages[0] = snapper
+snapshot_snapper__packages[0] = mlocate
+snapshot_snapper__auto_reinit = True
+snapshot_snapper__directory = .snapshots
+snapshot_snapper__divert_files[0] = /etc/updatedb.conf
+snapshot_snapper__divert_files[1] = /etc/snapper/config-templates/default

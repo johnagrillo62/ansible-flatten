@@ -1,0 +1,5 @@
+[0].name = Verify
+[0].hosts = all
+[0].tasks[0].name = Verify Apache is serving web requests.
+[0].tasks[0]["ansible.builtin.uri"].url = http://localhost/
+[0].tasks[0]["ansible.builtin.uri"].status_code = 200

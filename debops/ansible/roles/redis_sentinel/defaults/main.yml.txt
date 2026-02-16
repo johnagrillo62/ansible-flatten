@@ -1,0 +1,73 @@
+redis_sentinel__base_packages[0] = redis-sentinel
+redis_sentinel__base_packages[1] = redis-tools
+redis_sentinel__version = {{ ansible_local.redis_sentinel.version | d("0.0.0") }}
+redis_sentinel__user = redis
+redis_sentinel__group = redis
+redis_sentinel__auth_group = redis-auth
+redis_sentinel__domain = {{ ansible_domain }}
+redis_sentinel__auth_password = {{ ansible_local.redis_sentinel.password
+                                   if (ansible_local.redis_sentinel.password | d())
+                                   else (lookup("password", secret +
+                                         "/redis/clusters/" + redis_sentinel__domain +
+                                         "/password length=" + redis_sentinel__password_length +
+                                         " chars=ascii_letters,digits,-_.")) }}
+
+redis_sentinel__password_length = 256
+redis_sentinel__bind = localhost
+redis_sentinel__default_base_options[0].name = syslog-enabled
+redis_sentinel__default_base_options[0].value = True
+redis_sentinel__default_base_options[1].name = syslog-facility
+redis_sentinel__default_base_options[1].value = local0
+redis_sentinel__default_base_options[2].name = loglevel
+redis_sentinel__default_base_options[2].value = notice
+redis_sentinel__default_base_options[3].name = daemonize
+redis_sentinel__default_base_options[3].value = True
+redis_sentinel__default_instances[0].name = main
+redis_sentinel__default_instances[0].port = 26379
+redis_sentinel__default_instances[0].pidfile = /var/run/sentinel/redis-sentinel.pid
+redis_sentinel__default_instances[0].unixsocket = /var/run/sentinel/redis-sentinel.sock
+redis_sentinel__default_instances[0].systemd_override = [Service]
+PIDFile=/var/run/sentinel/redis-sentinel.pid
+RuntimeDirectory=sentinel
+ReadWriteDirectories=-/var/run/sentinel
+
+redis_sentinel__default_instances[0].state = present
+redis_sentinel__combined_instances = {{ redis_sentinel__default_instances
+                                        + redis_sentinel__instances
+                                        + redis_sentinel__group_instances
+                                        + redis_sentinel__host_instances }}
+
+redis_sentinel__default_monitors[0].name = redis-ha
+redis_sentinel__default_monitors[0].host = localhost
+redis_sentinel__default_monitors[0].port = 6379
+redis_sentinel__default_monitors[0].quorum = 2
+redis_sentinel__combined_monitors = {{ redis_sentinel__default_monitors
+                                       + redis_sentinel__monitors
+                                       + redis_sentinel__group_monitors
+                                       + redis_sentinel__host_monitors }}
+
+redis_sentinel__default_configuration = {{ lookup("template", "lookup/redis_sentinel__filtered_instances.j2")
+                                           | from_yaml }} 
+redis_sentinel__combined_configuration = {{ redis_sentinel__default_configuration
+                                            + redis_sentinel__configuration
+                                            + redis_sentinel__group_configuration
+                                            + redis_sentinel__host_configuration }}
+
+redis_sentinel__apt_preferences__dependent_list[0].packages[0] = redis
+redis_sentinel__apt_preferences__dependent_list[0].packages[1] = redis-*
+redis_sentinel__apt_preferences__dependent_list[0].backports[0] = stretch
+redis_sentinel__apt_preferences__dependent_list[0].by_role = debops.redis_sentinel
+redis_sentinel__apt_preferences__dependent_list[0].reason = Support for multiple Redis instances, compatibility with newer Debian releases
+redis_sentinel__etc_services__dependent_list[0].name = redis-sentinel
+redis_sentinel__etc_services__dependent_list[0].port = 26379
+redis_sentinel__etc_services__dependent_list[0].comment = Redis Sentinel
+redis_sentinel__python__dependent_packages3[0] = python3-redis
+redis_sentinel__python__dependent_packages2[0] = python-redis
+redis_sentinel__ferm__dependent_rules[0].name = redis_sentinel
+redis_sentinel__ferm__dependent_rules[0].type = accept
+redis_sentinel__ferm__dependent_rules[0].dport = {{ redis_sentinel__env_ports }}
+redis_sentinel__ferm__dependent_rules[0].saddr = {{ redis_sentinel__allow + redis_sentinel__group_allow + redis_sentinel__host_allow }}
+redis_sentinel__ferm__dependent_rules[0].weight = 40
+redis_sentinel__ferm__dependent_rules[0].accept_any = False
+redis_sentinel__ferm__dependent_rules[0].multiport = True
+redis_sentinel__ferm__dependent_rules[0].by_role = debops.redis_sentinel

@@ -1,0 +1,9 @@
+~d0.name = Test named configuration and restart
+~d1.ansible.builtin.command = runuser -u bind -- /usr/bin/named-checkconf
+~d1.register = global_handlers__bind_register_checkconf
+~d1.changed_when = global_handlers__bind_register_checkconf.changed | bool
+~d1.notify = [ 'Restart named' ]
+~d0.name = Restart named
+~d1.ansible.builtin.service = 
+~d2.name = 'named'
+~d2.state = 'restarted'

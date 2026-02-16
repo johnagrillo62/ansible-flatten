@@ -1,0 +1,36 @@
+cran__upstream = True
+cran__upstream_mirror = https://cloud.r-project.org/
+cran__upstream_apt_key_map.Debian = E19F5F87128899B192B1A2C2AD5F960A256A04AF
+cran__upstream_apt_key_map.Ubuntu = E298A3A825C0D65DFD57CBB651716619E084DAB9
+cran__upstream_apt_key = {{ cran__upstream_apt_key_map[ansible_distribution] }}
+cran__upstream_apt_suite_map.Debian = {{ ansible_distribution_release + "-cran35/" }}
+cran__upstream_apt_suite_map.Ubuntu = {{ ansible_distribution_release + "-cran35/" }}
+cran__upstream_apt_suite = {{ cran__upstream_apt_suite_map[ansible_distribution] }}
+cran__upstream_apt_repo = {{ "deb " + cran__upstream_mirror + "bin/linux/"
+                             + ansible_distribution | lower + " "
+                             + cran__upstream_apt_suite }}
+
+cran__base_packages[0] = r-base
+cran__base_packages[1] = r-base-dev
+cran__base_packages[2] = r-recommended
+cran__java_integration = {{ True
+                            if (ansible_local | d() and ansible_local.java | d() and
+                                (ansible_local.java.installed | d()) | bool)
+                            else False }}
+
+cran__apt_preferences__dependent_list[0].packages[0] = r-cran-coda
+cran__apt_preferences__dependent_list[0].packages[1] = rkward
+cran__apt_preferences__dependent_list[0].pin = release o=CRAN
+cran__apt_preferences__dependent_list[0].priority = 600
+cran__apt_preferences__dependent_list[0].by_role = debops_cran
+cran__apt_preferences__dependent_list[0].reason = Packages in Debian Archive incompatible with upstream CRAN packages
+https://cran.r-project.org/bin/linux/debian/#debian-stretch-stable
+
+cran__apt_preferences__dependent_list[0].filename = debops_cran.pref
+cran__apt_preferences__dependent_list[0].state = {{ "present"
+               if (ansible_distribution == "Debian" and cran__upstream | bool)
+               else "absent" }}
+
+cran__keyring__dependent_apt_keys[0].id = {{ cran__upstream_apt_key }}
+cran__keyring__dependent_apt_keys[0].repo = {{ cran__upstream_apt_repo }}
+cran__keyring__dependent_apt_keys[0].state = {{ "present" if cran__upstream | bool else "absent" }}

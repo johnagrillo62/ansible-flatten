@@ -1,0 +1,15 @@
+dependency.name = galaxy
+driver.name = docker
+lint = set -e
+yamllint .
+ansible-lint
+
+platforms[0].name = instance
+platforms[0].image = geerlingguy/docker-${MOLECULE_DISTRO:-rockylinux9}-ansible:latest
+platforms[0].command = 
+platforms[0].volumes[0] = /sys/fs/cgroup:/sys/fs/cgroup:rw
+platforms[0].cgroupns_mode = host
+platforms[0].privileged = true
+platforms[0].pre_build_image = true
+provisioner.name = ansible
+verifier.name = ansible

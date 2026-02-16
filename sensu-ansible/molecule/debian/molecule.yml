@@ -1,0 +1,28 @@
+---
+scenario:
+  name: debian
+platforms:
+  - name: debian-8
+    image: dokken/debian-8
+    command: /lib/systemd/systemd
+    privileged: yes
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    groups:
+      - sensu_checks
+  - name: debian-9
+    image: dokken/debian-9
+    command: /lib/systemd/systemd
+    capabilities:
+      - SYS_ADMIN
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    groups:
+      - sensu_checks
+provisioner:
+  inventory:
+    host_vars:
+      debian-8:
+        inspec_version: ubuntu1604
+      debian-9:
+        inspec_version: ubuntu1604

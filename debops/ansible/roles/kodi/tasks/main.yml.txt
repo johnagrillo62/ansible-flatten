@@ -1,0 +1,31 @@
+[0].name = Ensure specified packages are in there desired state
+[0]["ansible.builtin.package"].name = {{ q("flattened", kodi__base_packages) }}
+[0]["ansible.builtin.package"].state = {{ "present" if (kodi__deploy_state == "present") else "absent" }}
+[0].register = kodi__register_packages
+[0].until = kodi__register_packages is succeeded
+[0].tags[0] = role::kodi:pkgs
+[1].name = Create Kodi system group
+[1]["ansible.builtin.group"].name = {{ kodi__group }}
+[1]["ansible.builtin.group"].state = {{ "present" if (kodi__deploy_state == "present") else "absent" }}
+[1]["ansible.builtin.group"].system = True
+[2].name = Create Kodi system user
+[2]["ansible.builtin.user"].name = {{ kodi__user }}
+[2]["ansible.builtin.user"].group = {{ kodi__group }}
+[2]["ansible.builtin.user"].groups = {{ kodi__groups | join(",") | default(omit) }}
+[2]["ansible.builtin.user"].append = False
+[2]["ansible.builtin.user"].home = {{ kodi__home_path }}
+[2]["ansible.builtin.user"].comment = {{ kodi__gecos }}
+[2]["ansible.builtin.user"].shell = {{ kodi__shell }}
+[2]["ansible.builtin.user"].state = {{ "present" if (kodi__deploy_state == "present") else "absent" }}
+[2]["ansible.builtin.user"].system = True
+[3].name = Create polkit configuration
+[3]["ansible.builtin.template"].src = etc/polkit-1/localauthority/50-local.d/kodi-actions.pkla.j2
+[3]["ansible.builtin.template"].dest = /etc/polkit-1/localauthority/50-local.d/kodi-actions.pkla
+[3]["ansible.builtin.template"].owner = root
+[3]["ansible.builtin.template"].group = root
+[3]["ansible.builtin.template"].mode = 0644
+[3].when = kodi__polkit_action | d()
+[4].name = Remove polkit configuration
+[4]["ansible.builtin.file"].path = /etc/polkit-1/localauthority/50-local.d/kodi-actions.pkla
+[4]["ansible.builtin.file"].state = absent
+[4].when = not kodi__polkit_action | d()

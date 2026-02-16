@@ -1,0 +1,18 @@
+[0].name = Check if bootstrap is needed
+[0].raw = stat /opt/bin/.bootstrapped
+[0].register = need_bootstrap
+[0].failed_when = false
+[0].changed_when = false
+[0].tags[0] = facts
+[1].name = Run bootstrap.sh
+[1].script = bootstrap.sh
+[1].become = true
+[1].environment = {{ proxy_env }}
+[1].when[0] = need_bootstrap.rc != 0
+[2].name = Make interpreter discovery works on Flatcar
+[2].set_fact.ansible_interpreter_python_fallback = {{ (ansible_interpreter_python_fallback | default([])) + ['/opt/bin/python'] }}
+[3].name = Disable auto-upgrade
+[3].systemd_service.name = locksmithd.service
+[3].systemd_service.masked = true
+[3].systemd_service.state = stopped
+[3].when[0] = coreos_locksmithd_disable

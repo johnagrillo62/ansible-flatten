@@ -1,0 +1,16 @@
+~d0.secret_root = '{{ inventory_dir | realpath }}'
+~d0.secret_name = 'secret'
+~d0.secret = '{{ secret_root + "/" + secret_name }}'
+~d0.db_admin_username = 'postgres'
+~d0.db_admin_password = "{{ lookup('password', secret + '/' + 'db_admin_password', length=32) }}"
+~d0.mail_db_username = 'mailuser'
+~d0.mail_db_password = "{{ lookup('password', secret + '/' + 'mail_db_password', length=32) }}"
+~d0.mail_db_database = 'mailserver'
+~d0.mail_server_hostname = "mail.{{ domain }}"
+~d0.mail_server_autoconfig_hostname = "autoconfig.{{ domain }}"
+~d0.mail_header_privacy = 1
+~d0.mail_virtual_domains = []
+~d0.mail_virtual_users = []
+~d0.mail_virtual_aliases = []
+~d0.zpush_version = 2.1.1-1788
+~d0.zpush_timezone = "{{ common_timezone|default('Etc/UTC') }}"

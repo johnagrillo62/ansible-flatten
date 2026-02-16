@@ -1,0 +1,10 @@
+[0].name = Verify
+[0].hosts = all
+[0].vars.__galaxy_version = {{ lookup('env', 'GALAXY_VERSION') }}
+[0].tasks[0].name = Check version
+[0].tasks[0].uri.url = http://localhost:8080/api/version
+[0].tasks[0].register = response
+[0].tasks[0].failed_when = response.status != 200 or (__galaxy_version != 'dev' and response.json.version_major != lookup('env', 'GALAXY_VERSION'))
+[0].tasks[0].until = response.status > 0
+[0].tasks[0].retries = 60
+[0].tasks[0].delay = 1

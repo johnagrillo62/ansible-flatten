@@ -1,0 +1,4 @@
+[0].name = Restart ferm
+[0]["ansible.builtin.service"].name = ferm
+[0]["ansible.builtin.service"].state = restarted
+[0].when = (ansible_local.ferm.enabled | d()) | bool and not ansible_check_mode

@@ -1,0 +1,168 @@
+~d0.name = Generate a random string for test
+~d1.ansible.builtin.set_fact = 
+~d2.test_id = "{{ lookup('password', '/dev/null chars=ascii_letters length=16') }}"
+~d1.when = test_id is not defined
+~d0.name = Generate usernames
+~d1.ansible.builtin.set_fact = 
+~d2.usernames = 
+~d2.hosts = 
+~d2.group_name = "AWX-Collection-tests-api_lookup-group1-{{ test_id }}"
+~d0.name = Get our collection package
+~d1.controller_meta = 
+~d1.register = controller_meta
+~d0.name = Generate the name of our plugin
+~d1.ansible.builtin.set_fact = 
+~d2.plugin_name = "{{ controller_meta.prefix }}.controller_api"
+~d0.name = Create all of our users
+~d1.user = 
+~d2.username = "{{ item }}"
+~d2.is_superuser = true
+~d2.password = "{{ test_id }}"
+~d1.loop = "{{ usernames }}"
+~d1.register = user_creation_results
+~d0.block = 
+~d2.name = Specify the connection params
+~d3.debug = 
+~d4.msg = "{{ query(plugin_name, 'ping', host='DNE://junk.com', username='john', password='not_legit', verify_ssl=True) }}"
+~d3.register = results
+~d3.ignore_errors = yes
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Create our hosts
+~d3.host = 
+~d4.name = "{{ item }}"
+~d4.inventory = "Demo Inventory"
+~d3.loop = "{{ hosts }}"
+~d2.name = Test too many params (failure from validation of terms)
+~d3.ansible.builtin.set_fact = 
+~d4.junk = "{{ query(plugin_name, 'users', 'teams', query_params={}, ) }}"
+~d3.ignore_errors = yes
+~d3.register = result
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Try to load invalid endpoint
+~d3.ansible.builtin.set_fact = 
+~d4.junk = "{{ query(plugin_name, 'john', query_params={}, ) }}"
+~d3.ignore_errors = yes
+~d3.register = result
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Load user of a specific name without promoting objects
+~d3.ansible.builtin.set_fact = 
+~d4.users_list = "{{ lookup(plugin_name, 'users', query_params={ 'username' : user_creation_results['results'][0]['item'] }, return_objects=False) }}"
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Load user of a specific name with promoting objects
+~d3.ansible.builtin.set_fact = 
+~d4.user_objects = "{{ query(plugin_name, 'users', query_params={ 'username' : user_creation_results['results'][0]['item'] }, return_objects=True ) }}"
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Loop over one user with the loop syntax
+~d3.ansible.builtin.assert = 
+~d4.that = 
+~d3.loop = "{{ query(plugin_name, 'users', query_params={ 'username' : user_creation_results['results'][0]['item'] } ) }}"
+~d3.loop_control = 
+~d4.label = "{{ item.id }}"
+~d2.name = Get a page of users as just ids
+~d3.ansible.builtin.set_fact = 
+~d4.users = "{{ query(plugin_name, 'users', query_params={ 'username__endswith': test_id, 'page_size': 2 }, return_ids=True ) }}"
+~d2.debug = 
+~d4.msg = "{{ users }}"
+~d2.name = assert that user list has 2 ids only and that they are strings, not ints
+~d3.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Get all users of a system through next attribute
+~d3.ansible.builtin.set_fact = 
+~d4.users = "{{ query(plugin_name, 'users', query_params={ 'username__endswith': test_id, 'page_size': 1 }, return_all=true ) }}"
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Get all of the users created with a max_objects of 1
+~d3.ansible.builtin.set_fact = 
+~d4.users = "{{ lookup(plugin_name, 'users', query_params={ 'username__endswith': test_id, 'page_size': 1 }, return_all=true, max_objects=1 ) }}"
+~d3.ignore_errors = yes
+~d3.register = max_user_errors
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Get the ID of the first user created and verify that it is correct
+~d3.ansible.builtin.assert = 
+~d4.that = "query(plugin_name, 'users', query_params={ 'username' : user_creation_results['results'][0]['item'] }, return_ids=True)[0] ==  user_creation_results['results'][0]['id'] | string"
+~d2.name = Try to get an ID of someone who does not exist
+~d3.ansible.builtin.set_fact = 
+~d4.failed_user_id = "{{ query(plugin_name, 'users', query_params={ 'username': 'john jacob jingleheimer schmidt' }, expect_one=True) }}"
+~d3.register = result
+~d3.ignore_errors = yes
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Lookup too many users
+~d3.ansible.builtin.set_fact = 
+~d4.too_many_user_ids = " {{ query(plugin_name, 'users', query_params={ 'username__endswith': test_id }, expect_one=True) }}"
+~d3.register = results
+~d3.ignore_errors = yes
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Get the ping page
+~d3.ansible.builtin.set_fact = 
+~d4.ping_data = "{{ lookup(plugin_name, 'ping' ) }}"
+~d3.register = results
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = "Make sure that expect_objects fails on an API page"
+~d3.ansible.builtin.set_fact = 
+~d4.my_var = "{{ lookup(plugin_name, 'settings/ui', expect_objects=True) }}"
+~d3.ignore_errors = yes
+~d3.register = results
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Load the UI settings
+~d3.ansible.builtin.set_fact = 
+~d4.controller_settings = "{{ lookup('awx.awx.controller_api', 'settings/ui') }}"
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Display the usernames of all admin users
+~d3.debug = 
+~d4.msg = "Admin users: {{ query('awx.awx.controller_api', 'users', query_params={ 'is_superuser': true }) | map(attribute='username') | join(', ') }}"
+~d3.register = results
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = debug all organizations in a loop  # use query to return a list
+~d3.debug = 
+~d4.msg = "Organization description={{ item['description'] }} id={{ item['id'] }}"
+~d3.loop = "{{ query('awx.awx.controller_api', 'organizations') }}"
+~d3.loop_control = 
+~d4.label = "{{ item['name'] }}"
+~d2.name = Make sure user 'john' is an org admin of the default org if the user exists
+~d3.role = 
+~d4.organization = Default
+~d4.role = admin
+~d4.user = "{{ usernames[0] }}"
+~d4.state = absent
+~d3.register = role_revoke
+~d3.when = "query('awx.awx.controller_api', 'users', query_params={ 'username': 'DNE_TESTING' }) | length  == 1"
+~d2.ansible.builtin.assert = 
+~d4.that = 
+~d2.name = Create an inventory group with all 'foo' hosts
+~d3.group = 
+~d4.name = "{{ group_name }}"
+~d4.inventory = "Demo Inventory"
+~d4.hosts = >-
+~d8.query_params={ 'name__endswith' = test_id, },
+~d3.register = group_creation
+~d2.ansible.builtin.assert = 
+~d4.that = group_creation is changed
+~d1.always = 
+~d2.name = Cleanup group
+~d3.group = 
+~d4.name = "{{ group_name }}"
+~d4.inventory = "Demo Inventory"
+~d4.state = absent
+~d2.name = Cleanup hosts
+~d3.host = 
+~d4.name = "{{ item }}"
+~d4.inventory = "Demo Inventory"
+~d4.state = absent
+~d3.loop = "{{ hosts }}"
+~d2.name = Cleanup users
+~d3.user = 
+~d4.username = "{{ item }}"
+~d4.state = absent
+~d3.loop = "{{ usernames }}"

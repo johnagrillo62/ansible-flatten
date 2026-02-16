@@ -1,0 +1,5 @@
+[0].name = Update GRUB
+[0]["ansible.builtin.command"] = update-grub
+[0].register = global_handlers__grub_register_update
+[0].changed_when = global_handlers__grub_register_update.changed | bool
+[0].failed_when = ('error' in global_handlers__grub_register_update.stderr)

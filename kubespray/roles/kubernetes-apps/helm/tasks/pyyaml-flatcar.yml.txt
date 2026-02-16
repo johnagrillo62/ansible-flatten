@@ -1,0 +1,16 @@
+[0].name = Get installed pip version
+[0].command = {{ ansible_python_interpreter if ansible_python_interpreter is defined else 'python' }} -m pip --version
+[0].register = pip_version_output
+[0].ignore_errors = true
+[0].changed_when = false
+[1].name = Get installed PyYAML version
+[1].command = {{ ansible_python_interpreter if ansible_python_interpreter is defined else 'python' }} -m pip show PyYAML
+[1].register = pyyaml_version_output
+[1].ignore_errors = true
+[1].changed_when = false
+[2].name = Install pip
+[2].command = {{ ansible_python_interpreter if ansible_python_interpreter is defined else 'python' }} -m ensurepip --upgrade
+[2].when = (pyyaml_version_output is failed) and (pip_version_output is failed)
+[3].name = Install PyYAML
+[3]["ansible.builtin.pip"].name[0] = PyYAML
+[3].when = (pyyaml_version_output is failed)

@@ -1,0 +1,83 @@
+---
+# tasks/CentOS/main.yml: CentOS specific set-up
+# This takes care of base prerequisites for CentOS
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: setup
+
+- name: Ensure the Sensu Core Yum repo is present
+  tags: setup
+  yum_repository:
+    name: sensu
+    description: The Sensu Core yum repository
+    baseurl: "{{ sensu_yum_repo_url }}"
+    gpgkey: "{{ sensu_yum_key_url }}"
+    gpgcheck: "{{ (
+      (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and
+      ansible_distribution_major_version == '5'
+      ) | ternary('no', 'yes') }}"
+    enabled: yes
+
+- name: Ensure the epel present for OracleLinux
+  tags: setup
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: "{{ sensu_ol_yum_repo_url }}"
+    gpgkey: "{{ sensu_ol_yum_key_url }}"
+    enabled: yes
+  when: ansible_distribution == 'OracleLinux'
+
+- name: Ensure that credential is supplied if installing Sensu Enterprise
+  tags: setup
+  assert:
+    that:
+      - se_user
+      - se_pass
+    msg: Sensu enterprise credential must not be empty. Did you forget to set se_user and se_pass?
+  when: se_enterprise
+
+- name: Ensure the Sensu Enterprise repo is present
+  tags: setup
+  copy:
+    dest: /etc/yum.repos.d/sensu-enterprise.repo
+    content: |
+      [sensu-enterprise]
+      name=sensu-enterprise
+      baseurl=http://{{ se_user }}:{{ se_pass }}@enterprise.sensuapp.com/yum/noarch/
+      gpgcheck=0
+      enabled=1
+    owner: root
+    group: root
+    mode: 0644
+  when: se_enterprise
+
+- name: Ensure the Sensu Enterprise Dashboard repo is present
+  tags: setup
+  copy:
+    dest: /etc/yum.repos.d/sensu-enterprise-dashboard.repo
+    content: |
+      [sensu-enterprise-dashboard]
+      name=sensu-enterprise-dashboard
+      baseurl=http://{{ se_user }}:{{ se_pass }}@enterprise.sensuapp.com/yum/\$basearch/
+      gpgcheck=0
+      enabled=1
+    owner: root
+    group: root
+    mode: 0644
+  when: se_enterprise
+
+- name: Ensure Sensu is installed
+  tags: setup
+  package:
+    name: "{{ sensu_package }}"
+    state: "{{ sensu_pkg_state }}"
+
+- name: Ensure Sensu Enterprise is installed
+  tags: setup
+  package:
+    name: "{{ sensu_enterprise_package }}"
+    state: "{{ sensu_pkg_state }}"
+  when: se_enterprise

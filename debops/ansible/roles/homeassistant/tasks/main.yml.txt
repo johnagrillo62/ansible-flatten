@@ -1,0 +1,87 @@
+[0].name = Ensure specified packages are in there desired state
+[0]["ansible.builtin.package"].name = {{ q("flattened", homeassistant__combined_packages) }}
+[0].when = (homeassistant__deploy_state == "present")
+[0].register = homeassistant__register_packages
+[0].until = homeassistant__register_packages is succeeded
+[0].tags[0] = role::homeassistant:pkgs
+[1].name = Create Home Assistant system group
+[1]["ansible.builtin.group"].name = {{ homeassistant__group }}
+[1]["ansible.builtin.group"].state = {{ "present" if (homeassistant__deploy_state == "present") else "absent" }}
+[1]["ansible.builtin.group"].system = True
+[2].name = Create Home Assistant system user
+[2]["ansible.builtin.user"].name = {{ homeassistant__user }}
+[2]["ansible.builtin.user"].group = {{ homeassistant__group }}
+[2]["ansible.builtin.user"].groups = {{ homeassistant__groups | join(",") | default(omit) }}
+[2]["ansible.builtin.user"].append = False
+[2]["ansible.builtin.user"].home = {{ homeassistant__home_path }}
+[2]["ansible.builtin.user"].comment = {{ homeassistant__gecos }}
+[2]["ansible.builtin.user"].shell = {{ homeassistant__shell }}
+[2]["ansible.builtin.user"].state = {{ "present" if (homeassistant__deploy_state == "present") else "absent" }}
+[2]["ansible.builtin.user"].system = True
+[3].name = Clone Home Assistant git repository
+[3]["ansible.builtin.git"].repo = {{ homeassistant__git_repo }}
+[3]["ansible.builtin.git"].dest = {{ homeassistant__git_dest }}
+[3]["ansible.builtin.git"].depth = {{ homeassistant__git_depth }}
+[3]["ansible.builtin.git"].version = {{ homeassistant__git_version }}
+[3]["ansible.builtin.git"].recursive = {{ homeassistant__git_recursive | bool }}
+[3]["ansible.builtin.git"].update = {{ homeassistant__git_update | bool }}
+[3].become = True
+[3].become_user = {{ homeassistant__user }}
+[3].register = homeassistant__register_git
+[3].when = (homeassistant__deploy_state == "present")
+[4].name = Install hass without virtualenv
+[4]["ansible.builtin.pip"].name = .
+[4]["ansible.builtin.pip"].chdir = {{ homeassistant__git_dest }}
+[4]["ansible.builtin.pip"].executable = pip3
+[4]["ansible.builtin.pip"].extra_args = --user --upgrade
+[4].become = True
+[4].become_user = {{ homeassistant__user }}
+[4].when = not homeassistant__virtualenv | bool and homeassistant__register_git is changed
+[4].notify[0] = Restart Home Assistant
+[5].name = Install hass in virtualenv
+[5]["ansible.builtin.pip"].name = .
+[5]["ansible.builtin.pip"].chdir = {{ homeassistant__git_dest }}
+[5]["ansible.builtin.pip"].extra_args = --upgrade
+[5]["ansible.builtin.pip"].virtualenv = {{ homeassistant__virtualenv_path }}
+[5]["ansible.builtin.pip"].virtualenv_python = python3
+[5].become = True
+[5].become_user = {{ homeassistant__user }}
+[5].when = homeassistant__virtualenv | bool and homeassistant__register_git is changed
+[5].notify[0] = Restart Home Assistant
+[6].name = Ensure Home Assistant config dir exists
+[6]["ansible.builtin.file"].path = {{ homeassistant__home_path }}/.homeassistant
+[6]["ansible.builtin.file"].mode = 0750
+[6]["ansible.builtin.file"].state = directory
+[6].become = True
+[6].become_user = {{ homeassistant__user }}
+[6].when = (homeassistant__deploy_state == "present")
+[7].name = Ensure Home Assistant www dir exists
+[7]["ansible.builtin.file"].path = {{ homeassistant__home_path }}/www
+[7]["ansible.builtin.file"].owner = {{ homeassistant__user }}
+[7]["ansible.builtin.file"].group = {{ homeassistant__webserver_user }}
+[7]["ansible.builtin.file"].mode = 0750
+[7]["ansible.builtin.file"].state = directory
+[7].when = (homeassistant__deploy_state == "present")
+[8].name = Ensure Home Assistant www in config dir is a symlink
+[8]["ansible.builtin.file"].src = {{ homeassistant__home_path }}/www
+[8]["ansible.builtin.file"].dest = {{ homeassistant__home_path }}/.homeassistant/www
+[8]["ansible.builtin.file"].state = link
+[8]["ansible.builtin.file"].mode = 0755
+[8].become = True
+[8].become_user = {{ homeassistant__user }}
+[8].when = (homeassistant__deploy_state == "present")
+[9].name = Configure systemd unit file
+[9]["ansible.builtin.template"].src = etc/systemd/system/home-assistant.service.j2
+[9]["ansible.builtin.template"].dest = /etc/systemd/system/home-assistant.service
+[9]["ansible.builtin.template"].owner = root
+[9]["ansible.builtin.template"].group = root
+[9]["ansible.builtin.template"].mode = 0644
+[9].register = homeassistant__register_systemd_unit_file
+[9].when = (homeassistant__deploy_state == "present")
+[10].name = Set Home Assistant state using systemd
+[10]["ansible.builtin.systemd"].name = home-assistant
+[10]["ansible.builtin.systemd"].state = {{ "started" if (homeassistant__deploy_state == "present") else "stopped" }}
+[10]["ansible.builtin.systemd"].enabled = True
+[10]["ansible.builtin.systemd"].masked = False
+[10]["ansible.builtin.systemd"].daemon_reload = {{ homeassistant__register_systemd_unit_file is changed }}
+[10].when = (homeassistant__deploy_state == "present" and ansible_distribution_release not in ["trusty"])

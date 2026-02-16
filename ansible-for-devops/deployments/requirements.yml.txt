@@ -1,0 +1,4 @@
+roles[0].name = geerlingguy.git
+roles[1].name = geerlingguy.ruby
+roles[2].name = geerlingguy.nodejs
+roles[3].name = geerlingguy.passenger

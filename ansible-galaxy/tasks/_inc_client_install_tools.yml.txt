@@ -1,0 +1,44 @@
+~d0.name = Ensure Galaxy version is set
+~d1.include_tasks = _inc_galaxy_version.yml
+~d1.when = __galaxy_major_version is undefined
+~d0.name = Enable corepack shims  # noqa no-changed-when
+~d1.command = "corepack enable --install-directory {{ galaxy_venv_dir }}/bin"
+~d1.environment = 
+~d2.PATH = "{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}"
+~d2.VIRTUAL_ENV = "{{ galaxy_venv_dir }}"
+~d2.COREPACK_ENABLE_DOWNLOAD_PROMPT = "0"
+~d1.when = __galaxy_major_version is version('25.1', '>=')
+~d0.name = Install client build tools
+~d1.when = __galaxy_major_version is version('25.1', '<')
+~d1.block = 
+~d2.name = Ensure galaxy_node_version is set
+~d3.include_tasks = _inc_node_version.yml
+~d3.when = galaxy_node_version is undefined
+~d2.name = Check if node is installed
+~d3.stat = 
+~d4.path = "{{ galaxy_venv_dir }}/bin/node"
+~d3.register = __galaxy_node_is_installed
+~d2.name = Collect installed node version
+~d3.command = "{{ galaxy_venv_dir }}/bin/node --version"
+~d3.when = __galaxy_node_is_installed.stat.exists
+~d3.changed_when = false
+~d3.register = __galaxy_installed_node_version
+~d2.name = Remove node_modules directory when upgrading node
+~d3.file = 
+~d4.path = "{{ galaxy_venv_dir }}/lib/node_modules"
+~d4.state = absent
+~d3.when = (not __galaxy_node_is_installed.stat.exists) or (('v' ~ galaxy_node_version) != __galaxy_installed_node_version.stdout)
+~d2.name = Install or upgrade node
+~d3.command = "nodeenv -n {{ galaxy_node_version }} -p"
+~d3.environment = 
+~d4.PATH = "{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}"
+~d4.VIRTUAL_ENV = "{{ galaxy_venv_dir }}"
+~d3.when = (not __galaxy_node_is_installed.stat.exists) or (('v' ~ galaxy_node_version) != __galaxy_installed_node_version.stdout)
+~d2.name = Install yarn
+~d3.npm = 
+~d4.executable = "{{ galaxy_venv_dir }}/bin/npm"
+~d4.name = yarn
+~d4.global = yes
+~d3.environment = 
+~d4.PATH = "{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}"
+~d4.VIRTUAL_ENV = "{{ galaxy_venv_dir }}"

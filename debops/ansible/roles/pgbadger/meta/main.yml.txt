@@ -1,0 +1,15 @@
+collections[0] = debops.debops
+galaxy_info.author = Maciej Delmanowski
+galaxy_info.description = Manage pgBadger, PostgreSQL log analyzer
+galaxy_info.company = DebOps
+galaxy_info.license = GPL-3.0-or-later
+galaxy_info.min_ansible_version = 2.3.0
+galaxy_info.platforms[0].name = Ubuntu
+galaxy_info.platforms[0].versions[0] = all
+galaxy_info.platforms[1].name = Debian
+galaxy_info.platforms[1].versions[0] = all
+galaxy_info.galaxy_tags[0] = database
+galaxy_info.galaxy_tags[1] = postgresql
+galaxy_info.galaxy_tags[2] = logging
+galaxy_info.galaxy_tags[3] = metrics
+galaxy_info.galaxy_tags[4] = analytics

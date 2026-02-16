@@ -1,0 +1,12 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = dashboard
+[1].name = Install Uchiwa
+[1].tags = dashboard
+[1].apt.name = uchiwa
+[1].apt.state = present
+[2].name = Deploy Uchiwa config
+[2].tags = dashboard
+[2].template.src = uchiwa_config.json.j2
+[2].template.dest = {{ sensu_config_path }}/uchiwa.json
+[2].notify = restart uchiwa service

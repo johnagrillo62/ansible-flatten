@@ -1,0 +1,30 @@
+~d0.deploy_netchecker = true
+~d0.dns_min_replicas = 1
+~d0.unsafe_show_logs = true
+~d0.bin_dir = "{{ '/opt/bin' if ansible_os_family == 'Flatcar' else '/usr/local/bin' }}"
+~d0.docker_registry_mirrors = 
+~d1."https = //mirror.gcr.io"
+~d0.containerd_registries_mirrors = 
+~d1.prefix = docker.io
+~d2.mirrors = 
+~d3.host = https://mirror.gcr.io
+~d4.capabilities = ["pull", "resolve"]
+~d4.skip_verify = false
+~d3.host = https://registry-1.docker.io
+~d4.capabilities = ["pull", "resolve"]
+~d4.skip_verify = false
+~d0.crio_registries = 
+~d1.prefix = docker.io
+~d2.insecure = false
+~d2.blocked = false
+~d2.unqualified = false
+~d2.location = registry-1.docker.io
+~d2.mirrors = 
+~d3.location = mirror.gcr.io
+~d4.insecure = false
+~d0.netcheck_agent_image_repo = "{{ quay_image_repo }}/kubespray/k8s-netchecker-agent"
+~d0.netcheck_server_image_repo = "{{ quay_image_repo }}/kubespray/k8s-netchecker-server"
+~d0.nginx_image_repo = "{{ quay_image_repo }}/kubespray/nginx"
+~d0.flannel_image_repo = "{{ quay_image_repo }}/kubespray/flannel"
+~d0.flannel_init_image_repo = "{{ quay_image_repo }}/kubespray/flannel-cni-plugin"
+~d0.local_release_dir = "{{ '/tmp/releases' if inventory_hostname != 'localhost' else (lookup('env', 'PWD') + '/downloads') }}"

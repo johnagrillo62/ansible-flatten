@@ -1,0 +1,4 @@
+[0].name = Run bind-dirs
+[0]["ansible.builtin.command"] = {{ persistent_paths__qubes_os_handler }}
+[0].register = persistent_paths__register_bind_dirs
+[0].changed_when = persistent_paths__register_bind_dirs.changed | bool

@@ -1,0 +1,104 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Import DebOps secret role
+[2]["ansible.builtin.import_role"].name = secret
+[3].name = Install Filebeat packages
+[3]["ansible.builtin.package"].name = {{ q("flattened", (filebeat__base_packages
+                              + filebeat__packages)) }} 
+[3]["ansible.builtin.package"].state = present
+[3].notify[0] = Refresh host facts
+[3].register = filebeat__register_packages
+[3].until = filebeat__register_packages is succeeded
+[4].name = Make sure that Ansible local facts directory exists
+[4]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].mode = 0755
+[5].name = Save Filebeat local facts
+[5]["ansible.builtin.template"].src = etc/ansible/facts.d/filebeat.fact.j2
+[5]["ansible.builtin.template"].dest = /etc/ansible/facts.d/filebeat.fact
+[5]["ansible.builtin.template"].mode = 0755
+[5].notify[0] = Refresh host facts
+[5].tags[0] = meta::facts
+[6].name = Update Ansible facts if they were modified
+[6]["ansible.builtin.meta"] = flush_handlers
+[7].name = Divert the original Filebeat configuration
+[7]["debops.debops.dpkg_divert"].path = /etc/filebeat/filebeat.yml
+[7]["debops.debops.dpkg_divert"].state = present
+[7].register = filebeat__register_config_divert
+[7].when = ansible_pkg_mgr == 'apt'
+[8].name = Generate main Filebeat configuration
+[8]["ansible.builtin.template"].src = etc/filebeat/filebeat.yml.j2
+[8]["ansible.builtin.template"].dest = /etc/filebeat/filebeat.yml
+[8]["ansible.builtin.template"].mode = 0600
+[8].notify[0] = Test filebeat configuration and restart
+[8].no_log = {{ debops__no_log | d(True) }}
+[9].name = Create required configuration directories
+[9]["ansible.builtin.file"].path = {{ "/etc/filebeat/" + (item.name | dirname) }}
+[9]["ansible.builtin.file"].state = directory
+[9]["ansible.builtin.file"].mode = 0755
+[9].loop = {{ filebeat__combined_snippets | debops.debops.parse_kv_config }}
+[9].loop_control.label = {{ {"name": item.name, "state": item.state} }}
+[9].when = item.state | d('present') not in ['absent', 'ignore', 'init'] and item.config | d()
+[9].no_log = {{ debops__no_log | d(True) }}
+[10].name = Remove snippet configuration if requested
+[10]["ansible.builtin.file"].path = {{ "/etc/filebeat/" + (item.name | regex_replace(".yml", "") + ".yml") }}
+[10]["ansible.builtin.file"].state = absent
+[10].loop = {{ filebeat__combined_snippets | debops.debops.parse_kv_config }}
+[10].loop_control.label = {{ {"name": item.name, "state": item.state, "config": item.config} }}
+[10].notify[0] = Test filebeat configuration and restart
+[10].when = item.state | d('present') == 'absent' and item.config | d()
+[10].no_log = {{ debops__no_log | d(True) }}
+[11].name = Generate snippet configuration
+[11]["ansible.builtin.template"].src = etc/filebeat/snippets.d/snippet.yml.j2
+[11]["ansible.builtin.template"].dest = {{ "/etc/filebeat/" + (item.name | regex_replace(".yml", "") + ".yml") }}
+[11]["ansible.builtin.template"].mode = {{ item.mode | d("0600") }}
+[11].loop = {{ filebeat__combined_snippets | debops.debops.parse_kv_config }}
+[11].loop_control.label = {{ {"name": item.name, "state": item.state, "config": item.config} }}
+[11].notify[0] = Test filebeat configuration and restart
+[11].when = item.state | d('present') not in ['absent', 'ignore', 'init'] and item.config | d()
+[11].no_log = {{ debops__no_log | d(True) }}
+[12].name = Check if the Filebeat keystore exists
+[12]["ansible.builtin.stat"].path = /var/lib/filebeat/filebeat.keystore
+[12].register = filebeat__register_keystore
+[13].name = Create Filebeat keystore if not present
+[13]["ansible.builtin.command"] = filebeat keystore create
+[13].register = filebeat__register_keystore_create
+[13].changed_when = filebeat__register_keystore_create.changed | bool
+[13].when = not filebeat__register_keystore.stat.exists
+[14].name = Get the list of keystore contents
+[14]["ansible.builtin.command"] = filebeat keystore list
+[14].register = filebeat__register_keys
+[14].changed_when = False
+[14].check_mode = False
+[15].name = Remove key from Filebeat keystore when requested
+[15]["ansible.builtin.command"] = filebeat keystore remove {{ item.name }}
+[15].loop = {{ filebeat__combined_keys | debops.debops.parse_kv_config }}
+[15].loop_control.label = {{ {"name": item.name, "state": item.state} }}
+[15].notify[0] = Test filebeat configuration and restart
+[15].register = filebeat__register_keystore_remove
+[15].changed_when = filebeat__register_keystore_remove.changed | bool
+[15].when = (item.state | d('present') == 'absent' and item.name in filebeat__register_keys.stdout_lines)
+[15].no_log = {{ debops__no_log | d(True) }}
+[16].name = Set or update key in Filebeat keystore
+[16].environment.DEBOPS_FILEBEAT_KEY = {{ item.value }}
+[16]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+{% if item.force | d(False) %}
+printf "%s" "${DEBOPS_FILEBEAT_KEY}" | filebeat keystore add "{{ item.name }}" --stdin --force
+{% else %}
+printf "%s" "${DEBOPS_FILEBEAT_KEY}" | filebeat keystore add "{{ item.name }}" --stdin
+{% endif %}
+
+[16].args.executable = bash
+[16].loop = {{ filebeat__combined_keys | debops.debops.parse_kv_config }}
+[16].loop_control.label = {{ {"name": item.name, "state": item.state} }}
+[16].notify[0] = Test filebeat configuration and restart
+[16].register = filebeat__register_keystore_add
+[16].changed_when = filebeat__register_keystore_add.changed | bool
+[16].when = (item.state | d('present') not in ['absent', 'ignore', 'init'] and (item.name not in filebeat__register_keys.stdout_lines or (item.force | d(False)) | bool))
+[16].no_log = {{ debops__no_log | d(True) }}
+[17].name = Enable filebeat service on installation
+[17]["ansible.builtin.service"].name = filebeat
+[17]["ansible.builtin.service"].enabled = True
+[17].when = filebeat__register_config_divert is changed

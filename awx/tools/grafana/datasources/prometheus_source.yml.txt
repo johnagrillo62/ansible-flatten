@@ -1,0 +1,9 @@
+apiVersion = 1
+datasources[0].name = Prometheus
+datasources[0].type = prometheus
+datasources[0].isDefault = true
+datasources[0].access = proxy
+datasources[0].url = http://prometheus:9090
+datasources[0].editable = true
+datasources[0].jsonData.timeInterval = 5s
+datasources[0].uid = awx_prometheus

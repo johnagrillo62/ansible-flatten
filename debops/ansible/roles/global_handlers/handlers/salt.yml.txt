@@ -1,0 +1,4 @@
+~d0.name = Restart salt-master
+~d1.ansible.builtin.service = 
+~d2.name = 'salt-master'
+~d2.state = 'restarted'

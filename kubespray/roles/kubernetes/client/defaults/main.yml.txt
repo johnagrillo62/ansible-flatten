@@ -1,0 +1,6 @@
+~d0.kubeconfig_localhost = false
+~d0.kubeconfig_localhost_ansible_host = false
+~d0.kubectl_localhost = false
+~d0.artifacts_dir = "{{ inventory_dir }}/artifacts"
+~d0.kube_config_dir = "/etc/kubernetes"
+~d0.kube_apiserver_port = "6443"

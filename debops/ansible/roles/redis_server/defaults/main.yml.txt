@@ -1,0 +1,123 @@
+redis_server__base_packages[0] = redis-server
+redis_server__base_packages[1] = redis-tools
+redis_server__version = {{ ansible_local.redis_server.version | d("0.0.0") }}
+redis_server__user = redis
+redis_server__group = redis
+redis_server__auth_group = redis-auth
+redis_server__domain = {{ ansible_domain }}
+redis_server__auth_password = {{ ansible_local.redis_server.password
+                                 if (ansible_local.redis_server.password | d())
+                                 else (lookup("password", secret +
+                                       "/redis/clusters/" + redis_server__domain +
+                                       "/password length=" + redis_server__password_length +
+                                       " chars=ascii_letters,digits,-_.")) }}
+
+redis_server__password_length = 256
+redis_server__maxmemory_multiplier = 0.5
+redis_server__maxmemory_total = {{ (((ansible_memtotal_mb | int * 1024 * 1024)
+                                     * redis_server__maxmemory_multiplier | float) | round | int) }} 
+redis_server__maxmemory_instances = {{ redis_server__combined_instances
+                                       | debops.debops.parse_kv_items
+                                       | selectattr("state", "equalto", "present")
+                                       | list | count | int }}
+
+redis_server__maxmemory_shared = {{ (redis_server__maxmemory_total | int
+                                     / redis_server__maxmemory_instances | int)
+                                    | round | int }}
+
+redis_server__bind[0] = 127.0.0.1
+redis_server__bind[1] = ::1
+redis_server__default_base_options[0].name = masterauth
+redis_server__default_base_options[0].value = {{ redis_server__auth_password }}
+redis_server__default_base_options[0].state = {{ "present" if redis_server__auth_password | d() else "ignore" }}
+redis_server__default_base_options[1].name = requirepass
+redis_server__default_base_options[1].value = {{ redis_server__auth_password }}
+redis_server__default_base_options[1].state = {{ "present" if redis_server__auth_password | d() else "ignore" }}
+redis_server__default_base_options[2].name = always-show-logo
+redis_server__default_base_options[2].value = False
+redis_server__default_base_options[2].state = {{ "present"
+               if (redis_server__version is version_compare("4.0.0", ">="))
+               else "ignore" }}
+
+redis_server__default_base_options[3].name = syslog-enabled
+redis_server__default_base_options[3].value = True
+redis_server__default_base_options[4].name = syslog-facility
+redis_server__default_base_options[4].value = local0
+redis_server__default_base_options[5].name = loglevel
+redis_server__default_base_options[5].value = notice
+redis_server__default_base_options[5].dynamic = True
+redis_server__default_base_options[6].name = slave-read-only
+redis_server__default_base_options[6].value = True
+redis_server__default_base_options[6].dynamic = True
+redis_server__default_base_options[7].name = slave-serve-stale-date
+redis_server__default_base_options[7].value = True
+redis_server__default_base_options[7].dynamic = True
+redis_server__default_base_options[8].name = min-slaves-to-write
+redis_server__default_base_options[8].value = 0
+redis_server__default_base_options[8].dynamic = True
+redis_server__default_base_options[9].name = maxmemory
+redis_server__default_base_options[9].value = {{ redis_server__maxmemory_shared }}
+redis_server__default_base_options[9].dynamic = True
+redis_server__default_base_options[10].name = maxmemory-policy
+redis_server__default_base_options[10].value = volatile-lru
+redis_server__default_base_options[10].dynamic = True
+redis_server__default_base_options[11].name = maxmemory-samples
+redis_server__default_base_options[11].value = 3
+redis_server__default_base_options[11].dynamic = True
+redis_server__default_base_options[12].name = save
+redis_server__default_base_options[12].value[0] = 900 1
+redis_server__default_base_options[12].value[1] = 300 10
+redis_server__default_base_options[12].value[2] = 60 10000
+redis_server__default_base_options[12].dynamic = True
+redis_server__default_base_options[13].name = tcp-backlog
+redis_server__default_base_options[13].value = 128
+redis_server__default_instances[0].name = main
+redis_server__default_instances[0].port = 6379
+redis_server__default_instances[0].pidfile = /var/run/redis/redis-server.pid
+redis_server__default_instances[0].unixsocket = /var/run/redis/redis-server.sock
+redis_server__default_instances[0].systemd_override = [Service]
+PIDFile=/var/run/redis/redis-server.pid
+RuntimeDirectory=redis
+ReadWriteDirectories=-/var/run/redis
+
+redis_server__default_instances[0].state = present
+redis_server__combined_instances = {{ redis_server__default_instances
+                                      + redis_server__instances
+                                      + redis_server__group_instances
+                                      + redis_server__host_instances }}
+
+redis_server__default_configuration = {{ lookup("template", "lookup/redis_server__filtered_instances.j2")
+                                         | from_yaml }} 
+redis_server__combined_configuration = {{ redis_server__default_configuration
+                                          + redis_server__configuration
+                                          + redis_server__group_configuration
+                                          + redis_server__host_configuration }}
+
+redis_server__apt_preferences__dependent_list[0].packages[0] = redis
+redis_server__apt_preferences__dependent_list[0].packages[1] = redis-*
+redis_server__apt_preferences__dependent_list[0].backports[0] = stretch
+redis_server__apt_preferences__dependent_list[0].by_role = debops.redis_server
+redis_server__apt_preferences__dependent_list[0].reason = Support for multiple Redis instances, compatibility with newer Debian releases
+redis_server__etc_services__dependent_list[0].name = redis-server
+redis_server__etc_services__dependent_list[0].port = 6379
+redis_server__etc_services__dependent_list[0].comment = Redis Server
+redis_server__python__dependent_packages3[0] = python3-redis
+redis_server__python__dependent_packages2[0] = python-redis
+redis_server__ferm__dependent_rules[0].name = redis_server
+redis_server__ferm__dependent_rules[0].type = accept
+redis_server__ferm__dependent_rules[0].dport = {{ redis_server__env_ports }}
+redis_server__ferm__dependent_rules[0].saddr = {{ redis_server__allow + redis_server__group_allow + redis_server__host_allow }}
+redis_server__ferm__dependent_rules[0].weight = 40
+redis_server__ferm__dependent_rules[0].accept_any = False
+redis_server__ferm__dependent_rules[0].multiport = True
+redis_server__ferm__dependent_rules[0].by_role = debops.redis_server
+redis_server__sysctl__dependent_parameters[0].name = redis-server
+redis_server__sysctl__dependent_parameters[0].weight = 80
+redis_server__sysctl__dependent_parameters[0].options[0].name = vm.overcommit_memory
+redis_server__sysctl__dependent_parameters[0].options[0].comment = Required to allow background saving of the Redis database without
+issues. Ref: https://redis.io/topics/faq
+
+redis_server__sysctl__dependent_parameters[0].options[0].value = 1
+redis_server__sysfs__dependent_attributes[0].role = redis_server
+redis_server__sysfs__dependent_attributes[0].config[0].name = transparent_hugepages
+redis_server__sysfs__dependent_attributes[0].config[0].state = present

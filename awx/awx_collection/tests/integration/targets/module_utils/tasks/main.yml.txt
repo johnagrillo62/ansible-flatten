@@ -1,0 +1,4 @@
+[0].name = Generate a random string for test
+[0].set_fact.test_id = {{ lookup('password', '/dev/null chars=ascii_letters length=16') }}
+[0].when = test_id is not defined
+[1].include_tasks.file = test_named_reference.yml

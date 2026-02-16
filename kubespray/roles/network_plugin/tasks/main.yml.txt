@@ -1,0 +1,28 @@
+[0].name = Container Network Interface plugin
+[0].include_role.name = network_plugin/cni
+[0].when = kube_network_plugin != 'none'
+[1].name = Network plugin
+[1].include_role.name = network_plugin/{{ kube_network_plugin }}
+[1].include_role.apply.tags[0] = {{ kube_network_plugin }}
+[1].include_role.apply.tags[1] = network
+[1].when[0] = kube_network_plugin != 'none'
+[1].tags[0] = cilium
+[1].tags[1] = calico
+[1].tags[2] = flannel
+[1].tags[3] = macvlan
+[1].tags[4] = kube-ovn
+[1].tags[5] = kube-router
+[1].tags[6] = custom_cni
+[2].name = Cilium additional
+[2].include_role.name = network_plugin/cilium
+[2].include_role.apply.tags[0] = cilium
+[2].include_role.apply.tags[1] = network
+[2].when[0] = kube_network_plugin != 'cilium'
+[2].when[1] = cilium_deploy_additionally
+[2].tags[0] = cilium
+[3].name = Multus
+[3].include_role.name = network_plugin/multus
+[3].include_role.apply.tags[0] = multus
+[3].include_role.apply.tags[1] = network
+[3].when = kube_network_plugin_multus
+[3].tags[0] = multus

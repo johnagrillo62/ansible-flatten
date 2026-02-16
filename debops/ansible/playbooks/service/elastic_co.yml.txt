@@ -1,0 +1,14 @@
+~d0.name = Manage Elastic APT repositories
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_elastic_co' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = keyring
+~d3.tags = [ 'role::keyring', 'skip::keyring', 'role::elastic_co' ]
+~d3.keyring__dependent_apt_keys = 
+~d2.role = apt_preferences
+~d3.tags = [ 'role::apt_preferences', 'skip::apt_preferences' ]
+~d3.apt_preferences__dependent_list = 
+~d2.role = elastic_co
+~d3.tags = [ 'role::elastic_co', 'skip::elastic_co' ]

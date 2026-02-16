@@ -1,0 +1,7 @@
+~d0.name = Prepare minio environment
+~d1.ansible.builtin.set_fact = 
+~d2.minio__env_upstream_url_release = '{{ ansible_local.minio.release_tag
+~d2.minio__env_etc_services_dependent_list = '{{ lookup("template",
+~d2.minio__env_ferm_dependent_rules = '{{ lookup("template",
+~d2.minio__env_nginx_dependent_upstreams = '{{ lookup("template",
+~d2.minio__env_nginx_dependent_servers = '{{ lookup("template",

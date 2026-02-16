@@ -1,0 +1,87 @@
+avahi__enabled = True
+avahi__base_packages[0] = avahi-daemon
+avahi__base_packages[1] = avahi-utils
+avahi__base_packages[2] = libnss-mdns
+avahi__domain = local
+avahi__use_ipv4 = True
+avahi__use_ipv6 = {{ True
+                     if (ansible_all_ipv6_addresses
+                         | difference(ansible_all_ipv6_addresses
+                         | ansible.utils.ipv6("link-local")))
+                     else False }}
+
+avahi__check_response_ttl = False
+avahi__use_iff_running = False
+avahi__enable_dbus = True
+avahi__disallow_other_stacks = True
+avahi__add_service_cookie = True
+avahi__publish_hinfo = False
+avahi__publish_workstation = False
+avahi__publish_device_info = {{ True
+                                if not avahi__publish_workstation | bool
+                                else False }}
+
+avahi__publish_ssh = True
+avahi__daemon_conf_default_server.use-ipv4 = {{ avahi__use_ipv4 }}
+avahi__daemon_conf_default_server.use-ipv6 = {{ avahi__use_ipv6 }}
+avahi__daemon_conf_default_server.allow-interfaces = {{ avahi__allow_interfaces }}
+avahi__daemon_conf_default_server.deny-interfaces = {{ avahi__deny_interfaces }}
+avahi__daemon_conf_default_server.check-response-ttl = {{ avahi__check_response_ttl }}
+avahi__daemon_conf_default_server.use-iff-running = {{ avahi__use_iff_running }}
+avahi__daemon_conf_default_server.enable-dbus = {{ avahi__enable_dbus }}
+avahi__daemon_conf_default_server.disallow-other-stacks = {{ avahi__disallow_other_stacks }}
+avahi__daemon_conf_default_server.ratelimit-interval-usec = 1000000
+avahi__daemon_conf_default_server.ratelimit-burst = 1000
+avahi__daemon_conf_default_wide_area.enable-wide-area = True
+avahi__daemon_conf_default_publish.add-service-cookie = {{ avahi__add_service_cookie }}
+avahi__daemon_conf_default_publish.publish-hinfo = {{ avahi__publish_hinfo }}
+avahi__daemon_conf_default_publish.publish-workstation = {{ avahi__publish_workstation }}
+avahi__daemon_conf_default_reflector.enable-reflector = False
+avahi__daemon_conf_default_reflector.reflect-ipv = False
+avahi__daemon_conf_default_rlimits.rlimit-as = 
+avahi__daemon_conf_default_rlimits.rlimit-core = 0
+avahi__daemon_conf_default_rlimits.rlimit-data = 4194304
+avahi__daemon_conf_default_rlimits.rlimit-fsize = 0
+avahi__daemon_conf_default_rlimits.rlimit-nofile = 768
+avahi__daemon_conf_default_rlimits.rlimit-stack = 4194304
+avahi__daemon_conf_default_rlimits.rlimit-nproc = 32
+avahi__alias_enabled = {{ True
+                          if (ansible_local | d() and ansible_local.python | d() and
+                              (ansible_local.python.installed2 | d()) | bool)
+                          else False }}
+
+avahi__alias_install_path = {{ ansible_local.fhs.sbin | d("/usr/local/sbin") }}
+avahi__alias_config_file = /etc/avahi/aliases
+avahi__default_services.device-info.comment = Set server icon for this host on compatible devices
+avahi__default_services.device-info.type = _device-info._tcp
+avahi__default_services.device-info.txt = model=RackMac
+avahi__default_services.device-info.state = {{ "present"
+               if avahi__publish_device_info | bool
+               else "absent" }}
+
+avahi__default_services.sftp-ssh.name = SFTP on %h
+avahi__default_services.sftp-ssh.type = _sftp-ssh._tcp
+avahi__default_services.sftp-ssh.port = 22
+avahi__default_services.sftp-ssh.state = {{ "present"
+               if avahi__publish_ssh | bool
+               else "absent" }}
+
+avahi__default_services.ssh.name = SSH on %h
+avahi__default_services.ssh.type = _ssh._tcp
+avahi__default_services.ssh.port = 22
+avahi__default_services.ssh.state = {{ "present"
+               if avahi__publish_ssh | bool
+               else "absent" }}
+
+avahi__combined_services = {{ lookup("template",
+                              "lookup/avahi__combined_services.j2",
+                              convert_data=False) | from_yaml }}
+
+avahi__python__dependent_packages2[0] = python-avahi
+avahi__ferm__dependent_rules[0].name = avahi
+avahi__ferm__dependent_rules[0].type = accept
+avahi__ferm__dependent_rules[0].dport = mdns
+avahi__ferm__dependent_rules[0].saddr = {{ avahi__allow }}
+avahi__ferm__dependent_rules[0].protocol = udp
+avahi__ferm__dependent_rules[0].accept_any = True
+avahi__ferm__dependent_rules[0].rule_state = {{ "present" if (avahi__enabled | bool) else "absent" }}

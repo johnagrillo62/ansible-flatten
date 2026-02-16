@@ -1,0 +1,6 @@
+[0].name = Adjust OpCache memory setting.
+[0].lineinfile.dest = /etc/php/7.4/apache2/conf.d/10-opcache.ini
+[0].lineinfile.regexp = ^opcache.memory_consumption
+[0].lineinfile.line = opcache.memory_consumption = 96
+[0].lineinfile.state = present
+[0].notify = restart apache

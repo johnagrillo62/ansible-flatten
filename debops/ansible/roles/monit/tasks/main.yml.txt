@@ -1,0 +1,52 @@
+~d0.name = Import custom Ansible plugins
+~d1.ansible.builtin.import_role = 
+~d2.name = 'ansible_plugins'
+~d0.name = Import DebOps global handlers
+~d1.ansible.builtin.import_role = 
+~d2.name = 'global_handlers'
+~d0.name = Import DebOps secret role
+~d1.ansible.builtin.import_role = 
+~d2.name = 'secret'
+~d0.name = Install Monit packages
+~d1.ansible.builtin.package = 
+~d2.name = '{{ q("flattened", (monit__base_packages
+~d2.state = 'present'
+~d1.register = monit__register_packages
+~d1.until = monit__register_packages is succeeded
+~d0.name = Remove Monit configuration if requested
+~d1.ansible.builtin.file = 
+~d2.path = '/etc/monit/conf.d/{{ ((item.weight | string + "_") if (item.weight != 0) else "") + item.name }}'
+~d2.state = 'absent'
+~d1.with_items = '{{ monit__combined_config | debops.debops.parse_kv_items }}'
+~d1.when = item.name | d() and item.state | d('present') == 'absent'
+~d1.notify = [ 'Test monit and reload' ]
+~d1.no_log = '{{ debops__no_log | d(True if (item.mode | d("0644") == "0600") else False) }}'
+~d0.name = Generate Monit configuration
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/monit/conf.d/template.j2'
+~d2.dest = '/etc/monit/conf.d/{{ ((item.weight | string + "_") if (item.weight != 0) else "") + item.name }}'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '{{ item.mode | d("0600") }}'
+~d1.with_items = '{{ monit__combined_config | debops.debops.parse_kv_items }}'
+~d1.when = item.name | d() and item.state | d('present') not in ['init', 'absent']
+~d1.notify = [ 'Test monit and reload' ]
+~d1.no_log = '{{ debops__no_log | d(True if (item.mode | d("0644") == "0600") else False) }}'
+~d0.name = Make sure Ansible local facts directory exists
+~d1.ansible.builtin.file = 
+~d2.dest = '/etc/ansible/facts.d'
+~d2.state = 'directory'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d0.name = Configure Monit local facts
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/ansible/facts.d/monit.fact.j2'
+~d2.dest = '/etc/ansible/facts.d/monit.fact'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0755'
+~d1.notify = [ 'Refresh host facts' ]
+~d1.tags = [ 'meta::facts' ]
+~d0.name = Re-read local facts if they have been modified
+~d1.ansible.builtin.meta = 'flush_handlers'

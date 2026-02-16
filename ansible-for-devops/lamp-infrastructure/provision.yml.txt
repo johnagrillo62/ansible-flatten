@@ -1,0 +1,2 @@
+[0].import_playbook = provisioners/digitalocean.yml
+[1].import_playbook = configure.yml

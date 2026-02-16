@@ -1,0 +1,4 @@
+~d0.name = Restart pdns
+~d1.ansible.builtin.service = 
+~d2.name = 'pdns'
+~d2.state = 'restarted'

@@ -1,0 +1,85 @@
+[0].name = Calico | Configure peering with router(s) at global scope
+[0].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[0].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[0].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "BGPPeer", "metadata": {
+  "name": "global-{{ item.name | default(item.router_id | replace(':', '-')) }}"
+}, "spec": {
+  "asNumber": "{{ item.as }}",
+  "peerIP": "{{ item.router_id }}"
+}}
+
+[0].register = output
+[0].retries = 4
+[0].until = output.rc == 0
+[0].delay = {{ retry_stagger | random + 3 }}
+[0].with_items[0] = {{ peers | default([]) | selectattr('scope', 'defined') | selectattr('scope', 'equalto', 'global') | list }}
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Calico | Get node for per node peering
+[1].command.cmd = {{ bin_dir }}/calicoctl.sh get node {{ inventory_hostname }}
+[1].register = output_get_node
+[1].when[0] = ('k8s_cluster' in group_names)
+[1].when[1] = local_as is defined
+[1].when[2] = groups['calico_rr'] | default([]) | length == 0
+[1].delegate_to = {{ groups['kube_control_plane'][0] }}
+[2].name = Calico | Patch node asNumber for per node peering
+[2].command.cmd = {{ bin_dir }}/calicoctl.sh patch node "{{ inventory_hostname }}" --patch '{{ patch is string | ternary(patch, patch | to_json) }}'
+[2].vars.patch = {"spec": {
+  "bgp": {
+    "asNumber": "{{ local_as }}"
+  },
+  "orchRefs": [{"nodeName": "{{ inventory_hostname }}", "orchestrator": "k8s"}]
+}}
+
+[2].register = output
+[2].retries = 0
+[2].until = output.rc == 0
+[2].delay = {{ retry_stagger | random + 3 }}
+[2].when[0] = ('k8s_cluster' in group_names)
+[2].when[1] = local_as is defined
+[2].when[2] = groups['calico_rr'] | default([]) | length == 0
+[2].when[3] = output_get_node.rc == 0
+[3].name = Calico | Configure node asNumber for per node peering
+[3].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[3].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[3].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "Node", "metadata": {
+  "name": "{{ inventory_hostname }}"
+}, "spec": {
+  "bgp": {
+    "asNumber": "{{ local_as }}"
+  },
+  "orchRefs":[{"nodeName":"{{ inventory_hostname }}","orchestrator":"k8s"}]
+}}
+
+[3].register = output
+[3].retries = 4
+[3].until = output.rc == 0
+[3].delay = {{ retry_stagger | random + 3 }}
+[3].when[0] = ('k8s_cluster' in group_names)
+[3].when[1] = local_as is defined
+[3].when[2] = groups['calico_rr'] | default([]) | length == 0
+[3].when[3] = output_get_node.rc != 0
+[4].name = Calico | Configure peering with router(s) at node scope
+[4].command.cmd = {{ bin_dir }}/calicoctl.sh apply -f -
+[4].command.stdin = {{ stdin is string | ternary(stdin, stdin | to_json) }}
+[4].vars.stdin = {"apiVersion": "projectcalico.org/v3", "kind": "BGPPeer", "metadata": {
+  "name": "{{ inventory_hostname }}-{{ item.name | default(item.router_id | replace(':', '-')) }}"
+}, "spec": {
+  "asNumber": "{{ item.as }}",
+  "node": "{{ inventory_hostname }}",
+  "peerIP": "{{ item.router_id }}",
+  {% if calico_version is version('3.26.0', '>=') and (item.filters | default([]) | length > 0) %}
+  "filters": {{ item.filters }},
+  {% endif %}
+  {% if calico_version is version('3.23.0', '>=') and (item.numallowedlocalasnumbers | default(0) > 0) %}
+  "numAllowedLocalASNumbers": {{ item.numallowedlocalasnumbers }},
+  {% endif %}
+  "sourceAddress": "{{ item.sourceaddress | default('UseNodeIP') }}"
+}}
+
+[4].register = output
+[4].retries = 4
+[4].until = output.rc == 0
+[4].delay = {{ retry_stagger | random + 3 }}
+[4].with_items[0] = {{ peers | default([]) | selectattr('scope', 'undefined') | list | union(peers | default([]) | selectattr('scope', 'defined') | selectattr('scope', 'equalto', 'node') | list ) }}
+[4].delegate_to = {{ groups['kube_control_plane'][0] }}
+[4].when[0] = ('k8s_cluster' in group_names)

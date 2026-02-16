@@ -1,0 +1,58 @@
+[0].name = Install required packages
+[0]["ansible.builtin.package"].name = {{ (logrotate__base_packages + logrotate__packages) | flatten }}
+[0]["ansible.builtin.package"].state = present
+[0].register = logrotate__register_packages
+[0].until = logrotate__register_packages is succeeded
+[0].when = logrotate__enabled | bool
+[1].name = Determine current cron log rotation
+[1]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+dpkg-divert --list /etc/cron.daily/logrotate | awk '{ print $NF }'
+
+[1].args.executable = bash
+[1].register = logrotate__register_cron_diversion
+[1].changed_when = False
+[1].when = logrotate__enabled | bool
+[2].name = Remove previous cron log rotation
+[2]["debops.debops.dpkg_divert"].path = /etc/cron.daily/logrotate
+[2]["debops.debops.dpkg_divert"].divert = {{ logrotate__register_cron_diversion.stdout }}
+[2]["debops.debops.dpkg_divert"].state = absent
+[2]["debops.debops.dpkg_divert"].delete = True
+[2].when = (logrotate__enabled | bool and logrotate__register_cron_diversion.stdout | d() and logrotate__register_cron_diversion.stdout | d() != ('/etc/cron.' + logrotate__cron_period + '/logrotate'))
+[3].name = Configure cron log rotation {{ logrotate__cron_period }}
+[3]["debops.debops.dpkg_divert"].path = /etc/cron.daily/logrotate
+[3]["debops.debops.dpkg_divert"].divert = /etc/cron.{{ logrotate__cron_period }}/logrotate
+[3].when = (logrotate__enabled | bool and logrotate__cron_period in ['hourly', 'weekly', 'monthly'])
+[4].name = Add/remove diversion of the logrotate config file
+[4]["debops.debops.dpkg_divert"].path = /etc/logrotate.conf
+[4]["debops.debops.dpkg_divert"].state = {{ "present" if logrotate__enabled | bool else "absent" }}
+[4]["debops.debops.dpkg_divert"].delete = True
+[5].name = Generate logrotate main configuration file
+[5]["ansible.builtin.template"].src = etc/logrotate.conf.j2
+[5]["ansible.builtin.template"].dest = /etc/logrotate.conf
+[5]["ansible.builtin.template"].owner = root
+[5]["ansible.builtin.template"].group = root
+[5]["ansible.builtin.template"].mode = 0644
+[5].when = logrotate__enabled | bool
+[6].name = Add/remove diversion of the custom log rotation configuration
+[6]["debops.debops.dpkg_divert"].path = /etc/logrotate.d/{{ item.filename }}
+[6]["debops.debops.dpkg_divert"].state = {{ "present"
+               if
+               (logrotate__enabled | bool and item.state | d("present") != "absent")
+               else "absent" }}
+
+[6]["debops.debops.dpkg_divert"].delete = True
+[6].loop = {{ logrotate__combined_config | flatten }}
+[6].when = item.filename | d() and item.divert | d(False) | bool
+[7].name = Generate custom log rotation configuration
+[7]["ansible.builtin.template"].src = etc/logrotate.d/config.j2
+[7]["ansible.builtin.template"].dest = /etc/logrotate.d/{{ item.filename }}
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0644
+[7].loop = {{ logrotate__combined_config | flatten }}
+[7].when = (logrotate__enabled | bool and item.filename | d() and item.state | d('present') != 'absent')
+[8].name = Remove custom log rotation configuration
+[8]["ansible.builtin.file"].path = /etc/logrotate.d/{{ item.filename }}
+[8]["ansible.builtin.file"].state = absent
+[8].loop = {{ logrotate__combined_config | flatten }}
+[8].when = (item.filename | d() and not item.divert | d(False) | bool and (not logrotate__enabled | bool or item.state | d('present') == 'absent'))

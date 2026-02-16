@@ -1,0 +1,12 @@
+~d0.name = Divert original /etc/ntp.conf
+~d1.debops.debops.dpkg_divert = 
+~d2.path = '/etc/ntp.conf'
+~d1.when = ntp__daemon == 'ntpd'
+~d0.name = Configure NTPd
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/ntpd/ntp.conf.j2'
+~d2.dest = '/etc/ntp.conf'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.notify = [ 'Restart ntp' ]

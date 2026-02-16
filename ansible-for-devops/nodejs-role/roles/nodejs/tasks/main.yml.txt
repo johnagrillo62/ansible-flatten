@@ -1,0 +1,4 @@
+[0].name = Install Node.js (npm plus all its dependencies).
+[0].dnf = name=npm state=present enablerepo=epel
+[1].name = Install forever module (to run our Node.js app).
+[1].npm = name=forever global=yes state=present

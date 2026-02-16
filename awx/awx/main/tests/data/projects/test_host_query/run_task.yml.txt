@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].gather_facts = false
+[0].connection = local
+[0].tasks[0]["demo.query.example"] = null
+[0].tasks[0].register = result
+[0].tasks[1].debug = var=result

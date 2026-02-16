@@ -1,0 +1,28 @@
+[0].name = Enable ipsec service
+[0].systemd.name = ipsec
+[0].systemd.enabled = yes
+[1].name = add nssdir to ipsec.conf
+[1]["ansible.builtin.lineinfile"].path = /etc/ipsec.conf
+[1]["ansible.builtin.lineinfile"].insertafter = config setup
+[1]["ansible.builtin.lineinfile"].line = 	nssdir=/var/lib/ipsec/nss
+[2].name = create nssdir
+[2].file.path = /var/lib/ipsec/nss
+[2].file.state = directory
+[3].name = check if ipsec dir is empty
+[3].find.paths = /var/lib/ipsec/nss
+[3].find.file_type = any
+[3].find.hidden = true
+[3].register = findFiles
+[4].name = determine if selinux context is set
+[4].shell = semanage fcontext -l ipsec_key_file_t | grep "/var/lib/ipsec/nss" | wc -l
+[4].register = numContextEntries
+[5].name = set nss selinux context
+[5].shell = semanage fcontext -a -t ipsec_key_file_t /var/lib/ipsec/nss
+[5].when = numContextEntries.stdout | int < 1
+[6].name = restore nss selinux context so it will be active
+[6].command = restorecon -r /var/lib/ipsec/nss
+[7].name = initialize nss db
+[7].command = ipsec initnss --nssdir /var/lib/ipsec/nss
+[7].when = findFiles.matched == 0
+[8].name = make sure proper selinux label on nss db
+[8].command = chcon -R -t ipsec_key_file_t /var/lib/ipsec/nss

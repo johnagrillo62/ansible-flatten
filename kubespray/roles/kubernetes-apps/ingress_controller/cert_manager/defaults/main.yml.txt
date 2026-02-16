@@ -1,0 +1,7 @@
+cert_manager_namespace = cert-manager
+cert_manager_user = 1001
+cert_manager_dns_policy = ClusterFirst
+cert_manager_http_proxy = {{ http_proxy | default('') }}
+cert_manager_https_proxy = {{ https_proxy | default('') }}
+cert_manager_no_proxy = {{ no_proxy | default('') }}
+cert_manager_leader_election_namespace = kube-system

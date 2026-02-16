@@ -1,0 +1,15 @@
+[0].name = Detect passenger root
+[0]["ansible.builtin.command"] = passenger-config about root
+[0].register = nginx_register_passenger_root
+[0].changed_when = False
+[1].name = Set passenger_root value
+[1]["ansible.builtin.set_fact"].nginx_passenger_root = {{ nginx_register_passenger_root.stdout }}
+[1].when = nginx_passenger_root is undefined or not nginx_passenger_root
+[2].name = Detect passenger ruby
+[2]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && passenger-config about ruby-command | grep Command | tail -1 | awk -F: '{print $2}'
+[2].args.executable = bash
+[2].register = nginx_register_passenger_ruby
+[2].changed_when = False
+[3].name = Set passenger_ruby value
+[3]["ansible.builtin.set_fact"].nginx_passenger_ruby = {{ nginx_register_passenger_ruby.stdout | trim }}
+[3].when = nginx_passenger_ruby is undefined or not nginx_passenger_ruby

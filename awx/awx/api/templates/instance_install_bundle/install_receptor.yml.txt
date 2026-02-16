@@ -1,0 +1,15 @@
+~d0.hosts = all
+~d1.become = yes
+~d1.tasks = 
+~d2.name = Create the receptor group
+~d3.group = 
+~d4.name = "{{ receptor_group }}"
+~d4.state = present
+~d2.name = Create the receptor user
+~d3.user = 
+~d4.name = "{{ receptor_user }}"
+~d4.shell = /bin/bash
+~d2.import_role = 
+~d4.name = ansible.receptor.podman
+~d2.import_role = 
+~d4.name = ansible.receptor.setup

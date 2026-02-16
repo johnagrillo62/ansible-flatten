@@ -1,0 +1,9 @@
+~d0.name = Verify rstudio-server
+~d1.ansible.builtin.command = rstudio-server test-config
+~d1.register = global_handlers__rstudio_server_register_test_config
+~d1.changed_when = global_handlers__rstudio_server_register_test_config.changed | bool
+~d1.notify = [ 'Restart rstudio-server' ]
+~d0.name = Restart rstudio-server
+~d1.ansible.builtin.service = 
+~d2.name = 'rstudio-server'
+~d2.state = 'restarted'

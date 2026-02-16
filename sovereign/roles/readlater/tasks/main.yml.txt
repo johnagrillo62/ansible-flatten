@@ -1,0 +1,2 @@
+[0].import_tasks = wallabag.yml
+[0].tags = wallabag

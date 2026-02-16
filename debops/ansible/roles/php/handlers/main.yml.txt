@@ -1,0 +1,10 @@
+~d0.name = "Restart php-fpm"
+~d1.ansible.builtin.service = 
+~d2.name = "php{{ php__version }}-fpm"
+~d2.state = 'restarted'
+~d1.when = '"fpm" in php__server_api_packages'
+~d0.name = "Reload php-fpm"
+~d1.ansible.builtin.service = 
+~d2.name = "php{{ php__version }}-fpm"
+~d2.state = 'reloaded'
+~d1.when = '"fpm" in php__server_api_packages'

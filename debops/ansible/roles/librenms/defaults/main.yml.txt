@@ -1,0 +1,164 @@
+librenms__base_packages[0][0] = snmp
+librenms__base_packages[0][1] = imagemagick
+librenms__base_packages[0][2] = fping
+librenms__base_packages[0][3] = whois
+librenms__base_packages[0][4] = mtr-tiny
+librenms__base_packages[0][5] = rrdtool
+librenms__base_packages[0][6] = nmap
+librenms__base_packages[1] = {{ "snmp-mibs-downloader"
+        if (ansible_local | d() and ansible_local.apt | d() and
+            (ansible_local.apt.nonfree | d()) | bool)
+        else [] }}
+
+librenms__monitoring_packages = {{ librenms__monitoring_packages_map[ansible_distribution]
+                                   | d(["monitoring-plugins"]) }} 
+librenms__monitoring_packages_map.Ubuntu[0] = nagios-plugins
+librenms__fqdn = nms.{{ librenms__domain }}
+librenms__domain = {{ ansible_domain }}
+librenms__base_url = /
+librenms__nginx_auth_realm = LibreNMS access is restricted
+librenms__nginx_access_policy = 
+librenms__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
+librenms__user = librenms
+librenms__group = librenms
+librenms__shell = /bin/bash
+librenms__home = {{ ansible_local.nginx.www | d("/srv/www") + "/" + librenms__user }}
+librenms__install_path = {{ librenms__home + "/sites/public" }}
+librenms__data_path = {{ (ansible_local.fhs.data | d("/srv"))
+                         + "/" + librenms__user }} 
+librenms__rrd_dir = {{ librenms__data_path + "/rrd" }}
+librenms__log_dir = {{ (ansible_local.fhs.log | d("/var/log"))
+                       + "/librenms" }} 
+librenms__config_mode = 0600
+librenms__install_repo = https://github.com/librenms/librenms.git
+librenms__install_version = master
+librenms__update = True
+librenms__database_server = {{ ansible_local.mariadb.server }}
+librenms__database_user = librenms
+librenms__database_name = librenms
+librenms__database_password = {{ lookup('password', secret + '/mariadb/' +
+                                 ansible_local.mariadb.delegate_to +
+                                 '/credentials/' + librenms__database_user +
+                                 '/password length=48') }}
+
+librenms__admin_accounts = {{ ansible_local.core.admin_users | d([]) }}
+librenms__cron_threads = {{ (ansible_processor_cores | int * 4) }}
+librenms__memcached = False
+librenms__memcached_host = localhost
+librenms__memcached_port = 11211
+librenms__show_services = True
+librenms__site_style = light
+librenms__network_map_items[0] = xdp
+librenms__front_page = pages/front/tiles.php
+librenms__public_status = False
+librenms__devices[0] = {{ librenms__own_hostname }}
+librenms__own_hostname = {{ ansible_fqdn }}
+librenms__discover_services = True
+librenms__autodiscover_networks[0] = 10.0.0.0/8
+librenms__autodiscover_networks[1] = 172.16.0.0/12
+librenms__autodiscover_networks[2] = 192.168.0.0/16
+librenms__ignore_mount_string[0] = cgroup
+librenms__ignore_mount_string[1] = /run/
+librenms__ignore_mount_string[2] = /dev/shm
+librenms__snmp_version = v3
+librenms__snmp_communities[0] = public
+librenms__snmp_credentials[0] = {{ librenms__snmp_credentials_default }}
+librenms__snmp_credentials_default.authname = {{ lookup("password", secret + "/snmp/credentials/agent/username") }}
+librenms__snmp_credentials_default.authpass = {{ lookup("password", secret + "/snmp/credentials/agent/password") }}
+librenms__snmp_credentials_default.cryptopass = {{ lookup("password", secret + "/snmp/credentials/agent/password") }}
+librenms__snmp_credentials_default.authlevel = authPriv
+librenms__snmp_credentials_default.authalgo = SHA
+librenms__snmp_credentials_default.cryptoalgo = AES
+librenms__home_snmp_conf = {{ (["root", librenms__user] +
+                              librenms__admin_accounts | d([])) | unique }} 
+librenms__configuration_maps[0] = {{ librenms__config_database }}
+librenms__configuration_maps[1] = {{ librenms__config_authentication }}
+librenms__configuration_maps[2] = {{ librenms__config_installation }}
+librenms__configuration_maps[3] = {{ librenms__config_memcached }}
+librenms__configuration_maps[4] = {{ librenms__config_webui }}
+librenms__configuration_maps[5] = {{ librenms__config_autodiscovery }}
+librenms__configuration_maps[6] = {{ librenms__config_snmp }}
+librenms__configuration_maps[7] = {{ librenms__config_custom }}
+librenms__config_database.comment = Database configuration
+librenms__config_database.db_host = {{ librenms__database_server }}
+librenms__config_database.db_name = {{ librenms__database_name }}
+librenms__config_database.db_user = {{ librenms__database_user }}
+librenms__config_database.db_pass = {{ librenms__database_password }}
+librenms__config_authentication.comment = Authentication configuration
+librenms__config_authentication.auth_mechanism = mysql
+librenms__config_installation.comment = Application directories, installation
+librenms__config_installation.install_dir = {{ librenms__install_path }}
+librenms__config_installation.base_url = {{ librenms__base_url }}
+librenms__config_installation.rrd_dir = {{ librenms__rrd_dir }}
+librenms__config_installation.log_dir = {{ librenms__log_dir }}
+librenms__config_installation.update = {{ librenms__update }}
+librenms__config_installation.user = {{ librenms__user }}
+librenms__config_memcached.comment = Memcached configuration
+librenms__config_memcached.memcached.enable = {{ librenms__memcached }}
+librenms__config_memcached.memcached.host = {{ librenms__memcached_host }}
+librenms__config_memcached.memcached.port = {{ librenms__memcached_port }}
+librenms__config_webui.comment = Web interface configuration
+librenms__config_webui.site_style = {{ librenms__site_style }}
+librenms__config_webui.front_page = {{ librenms__front_page }}
+librenms__config_webui.public_status = {{ librenms__public_status }}
+librenms__config_webui.show_services = {{ librenms__show_services }}
+librenms__config_webui.network_map_items.array = {{ librenms__network_map_items }}
+librenms__config_autodiscovery.comment = Autodiscovery configuration
+librenms__config_autodiscovery.own_hostname = {{ librenms__own_hostname }}
+librenms__config_autodiscovery.discover_services = {{ librenms__discover_services }}
+librenms__config_autodiscovery.nets = {{ librenms__autodiscover_networks }}
+librenms__config_autodiscovery.ignore_mount_string = {{ librenms__ignore_mount_string }}
+librenms__config_autodiscovery.auth_ldap_groups.admin.level = 7
+librenms__config_snmp.comment = SNMP configuration
+librenms__config_snmp.snmp.version.array[0] = {{ librenms__snmp_version }}
+librenms__config_snmp.snmp.community.array = {{ librenms__snmp_communities }}
+librenms__config_snmp.snmp.v3 = {{ librenms__snmp_credentials }}
+librenms__python__dependent_packages3[0] = python3-mysqldb
+librenms__python__dependent_packages2[0] = python-mysqldb
+librenms__logrotate__dependent_config[0].filename = librenms
+librenms__logrotate__dependent_config[0].logs = {{ librenms__log_dir }}/*.log
+librenms__logrotate__dependent_config[0].options = weekly
+missingok
+rotate 4
+compress
+notifempty
+copytruncate
+delaycompress
+
+librenms__php__dependent_packages[0][0] = mysql
+librenms__php__dependent_packages[0][1] = gmp
+librenms__php__dependent_packages[0][2] = gd
+librenms__php__dependent_packages[0][3] = snmp
+librenms__php__dependent_packages[0][4] = curl
+librenms__php__dependent_packages[0][5] = mcrypt
+librenms__php__dependent_packages[0][6] = json
+librenms__php__dependent_packages[1] = {{ ["xml", "mbstring", "zip"]
+        if (php__version is version_compare("7.0", ">=")) else [] }} 
+librenms__php__dependent_pools[0].name = librenms
+librenms__php__dependent_pools[0].user = {{ librenms__user }}
+librenms__php__dependent_pools[0].group = {{ librenms__group }}
+librenms__php__dependent_pools[0].owner = {{ librenms__user }}
+librenms__php__dependent_pools[0].home = {{ librenms__home }}
+librenms__nginx__dependent_upstreams[0].name = php_librenms
+librenms__nginx__dependent_upstreams[0].type = php
+librenms__nginx__dependent_upstreams[0].php_pool = librenms
+librenms__nginx__dependent_servers[0].by_role = debops.librenms
+librenms__nginx__dependent_servers[0].type = php
+librenms__nginx__dependent_servers[0].name[0] = {{ librenms__fqdn }}
+librenms__nginx__dependent_servers[0].root = {{ librenms__install_path + "/html" }}
+librenms__nginx__dependent_servers[0].webroot_create = False
+librenms__nginx__dependent_servers[0].filename = debops.librenms
+librenms__nginx__dependent_servers[0].access_policy = {{ librenms__nginx_access_policy }}
+librenms__nginx__dependent_servers[0].auth_basic_realm = {{ librenms__nginx_auth_realm }}
+librenms__nginx__dependent_servers[0].php_upstream = php_librenms
+librenms__nginx__dependent_servers[0].location.@librenms = rewrite ^api/v0(.*)$ /api_v0.php/$1 last;
+rewrite ^(.+)$ /index.php/$1 last;
+
+librenms__nginx__dependent_servers[0].location./ = try_files $uri $uri/ @librenms;
+
+librenms__mariadb__dependent_users[0].database = {{ librenms__database_name }}
+librenms__mariadb__dependent_users[0].user = {{ librenms__database_user }}
+librenms__mariadb__dependent_users[0].owner = {{ librenms__user }}
+librenms__mariadb__dependent_users[0].group = {{ librenms__group }}
+librenms__mariadb__dependent_users[0].home = {{ librenms__home }}
+librenms__mariadb__dependent_users[0].system = True

@@ -1,0 +1,8 @@
+[0].hosts = all
+[0].remote_user = root
+[0].become = yes
+[0].become_method = sudo
+[0].tasks[0].name = create a group
+[0].tasks[0].group = name=tset
+[0].tasks[1].group = name=tset gid=7777
+[0].tasks[2].group = name=tset state=absent

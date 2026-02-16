@@ -1,0 +1,12 @@
+scheduler_plugins_enabled = false
+scheduler_plugins_namespace = scheduler-plugins
+scheduler_plugins_controller_replicas = 1
+scheduler_plugins_scheduler_replicas = 1
+scheduler_plugins_scheduler_leader_elect = {{ ((groups['kube_control_plane'] | length) > 1) }}
+scheduler_plugins_enabled_plugins[0] = Coscheduling
+scheduler_plugins_enabled_plugins[1] = CapacityScheduling
+scheduler_plugins_enabled_plugins[2] = NodeResourceTopologyMatch
+scheduler_plugins_enabled_plugins[3] = NodeResourcesAllocatable
+scheduler_plugins_disabled_plugins[0] = PrioritySort
+scheduler_plugins_plugin_config[0].name = Coscheduling
+scheduler_plugins_plugin_config[0].args.permitWaitingTimeSeconds = 10

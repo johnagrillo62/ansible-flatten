@@ -1,0 +1,90 @@
+influxdb_server__base_packages[0] = influxdb
+influxdb_server__bind = 
+influxdb_server__port = 8086
+influxdb_server__rpc_bind = 127.0.0.1
+influxdb_server__rpc_port = 8088
+influxdb_server__default_directory = /var/lib/influxdb
+influxdb_server__directory = {{ influxdb_server__default_directory }}
+influxdb_server__delegate_to = {{ inventory_hostname }}
+influxdb_server__default_configuration[0].name = global
+influxdb_server__default_configuration[0].options[0].reporting-disabled = true
+influxdb_server__default_configuration[0].options[1].bind-address = "{{ influxdb_server__rpc_bind }}:{{ influxdb_server__rpc_port }}"
+influxdb_server__default_configuration[1].name = meta
+influxdb_server__default_configuration[1].options[0].dir = "{{ influxdb_server__directory }}/meta"
+influxdb_server__default_configuration[2].name = data
+influxdb_server__default_configuration[2].options[0].dir = "{{ influxdb_server__directory }}/data"
+influxdb_server__default_configuration[2].options[1].wal-dir = "{{ influxdb_server__directory }}/wal"
+influxdb_server__default_configuration[3].name = coordinator
+influxdb_server__default_configuration[4].name = retention
+influxdb_server__default_configuration[5].name = shard-precreation
+influxdb_server__default_configuration[6].name = monitor
+influxdb_server__default_configuration[7].name = http
+influxdb_server__default_configuration[7].options[0].bind-address = "{{ influxdb_server__bind }}:{{ influxdb_server__port }}"
+influxdb_server__default_configuration[7].options[1].https-enabled = {{ "true" if influxdb_server__pki else "false" }}
+influxdb_server__default_configuration[7].options[2].auth-enabled = true
+influxdb_server__default_configuration[8].name = logging
+influxdb_server__default_configuration[9].name = subscriber
+influxdb_server__default_configuration[10].name = graphite
+influxdb_server__default_configuration[11].name = collectd
+influxdb_server__default_configuration[12].name = opentsdb
+influxdb_server__default_configuration[13].name = udp
+influxdb_server__default_configuration[14].name = continuous_queries
+influxdb_server__default_configuration[15].name = tls
+influxdb_server__default_configuration[15].options[0].min-version = "tls1.2"
+influxdb_server__combined_configuration = {{ influxdb_server__default_configuration +
+                                             influxdb_server__configuration +
+                                             influxdb_server__pki_options }}
+
+influxdb_server__append_groups[0] = ssl-cert
+influxdb_server__pki_options[0].name = http
+influxdb_server__pki_options[0].state = {{ "present" if influxdb_server__pki | bool else "absent" }}
+influxdb_server__pki_options[0].options[0].https-certificate = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
+                                "/" + influxdb_server__pki_crt }} "
+influxdb_server__pki_options[0].options[1].https-private-key = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
+                                "/" + influxdb_server__pki_key }} "
+influxdb_server__pki_options[1].name = subscriber
+influxdb_server__pki_options[1].state = {{ "present" if influxdb_server__pki | bool else "absent" }}
+influxdb_server__pki_options[1].options[0].ca-certs = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
+                       "/" + influxdb_server__pki_ca }} "
+influxdb_server__pki = {{ True
+                          if (ansible_local.pki.enabled | d() | bool and
+                              influxdb_server__pki_realm in ansible_local.pki.known_realms)
+                          else False }}
+
+influxdb_server__pki_path = {{ ansible_local.pki.base_path | d("/etc/pki") }}
+influxdb_server__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+influxdb_server__pki_ca = CA.crt
+influxdb_server__pki_crt = default.crt
+influxdb_server__pki_key = default.key
+influxdb_server__password_length = 48
+influxdb_server__root_password = {{ lookup("password", secret + "/influxdb/" + ansible_fqdn +
+                                    "/credentials/root/password " +
+                                    "length=" + influxdb_server__password_length) }}
+
+influxdb_server__backup = True
+influxdb_server__backup_mailaddr = backup@{{ ansible_domain }}
+influxdb_server__backup_doweekly = 6
+influxdb_server__backup_latest = no
+influxdb_server__backup_directory = /var/lib/autoinfluxdbbackup
+influxdb_server__influxdata__dependent_packages[0] = {{ influxdb_server__base_packages }}
+influxdb_server__influxdata__dependent_packages[1] = {{ influxdb_server__packages }}
+influxdb_server__ferm__dependent_rules[0].name = influxdb_http
+influxdb_server__ferm__dependent_rules[0].type = accept
+influxdb_server__ferm__dependent_rules[0].saddr = {{ influxdb_server__allow }}
+influxdb_server__ferm__dependent_rules[0].dport[0] = influxdb-http
+influxdb_server__ferm__dependent_rules[0].accept_any = False
+influxdb_server__ferm__dependent_rules[0].role = influxdb_server
+influxdb_server__ferm__dependent_rules[1].name = influxdb_rpc
+influxdb_server__ferm__dependent_rules[1].type = accept
+influxdb_server__ferm__dependent_rules[1].saddr = {{ influxdb_server__rpc_allow }}
+influxdb_server__ferm__dependent_rules[1].dport[0] = influxdb-rpc
+influxdb_server__ferm__dependent_rules[1].accept_any = False
+influxdb_server__ferm__dependent_rules[1].role = influxdb_server
+influxdb_server__ferm__dependent_rules[1].state = {{ "absent" if influxdb_server__rpc_bind == "127.0.0.1" else "present" }}
+influxdb_server__etc_services__dependent_list[0].name = influxdb-http
+influxdb_server__etc_services__dependent_list[0].port = {{ influxdb_server__port }}
+influxdb_server__etc_services__dependent_list[1].name = influxdb-rpc
+influxdb_server__etc_services__dependent_list[1].port = {{ influxdb_server__rpc_port }}
+influxdb_server__etc_services__dependent_list[1].state = {{ "absent" if influxdb_server__rpc_bind == "127.0.0.1" else "present" }}
+influxdb_server__python__dependent_packages3[0] = python3-influxdb
+influxdb_server__python__dependent_packages2[0] = python-influxdb

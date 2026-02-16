@@ -1,0 +1,14 @@
+[0].name = Download EPEL Repo - Centos/RHEL 6
+[0].get_url = url=http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm dest=/tmp/epel-release-latest-6.noarch.rpm
+[0].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '6'
+[1].name = Install EPEL Repo - Centos/RHEL 6
+[1].command = rpm -ivh /tmp/epel-release-latest-6.noarch.rpm creates=/etc/yum.repos.d/epel.repo
+[1].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '6'
+[2].name = Download EPEL Repo - Centos/RHEL 7
+[2].get_url = url=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm dest=/tmp/epel-release-latest-7.noarch.rpm
+[2].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'
+[3].name = Install EPEL Repo - Centos/RHEL 7
+[3].command = rpm -ivh /tmp/epel-release-latest-7.noarch.rpm creates=/etc/yum.repos.d/epel.repo
+[3].when = ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'
+[4].name = Install libselinux-python
+[4].yum = name=libselinux-python

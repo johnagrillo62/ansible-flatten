@@ -1,0 +1,68 @@
+sudo__enabled = True
+sudo__base_packages = {{ ["sudo-ldap"]
+                         if sudo__ldap_enabled | bool
+                         else ["sudo"] }}
+
+sudo__logind_session = {{ True if (ansible_service_mgr == "systemd") else False }}
+sudo__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+sudo__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+sudo__ldap_self_rdn = uid=sudo
+sudo__ldap_self_object_classes[0] = account
+sudo__ldap_self_object_classes[1] = simpleSecurityObject
+sudo__ldap_self_attributes.uid = {{ sudo__ldap_self_rdn.split("=")[1] }}
+sudo__ldap_self_attributes.userPassword = {{ sudo__ldap_bindpw }}
+sudo__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+sudo__ldap_self_attributes.description = Account used by the "sudo" service to access the LDAP directory
+sudo__ldap_binddn = {{ ([sudo__ldap_self_rdn] + sudo__ldap_device_dn) | join(",") }}
+sudo__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                               + sudo__ldap_binddn | to_uuid + ".password length=32"))
+                       if sudo__ldap_enabled | bool
+                       else "" }}
+
+sudo__combined_sudoers = {{ sudo__sudoers
+                            + sudo__group_sudoers
+                            + sudo__host_sudoers
+                            + sudo__dependent_sudoers }}
+
+sudo__ldap_enabled = {{ True
+                        if (ansible_local | d() and ansible_local.ldap | d() and
+                            (ansible_local.ldap.posix_enabled | d()) | bool and not
+                            (ansible_local.sssd | d() and ansible_local.sssd.installed | d()) | bool)
+                        else False }}
+
+sudo__ldap_default_configuration[0].name = sudoers_base
+sudo__ldap_default_configuration[0].comment = The base DN to use when performing "sudo" LDAP queries.
+sudo__ldap_default_configuration[0].value = {{ (["ou=SUDOers"] + sudo__ldap_base_dn) | join(",") }}
+sudo__ldap_default_configuration[1].name = uri
+sudo__ldap_default_configuration[1].comment = The location at which the LDAP server(s) should be reachable.
+sudo__ldap_default_configuration[1].value = {{ ansible_local.ldap.uri | d("") }}
+sudo__ldap_default_configuration[2].name = ssl
+sudo__ldap_default_configuration[2].comment = SSL options
+sudo__ldap_default_configuration[2].value = {{ "start_tls"
+               if (ansible_local | d() and ansible_local.ldap | d() and
+                   (ansible_local.ldap.start_tls | d()) | bool)
+               else "on" }}
+
+sudo__ldap_default_configuration[3].name = tls_reqcert
+sudo__ldap_default_configuration[3].value = demand
+sudo__ldap_default_configuration[4].name = tls_cacert
+sudo__ldap_default_configuration[4].value = /etc/ssl/certs/ca-certificates.crt
+sudo__ldap_default_configuration[5].name = binddn
+sudo__ldap_default_configuration[5].comment = The "sudo" service LDAP credentials used to bind to the directory.
+sudo__ldap_default_configuration[5].value = {{ sudo__ldap_binddn }}
+sudo__ldap_default_configuration[6].name = bindpw
+sudo__ldap_default_configuration[6].value = {{ sudo__ldap_bindpw }}
+sudo__ldap_combined_configuration = {{ sudo__ldap_default_configuration
+                                       + sudo__ldap_configuration
+                                       + sudo__ldap_group_configuration
+                                       + sudo__ldap_host_configuration }}
+
+sudo__ldap__dependent_tasks[0].name = Create sudo account for {{ sudo__ldap_device_dn | join(",") }}
+sudo__ldap__dependent_tasks[0].dn = {{ sudo__ldap_binddn }}
+sudo__ldap__dependent_tasks[0].objectClass = {{ sudo__ldap_self_object_classes }}
+sudo__ldap__dependent_tasks[0].attributes = {{ sudo__ldap_self_attributes }}
+sudo__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+sudo__ldap__dependent_tasks[0].state = {{ "present"
+               if sudo__ldap_enabled | bool
+               else "ignore" }}
+

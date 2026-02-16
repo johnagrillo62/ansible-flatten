@@ -1,0 +1,12 @@
+lxc_containers[0].name = somehost
+lxc_containers[0].state = started
+lxc_containers[0].network = nat
+lxc_containers[0].config = True
+lxc_containers[1].name = somedbhost
+lxc_containers[1].state = started
+lxc_containers[1].network = nat
+lxc_containers[1].config = True
+lxc_containers[2].name = aptcachehost
+lxc_containers[2].state = started
+lxc_containers[2].network = nat
+lxc_containers[2].config = True

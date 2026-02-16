@@ -1,0 +1,5 @@
+~d0.networkd__units = 
+~d1.name = '50-static.network'
+~d2.comment = 'Configure specific interface with static IP address'
+~d2.raw = |
+~d2.state = 'present'

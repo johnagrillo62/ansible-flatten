@@ -1,0 +1,39 @@
+[0].name = Prep_kubeadm_images | Download kubeadm binary
+[0].include_tasks = download_file.yml
+[0].vars.download = {{ download_defaults | combine(downloads.kubeadm) }}
+[0].when[0] = not skip_downloads | default(false)
+[0].when[1] = downloads.kubeadm.enabled
+[1].name = Prep_kubeadm_images | Copy kubeadm binary from download dir to system path
+[1].copy.src = {{ downloads.kubeadm.dest }}
+[1].copy.dest = {{ bin_dir }}/kubeadm
+[1].copy.mode = 0755
+[1].copy.remote_src = true
+[2].name = Prep_kubeadm_images | Create kubeadm config
+[2].template.src = kubeadm-images.yaml.j2
+[2].template.dest = {{ kube_config_dir }}/kubeadm-images.yaml
+[2].template.mode = 0644
+[2].template.validate = {{ kubeadm_config_validate_enabled | ternary(bin_dir + '/kubeadm config validate --config %s', omit) }}
+[2].when[0] = not skip_kubeadm_images | default(false)
+[3].name = Prep_kubeadm_images | Generate list of required images
+[3].shell = set -o pipefail && {{ bin_dir }}/kubeadm config images list --config={{ kube_config_dir }}/kubeadm-images.yaml | grep -Ev 'coredns|pause'
+[3].args.executable = /bin/bash
+[3].register = kubeadm_images_raw
+[3].run_once = true
+[3].changed_when = false
+[3].when[0] = not skip_kubeadm_images | default(false)
+[4].name = Prep_kubeadm_images | Parse list of images
+[4].vars.kubeadm_images_list = {{ kubeadm_images_raw.stdout_lines }}
+[4].set_fact.kubeadm_image.key = kubeadm_{{ (item | regex_replace('^(?:.*\\/)*', '')).split(':')[0] }}
+[4].set_fact.kubeadm_image.value.enabled = true
+[4].set_fact.kubeadm_image.value.container = true
+[4].set_fact.kubeadm_image.value.repo = {{ item | regex_replace('^(.*):.*$', '\\1') }}
+[4].set_fact.kubeadm_image.value.tag = {{ item | regex_replace('^.*:(.*)$', '\\1') }}
+[4].set_fact.kubeadm_image.value.groups[0] = k8s_cluster
+[4].loop = {{ kubeadm_images_list | flatten(levels=1) }}
+[4].register = kubeadm_images_cooked
+[4].run_once = true
+[4].when[0] = not skip_kubeadm_images | default(false)
+[5].name = Prep_kubeadm_images | Convert list of images to dict for later use
+[5].set_fact.kubeadm_images = {{ kubeadm_images_cooked.results | map(attribute='ansible_facts.kubeadm_image') | list | items2dict }}
+[5].run_once = true
+[5].when[0] = not skip_kubeadm_images | default(false)

@@ -1,0 +1,16 @@
+doc[0][0].hosts = all
+doc[0][0].vars.release = 2.0
+doc[0][0].vars_files[0] = vars/external_vars.yml
+doc[0][0].tasks[0].name = arbitrary command
+doc[0][0].tasks[0].command = /bin/true
+doc[0][0].tasks[1].include = tasks/base.yml
+doc[0][0].handlers[0].include = handlers/handlers.yml
+doc[0][0].handlers[1].name = restart foo
+doc[0][0].handlers[1].service = name=foo state=restarted
+doc[0][1].hosts = webservers
+doc[0][1].remote_user = mdehaan
+doc[0][1].vars.release = 2.0
+doc[0][1].vars_files[0] = vars/external_vars.yml
+doc[0][1].tasks[0].name = some random command
+doc[0][1].tasks[0].command = /bin/true
+doc[1] = 

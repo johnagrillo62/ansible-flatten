@@ -1,0 +1,139 @@
+[0].name = Upgrade all the things!
+[0].hosts = all:!localhost
+[0].become = True
+[0].vars.dist_upgrade_version_map.stretch = buster
+[0].vars.dist_upgrade_version_map.buster = bullseye
+[0].vars.dist_upgrade_version_map.bullseye = bookworm
+[0].vars.dist_upgrade_version_map.bookworm = trixie
+[0].vars.dist_upgrade_version_map.trixie = forky
+[0].vars.dist_upgrade_version_map.trusty = utopic
+[0].vars.dist_upgrade_current_release = {{ ansible_distribution_release }}
+[0].vars.dist_upgrade_new_release = {{ dist_upgrade_version_map[dist_upgrade_current_release] }}
+[0].vars.dist_upgrade_lockfile = /tmp/dist-upgrade-in-progress
+[0].vars.dist_upgrade_mail_host = localhost
+[0].vars.dist_upgrade_mail_port = 25
+[0].vars.dist_upgrade_mail_secure = try
+[0].vars.dist_upgrade_mail_to[0] = {{ "root@" + ansible_domain }}
+[0].vars.dist_upgrade_mail_subject = {{ ansible_fqdn }} has been upgraded from {{ ansible_distribution }} {{ dist_upgrade_current_release | capitalize }} to {{ ansible_distribution }} {{ dist_upgrade_new_release | capitalize }}
+[0].vars.dist_upgrade_mail_body = Ansible performed an unattended 'apt-get dist-upgrade' on host
+
+    {{ ansible_fqdn }}
+
+Upgrade has been orchestrated by {{ansible_env.SUDO_USER | d("root")}}.
+You should reboot {{ ansible_fqdn }} as soon
+as possible to complete the upgrade process and boot
+with new kernel.
+
+Log from the upgrade is included below:
+
+============================
+    apt-get dist-upgrade
+============================
+
+{% for line in dist_upgrade_register_upgrade.stdout_lines %}
+{% if not line | regex_search('^\(Reading\s+database.*%') and
+      not line | regex_search('^\(Reading\s+database\s+\.\.\.\s+$') %}
+{{ line }}
+{% endif %}
+{% endfor %}
+
+==========================
+    apt-get autoremove
+==========================
+
+{% for line in dist_upgrade_register_autoremove.stdout_lines %}
+{% if not line | regex_search('^\(Reading\s+database.*%') and
+      not line | regex_search('^\(Reading\s+database\s+\.\.\.\s+$') %}
+{{ line }}
+{% endif %}
+{% endfor %}
+
+=========================
+    apt-get autoclean
+=========================
+
+{% for line in dist_upgrade_register_autoclean.stdout_lines %}
+{% if not line | regex_search('^\(Reading\s+database.*%') and
+      not line | regex_search('^\(Reading\s+database\s+\.\.\.\s+$') %}
+{{ line }}
+{% endif %}
+{% endfor %}
+
+[0].tasks[0].name = Check if lockfile exists
+[0].tasks[0]["ansible.builtin.stat"].path = {{ dist_upgrade_lockfile }}
+[0].tasks[0].register = dist_upgrade_register_lockfile
+[0].tasks[1].name = Find all apt sources.list files
+[0].tasks[1]["ansible.builtin.find"].paths = /etc/apt/
+[0].tasks[1]["ansible.builtin.find"].patterns = *.list
+[0].tasks[1]["ansible.builtin.find"].recurse = True
+[0].tasks[1].register = dist_upgrade_register_apt_sources
+[0].tasks[2].name = Change current release in APT sources
+[0].tasks[2]["ansible.builtin.replace"].dest = {{ item.path }}
+[0].tasks[2]["ansible.builtin.replace"].regexp = {{ dist_upgrade_current_release }}
+[0].tasks[2]["ansible.builtin.replace"].replace = {{ dist_upgrade_new_release }}
+[0].tasks[2].register = dist_upgrade_register_replace
+[0].tasks[2].with_items[0] = {{ dist_upgrade_register_apt_sources.files }}
+[0].tasks[2].when = dist_upgrade_current_release in dist_upgrade_version_map.keys() and dist_upgrade_new_release is defined and dist_upgrade_new_release
+[0].tasks[3].name = Fix APT sources (buster/updates becomes bullseye-security)
+[0].tasks[3]["ansible.builtin.replace"].dest = {{ item.path }}
+[0].tasks[3]["ansible.builtin.replace"].regexp = \s{{ dist_upgrade_new_release }}/updates\s
+[0].tasks[3]["ansible.builtin.replace"].replace =  {{ dist_upgrade_new_release }}-security 
+[0].tasks[3].with_items[0] = {{ dist_upgrade_register_apt_sources.files }}
+[0].tasks[3].when = dist_upgrade_new_release == 'bullseye'
+[0].tasks[4].name = Remove all APT preferences for backported packages
+[0].tasks[4]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && grep -lrIZ 'Pin: release .*={{ dist_upgrade_current_release }}-backports' /etc/apt/preferences.d | xargs -0 rm -f -- || true
+[0].tasks[4].args.executable = bash
+[0].tasks[4].register = dist_upgrade_register_remove
+[0].tasks[4].changed_when = dist_upgrade_register_remove.changed | bool
+[0].tasks[4].when = dist_upgrade_register_replace is defined and dist_upgrade_register_replace is changed
+[0].tasks[5].name = Create a lockfile
+[0].tasks[5]["ansible.builtin.file"].path = {{ dist_upgrade_lockfile }}
+[0].tasks[5]["ansible.builtin.file"].state = touch
+[0].tasks[5]["ansible.builtin.file"].mode = 0644
+[0].tasks[5].when = dist_upgrade_register_replace is defined and dist_upgrade_register_replace is changed
+[0].tasks[6].name = Perform apt-get dist-upgrade (this might take a while)
+[0].tasks[6]["ansible.builtin.apt"].update_cache = True
+[0].tasks[6]["ansible.builtin.apt"].upgrade = dist
+[0].tasks[6].register = dist_upgrade_register_upgrade
+[0].tasks[6].when = ((dist_upgrade_register_replace is defined and dist_upgrade_register_replace is changed) or (dist_upgrade_register_lockfile is defined and dist_upgrade_register_lockfile.stat.exists))
+[0].tasks[7].name = Check what init system is active
+[0].tasks[7]["ansible.builtin.stat"].path = /sbin/init
+[0].tasks[7].register = dist_upgrade_register_init
+[0].tasks[8].name = Install dbus package (required by systemd)
+[0].tasks[8]["ansible.builtin.apt"].name = dbus
+[0].tasks[8]["ansible.builtin.apt"].state = present
+[0].tasks[8]["ansible.builtin.apt"].install_recommends = False
+[0].tasks[8].when = dist_upgrade_register_init.stat.lnk_source is defined and dist_upgrade_register_init.stat.lnk_source == '/lib/systemd/systemd'
+[0].tasks[9].name = Automatically remove packages that are no longer needed
+[0].tasks[9]["ansible.builtin.apt"].autoremove = True
+[0].tasks[9].register = dist_upgrade_register_autoremove
+[0].tasks[9].when = dist_upgrade_register_upgrade is defined and dist_upgrade_register_upgrade is changed
+[0].tasks[10].name = Clean APT package cache
+[0].tasks[10]["ansible.builtin.apt"].autoclean = True
+[0].tasks[10].register = dist_upgrade_register_autoclean
+[0].tasks[10].when = dist_upgrade_register_upgrade is defined and dist_upgrade_register_upgrade is changed
+[0].tasks[11].name = Check if /etc/services.d exists
+[0].tasks[11]["ansible.builtin.stat"].path = /etc/services.d
+[0].tasks[11].register = dist_upgrade_register_etc_services
+[0].tasks[11].when = dist_upgrade_register_upgrade is defined and dist_upgrade_register_upgrade is changed
+[0].tasks[12].name = Assemble /etc/services
+[0].tasks[12]["ansible.builtin.assemble"].src = /etc/services.d
+[0].tasks[12]["ansible.builtin.assemble"].dest = /etc/services
+[0].tasks[12]["ansible.builtin.assemble"].owner = root
+[0].tasks[12]["ansible.builtin.assemble"].group = root
+[0].tasks[12]["ansible.builtin.assemble"].mode = 0644
+[0].tasks[12]["ansible.builtin.assemble"].backup = False
+[0].tasks[12].when = dist_upgrade_register_etc_services is not skipped and dist_upgrade_register_etc_services is defined and dist_upgrade_register_etc_services.stat.exists
+[0].tasks[13].name = Remove the lockfile
+[0].tasks[13]["ansible.builtin.file"].path = {{ dist_upgrade_lockfile }}
+[0].tasks[13]["ansible.builtin.file"].state = absent
+[0].tasks[14].name = Send mail with information about the upgrade
+[0].tasks[14]["community.general.mail"].host = {{ dist_upgrade_mail_host }}
+[0].tasks[14]["community.general.mail"].port = {{ dist_upgrade_mail_port }}
+[0].tasks[14]["community.general.mail"].secure = {{ dist_upgrade_mail_secure }}
+[0].tasks[14]["community.general.mail"].from = {{ "root@" + ansible_fqdn }}
+[0].tasks[14]["community.general.mail"].to = {{ dist_upgrade_mail_to | join(",") }}
+[0].tasks[14]["community.general.mail"].subject = {{ dist_upgrade_mail_subject }}
+[0].tasks[14]["community.general.mail"].charset = utf8
+[0].tasks[14]["community.general.mail"].body = {{ dist_upgrade_mail_body }}
+[0].tasks[14].when = dist_upgrade_register_upgrade is defined and dist_upgrade_register_upgrade is changed

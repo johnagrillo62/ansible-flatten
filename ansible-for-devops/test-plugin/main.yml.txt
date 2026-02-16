@@ -1,0 +1,4 @@
+[0].hosts = all
+[0].vars.my_color_choice = blue
+[0].tasks[0].name = Verify {{ my_color_choice }} is a form of blue.
+[0].tasks[0].assert.that = my_color_choice is blue

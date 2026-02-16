@@ -1,0 +1,12 @@
+[0].name = Delete anonymous database user
+[0]["community.mysql.mysql_user"].user = 
+[0]["community.mysql.mysql_user"].host = {{ item }}
+[0]["community.mysql.mysql_user"].state = absent
+[0]["community.mysql.mysql_user"].login_unix_socket = /run/mysqld/mysqld.sock
+[0].with_items[0] = {{ ansible_hostname }}
+[0].with_items[1] = localhost
+[1].name = Remove test database on first install
+[1]["community.mysql.mysql_db"].db = test
+[1]["community.mysql.mysql_db"].state = absent
+[1]["community.mysql.mysql_db"].login_unix_socket = /run/mysqld/mysqld.sock
+[1].when = ((mariadb_server__register_version | d() and not mariadb_server__register_version.stdout) and (mariadb_server__register_install_status | d() and mariadb_server__register_install_status is changed))

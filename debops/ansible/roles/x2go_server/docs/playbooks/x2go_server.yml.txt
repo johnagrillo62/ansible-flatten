@@ -1,0 +1,8 @@
+~d0.name = Setup and manage the server-side of X2Go
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_x2go_server' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = x2go_server
+~d3.tags = [ 'role::x2go_server' ]

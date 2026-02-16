@@ -1,0 +1,4 @@
+~d0.name = Prepare
+~d1.hosts = all
+~d1.gather_facts = false
+~d1.tasks = []

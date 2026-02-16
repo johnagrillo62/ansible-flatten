@@ -1,0 +1,36 @@
+[0].name = Get software for apt repository management.
+[0].apt.name[0] = python-apt
+[0].apt.name[1] = python-pycurl
+[0].apt.state = present
+[1].name = Add ondrej repository for later versions of PHP.
+[1].apt_repository = repo='ppa:ondrej/php' update_cache=yes
+[2].name = Install Apache, MySQL, PHP, and other dependencies.
+[2].apt.name[0] = acl
+[2].apt.name[1] = git
+[2].apt.name[2] = curl
+[2].apt.name[3] = unzip
+[2].apt.name[4] = sendmail
+[2].apt.name[5] = apache2
+[2].apt.name[6] = php7.4-common
+[2].apt.name[7] = php7.4-cli
+[2].apt.name[8] = php7.4-dev
+[2].apt.name[9] = php7.4-gd
+[2].apt.name[10] = php7.4-curl
+[2].apt.name[11] = php7.4-json
+[2].apt.name[12] = php7.4-opcache
+[2].apt.name[13] = php7.4-xml
+[2].apt.name[14] = php7.4-mbstring
+[2].apt.name[15] = php7.4-pdo
+[2].apt.name[16] = php7.4-mysql
+[2].apt.name[17] = php7.4-apcu
+[2].apt.name[18] = libpcre3-dev
+[2].apt.name[19] = libapache2-mod-php7.4
+[2].apt.name[20] = python3-mysqldb
+[2].apt.name[21] = mysql-server
+[2].apt.state = present
+[3].name = Disable the firewall (since this is for local dev only).
+[3].service = name=ufw state=stopped
+[4].name = Start Apache, MySQL, and PHP.
+[4].service = name={{ item }} state=started enabled=yes
+[4].with_items[0] = apache2
+[4].with_items[1] = mysql

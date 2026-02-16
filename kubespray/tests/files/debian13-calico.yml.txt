@@ -1,0 +1,4 @@
+~d0.cloud_image = debian-13
+~d0.gateway_api_enabled = true
+~d0.dns_mode = coredns_dual
+~d0.kube_asymmetric_encryption_algorithm = "RSA-3072"

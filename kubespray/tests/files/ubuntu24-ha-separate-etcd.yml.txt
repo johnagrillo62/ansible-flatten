@@ -1,0 +1,10 @@
+cloud_image = ubuntu-2404
+cluster_layout[0].node_groups[0] = kube_control_plane
+cluster_layout[1].node_groups[0] = kube_control_plane
+cluster_layout[2].node_groups[0] = kube_control_plane
+cluster_layout[3].node_groups[0] = kube_node
+cluster_layout[4].node_groups[0] = etcd
+cluster_layout[5].node_groups[0] = etcd
+cluster_layout[6].node_groups[0] = etcd
+kube_network_plugin = calico
+calico_datastore = etcd

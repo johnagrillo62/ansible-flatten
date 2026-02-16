@@ -1,0 +1,4 @@
+roles[0].name = geerlingguy.swap
+roles[1].name = geerlingguy.docker
+roles[2].name = geerlingguy.kubernetes
+collections[0].name = community.kubernetes

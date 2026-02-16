@@ -1,0 +1,27 @@
+[0].name = Download WordPress
+[0].get_url = url=http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/srv/wordpress-{{ wp_version }}.tar.gz sha256sum="{{ wp_sha256sum }}"
+[1].name = Extract archive
+[1].unarchive.creates = /srv/wordpress
+[1].unarchive.src = /srv/wordpress-{{ wp_version }}.tar.gz
+[1].unarchive.dest = /srv/wordpress
+[2].name = Add group "wordpress"
+[2].group = name=wordpress
+[3].name = Add user "wordpress"
+[3].user = name=wordpress group=wordpress home=/srv/wordpress/
+[4].name = Fetch random salts for WordPress config
+[4].get_url.url = https://api.wordpress.org/secret-key/1.1/salt/
+[4].register = wp_salt
+[4].become = no
+[4].become_method = sudo
+[4].changed_when = true
+[4].delegate_to = localhost
+[5].name = Create WordPress database
+[5].mysql_db = name={{ wp_db_name }} state=present
+[6].name = Create WordPress database user
+[6].mysql_user = name={{ wp_db_user }} password={{ wp_db_password }} priv={{ wp_db_name }}.*:ALL host='localhost' state=present
+[7].name = Copy WordPress config file
+[7].template = src=wp-config.php dest=/srv/wordpress/
+[8].name = Change ownership of WordPress installation
+[8].file = path=/srv/wordpress/ owner=wordpress group=wordpress state=directory recurse=yes setype=httpd_sys_content_t
+[9].name = Start php-fpm Service
+[9].service = name=php-fpm state=started enabled=yes

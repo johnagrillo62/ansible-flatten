@@ -1,0 +1,2 @@
+dependencies[0].role = container-engine/docker
+dependencies[1].role = container-engine/crictl

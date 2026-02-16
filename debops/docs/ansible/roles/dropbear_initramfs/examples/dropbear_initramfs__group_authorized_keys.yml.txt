@@ -1,0 +1,3 @@
+~d0.dropbear_initramfs__group_authorized_keys = 
+~d1.key = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCriBiAJ76UtTD1eWv...'
+~d1.key = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDfE/F747VSqti0byU...'

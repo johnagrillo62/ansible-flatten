@@ -1,0 +1,10 @@
+~d0.kube_kubeadm_scheduler_extra_args = {}
+~d0.kube_scheduler_bind_address = "::"
+~d0.kube_scheduler_client_conn_extra_opts = {}
+~d0.kube_scheduler_config_extra_opts = {}
+~d0.kube_scheduler_extenders = []
+~d0.kube_scheduler_leader_elect_extra_opts = {}
+~d0.kube_scheduler_leader_elect_lease_duration = 15s
+~d0.kube_scheduler_leader_elect_renew_deadline = 10s
+~d0.kube_scheduler_profiles = []
+~d0.scheduler_extra_volumes = {}

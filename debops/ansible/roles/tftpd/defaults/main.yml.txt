@@ -1,0 +1,25 @@
+tftpd__base_packages[0] = tftpd-hpa
+tftpd__address = [::]:69
+tftpd__directory = /srv/tftp
+tftpd__username = tftp
+tftpd__options[0] = --secure
+tftpd__options[1] = {{ ["--permissive", "--create", ("--umask " + tftpd__upload_umask)]
+        if tftpd__upload_enabled | bool else [] }} 
+tftpd__upload_enabled = {{ True if tftpd__allow | d() else False }}
+tftpd__upload_directory = upload
+tftpd__upload_group = tftp
+tftpd__upload_mode = 0751
+tftpd__upload_umask = 0002
+tftpd__ferm__dependent_rules[0].type = accept
+tftpd__ferm__dependent_rules[0].protocols[0] = udp
+tftpd__ferm__dependent_rules[0].dport[0] = tftp
+tftpd__ferm__dependent_rules[0].saddr = {{ tftpd__allow }}
+tftpd__ferm__dependent_rules[0].accept_any = True
+tftpd__ferm__dependent_rules[0].weight = 50
+tftpd__ferm__dependent_rules[0].filename = tftpd_dependency_accept
+tftpd__tcpwrappers__dependent_allow[0].daemon = in.tftpd
+tftpd__tcpwrappers__dependent_allow[0].client = {{ tftpd__allow }}
+tftpd__tcpwrappers__dependent_allow[0].accept_any = True
+tftpd__tcpwrappers__dependent_allow[0].weight = 50
+tftpd__tcpwrappers__dependent_allow[0].filename = tftpd_dependency_allow
+tftpd__tcpwrappers__dependent_allow[0].comment = Allow remote connections to TFTP server

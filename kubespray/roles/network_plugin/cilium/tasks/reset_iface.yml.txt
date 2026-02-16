@@ -1,0 +1,9 @@
+[0].name = Reset | check if network device {{ iface }} is present
+[0].stat.path = /sys/class/net/{{ iface }}
+[0].stat.get_attributes = false
+[0].stat.get_checksum = false
+[0].stat.get_mime = false
+[0].register = device_remains
+[1].name = Reset | remove network device {{ iface }}
+[1].command = ip link del {{ iface }}
+[1].when = device_remains.stat.exists

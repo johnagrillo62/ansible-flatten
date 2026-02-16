@@ -1,0 +1,12 @@
+[0].name = apply common configuration to all nodes
+[0].hosts = all
+[0].remote_user = root
+[0].roles[0] = common
+[1].name = configure and deploy the webservers and application code
+[1].hosts = webservers
+[1].remote_user = root
+[1].roles[0] = web
+[2].name = deploy MySQL and configure the databases
+[2].hosts = dbservers
+[2].remote_user = root
+[2].roles[0] = db

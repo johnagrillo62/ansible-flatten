@@ -1,0 +1,12 @@
+phpmyadmin_dependencies = True
+phpmyadmin_domain[0] = mysql.{{ ansible_domain }}
+phpmyadmin_password_length = 20
+phpmyadmin_control_password = {{ lookup('password', secret + '/mariadb/' + ansible_local['mariadb'].delegate_to + '/credentials/' + phpmyadmin_control_user + '/password length=' + phpmyadmin_password_length) }}
+phpmyadmin_upload_size = 64M
+phpmyadmin_php5_max_children = 20
+phpmyadmin__php__dependent_packages[0] = mysql
+phpmyadmin__php__dependent_packages[1] = mcrypt
+phpmyadmin__php__dependent_packages[2] = gd
+phpmyadmin__php__dependent_pools[0] = {{ phpmyadmin_php5_pool }}
+phpmyadmin__nginx__dependent_servers[0] = {{ phpmyadmin_nginx_server }}
+phpmyadmin__nginx__dependent_upstreams[0] = {{ phpmyadmin_nginx_upstream_php5 }}

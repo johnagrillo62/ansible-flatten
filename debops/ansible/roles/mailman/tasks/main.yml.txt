@@ -1,0 +1,84 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Import DebOps secret role
+[2]["ansible.builtin.import_role"].name = secret
+[3].name = Install required APT packages
+[3]["ansible.builtin.package"].name = {{ q("flattened", mailman__base_packages
+                             + mailman__packages) }} 
+[3]["ansible.builtin.package"].state = present
+[3].register = mailman__register_packages
+[3].until = mailman__register_packages is succeeded
+[4].name = Create systemd configuration directories
+[4]["ansible.builtin.file"].path = {{ "/etc/systemd/system/" + item }}
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].mode = 0755
+[4].loop[0] = mailman3.service.d
+[4].loop[1] = mailman3-web.service.d
+[4].when = ansible_service_mgr == 'systemd'
+[5].name = Configure systemd services
+[5]["ansible.builtin.template"].src = {{ "etc/systemd/system/" + item + "/dependencies.conf.j2" }}
+[5]["ansible.builtin.template"].dest = {{ "/etc/systemd/system/" + item + "/dependencies.conf" }}
+[5]["ansible.builtin.template"].mode = 0644
+[5].loop[0] = mailman3.service.d
+[5].loop[1] = mailman3-web.service.d
+[5].notify[0] = Reload service manager
+[5].when = ansible_service_mgr == 'systemd'
+[6].name = Make sure that Ansible local facts directory exists
+[6]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[6]["ansible.builtin.file"].state = directory
+[6]["ansible.builtin.file"].mode = 0755
+[7].name = Save Mailman local facts
+[7]["ansible.builtin.template"].src = etc/ansible/facts.d/mailman.fact.j2
+[7]["ansible.builtin.template"].dest = /etc/ansible/facts.d/mailman.fact
+[7]["ansible.builtin.template"].mode = 0755
+[7].notify[0] = Refresh host facts
+[7].tags[0] = meta::facts
+[8].name = Update Ansible facts if they were modified
+[8]["ansible.builtin.meta"] = flush_handlers
+[9].name = Generate Mailman Core configuration
+[9]["ansible.builtin.template"].src = etc/mailman3/{{ item }}.j2
+[9]["ansible.builtin.template"].dest = /etc/mailman3/{{ item }}
+[9]["ansible.builtin.template"].group = {{ mailman__group }}
+[9]["ansible.builtin.template"].mode = 0640
+[9].loop[0] = mailman.cfg
+[9].loop[1] = mailman-hyperkitty.cfg
+[9].notify[0] = Restart mailman3
+[10].name = Generate Mailman Web configuration
+[10]["ansible.builtin.template"].src = etc/mailman3/mailman-web.py.j2
+[10]["ansible.builtin.template"].dest = /etc/mailman3/mailman-web.py
+[10]["ansible.builtin.template"].group = www-data
+[10]["ansible.builtin.template"].mode = 0640
+[10].notify[0] = Restart mailman3-web
+[11].name = Create required template directories
+[11]["ansible.builtin.file"].path = {{ "/var/lib/mailman3/templates/" + (item.name | dirname) }}
+[11]["ansible.builtin.file"].state = directory
+[11]["ansible.builtin.file"].owner = {{ mailman__user }}
+[11]["ansible.builtin.file"].group = {{ mailman__group }}
+[11]["ansible.builtin.file"].mode = 0755
+[11].loop = {{ mailman__combined_templates | debops.debops.parse_kv_items }}
+[11].when = item.state | d('present') != 'absent'
+[12].name = Remove custom Mailman templates if requested
+[12]["ansible.builtin.file"].path = {{ "/var/lib/mailman3/templates/" + item.name }}
+[12]["ansible.builtin.file"].state = absent
+[12].loop = {{ mailman__combined_templates | debops.debops.parse_kv_items }}
+[12].when = item.state | d('present') == 'absent'
+[13].name = Generate custom Mailman templates
+[13]["ansible.builtin.copy"].content = {{ item.content | d("") }}
+[13]["ansible.builtin.copy"].dest = {{ "/var/lib/mailman3/templates/" + item.name }}
+[13]["ansible.builtin.copy"].owner = {{ mailman__user }}
+[13]["ansible.builtin.copy"].group = {{ mailman__group }}
+[13]["ansible.builtin.copy"].mode = 0644
+[13].loop = {{ mailman__combined_templates | debops.debops.parse_kv_items }}
+[13].when = item.state | d('present') != 'absent'
+[14].name = Ensure Postfix lookup tables exist
+[14]["ansible.builtin.command"] = mailman aliases
+[14].args.creates = /var/lib/mailman3/data/postfix_domains
+[14].register = mailman__register_aliases
+[14].become = True
+[14].become_user = {{ mailman__user }}
+[15].name = Create Django superuser account
+[15]["community.general.django_manage"].command = createsuperuser --noinput --username={{ mailman__superuser_name }} --email={{ mailman__superuser_email }}
+[15]["community.general.django_manage"].app_path = /usr/share/mailman3-web
+[15].when = mailman__register_aliases is changed and not mailman__ldap_enabled | bool

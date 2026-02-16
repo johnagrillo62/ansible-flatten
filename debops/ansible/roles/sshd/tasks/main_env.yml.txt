@@ -1,0 +1,8 @@
+~d0.name = Gather SSH host public keys
+~d1.ansible.builtin.shell = 'set -o nounset -o pipefail -o errexit &&
+~d1.args = 
+~d2.executable = '/bin/bash'
+~d1.register = sshd__env_register_host_public_keys
+~d1.changed_when = False
+~d1.check_mode = False
+~d1.tags = [ 'meta::facts' ]

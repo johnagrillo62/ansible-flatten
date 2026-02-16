@@ -1,0 +1,7 @@
+[0].hosts = nodes
+[0].tasks[0].command = yum -y update
+[0].tasks[1].command = yum install NetworkManager -y
+[0].tasks[2].name = Start NetworkManager
+[0].tasks[2].command = systemctl start NetworkManager
+[0].tasks[3].name = Enable NetworkManager
+[0].tasks[3].command = systemctl enable NetworkManager

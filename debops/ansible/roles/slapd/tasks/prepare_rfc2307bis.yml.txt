@@ -1,0 +1,23 @@
+[0].name = Install APT packages with rfc2307bis LDAP schema
+[0]["ansible.builtin.package"].name = {{ slapd__rfc2307bis_packages }}
+[0]["ansible.builtin.package"].state = present
+[0].register = slapd__register_rfc2307bis_packages
+[0].until = slapd__register_rfc2307bis_packages is succeeded
+[1].name = Divert the original NIS schema included in Debian
+[1]["debops.debops.dpkg_divert"].path = /etc/ldap/schema/{{ item }}
+[1].loop[0] = nis.schema
+[1].loop[1] = nis.ldif
+[2].name = Convert FusionDirectory rfc2307bis schema to ldif
+[2]["ansible.builtin.shell"] = schema2ldif rfc2307bis.schema > rfc2307bis.ldif
+[2].args.creates = /etc/ldap/schema/fusiondirectory/rfc2307bis.ldif
+[2].args.chdir = /etc/ldap/schema/fusiondirectory
+[2].when = "fusiondirectory-schema" in slapd__rfc2307bis_packages
+[3].name = Symlink the new rfc2307bis schema in place of NIS schema
+[3]["ansible.builtin.file"].state = link
+[3]["ansible.builtin.file"].path = /etc/ldap/schema/{{ item | replace("rfc2307bis", "nis") }}
+[3]["ansible.builtin.file"].src = {{ (("fusiondirectory-schema" in slapd__rfc2307bis_packages)
+              | ternary("fusiondirectory", "gosa")) + "/" + item }} 
+[3]["ansible.builtin.file"].mode = 0644
+[3].loop[0] = rfc2307bis.schema
+[3].loop[1] = rfc2307bis.ldif
+[3].when = not ansible_check_mode | bool

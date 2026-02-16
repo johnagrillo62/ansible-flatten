@@ -1,0 +1,12 @@
+influxdb__server = 
+influxdb__port = 8086
+influxdb__delegate_to = {{ inventory_hostname }}
+influxdb__pki = {{ ansible_local.pki.enabled | d() | bool }}
+influxdb__password_length = 48
+influxdb__root_password = {{ lookup("password",
+                             secret + "/influxdb/" + influxdb__server +
+                             "/credentials/root/password " +
+                             "length=" + influxdb__password_length) }}
+
+influxdb__python__dependent_packages3[0] = python3-influxdb
+influxdb__python__dependent_packages2[0] = python-influxdb

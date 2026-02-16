@@ -1,0 +1,4 @@
+~d0.name = Restart docker-gen
+~d1.ansible.builtin.service = 
+~d2.name = 'docker-gen'
+~d2.state = 'restarted'

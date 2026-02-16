@@ -1,0 +1,4 @@
+cloud_image = almalinux-9
+vm_memory = 3072
+enable_nodelocaldns_secondary = true
+loadbalancer_apiserver_type = haproxy

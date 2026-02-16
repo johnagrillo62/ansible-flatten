@@ -1,0 +1,5 @@
+[0].hosts = all
+[0].gather_facts = false
+[0].connection = local
+[0].vars.msg = hello
+[0].tasks[0].debug = var=msg

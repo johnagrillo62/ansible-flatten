@@ -1,0 +1,3 @@
+~d0.prosody_admin = "{{ admin_email }}"
+~d0.prosody_virtual_domain = "{{ domain }}"
+~d0.prosody_accounts = []

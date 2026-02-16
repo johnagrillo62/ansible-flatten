@@ -1,0 +1,5 @@
+[0].name = Commit changes in etckeeper
+[0]["ansible.builtin.shell"] = etckeeper unclean && etckeeper commit 'Committed by Ansible "etckeeper" handler' || true
+[0].register = global_handlers__etckeeper_register_commit
+[0].changed_when = global_handlers__etckeeper_register_commit.changed | bool
+[0].when = (ansible_local.etckeeper.enabled | d()) | bool

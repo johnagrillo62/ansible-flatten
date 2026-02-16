@@ -1,0 +1,24 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = setup
+[1].name = Ensure the Sensu group is present
+[1].tags = setup
+[1].group = name={{ sensu_group_name }} state=present
+[2].name = Ensure the Sensu user is present
+[2].tags = setup
+[2].user.name = {{ sensu_user_name }}
+[2].user.group = {{ sensu_group_name }}
+[2].user.shell = /bin/false
+[2].user.home = {{ sensu_config_path }}
+[2].user.createhome = true
+[2].user.state = present
+[3].name = Ensure Sensu dependencies are installed
+[3].tags = setup
+[3].pkgin = name=build-essential,ruby21-base state=present
+[4].name = Ensure Sensu is installed
+[4].tags = setup
+[4].gem = name=sensu state={{ sensu_gem_state }} user_install=no
+[4].notify[0] = restart sensu-client service
+[5].name = Ensure Sensu 'plugins' gem is installed
+[5].tags = setup
+[5].gem = name=sensu-plugin state={{ sensu_plugin_gem_state }} user_install=no

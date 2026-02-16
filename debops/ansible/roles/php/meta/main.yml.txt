@@ -1,0 +1,15 @@
+collections[0] = debops.debops
+galaxy_info.author = Mariano Barcia, Maciej Delmanowski
+galaxy_info.description = Install and manage PHP environment
+galaxy_info.company = DebOps
+galaxy_info.license = GPL-3.0-only
+galaxy_info.min_ansible_version = 2.2.0
+galaxy_info.platforms[0].name = Ubuntu
+galaxy_info.platforms[0].versions[0] = all
+galaxy_info.platforms[1].name = Debian
+galaxy_info.platforms[1].versions[0] = all
+galaxy_info.galaxy_tags[0] = development
+galaxy_info.galaxy_tags[1] = web
+galaxy_info.galaxy_tags[2] = php
+galaxy_info.galaxy_tags[3] = php5
+galaxy_info.galaxy_tags[4] = php7

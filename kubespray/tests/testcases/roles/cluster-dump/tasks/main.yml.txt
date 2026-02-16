@@ -1,0 +1,13 @@
+[0].name = Generate dump folder
+[0].command = {{ bin_dir }}/kubectl cluster-info dump --all-namespaces --output-directory /tmp/cluster-dump
+[0].when = inventory_hostname in groups['kube_control_plane']
+[1].name = Compress directory cluster-dump
+[1]["community.general.archive"].path = /tmp/cluster-dump
+[1]["community.general.archive"].dest = /tmp/cluster-dump.tgz
+[1]["community.general.archive"].mode = 0644
+[1].when = inventory_hostname in groups['kube_control_plane']
+[2].name = Fetch dump file
+[2].fetch.src = /tmp/cluster-dump.tgz
+[2].fetch.dest = {{ lookup('env', 'CI_PROJECT_DIR') }}/cluster-dump/{{ inventory_hostname }}.tgz
+[2].fetch.flat = true
+[2].when = inventory_hostname in groups['kube_control_plane']

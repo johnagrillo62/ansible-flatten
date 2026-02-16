@@ -1,0 +1,12 @@
+associations.job_templates[0].related_item = credentials
+associations.job_templates[0].endpoint = credentials
+associations.job_templates[0].description = The credentials used by this job template
+associations.job_templates[0].required = false
+associations.groups[0].related_item = hosts
+associations.groups[0].endpoint = hosts
+associations.groups[0].description = The hosts associated with this group
+associations.groups[0].required = false
+associations.groups[1].related_item = groups
+associations.groups[1].endpoint = children
+associations.groups[1].description = The hosts associated with this group
+associations.groups[1].required = false

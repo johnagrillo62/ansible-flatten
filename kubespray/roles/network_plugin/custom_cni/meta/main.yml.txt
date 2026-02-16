@@ -1,0 +1,17 @@
+~d0.dependencies = 
+~d1.role = helm-apps
+~d2.when = 
+~d2.environment = 
+~d3.http_proxy = "{{ http_proxy | default('') }}"
+~d3.https_proxy = "{{ https_proxy | default('') }}"
+~d2.release_common_opts = {}
+~d2.releases = 
+~d3.name = "{{ custom_cni_chart_release_name }}"
+~d4.namespace = "{{ custom_cni_chart_namespace }}"
+~d4.chart_ref = "{{ custom_cni_chart_ref }}"
+~d4.chart_version = "{{ custom_cni_chart_version }}"
+~d4.wait = true
+~d4.values = "{{ custom_cni_chart_values }}"
+~d2.repositories = 
+~d3.name = "{{ custom_cni_chart_repository_name }}"
+~d4.url = "{{ custom_cni_chart_repository_url }}"

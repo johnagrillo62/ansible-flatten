@@ -1,0 +1,30 @@
+[0].name = Flannel | Stop if kernel version is too low for Flannel Wireguard encryption
+[0].assert.that = ansible_kernel.split('-')[0] is version('5.6.0', '>=')
+[0].when[0] = kube_network_plugin == 'flannel'
+[0].when[1] = flannel_backend_type == 'wireguard'
+[0].when[2] = not ignore_assert_errors
+[1].name = Flannel | Create Flannel manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = flannel
+[1].with_items[0].file = cni-flannel-rbac.yml
+[1].with_items[0].type = sa
+[1].with_items[1].name = kube-flannel
+[1].with_items[1].file = cni-flannel.yml
+[1].with_items[1].type = ds
+[1].register = flannel_node_manifests
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = Flannel | Start Resources
+[2].kube.name = {{ item.item.name }}
+[2].kube.namespace = kube-system
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.resource = {{ item.item.type }}
+[2].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[2].kube.state = latest
+[2].with_items = {{ flannel_node_manifests.results }}
+[2].when = inventory_hostname == groups['kube_control_plane'][0] and not item is skipped
+[3].name = Flannel | Wait for flannel subnet.env file presence
+[3].wait_for.path = /run/flannel/subnet.env
+[3].wait_for.delay = 5
+[3].wait_for.timeout = 600

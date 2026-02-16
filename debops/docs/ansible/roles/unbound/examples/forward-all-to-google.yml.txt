@@ -1,0 +1,7 @@
+~d0.unbound__zones = 
+~d1.name = 'forward-all-to-google'
+~d2.comment = 'Forward all DNS queries to Google Public DNS'
+~d2.zone = '.'
+~d2.nameservers = [ '8.8.8.8', '8.8.4.4',
+~d9.'2001 = 4860:4860::8888',
+~d9.'2001 = 4860:4860::8844' ]

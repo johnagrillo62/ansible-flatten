@@ -1,0 +1,4 @@
+~d0.name = Restart memcached
+~d1.ansible.builtin.service = 
+~d2.name = 'memcached'
+~d2.state = 'restarted'

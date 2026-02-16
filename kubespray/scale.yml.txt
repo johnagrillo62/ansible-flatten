@@ -1,0 +1,2 @@
+[0].name = Scale the cluster
+[0]["ansible.builtin.import_playbook"] = playbooks/scale.yml

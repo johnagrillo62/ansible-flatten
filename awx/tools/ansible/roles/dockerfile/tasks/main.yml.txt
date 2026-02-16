@@ -1,0 +1,13 @@
+~d0.name = Create _build directory
+~d1.file = 
+~d2.path = "{{ dockerfile_dest }}/{{ template_dest }}"
+~d2.state = directory
+~d0.name = Render supervisor configs
+~d1.template = 
+~d2.src = "{{ item }}.j2"
+~d2.dest = "{{ dockerfile_dest }}/{{ template_dest }}/{{ item }}"
+~d1.with_items = 
+~d0.name = Render Dockerfile
+~d1.template = 
+~d2.src = Dockerfile.j2
+~d2.dest = "{{ dockerfile_dest }}/{{ dockerfile_name }}"

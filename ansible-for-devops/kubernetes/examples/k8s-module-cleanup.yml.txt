@@ -1,0 +1,11 @@
+[0].hosts = k8s-master
+[0].become = yes
+[0].tasks[0].name = Remove resources in Nginx Deployment definition.
+[0].tasks[0].k8s.state = absent
+[0].tasks[0].k8s.definition = {{ lookup('file', 'files/nginx.yml') | from_yaml }}
+[0].tasks[1].name = Remove the Nginx Service.
+[0].tasks[1].k8s.state = absent
+[0].tasks[1].k8s.api_version = v1
+[0].tasks[1].k8s.kind = Service
+[0].tasks[1].k8s.namespace = default
+[0].tasks[1].k8s.name = a4d-nginx

@@ -1,0 +1,16 @@
+[0].name = Installs haproxy load balancer
+[0].apt.pkg = haproxy
+[0].apt.state = present
+[0].apt.update_cache = true
+[1].name = Pushes configuration
+[1].template.src = haproxy.cfg.j2
+[1].template.dest = /etc/haproxy/haproxy.cfg
+[1].template.mode = 0640
+[1].template.owner = root
+[1].template.group = root
+[1].notify[0] = restart haproxy
+[2].name = Sets default starting flag to 1
+[2].lineinfile.dest = /etc/default/haproxy
+[2].lineinfile.regexp = ^ENABLED
+[2].lineinfile.line = ENABLED=1
+[2].notify[0] = restart haproxy

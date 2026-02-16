@@ -1,0 +1,13 @@
+[0].name = Collect container images for offline deployment
+[0].hosts = localhost
+[0].become = false
+[0].roles[0].role = kubespray_defaults
+[0].roles[0].when = false
+[0].roles[1].role = download
+[0].roles[1].when = false
+[0].tasks[0].name = Collect container images for offline deployment
+[0].tasks[0].template.src = ./contrib/offline/temp/{{ item }}.list.template
+[0].tasks[0].template.dest = ./contrib/offline/temp/{{ item }}.list
+[0].tasks[0].template.mode = 0644
+[0].tasks[0].with_items[0] = files
+[0].tasks[0].with_items[1] = images

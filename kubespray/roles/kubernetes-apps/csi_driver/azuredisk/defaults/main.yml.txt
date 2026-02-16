@@ -1,0 +1,5 @@
+~d0.azure_csi_use_instance_metadata = true
+~d0.azure_csi_controller_replicas = 2
+~d0.azure_csi_plugin_image_tag = latest
+~d0.azure_csi_controller_affinity = {}
+~d0.azure_csi_node_affinity = {}

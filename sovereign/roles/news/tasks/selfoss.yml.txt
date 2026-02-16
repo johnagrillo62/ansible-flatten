@@ -1,0 +1,46 @@
+[0].name = Clone Selfoss
+[0].git = repo=https://github.com/SSilence/selfoss.git dest=/var/www/selfoss accept_hostkey=yes version={{ selfoss_version }}
+[1].name = Set selfoss ownership
+[1].action = file owner=root group=www-data path=/var/www/selfoss recurse=yes state=directory
+[2].name = Set selfoss permission
+[2].action = file path=/var/www/selfoss/{{ item }} mode=0775
+[2].with_items[0] = data/cache
+[2].with_items[1] = data/favicons
+[2].with_items[2] = data/logs
+[2].with_items[3] = data/thumbnails
+[2].with_items[4] = data/sqlite
+[2].with_items[5] = public
+[3].name = Install selfoss dependencies
+[3].apt = pkg={{ item }} state=present
+[3].with_items[0] = php5
+[3].with_items[1] = php5-pgsql
+[3].with_items[2] = php5-gd
+[3].tags[0] = dependencies
+[4].name = Create database user for selfoss
+[4].postgresql_user = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ selfoss_db_username }} password="{{ selfoss_db_password }}" state=present
+[5].name = Create database for selfoss
+[5].postgresql_db = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ selfoss_db_database }} state=present owner={{ selfoss_db_username }}
+[6].name = Install selfoss config.ini
+[6].template = src=var_www_selfoss_config.ini.j2 dest=/var/www/selfoss/config.ini group=www-data owner=root mode=0640
+[7].name = Enable Apache rewrite module
+[7].command = a2enmod rewrite creates=/etc/apache2/mods-enabled/rewrite.load
+[7].notify = restart apache
+[8].name = Enable Apache headers module
+[8].command = a2enmod headers creates=/etc/apache2/mods-enabled/headers.load
+[8].notify = restart apache
+[9].name = Enable Apache expires module
+[9].command = a2enmod expires creates=/etc/apache2/mods-enabled/expires.load
+[9].notify = restart apache
+[10].name = Rename existing Apache blog virtualhost
+[10].command = mv /etc/apache2/sites-available/selfoss /etc/apache2/sites-available/selfoss.conf removes=/etc/apache2/sites-available/selfoss
+[11].name = Remove old sites-enabled/selfoss symlink (new one will be created by a2ensite)
+[11].file = path=/etc/apache2/sites-enabled/selfoss state=absent
+[12].name = Configure the Apache HTTP server for selfoss
+[12].template = src=etc_apache2_sites-available_selfoss.j2 dest=/etc/apache2/sites-available/selfoss.conf group=root owner=root
+[13].name = Enable the selfoss site
+[13].command = a2ensite selfoss.conf creates=/etc/apache2/sites-enabled/selfoss.conf
+[13].notify = restart apache
+[14].name = Install selfoss cronjob
+[14].cron = name="selfoss" user="www-data" minute="*/5" job="curl --silent --show-error -k 'https://{{ selfoss_domain }}/update' > /dev/null"
+[15].name = Configure selfoss logrotate
+[15].copy = src=etc_logrotate_selfoss dest=/etc/logrotate.d/selfoss owner=root group=root mode=0644

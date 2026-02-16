@@ -1,0 +1,334 @@
+icinga__upstream = {{ True
+                      if (ansible_distribution_release in ["trusty"])
+                      else False }}
+
+icinga__upstream_apt_key_id = DD3A F619 8ED0 00B4 C0B7 3956 CC11 6F55 AA7F 2382
+icinga__upstream_apt_repo = deb https://packages.icinga.com/{{ icinga__distribution | lower }} icinga-{{ icinga__distribution_release | lower }} main
+icinga__distribution = {{ ansible_local.core.distribution | d(ansible_distribution) }}
+icinga__distribution_release = {{ ansible_local.core.distribution_release | d(ansible_distribution_release) }}
+icinga__version = {{ ansible_local.icinga.version | d("0.0.0") }}
+icinga__base_packages[0] = icinga2
+icinga__base_packages[1] = ssl-cert
+icinga__base_packages[2] = monitoring-plugins
+icinga__base_packages[3] = nagios-plugins-contrib
+icinga__user = nagios
+icinga__group = nagios
+icinga__additional_groups[0] = ssl-cert
+icinga__additional_groups[1] = {{ ansible_local.proc_hidepid.group
+        if (ansible_local.proc_hidepid.group | d() and
+            (ansible_local.proc_hidepid.enabled | d()) | bool)
+        else [] }}
+
+icinga__fqdn = {{ ansible_fqdn }}
+icinga__display_name = {{ (inventory_hostname_short | d(inventory_hostname.split(".")[0]))
+                          if (inventory_hostname_short | d(inventory_hostname.split(".")[0]) != "localhost")
+                          else ansible_hostname }}
+
+icinga__ipv4_address = {{ ansible_default_ipv4.address
+                          | d(ansible_all_ipv4_addresses | d([]) | first)
+                          | d(icinga_fqdn) }}
+
+icinga__ipv6_address = {{ ansible_default_ipv6.address
+                          | d(ansible_all_ipv6_addresses | d([]) | first)
+                          | d(omit, true) }}
+
+icinga__domain = {{ ansible_domain }}
+icinga__master_nodes = {{ q("debops.debops.dig_srv", "_icinga-master._tcp." + icinga__domain,
+                            "icinga-master." + icinga__domain, icinga__api_port) }} 
+icinga__master_delegate_to = {{ icinga__master_nodes[0]["target"] }}
+icinga__director_nodes = {{ q("debops.debops.dig_srv", "_icinga-director._tcp." + icinga__domain,
+                              "icinga-director." + icinga__domain, 443) }} 
+icinga__node_type = {{ "master"
+                       if (icinga__fqdn in
+                           (icinga__master_nodes | map(attribute="target")) or
+                           not icinga__director_enabled | bool)
+                       else "client" }}
+
+icinga__api_listen = ::
+icinga__api_port = 5665
+icinga__api_user = root
+icinga__api_password = {{ lookup("password", secret + "/icinga/api/"
+                                  + icinga__fqdn + "/credentials/"
+                                  + icinga__api_user + "/password")
+                          if (icinga__node_type == "master")
+                          else "" }}
+
+icinga__api_permissions[0] = *
+icinga__director_enabled = {{ True
+                              if (icinga__master_nodes[0]["dig_srv_src"] | d("") != "fallback" and
+                                  icinga__director_nodes[0]["dig_srv_src"] | d("") != "fallback")
+                              else False }}
+
+icinga__director_register = {{ True
+                               if (icinga__director_enabled | bool)
+                               else False }}
+
+icinga__director_register_api_fqdn = {{ icinga__director_nodes[0]["target"] }}
+icinga__director_register_api_url = https://{{ icinga__director_register_api_fqdn }}/director/host
+icinga__director_register_api_user = director-api
+icinga__director_register_api_password = {{ lookup("password", secret + "/icinga_web/api/"
+                                            + icinga__director_register_api_fqdn + "/credentials/"
+                                            + icinga__director_register_api_user + "/password") }}
+
+icinga__director_register_default_templates[0] = icinga-agent-host
+icinga__director_register_default_vars.ansible_managed = True
+icinga__director_register_host_object.object_type = object
+icinga__director_register_host_object.object_name = {{ icinga__fqdn }}
+icinga__director_register_host_object.display_name = {{ icinga__display_name }}
+icinga__director_register_host_object.address = {{ icinga__ipv4_address }}
+icinga__director_register_host_object.address6 = {{ icinga__ipv6_address }}
+icinga__director_register_host_object.imports = {{ q("flattened",
+                 (icinga__director_register_default_templates
+                  + icinga__director_register_templates
+                  + icinga__director_register_group_templates
+                  + icinga__director_register_host_templates)) }}
+
+icinga__director_register_host_object.vars = {{ icinga__director_register_default_vars
+            | combine(icinga__director_register_vars,
+                      icinga__director_register_group_vars,
+                      icinga__director_register_host_vars) }}
+
+icinga__director_deploy = {{ True
+                             if (icinga__director_register | bool)
+                             else False }}
+
+icinga__director_deploy_api_fqdn = {{ icinga__director_nodes[0]["target"] }}
+icinga__director_deploy_api_url = https://{{ icinga__director_deploy_api_fqdn }}/director/config/deploy
+icinga__director_deploy_api_user = director-api
+icinga__director_deploy_api_password = {{ lookup("password", secret + "/icinga_web/api/"
+                                            + icinga__director_deploy_api_fqdn + "/credentials/"
+                                            + icinga__director_deploy_api_user + "/password") }}
+
+icinga__pki_enabled = {{ True
+                         if (ansible_local | d() and ansible_local.pki | d() and
+                             (ansible_local.pki.enabled | d()) | bool)
+                         else False }}
+
+icinga__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+icinga__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+icinga__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
+icinga__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
+icinga__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+icinga__pki_cert_path = {{ icinga__pki_path + "/" + icinga__pki_realm
+                           + "/" + icinga__pki_crt }} 
+icinga__pki_key_path = {{ icinga__pki_path + "/" + icinga__pki_realm
+                          + "/" + icinga__pki_key }} 
+icinga__pki_ca_path = {{ icinga__pki_path + "/" + icinga__pki_realm
+                         + "/" + icinga__pki_ca }} 
+icinga__default_configuration[0].name = icinga2.conf
+icinga__default_configuration[0].divert = True
+icinga__default_configuration[0].comment = Icinga 2 configuration file
+- this is where you define settings for the Icinga application including
+which hosts/services to check.
+
+For an overview of all available configuration options please refer
+to the documentation that is distributed as part of Icinga 2.
+
+icinga__default_configuration[0].options[0].name = constants
+icinga__default_configuration[0].options[0].comment = The constant.conf defines global constants.
+icinga__default_configuration[0].options[0].value = include "constants.conf"
+
+icinga__default_configuration[0].options[0].state = present
+icinga__default_configuration[0].options[1].name = zones
+icinga__default_configuration[0].options[1].comment = The zones.conf defines zones for a cluster setup.
+Not required for single instance setups.
+
+icinga__default_configuration[0].options[1].value = include "zones.conf"
+
+icinga__default_configuration[0].options[1].state = present
+icinga__default_configuration[0].options[2].name = itl
+icinga__default_configuration[0].options[2].comment = The Icinga Template Library (ITL) provides a number of useful templates
+and command definitions.
+Common monitoring plugin command definitions are included separately.
+
+icinga__default_configuration[0].options[2].value = include <itl>
+include <plugins>
+include <plugins-contrib>
+include <manubulon>
+
+icinga__default_configuration[0].options[2].state = present
+icinga__default_configuration[0].options[3].name = windows_plugins
+icinga__default_configuration[0].options[3].comment = This includes the Icinga 2 Windows plugins. These command definitions
+are required on a master node when a client is used as command endpoint.
+
+icinga__default_configuration[0].options[3].value = include <windows-plugins>
+
+icinga__default_configuration[0].options[3].state = present
+icinga__default_configuration[0].options[4].name = nscp
+icinga__default_configuration[0].options[4].comment = This includes the NSClient++ check commands. These command definitions
+are required on a master node when a client is used as command endpoint.
+
+icinga__default_configuration[0].options[4].value = include <nscp>
+
+icinga__default_configuration[0].options[4].state = present
+icinga__default_configuration[0].options[5].name = features_enabled
+icinga__default_configuration[0].options[5].comment = The features-available directory contains a number of configuration
+files for features which can be enabled and disabled using the
+icinga2 feature enable / icinga2 feature disable CLI commands.
+These commands work by creating and removing symbolic links in
+the features-enabled directory.
+
+icinga__default_configuration[0].options[5].value = include "features-enabled/*.conf"
+
+icinga__default_configuration[0].options[5].state = present
+icinga__default_configuration[0].options[6].name = repository.d
+icinga__default_configuration[0].options[6].comment = The repository.d directory contains all configuration objects
+managed by the 'icinga2 repository' CLI commands.
+
+icinga__default_configuration[0].options[6].value = include_recursive "repository.d"
+
+icinga__default_configuration[0].options[6].state = {{ "absent"
+                   if (icinga__version is version("2.8.0", ">="))
+                   else "present" }}
+
+icinga__default_configuration[0].options[7].name = conf.d
+icinga__default_configuration[0].options[7].comment = Although in theory you could define all your objects in this file
+the preferred way is to create separate directories and files in the conf.d
+directory. Each of these files must have the file extension ".conf".
+
+icinga__default_configuration[0].options[7].value = include_recursive "conf.d"
+
+icinga__default_configuration[0].options[7].state = {{ "absent" if (icinga__director_enabled | bool) else "present" }}
+icinga__default_configuration[0].options[8].name = api_users
+icinga__default_configuration[0].options[8].comment = Read the API User objects on master node.
+
+icinga__default_configuration[0].options[8].value = include "conf.d/api-users.conf"
+
+icinga__default_configuration[0].options[8].state = {{ "present"
+                   if (icinga__director_enabled | bool and
+                       icinga__node_type == "master")
+                   else "absent" }}
+
+icinga__default_configuration[1].name = zones.conf
+icinga__default_configuration[1].divert = True
+icinga__default_configuration[1].comment = Endpoint and Zone configuration for a cluster setup
+This local example requires 'NodeName' defined in
+constants.conf
+
+icinga__default_configuration[1].options[0].name = object_master
+icinga__default_configuration[1].options[0].value = {% for record in icinga__master_nodes %}
+{% if record.target | d() %}
+object Endpoint "{{ record.target | regex_replace('\.$', '') }}" {
+  host = "{{ record.target | regex_replace('\.$', '') }}"
+  port = "{{ record.port }}"
+}
+
+{% endif %}
+{% endfor %}
+object Zone "master" {
+  endpoints = [ "{{ icinga__master_nodes | map(attribute='target') | join('", "') }}" ]
+}
+
+icinga__default_configuration[1].options[0].state = {{ "present"
+                   if (icinga__node_type != "master" and
+                       icinga__master_nodes[0]["dig_srv_src"] | d("") != "fallback")
+                   else "absent" }}
+
+icinga__default_configuration[1].options[1].name = object_node
+icinga__default_configuration[1].options[1].value = object Endpoint NodeName {
+  host = NodeName
+}
+
+object Zone ZoneName {
+  endpoints = [ NodeName ]
+{% if (icinga__director_enabled | bool and icinga__node_type != 'master') %}
+  parent = "master"
+{% endif %}
+}
+
+icinga__default_configuration[1].options[1].state = present
+icinga__default_configuration[1].options[2].name = object_global_templates
+icinga__default_configuration[1].options[2].value = object Zone "global-templates" {
+  global = true
+}
+
+icinga__default_configuration[1].options[2].state = present
+icinga__default_configuration[1].options[3].name = object_director_global
+icinga__default_configuration[1].options[3].value = object Zone "director-global" {
+  global = true
+}
+
+icinga__default_configuration[1].options[3].state = {{ "present" if (icinga__director_enabled | bool) else "absent" }}
+icinga__default_configuration[2].name = conf.d/api-users.conf
+icinga__default_configuration[2].comment = The APIUser objects are used for authentication against the API.
+icinga__default_configuration[2].group = {{ icinga__group }}
+icinga__default_configuration[2].mode = 0640
+icinga__default_configuration[2].no_log = {{ debops__no_log | d(True) }}
+icinga__default_configuration[2].state = {{ "present"
+               if (icinga__node_type == "master")
+               else "absent" }}
+
+icinga__default_configuration[2].options[0].name = api_user_root
+icinga__default_configuration[2].options[0].value = object ApiUser "{{ icinga__api_user }}" {
+  password = "{{ icinga__api_password }}"
+
+  permissions = [ "{{ icinga__api_permissions | join('", "') }}" ]
+}
+
+icinga__default_configuration[2].options[0].state = present
+icinga__default_configuration[3].name = features-available/api.conf
+icinga__default_configuration[3].divert = True
+icinga__default_configuration[3].comment = The API listener is used for distributed monitoring setups.
+icinga__default_configuration[3].value = object ApiListener "api" {
+  bind_host = "{{ icinga__api_listen }}"
+  bind_port = {{ icinga__api_port }}
+
+{% if icinga__pki_enabled | bool %}
+  cert_path = "{{ icinga__pki_cert_path }}"
+  key_path  = "{{ icinga__pki_key_path }}"
+  ca_path   = "{{ icinga__pki_ca_path }}"
+{% else %}
+  cert_path = SysconfDir + "/icinga2/pki/" + NodeName + ".crt"
+  key_path = SysconfDir + "/icinga2/pki/" + NodeName + ".key"
+  ca_path = SysconfDir + "/icinga2/pki/ca.crt"
+{% endif %}
+
+  accept_config   = {{ 'false' if (icinga__director_enabled | bool and icinga__node_type == 'master') else 'true' }}
+  accept_commands = {{ 'false' if (icinga__director_enabled | bool and icinga__node_type == 'master') else 'true' }}
+
+  ticket_salt = TicketSalt
+}
+
+icinga__default_configuration[3].state = present
+icinga__default_configuration[3].feature_name = api
+icinga__default_configuration[3].feature_state = present
+icinga__default_configuration[4].name = features-available/notification.conf
+icinga__default_configuration[4].divert = True
+icinga__default_configuration[4].state = {{ "init" if (icinga__node_type == "master") else "feature" }}
+icinga__default_configuration[4].feature_name = notification
+icinga__default_configuration[4].feature_state = {{ "present" if (icinga__node_type == "master") else "absent" }}
+icinga__default_configuration[5].name = features-available/checker.conf
+icinga__default_configuration[5].divert = True
+icinga__default_configuration[5].state = {{ "init" if (icinga__node_type == "master") else "feature" }}
+icinga__default_configuration[5].feature_name = checker
+icinga__default_configuration[5].feature_state = {{ "present" if (icinga__node_type == "master") else "absent" }}
+icinga__dependent_configuration_filter = {{ lookup("template",
+                                             "lookup/icinga__dependent_configuration_filter.j2")
+                                             | from_yaml }}
+
+icinga__combined_configuration = {{ icinga__default_configuration
+                                    + icinga__dependent_configuration_filter
+                                    + icinga__configuration
+                                    + icinga__group_configuration
+                                    + icinga__host_configuration }}
+
+icinga__master_combined_configuration = {{ icinga__master_configuration
+                                           + icinga__master_group_configuration
+                                           + icinga__master_host_configuration }}
+
+icinga__etc_services__dependent_list[0].name = icinga-api
+icinga__etc_services__dependent_list[0].port = {{ icinga__api_port }}
+icinga__etc_services__dependent_list[0].comment = Icinga 2 REST API
+icinga__keyring__dependent_apt_keys[0].id = {{ icinga__upstream_apt_key_id }}
+icinga__keyring__dependent_apt_keys[0].repo = {{ icinga__upstream_apt_repo }}
+icinga__keyring__dependent_apt_keys[0].state = {{ "present" if icinga__upstream | bool else "absent" }}
+icinga__ferm__dependent_rules[0].type = accept
+icinga__ferm__dependent_rules[0].dport[0] = icinga-api
+icinga__ferm__dependent_rules[0].saddr = {{ icinga__allow + icinga__group_allow + icinga__host_allow }}
+icinga__ferm__dependent_rules[0].accept_any = False
+icinga__ferm__dependent_rules[0].weight = 40
+icinga__ferm__dependent_rules[0].by_role = icinga
+icinga__ferm__dependent_rules[0].name = icinga_api
+icinga__unattended_upgrades__dependent_origins[0].origin = site=packages.icinga.com
+icinga__unattended_upgrades__dependent_origins[0].by_role = debops.icinga
+icinga__unattended_upgrades__dependent_origins[0].state = {{ "present" if icinga__upstream | bool else "absent" }}

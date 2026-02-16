@@ -1,0 +1,8 @@
+~d0.persistent_paths__paths = 
+~d1.'50_debops_persistent_paths_present' = 
+~d2.by_role = 'debops.persistent_paths'
+~d2.paths = 
+~d1.'50_debops_persistent_paths_absent' = 
+~d2.by_role = 'debops.persistent_paths'
+~d2.state = 'absent'
+~d2.paths = 

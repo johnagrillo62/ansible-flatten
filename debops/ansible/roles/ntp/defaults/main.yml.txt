@@ -1,0 +1,122 @@
+ntp__daemon_enabled = {{ "True"
+                         if (ntp__daemon | d(False) and
+                             not (ansible_virtualization_role | d("") == "guest" and
+                                  ansible_virtualization_type | d("")
+                                    in ["container", "lxc"]) and
+                             not (ansible_system_capabilities_enforced | d(True) | bool and
+                                  "cap_sys_time" not in ansible_system_capabilities))
+                         else "False" }}
+
+ntp__daemon = {{ (ansible_local.ntp.daemon
+                  if (ansible_local.ntp.daemon | d())
+                  else ("systemd-timesyncd"
+                        if (ansible_service_mgr == "systemd")
+                        else "openntpd")) }}
+
+ntp__ignore_ntpdate = False
+ntp__servers = {{ (ntp__servers_map[ansible_distribution][1]
+                   | d(ntp__servers_map["default"][1]))
+                   if (ntp__daemon in ["chrony"])
+                   else ntp__servers_map[ansible_distribution]
+                        | d(ntp__servers_map["default"]) }}
+
+ntp__servers_map.Debian[0] = 0.debian.pool.ntp.org
+ntp__servers_map.Debian[1] = 1.debian.pool.ntp.org
+ntp__servers_map.Debian[2] = 2.debian.pool.ntp.org
+ntp__servers_map.Debian[3] = 3.debian.pool.ntp.org
+ntp__servers_map.Ubuntu[0] = 0.ubuntu.pool.ntp.org
+ntp__servers_map.Ubuntu[1] = 1.ubuntu.pool.ntp.org
+ntp__servers_map.Ubuntu[2] = 2.ubuntu.pool.ntp.org
+ntp__servers_map.Ubuntu[3] = 3.ubuntu.pool.ntp.org
+ntp__servers_map.default[0] = 0.pool.ntp.org
+ntp__servers_map.default[1] = 1.pool.ntp.org
+ntp__servers_map.default[2] = 2.pool.ntp.org
+ntp__servers_map.default[3] = 3.pool.ntp.org
+ntp__fudge = True
+ntp__servers_as_pool = True
+ntp__base_packages[0] = {{ "chrony" if (ntp__daemon == "chrony") else [] }}
+ntp__base_packages[1] = {{ "ntp" if (ntp__daemon == "ntpd") else [] }}
+ntp__base_packages[2] = {{ "openntpd" if (ntp__daemon == "openntpd") else [] }}
+ntp__base_packages[3] = {{ "systemd-timesyncd" if (ntp__daemon == "systemd-timesyncd" and
+                                ansible_distribution_release
+                                not in ["stretch", "buster"]) else [] }}
+
+ntp__base_packages[4] = {{ "ntpdate" if (ntp__daemon == "ntpdate") else [] }}
+ntp__purge_packages[0] = {{ "chrony" if (ntp__daemon != "chrony") else [] }}
+ntp__purge_packages[1] = {{ "ntp" if (ntp__daemon not in ["ntpd", "openntpd"]) else [] }}
+ntp__purge_packages[2] = {{ "openntpd" if (ntp__daemon != "openntpd") else [] }}
+ntp__purge_packages[3] = {{ "systemd-timesyncd" if (ntp__daemon != "systemd-timesyncd") else [] }}
+ntp__purge_packages[4] = {{ "ntpdate" if (ntp__daemon != "ntpdate" and
+                      not ntp__ignore_ntpdate | bool) else [] }} 
+ntp__openntpd_options = -f /etc/openntpd/ntpd.conf -s
+ntp__chrony_cmdport = 0
+ntp__firewall_access = False
+ntp__ferm_chain = filter-ntp
+ntp__ferm_weight = 40
+ntp__ferm_recent_seconds = {{ (60 * 60) }}
+ntp__ferm_recent_hitcount = 5
+ntp__ferm_recent_target = DROP
+ntp__ferm__dependent_rules[0].type = accept
+ntp__ferm__dependent_rules[0].dport[0] = ntp
+ntp__ferm__dependent_rules[0].protocol = udp
+ntp__ferm__dependent_rules[0].weight = {{ ntp__ferm_weight }}
+ntp__ferm__dependent_rules[0].role = ntp
+ntp__ferm__dependent_rules[0].role_weight = 10
+ntp__ferm__dependent_rules[0].name = jump-filter-ntp
+ntp__ferm__dependent_rules[0].target = {{ ntp__ferm_chain }}
+ntp__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if (ntp__daemon in ["openntpd", "ntpd", "chrony"] and
+                        ntp__firewall_access | bool)
+                    else "absent" }}
+
+ntp__ferm__dependent_rules[1].chain = {{ ntp__ferm_chain }}
+ntp__ferm__dependent_rules[1].type = recent
+ntp__ferm__dependent_rules[1].dport[0] = ntp
+ntp__ferm__dependent_rules[1].protocol = udp
+ntp__ferm__dependent_rules[1].saddr = {{ ntp__allow }}
+ntp__ferm__dependent_rules[1].weight = {{ ntp__ferm_weight }}
+ntp__ferm__dependent_rules[1].role = ntp
+ntp__ferm__dependent_rules[1].role_weight = 20
+ntp__ferm__dependent_rules[1].name = mark
+ntp__ferm__dependent_rules[1].subchain = False
+ntp__ferm__dependent_rules[1].recent_set_name = ntp-new
+ntp__ferm__dependent_rules[1].recent_log = False
+ntp__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (ntp__daemon in ["openntpd", "ntpd", "chrony"] and
+                        ntp__firewall_access | bool)
+                    else "absent" }}
+
+ntp__ferm__dependent_rules[2].chain = {{ ntp__ferm_chain }}
+ntp__ferm__dependent_rules[2].type = recent
+ntp__ferm__dependent_rules[2].dport[0] = ntp
+ntp__ferm__dependent_rules[2].protocol[0] = udp
+ntp__ferm__dependent_rules[2].weight = {{ ntp__ferm_weight }}
+ntp__ferm__dependent_rules[2].role = ntp
+ntp__ferm__dependent_rules[2].role_weight = 30
+ntp__ferm__dependent_rules[2].name = filter
+ntp__ferm__dependent_rules[2].subchain = False
+ntp__ferm__dependent_rules[2].recent_name = ntp-new
+ntp__ferm__dependent_rules[2].recent_update = True
+ntp__ferm__dependent_rules[2].recent_seconds = {{ ntp__ferm_recent_seconds }}
+ntp__ferm__dependent_rules[2].recent_hitcount = {{ ntp__ferm_recent_hitcount }}
+ntp__ferm__dependent_rules[2].recent_target = {{ ntp__ferm_recent_target }}
+ntp__ferm__dependent_rules[2].recent_log_prefix = ipt-recent-ntp: 
+ntp__ferm__dependent_rules[2].rule_state = {{ "present"
+                    if (ntp__daemon in ["openntpd", "ntpd", "chrony"] and
+                        ntp__firewall_access | bool)
+                    else "absent" }}
+
+ntp__ferm__dependent_rules[3].chain = {{ ntp__ferm_chain }}
+ntp__ferm__dependent_rules[3].type = accept
+ntp__ferm__dependent_rules[3].dport[0] = ntp
+ntp__ferm__dependent_rules[3].protocol = udp
+ntp__ferm__dependent_rules[3].state = NEW
+ntp__ferm__dependent_rules[3].saddr = {{ ntp__allow }}
+ntp__ferm__dependent_rules[3].weight = {{ ntp__ferm_weight }}
+ntp__ferm__dependent_rules[3].role = ntp
+ntp__ferm__dependent_rules[3].role_weight = 40
+ntp__ferm__dependent_rules[3].rule_state = {{ "present"
+                    if (ntp__daemon in ["openntpd", "ntpd", "chrony"] and
+                        ntp__firewall_access | bool)
+                    else "absent" }}
+

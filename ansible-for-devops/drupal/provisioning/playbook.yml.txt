@@ -1,0 +1,110 @@
+[0].hosts = all
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=3600
+[0].handlers[0].name = restart apache
+[0].handlers[0].service = name=apache2 state=restarted
+[0].tasks[0].name = Get software for apt repository management.
+[0].tasks[0].apt.state = present
+[0].tasks[0].apt.name[0] = python3-apt
+[0].tasks[0].apt.name[1] = python3-pycurl
+[0].tasks[1].name = Add ondrej repository for later versions of PHP.
+[0].tasks[1].apt_repository = repo='ppa:ondrej/php' update_cache=yes
+[0].tasks[2].name = Install Apache, MySQL, PHP, and other dependencies.
+[0].tasks[2].apt.state = present
+[0].tasks[2].apt.name[0] = acl
+[0].tasks[2].apt.name[1] = git
+[0].tasks[2].apt.name[2] = curl
+[0].tasks[2].apt.name[3] = unzip
+[0].tasks[2].apt.name[4] = sendmail
+[0].tasks[2].apt.name[5] = apache2
+[0].tasks[2].apt.name[6] = php8.2-common
+[0].tasks[2].apt.name[7] = php8.2-cli
+[0].tasks[2].apt.name[8] = php8.2-dev
+[0].tasks[2].apt.name[9] = php8.2-gd
+[0].tasks[2].apt.name[10] = php8.2-curl
+[0].tasks[2].apt.name[11] = php8.2-opcache
+[0].tasks[2].apt.name[12] = php8.2-xml
+[0].tasks[2].apt.name[13] = php8.2-mbstring
+[0].tasks[2].apt.name[14] = php8.2-pdo
+[0].tasks[2].apt.name[15] = php8.2-mysql
+[0].tasks[2].apt.name[16] = php8.2-apcu
+[0].tasks[2].apt.name[17] = libpcre3-dev
+[0].tasks[2].apt.name[18] = libapache2-mod-php8.2
+[0].tasks[2].apt.name[19] = python3-mysqldb
+[0].tasks[2].apt.name[20] = mysql-server
+[0].tasks[3].name = Disable the firewall (since this is for local dev only).
+[0].tasks[3].service = name=ufw state=stopped
+[0].tasks[4].name = Start Apache, MySQL, and PHP.
+[0].tasks[4].service = name={{ item }} state=started enabled=yes
+[0].tasks[4].with_items[0] = apache2
+[0].tasks[4].with_items[1] = mysql
+[0].tasks[5].name = Enable Apache rewrite module (required for Drupal).
+[0].tasks[5].apache2_module = name=rewrite state=present
+[0].tasks[5].notify = restart apache
+[0].tasks[6].name = Add Apache virtualhost for Drupal.
+[0].tasks[6].template.src = templates/drupal.test.conf.j2
+[0].tasks[6].template.dest = /etc/apache2/sites-available/{{ domain }}.test.conf
+[0].tasks[6].template.owner = root
+[0].tasks[6].template.group = root
+[0].tasks[6].template.mode = 0644
+[0].tasks[6].notify = restart apache
+[0].tasks[7].name = Enable the Drupal site.
+[0].tasks[7].command = a2ensite {{ domain }}.test creates=/etc/apache2/sites-enabled/{{ domain }}.test.conf
+
+[0].tasks[7].notify = restart apache
+[0].tasks[8].name = Disable the default site.
+[0].tasks[8].command = a2dissite 000-default removes=/etc/apache2/sites-enabled/000-default.conf
+
+[0].tasks[8].notify = restart apache
+[0].tasks[9].name = Adjust OpCache memory setting.
+[0].tasks[9].lineinfile.dest = /etc/php/8.2/apache2/conf.d/10-opcache.ini
+[0].tasks[9].lineinfile.regexp = ^opcache.memory_consumption
+[0].tasks[9].lineinfile.line = opcache.memory_consumption = 96
+[0].tasks[9].lineinfile.state = present
+[0].tasks[9].notify = restart apache
+[0].tasks[10].name = Create a MySQL database for Drupal.
+[0].tasks[10].mysql_db = db={{ domain }} state=present
+[0].tasks[11].name = Create a MySQL user for Drupal.
+[0].tasks[11].mysql_user.name = {{ domain }}
+[0].tasks[11].mysql_user.password = 1234
+[0].tasks[11].mysql_user.priv = {{ domain }}.*:ALL
+[0].tasks[11].mysql_user.host = localhost
+[0].tasks[11].mysql_user.state = present
+[0].tasks[12].name = Download Composer installer.
+[0].tasks[12].get_url.url = https://getcomposer.org/installer
+[0].tasks[12].get_url.dest = /tmp/composer-installer.php
+[0].tasks[12].get_url.mode = 0755
+[0].tasks[13].name = Run Composer installer.
+[0].tasks[13].command = php composer-installer.php chdir=/tmp creates=/usr/local/bin/composer
+
+[0].tasks[14].name = Move Composer into globally-accessible location.
+[0].tasks[14].command = mv /tmp/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+
+[0].tasks[15].name = Ensure Drupal directory exists.
+[0].tasks[15].file.path = {{ drupal_core_path }}
+[0].tasks[15].file.state = directory
+[0].tasks[15].file.owner = www-data
+[0].tasks[15].file.group = www-data
+[0].tasks[16].name = Check if Drupal project already exists.
+[0].tasks[16].stat.path = {{ drupal_core_path }}/composer.json
+[0].tasks[16].register = drupal_composer_json
+[0].tasks[17].name = Create Drupal project.
+[0].tasks[17].composer.command = create-project
+[0].tasks[17].composer.arguments = drupal/recommended-project "{{ drupal_core_path }}"
+[0].tasks[17].composer.working_dir = {{ drupal_core_path }}
+[0].tasks[17].composer.no_dev = true
+[0].tasks[17].become_user = www-data
+[0].tasks[17].when = not drupal_composer_json.stat.exists
+[0].tasks[18].name = Add drush to the Drupal site with Composer.
+[0].tasks[18].composer.command = require
+[0].tasks[18].composer.arguments = drush/drush:11.*
+[0].tasks[18].composer.working_dir = {{ drupal_core_path }}
+[0].tasks[18].become_user = www-data
+[0].tasks[18].when = not drupal_composer_json.stat.exists
+[0].tasks[19].name = Install Drupal.
+[0].tasks[19].command = vendor/bin/drush si -y --site-name="{{ drupal_site_name }}" --account-name=admin --account-pass=admin --db-url=mysql://{{ domain }}:1234@localhost/{{ domain }} --root={{ drupal_core_path }}/web chdir={{ drupal_core_path }} creates={{ drupal_core_path }}/web/sites/default/settings.php
+
+[0].tasks[19].notify = restart apache
+[0].tasks[19].become_user = www-data

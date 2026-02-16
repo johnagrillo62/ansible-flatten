@@ -1,0 +1,28 @@
+[0].hosts = rabbitmq
+[0].become = true
+[0].become_method = sudo
+[0].vars.rabbitmq_version = 3.0.2-1
+[0].tasks[0].name = ensure python-software-properties is installed
+[0].tasks[0].apt = pkg=python-software-properties state=installed
+[0].tasks[1].name = add rabbitmq official apt repository
+[0].tasks[1].apt_repository = repo='deb http://www.rabbitmq.com/debian/ testing main' state=present
+[0].tasks[2].name = add trusted key
+[0].tasks[2].apt_key = url=https://www.rabbitmq.com/rabbitmq-signing-key-public.asc state=present
+[0].tasks[3].name = install package
+[0].tasks[3].apt = name={{ item }} update_cache=yes state=installed
+[0].tasks[3].with_items[0] = rabbitmq-server
+[0].tasks[4].name = enable rabbitmq plugins
+[0].tasks[4].rabbitmq_plugin = names=rabbitmq_management,rabbitmq_tracing,rabbitmq_federation state=enabled
+[0].tasks[4].notify[0] = restart rabbitmq
+[0].tasks[5].name = add users
+[0].tasks[5].rabbitmq_user = user={{item.username}} password={{item.password}} tags=administrator,{{item.username}} vhost=/ configure_priv=.* write_priv=.* read_priv=.* state=present
+[0].tasks[5].with_items[0].username = user1
+[0].tasks[5].with_items[0].password = changeme
+[0].tasks[5].with_items[1].username = user2
+[0].tasks[5].with_items[1].password = changeme
+[0].tasks[6].name = remove default guest user
+[0].tasks[6].rabbitmq_user = user=guest state=absent
+[0].tasks[7].name = ensure vhost /test is present
+[0].tasks[7].rabbitmq_vhost = name=/test state=present
+[0].handlers[0].name = restart rabbitmq
+[0].handlers[0].service = name=rabbitmq-server state=restarted

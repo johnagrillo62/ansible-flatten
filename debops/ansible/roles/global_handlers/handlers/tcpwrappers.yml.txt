@@ -1,0 +1,6 @@
+[0].name = Assemble hosts.allow.d
+[0]["ansible.builtin.assemble"].src = /etc/hosts.allow.d
+[0]["ansible.builtin.assemble"].dest = /etc/hosts.allow
+[0]["ansible.builtin.assemble"].backup = False
+[0]["ansible.builtin.assemble"].mode = 0644
+[0].when = (ansible_local.tcpwrappers.enabled | d()) | bool

@@ -1,0 +1,114 @@
+[0].name = Set vault_addr
+[0].include_tasks = set_vault_addr.yml
+[1].block[0].name = Start the vault
+[1].block[0]["community.docker.docker_compose_v2"].state = present
+[1].block[0]["community.docker.docker_compose_v2"].services = vault
+[1].block[0]["community.docker.docker_compose_v2"].project_src = {{ sources_dest }}
+[1].block[0].register = vault_start
+[1].block[1].name = Run the initialization
+[1].block[1]["community.docker.docker_container_exec"].command = vault operator init
+[1].block[1]["community.docker.docker_container_exec"].container = tools_vault_1
+[1].block[1]["community.docker.docker_container_exec"].env.VAULT_ADDR = {{ vault_addr }}
+[1].block[1]["community.docker.docker_container_exec"].env.VAULT_SKIP_VERIFY = true
+[1].block[1].register = vault_initialization
+[1].block[1].failed_when[0] = vault_initialization.rc != 0
+[1].block[1].failed_when[1] = vault_initialization.stderr.find("Vault is already initialized") == -1
+[1].block[1].changed_when[0] = vault_initialization.rc == 0
+[1].block[1].retries = 5
+[1].block[1].delay = 5
+[1].block[2].name = Write out initialization file
+[1].block[2].copy.content = {{ vault_initialization.stdout_lines[0] | regex_replace('Unseal Key ', 'Unseal_Key_') }}
+{{ vault_initialization.stdout_lines[1] | regex_replace('Unseal Key ', 'Unseal_Key_') }}
+{{ vault_initialization.stdout_lines[2] | regex_replace('Unseal Key ', 'Unseal_Key_') }}
+{{ vault_initialization.stdout_lines[3] | regex_replace('Unseal Key ', 'Unseal_Key_') }}
+{{ vault_initialization.stdout_lines[4] | regex_replace('Unseal Key ', 'Unseal_Key_') }}
+{{ vault_initialization.stdout_lines[6] | regex_replace('Initial Root Token', 'Initial_Root_Token') }}
+
+[1].block[2].copy.dest = {{ vault_file }}
+[1].block[2].when = (vault_initialization.stdout_lines | length) > 0
+[1].block[3].name = Unlock the vault
+[1].block[3].include_role.name = vault
+[1].block[3].include_role.tasks_from = unseal.yml
+[1].block[4].name = Configure the vault with cert auth
+[1].block[4].block[0].name = Create a cert auth mount
+[1].block[4].block[0]["flowerysong.hvault.write"].path = sys/auth/cert
+[1].block[4].block[0]["flowerysong.hvault.write"].vault_addr = {{ vault_addr_from_host }}
+[1].block[4].block[0]["flowerysong.hvault.write"].validate_certs = false
+[1].block[4].block[0]["flowerysong.hvault.write"].token = {{ Initial_Root_Token }}
+[1].block[4].block[0]["flowerysong.hvault.write"].data.type = cert
+[1].block[4].block[0].register = vault_auth_cert
+[1].block[4].block[0].failed_when[0] = vault_auth_cert.result.errors | default([]) | length > 0
+[1].block[4].block[0].failed_when[1] = 'path is already in use at cert/' not in vault_auth_cert.result.errors | default([])
+[1].block[4].block[0].changed_when[0] = vault_auth_cert.result.errors | default([]) | length == 0
+[1].block[4].block[1].name = Configure client certificate
+[1].block[4].block[1]["flowerysong.hvault.write"].path = auth/cert/certs/awx-client
+[1].block[4].block[1]["flowerysong.hvault.write"].vault_addr = {{ vault_addr_from_host }}
+[1].block[4].block[1]["flowerysong.hvault.write"].validate_certs = false
+[1].block[4].block[1]["flowerysong.hvault.write"].token = {{ Initial_Root_Token }}
+[1].block[4].block[1]["flowerysong.hvault.write"].data.name = awx-client
+[1].block[4].block[1]["flowerysong.hvault.write"].data.certificate = {{ lookup('ansible.builtin.file', '{{ vault_client_cert }}') }}
+[1].block[4].block[1]["flowerysong.hvault.write"].data.policies[0] = root
+[1].block[4].when = vault_tls | bool
+[1].block[5].name = Create an engine
+[1].block[5]["flowerysong.hvault.engine"].path = my_engine
+[1].block[5]["flowerysong.hvault.engine"].type = kv
+[1].block[5]["flowerysong.hvault.engine"].vault_addr = {{ vault_addr_from_host }}
+[1].block[5]["flowerysong.hvault.engine"].validate_certs = false
+[1].block[5]["flowerysong.hvault.engine"].token = {{ Initial_Root_Token }}
+[1].block[6].name = Create a demo secret
+[1].block[6]["flowerysong.hvault.kv"].mount_point = my_engine/my_root
+[1].block[6]["flowerysong.hvault.kv"].key = my_folder
+[1].block[6]["flowerysong.hvault.kv"].value.my_key = this_is_the_secret_value
+[1].block[6]["flowerysong.hvault.kv"].vault_addr = {{ vault_addr_from_host }}
+[1].block[6]["flowerysong.hvault.kv"].validate_certs = false
+[1].block[6]["flowerysong.hvault.kv"].token = {{ Initial_Root_Token }}
+[1].block[7].name = Create userpass engine
+[1].block[7]["flowerysong.hvault.engine"].path = userpass_engine
+[1].block[7]["flowerysong.hvault.engine"].type = kv
+[1].block[7]["flowerysong.hvault.engine"].vault_addr = {{ vault_addr_from_host }}
+[1].block[7]["flowerysong.hvault.engine"].validate_certs = false
+[1].block[7]["flowerysong.hvault.engine"].token = {{ Initial_Root_Token }}
+[1].block[8].name = Create a userpass secret
+[1].block[8]["flowerysong.hvault.kv"].mount_point = userpass_engine/userpass_root
+[1].block[8]["flowerysong.hvault.kv"].key = userpass_secret
+[1].block[8]["flowerysong.hvault.kv"].value.my_key = this_is_the_userpass_secret_value
+[1].block[8]["flowerysong.hvault.kv"].vault_addr = {{ vault_addr_from_host }}
+[1].block[8]["flowerysong.hvault.kv"].validate_certs = false
+[1].block[8]["flowerysong.hvault.kv"].token = {{ Initial_Root_Token }}
+[1].block[9].name = Create userpass access policy
+[1].block[9]["flowerysong.hvault.policy"].vault_addr = {{ vault_addr_from_host }}
+[1].block[9]["flowerysong.hvault.policy"].validate_certs = false
+[1].block[9]["flowerysong.hvault.policy"].token = {{ Initial_Root_Token }}
+[1].block[9]["flowerysong.hvault.policy"].name = userpass_engine
+[1].block[9]["flowerysong.hvault.policy"].policy.userpass_engine/*[0] = create
+[1].block[9]["flowerysong.hvault.policy"].policy.userpass_engine/*[1] = read
+[1].block[9]["flowerysong.hvault.policy"].policy.userpass_engine/*[2] = update
+[1].block[9]["flowerysong.hvault.policy"].policy.userpass_engine/*[3] = delete
+[1].block[9]["flowerysong.hvault.policy"].policy.userpass_engine/*[4] = list
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts:/*[0] = create
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts:/*[1] = read
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts:/*[2] = update
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts:/*[3] = delete
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts:/*[4] = list
+[1].block[9]["flowerysong.hvault.policy"].policy.sys/mounts[0] = read
+[1].block[10].name = Create userpass auth mount
+[1].block[10]["flowerysong.hvault.write"].path = sys/auth/userpass
+[1].block[10]["flowerysong.hvault.write"].vault_addr = {{ vault_addr_from_host }}
+[1].block[10]["flowerysong.hvault.write"].validate_certs = false
+[1].block[10]["flowerysong.hvault.write"].token = {{ Initial_Root_Token }}
+[1].block[10]["flowerysong.hvault.write"].data.type = userpass
+[1].block[10].register = vault_auth_userpass
+[1].block[10].changed_when = vault_auth_userpass.result.errors | default([]) | length == 0
+[1].block[10].failed_when[0] = vault_auth_userpass.result.errors | default([]) | length > 0
+[1].block[10].failed_when[1] = 'path is already in use at userpass/' not in vault_auth_userpass.result.errors | default([])
+[1].block[11].name = Add awx_userpass_admin user to auth_method
+[1].block[11]["flowerysong.hvault.write"].vault_addr = {{ vault_addr_from_host }}
+[1].block[11]["flowerysong.hvault.write"].validate_certs = false
+[1].block[11]["flowerysong.hvault.write"].token = {{ Initial_Root_Token }}
+[1].block[11]["flowerysong.hvault.write"].path = auth/userpass/users/{{ vault_userpass_username }}
+[1].block[11]["flowerysong.hvault.write"].data.password = {{ vault_userpass_password }}
+[1].block[11]["flowerysong.hvault.write"].data.policies[0] = userpass_engine
+[1].always[0].name = Stop the vault
+[1].always[0]["community.docker.docker_compose_v2"].state = absent
+[1].always[0]["community.docker.docker_compose_v2"].project_src = {{ sources_dest }}
+[1].always[0].when = vault_start is defined and vault_start.changed

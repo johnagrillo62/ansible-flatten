@@ -1,0 +1,16 @@
+[0].name = Kube-router | delete kube-router docker containers
+[0].shell = set -o pipefail && {{ docker_bin_dir }}/docker ps -af name=k8s_POD_kube-router* -q | xargs --no-run-if-empty docker rm -f
+[0].args.executable = /bin/bash
+[0].register = docker_kube_router_remove
+[0].until = docker_kube_router_remove is succeeded
+[0].retries = 5
+[0].when = container_manager in ["docker"]
+[0].listen = Reset_kube_router
+[1].name = Kube-router | delete kube-router crio/containerd containers
+[1].shell = set -o pipefail && {{ bin_dir }}/crictl pods --name kube-router* -q | xargs -I% --no-run-if-empty bash -c "{{ bin_dir }}/crictl stopp % && {{ bin_dir }}/crictl rmp %"
+[1].args.executable = /bin/bash
+[1].register = crictl_kube_router_remove
+[1].until = crictl_kube_router_remove is succeeded
+[1].retries = 5
+[1].when = container_manager in ["crio", "containerd"]
+[1].listen = Reset_kube_router

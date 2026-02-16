@@ -1,0 +1,104 @@
+[0].hosts = all
+[0].become = true
+[0].handlers[0].name = restart ssh
+[0].handlers[0].service = name=sshd state=restarted
+[0].tasks[0].name = Allow sshd to listen on tcp port 2849.
+[0].tasks[0].seport.ports = 2849
+[0].tasks[0].seport.proto = tcp
+[0].tasks[0].seport.setype = ssh_port_t
+[0].tasks[0].seport.state = present
+[0].tasks[0].when = ansible_selinux.status == 'enabled'
+[0].tasks[1].name = Update SSH configuration to be more secure.
+[0].tasks[1].lineinfile.dest = /etc/ssh/sshd_config
+[0].tasks[1].lineinfile.regexp = {{ item.regexp }}
+[0].tasks[1].lineinfile.line = {{ item.line }}
+[0].tasks[1].lineinfile.state = present
+[0].tasks[1].lineinfile.validate = sshd -t -f %s
+[0].tasks[1].with_items[0].regexp = ^PasswordAuthentication
+[0].tasks[1].with_items[0].line = PasswordAuthentication no
+[0].tasks[1].with_items[1].regexp = ^PermitRootLogin
+[0].tasks[1].with_items[1].line = PermitRootLogin no
+[0].tasks[1].with_items[2].regexp = ^Port
+[0].tasks[1].with_items[2].line = Port 2849
+[0].tasks[1].notify = restart ssh
+[0].tasks[2].name = Add a deployment user.
+[0].tasks[2].user.name = johndoe
+[0].tasks[2].user.state = present
+[0].tasks[3].name = Add sudo rights for deployment user.
+[0].tasks[3].lineinfile.dest = /etc/sudoers
+[0].tasks[3].lineinfile.regexp = ^johndoe
+[0].tasks[3].lineinfile.line = johndoe ALL=(ALL) NOPASSWD: ALL
+[0].tasks[3].lineinfile.state = present
+[0].tasks[3].lineinfile.validate = visudo -cf %s
+[0].tasks[4].name = Remove unused packages.
+[0].tasks[4].package.name[0] = nano
+[0].tasks[4].package.name[1] = sendmail
+[0].tasks[4].package.state = absent
+[0].tasks[5].name = Configure the permissions for the messages log.
+[0].tasks[5].file.path = /var/log/messages
+[0].tasks[5].file.owner = root
+[0].tasks[5].file.group = root
+[0].tasks[5].file.mode = 0600
+[0].tasks[6].name = Install dnf-automatic.
+[0].tasks[6].dnf.name = dnf-automatic
+[0].tasks[6].dnf.state = present
+[0].tasks[7].name = Ensure dnf-automatic is running and enabled on boot.
+[0].tasks[7].service.name = dnf-automatic-install.timer
+[0].tasks[7].service.state = started
+[0].tasks[7].service.enabled = yes
+[0].tasks[8].name = Install unattended upgrades package.
+[0].tasks[8].apt.name = unattended-upgrades
+[0].tasks[8].apt.state = present
+[0].tasks[8].when = ansible_os_family == 'Debian'
+[0].tasks[9].name = Copy unattended-upgrades configuration files in place.
+[0].tasks[9].template.src = ../templates/{{ item }}.j2
+[0].tasks[9].template.dest = /etc/apt/apt.conf.d/{{ item }}
+[0].tasks[9].template.owner = root
+[0].tasks[9].template.group = root
+[0].tasks[9].template.mode = 0644
+[0].tasks[9].with_items[0] = 20auto-upgrades
+[0].tasks[9].with_items[1] = 50unattended-upgrades
+[0].tasks[9].when = ansible_os_family == 'Debian'
+[0].tasks[10].name = Ensure firewalld is running.
+[0].tasks[10].service.name = firewalld
+[0].tasks[10].service.state = started
+[0].tasks[11].name = Configure open ports with firewalld.
+[0].tasks[11].firewalld.state = {{ item.state }}
+[0].tasks[11].firewalld.port = {{ item.port }}
+[0].tasks[11].firewalld.zone = external
+[0].tasks[11].firewalld.immediate = yes
+[0].tasks[11].firewalld.permanent = yes
+[0].tasks[11].with_items[0].state = enabled
+[0].tasks[11].with_items[0].port = 22/tcp
+[0].tasks[11].with_items[1].state = enabled
+[0].tasks[11].with_items[1].port = 80/tcp
+[0].tasks[11].with_items[2].state = enabled
+[0].tasks[11].with_items[2].port = 123/udp
+[0].tasks[12].name = Ensure EPEL repo is present.
+[0].tasks[12].dnf.name = epel-release
+[0].tasks[12].dnf.state = present
+[0].tasks[12].when = ansible_os_family == 'RedHat'
+[0].tasks[13].name = Install fail2ban (RedHat).
+[0].tasks[13].dnf.name = fail2ban
+[0].tasks[13].dnf.state = present
+[0].tasks[13].dnf.enablerepo = epel
+[0].tasks[13].when = ansible_os_family == 'RedHat'
+[0].tasks[14].name = Install fail2ban (Debian).
+[0].tasks[14].apt.name = fail2ban
+[0].tasks[14].apt.state = present
+[0].tasks[14].when = ansible_os_family == 'Debian'
+[0].tasks[15].name = Ensure fail2ban is running and enabled on boot.
+[0].tasks[15].service.name = fail2ban
+[0].tasks[15].service.state = started
+[0].tasks[15].service.enabled = yes
+[0].tasks[16].name = Install Python SELinux library.
+[0].tasks[16].dnf.name = python3-libselinux
+[0].tasks[16].dnf.state = present
+[0].tasks[17].name = Ensure SELinux is enabled in `targeted` mode.
+[0].tasks[17].selinux.policy = targeted
+[0].tasks[17].selinux.state = enforcing
+[0].tasks[18].name = Ensure httpd can connect to the network.
+[0].tasks[18].seboolean.name = httpd_can_network_connect
+[0].tasks[18].seboolean.state = yes
+[0].tasks[18].seboolean.persistent = yes
+[0].tasks[18].when = ansible_selinux.status == 'enabled'

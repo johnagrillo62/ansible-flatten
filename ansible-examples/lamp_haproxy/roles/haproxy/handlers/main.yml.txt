@@ -1,0 +1,5 @@
+doc[0][0].name = restart haproxy
+doc[0][0].service = name=haproxy state=restarted
+doc[0][1].name = reload haproxy
+doc[0][1].service = name=haproxy state=reloaded
+doc[1] = 

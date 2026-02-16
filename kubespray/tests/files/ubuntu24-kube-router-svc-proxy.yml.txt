@@ -1,0 +1,11 @@
+cloud_image = ubuntu-2404
+cluster_layout[0].node_groups[0] = kube_control_plane
+cluster_layout[0].node_groups[1] = etcd
+cluster_layout[0].node_groups[2] = kube_node
+cluster_layout[1].node_groups[0] = kube_control_plane
+cluster_layout[1].node_groups[1] = etcd
+cluster_layout[1].node_groups[2] = kube_node
+cluster_layout[2].node_groups[0] = etcd
+cluster_layout[2].node_groups[1] = kube_node
+kube_network_plugin = kube-router
+kube_router_run_service_proxy = true

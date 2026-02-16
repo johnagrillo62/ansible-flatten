@@ -1,0 +1,4 @@
+[0].name = Common tasks for every playbooks
+[0].import_playbook = boilerplate.yml
+[1].name = Gather facts
+[1].import_playbook = internal_facts.yml

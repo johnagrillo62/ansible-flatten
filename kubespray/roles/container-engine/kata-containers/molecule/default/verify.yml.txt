@@ -1,0 +1,17 @@
+[0].name = Test kata-containers
+[0].hosts = all
+[0].gather_facts = false
+[0].tasks[0].name = Test version
+[0].tasks[0].command = /opt/kata/bin/kata-runtime version
+[0].tasks[0].register = version
+[0].tasks[0].failed_when = version is failed or 'kata-runtime' not in version.stdout
+
+[0].tasks[1].name = Test version
+[0].tasks[1].command = /opt/kata/bin/kata-runtime check
+[0].tasks[1].register = check
+[0].tasks[1].failed_when = check is failed or 'System is capable of running' not in check.stdout
+
+[1].name = Test run container
+[1].import_playbook = ../../../molecule/test_runtime.yml
+[1].vars.container_runtime = kata-qemu
+[1].vars.container_manager = containerd

@@ -1,0 +1,36 @@
+[0].name = ALB Ingress Controller | Create addon dir
+[0].file.path = {{ kube_config_dir }}/addons/alb_ingress
+[0].file.state = directory
+[0].file.owner = root
+[0].file.group = root
+[0].file.mode = 0755
+[1].name = ALB Ingress Controller | Create manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/addons/alb_ingress/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = alb-ingress-clusterrole
+[1].with_items[0].file = alb-ingress-clusterrole.yml
+[1].with_items[0].type = clusterrole
+[1].with_items[1].name = alb-ingress-clusterrolebinding
+[1].with_items[1].file = alb-ingress-clusterrolebinding.yml
+[1].with_items[1].type = clusterrolebinding
+[1].with_items[2].name = alb-ingress-ns
+[1].with_items[2].file = alb-ingress-ns.yml
+[1].with_items[2].type = ns
+[1].with_items[3].name = alb-ingress-sa
+[1].with_items[3].file = alb-ingress-sa.yml
+[1].with_items[3].type = sa
+[1].with_items[4].name = alb-ingress-deploy
+[1].with_items[4].file = alb-ingress-deploy.yml
+[1].with_items[4].type = deploy
+[1].register = alb_ingress_manifests
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = ALB Ingress Controller | Apply manifests
+[2].kube.name = {{ item.item.name }}
+[2].kube.namespace = {{ alb_ingress_controller_namespace }}
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.resource = {{ item.item.type }}
+[2].kube.filename = {{ kube_config_dir }}/addons/alb_ingress/{{ item.item.file }}
+[2].kube.state = latest
+[2].with_items = {{ alb_ingress_manifests.results }}
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]

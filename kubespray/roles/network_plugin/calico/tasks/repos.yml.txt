@@ -1,0 +1,15 @@
+[0].name = Calico | Add wireguard yum repo
+[0].when[0] = calico_wireguard_enabled
+[0].block[0].name = Calico | Add wireguard yum repo
+[0].block[0].yum_repository.name = copr:copr.fedorainfracloud.org:jdoss:wireguard
+[0].block[0].yum_repository.file = _copr:copr.fedorainfracloud.org:jdoss:wireguard
+[0].block[0].yum_repository.description = Copr repo for wireguard owned by jdoss
+[0].block[0].yum_repository.baseurl = {{ calico_wireguard_repo }}
+[0].block[0].yum_repository.gpgcheck = true
+[0].block[0].yum_repository.gpgkey = https://download.copr.fedorainfracloud.org/results/jdoss/wireguard/pubkey.gpg
+[0].block[0].yum_repository.skip_if_unavailable = true
+[0].block[0].yum_repository.enabled = true
+[0].block[0].yum_repository.repo_gpgcheck = false
+[0].block[0].when[0] = ansible_os_family in ['RedHat']
+[0].block[0].when[1] = ansible_distribution not in ['Fedora']
+[0].block[0].when[2] = ansible_facts['distribution_major_version'] | int < 9

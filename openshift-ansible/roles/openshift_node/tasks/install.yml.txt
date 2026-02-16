@@ -1,0 +1,93 @@
+[0].name = Retrieve rendered-worker name
+[0].command = oc get machineconfigpool worker --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.status.configuration.name}'
+
+[0].delegate_to = localhost
+[0].run_once = true
+[0].register = rendered_worker
+[0].until[0] = rendered_worker.stdout != ''
+[0].changed_when = false
+[1].name = Check cluster FIPS status
+[1].command = oc get machineconfig {{ rendered_worker.stdout }} --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.spec.fips}'
+
+[1].delegate_to = localhost
+[1].run_once = true
+[1].register = cluster_fips
+[1].until[0] = cluster_fips.stdout != ''
+[1].changed_when = false
+[2].name = Fail if host FIPS status does not match cluster FIPS status
+[2].fail.msg = Host FIPS status of '{{ ansible_fips }}' does not match cluster FIPS status of '{{ cluster_fips.stdout | bool }}'. Please update the host configuration before proceeding.
+
+[2].when[0] = ansible_fips != (cluster_fips.stdout | bool)
+[3].name = Update Yum Cache
+[3].yum.state = latest
+[3].yum.update_cache = true
+[3].become = true
+[4].name = Get cluster version
+[4].command = oc get clusterversion --kubeconfig={{ openshift_node_kubeconfig_path }} --output=jsonpath='{.items[0].status.desired.version}'
+
+[4].delegate_to = localhost
+[4].register = oc_get
+[4].until[0] = oc_get.stdout != ''
+[4].changed_when = false
+[5].name = Set fact l_cluster_version
+[5].set_fact.l_cluster_version = {{ oc_get.stdout | regex_search('^\\d+\\.\\d+') }}
+[6].name = Get kubernetes server version
+[6].command = oc version --kubeconfig={{ openshift_node_kubeconfig_path }} --output=json
+
+[6].delegate_to = localhost
+[6].register = oc_get
+[6].until[0] = oc_get.stdout != ''
+[6].changed_when = false
+[7].name = Set fact l_kubernetes_server_version
+[7].set_fact.l_kubernetes_server_version = {{ (oc_get.stdout | from_json).serverVersion.major ~ '.' ~  (oc_get.stdout | from_json).serverVersion.minor | regex_search('^\\d+') }}
+[8].name = Get available cri-o RPM versions
+[8].package.list = cri-o
+[8].register = crio_version
+[9].name = Set fact crio_latest
+[9].set_fact.crio_latest = {{ crio_version.results | selectattr('yumstate', 'match', 'available') | map(attribute='version') | list | last }}
+[10].name = Fail if cri-o is less than current kubernetes server version
+[10].fail.msg = Latest available cri-o ({{ crio_latest }}) version is less than current kubernetes server version ({{ l_kubernetes_server_version }}).
+
+[10].when[0] = crio_latest is version(l_kubernetes_server_version, 'lt')
+[11].name = Disable container-tools:rhel{{ ansible_distribution_major_version }} modularity appstream
+[11].command = dnf module disable container-tools:rhel{{ ansible_distribution_major_version }} -y
+[11].ignore_errors = true
+[12].block[0].name = Install openshift packages
+[12].block[0].dnf.name = {{ openshift_packages }}
+[12].block[0].dnf.disablerepo = container-tools
+[12].block[0].dnf.state = latest
+[12].block[0].dnf.allowerasing = true
+[12].block[0].dnf.disable_gpg_check = true
+[12].block[0].async = 3600
+[12].block[0].poll = 30
+[12].block[0].register = result
+[12].block[0].until = result is succeeded
+[12].rescue[0].name = Package install failure message
+[12].rescue[0].fail.msg = Unable to install {{ openshift_packages }}. Please ensure repos are configured properly to provide these packages and indicated versions.
+
+[13].name = reload systemd daemons
+[13].systemd.daemon_reload = yes
+[14].name = gather service facts
+[14]["ansible.builtin.service_facts"] = null
+[15].name = Restart openvswitch
+[15].systemd.name = openvswitch
+[15].systemd.state = restarted
+[15].when = ansible_facts.services['openvswitch.service'] is defined
+[16].name = Enable the CRI-O service
+[16].systemd.name = crio
+[16].systemd.enabled = yes
+[17].import_tasks = ipsec.yml
+[18].name = Enable persistent storage on journal
+[18].ini_file.dest = /etc/systemd/journald.conf
+[18].ini_file.section = Journal
+[18].ini_file.option = Storage
+[18].ini_file.value = persistent
+[18].ini_file.no_extra_spaces = yes
+[19].name = set package facts
+[19]["ansible.builtin.package_facts"] = null
+[20].name = Update the network backend to Netavark
+[20].lineinfile.path = /usr/share/containers/containers.conf
+[20].lineinfile.regexp = ^network_backend.*
+[20].lineinfile.line = network_backend = "netavark"
+[20].lineinfile.backrefs = yes
+[20].when = ansible_facts.packages.podman[0].version.split(".")[0] | int >= 5

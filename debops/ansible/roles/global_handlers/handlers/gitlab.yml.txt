@@ -1,0 +1,10 @@
+[0].name = Reconfigure GitLab Omnibus
+[0]["ansible.builtin.command"] = gitlab-ctl reconfigure
+[0].register = global_handlers__gitlab_register_reconfigure
+[0].changed_when = global_handlers__gitlab_register_reconfigure.changed | bool
+[0].when = (ansible_local.gitlab.omnibus | d()) | bool
+[1].name = Restart GitLab Omnibus
+[1]["ansible.builtin.command"] = gitlab-ctl restart
+[1].register = global_handlers__gitlab_register_restart
+[1].changed_when = global_handlers__gitlab_register_restart.changed | bool
+[1].when = (ansible_local.gitlab.omnibus | d()) | bool

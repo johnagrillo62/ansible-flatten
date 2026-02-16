@@ -1,0 +1,15 @@
+collections[0] = debops.debops
+galaxy_info.author = Pedro Luis López, Bechea Leonardo, Alin Alexandru
+galaxy_info.description = Install and manage InfluxDB server
+galaxy_info.company = DebOps
+galaxy_info.license = GPL-3.0-only
+galaxy_info.min_ansible_version = 2.9.0
+galaxy_info.platforms[0].name = Debian
+galaxy_info.platforms[0].versions[0] = stretch
+galaxy_info.platforms[0].versions[1] = buster
+galaxy_info.galaxy_tags[0] = clustering
+galaxy_info.galaxy_tags[1] = database
+galaxy_info.galaxy_tags[2] = nosql
+galaxy_info.galaxy_tags[3] = search
+galaxy_info.galaxy_tags[4] = monitoring
+galaxy_info.galaxy_tags[5] = influxdb

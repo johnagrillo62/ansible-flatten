@@ -1,0 +1,4 @@
+~d0.name = Restart docker
+~d1.ansible.builtin.service = 
+~d2.name = 'docker'
+~d2.state = 'restarted'

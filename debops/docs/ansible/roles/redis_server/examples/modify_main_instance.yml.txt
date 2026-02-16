@@ -1,0 +1,5 @@
+~d0.redis_server__instances = 
+~d1.name = 'main'
+~d2.bind = [ '0.0.0.0', '::' ]
+~d2.master_host = 'redis.example.org'
+~d2.master_port = '6379'

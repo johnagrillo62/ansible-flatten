@@ -1,0 +1,6 @@
+[0].name = Restart systemd-resolved service
+[0]["ansible.builtin.systemd"].name = systemd-resolved.service
+[0]["ansible.builtin.systemd"].state = restarted
+[0].listen[0] = Restart DNS resolver
+[0].when[0] = ansible_service_mgr == 'systemd'
+[0].when[1] = (ansible_local.resolved.state | d('disabled')) == 'enabled'

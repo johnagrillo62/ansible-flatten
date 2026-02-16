@@ -1,0 +1,5 @@
+dependencies[0].role = kubernetes-apps/container_engine_accelerator/nvidia_gpu
+dependencies[0].when = nvidia_accelerator_enabled
+dependencies[0].tags[0] = apps
+dependencies[0].tags[1] = nvidia_gpu
+dependencies[0].tags[2] = container_engine_accelerator

@@ -1,0 +1,10 @@
+~d0.name = Manage NixOS hosts using DebOps
+~d1.collections = [ 'debops.debops' ]
+~d1.hosts = [ 'debops_nixos_hosts' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.tasks = 
+~d2.name = Configure NixOS system
+~d3.ansible.builtin.import_role = 
+~d4.name = 'debops.debops.nixos'
+~d3.tags = [ 'role::nixos', 'skip::nixos' ]

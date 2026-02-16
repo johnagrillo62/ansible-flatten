@@ -1,0 +1,8 @@
+~d0.build_dev = false
+~d0.kube_dev = false
+~d0.headless = no
+~d0.dockerfile_dest = '../..'
+~d0.dockerfile_name = 'Dockerfile'
+~d0.template_dest = '_build'
+~d0.receptor_image = quay.io/ansible/receptor:devel
+~d0.image_architecture = '{{ { "x86_64": "amd64", "aarch64": "arm64", "armv7": "arm", "arm64": "arm64", "ppc64le": "ppc64le" }[ansible_facts.architecture] }}'

@@ -1,0 +1,103 @@
+nscd__flavor = unscd
+nscd__base_packages[0] = {{ nscd__flavor }}
+nscd__default_configuration[0].name = global
+nscd__default_configuration[0].options[0].name = logfile
+nscd__default_configuration[0].options[0].value = /var/log/nscd.log
+nscd__default_configuration[0].options[0].state = comment
+nscd__default_configuration[0].options[1].name = threads
+nscd__default_configuration[0].options[1].value = 4
+nscd__default_configuration[0].options[1].state = comment
+nscd__default_configuration[0].options[2].name = max_threads
+nscd__default_configuration[0].options[2].value = 32
+nscd__default_configuration[0].options[2].state = comment
+nscd__default_configuration[0].options[3].name = server_user
+nscd__default_configuration[0].options[3].value = {{ "unscd"
+                   if (nscd__flavor == "unscd")
+                   else "nobody" }}
+
+nscd__default_configuration[0].options[3].state = {{ "present"
+                   if (nscd__flavor == "unscd")
+                   else "comment" }}
+
+nscd__default_configuration[0].options[4].name = stat_user
+nscd__default_configuration[0].options[4].value = somebody
+nscd__default_configuration[0].options[4].state = comment
+nscd__default_configuration[0].options[5].name = debug_level
+nscd__default_configuration[0].options[5].value = 0
+nscd__default_configuration[0].options[6].name = reload_count
+nscd__default_configuration[0].options[6].value = 5
+nscd__default_configuration[0].options[6].state = comment
+nscd__default_configuration[0].options[7].name = paranoia
+nscd__default_configuration[0].options[7].value = False
+nscd__default_configuration[0].options[8].name = restart_interval
+nscd__default_configuration[0].options[8].value = 3600
+nscd__default_configuration[0].options[8].state = comment
+nscd__default_configuration[1].name = passwd
+nscd__default_configuration[1].enable_cache = True
+nscd__default_configuration[1].positive_time_to_live = 600
+nscd__default_configuration[1].negative_time_to_live = 20
+nscd__default_configuration[1].suggested_size = 1001
+nscd__default_configuration[1].check_files = True
+nscd__default_configuration[1].persistent = True
+nscd__default_configuration[1].shared = True
+nscd__default_configuration[1].max_db_size = 33554432
+nscd__default_configuration[1].auto_propagate = True
+nscd__default_configuration[2].name = group
+nscd__default_configuration[2].enable_cache = True
+nscd__default_configuration[2].positive_time_to_live = 3600
+nscd__default_configuration[2].negative_time_to_live = 60
+nscd__default_configuration[2].suggested_size = 1001
+nscd__default_configuration[2].check_files = True
+nscd__default_configuration[2].persistent = True
+nscd__default_configuration[2].shared = True
+nscd__default_configuration[2].max_db_size = 33554432
+nscd__default_configuration[2].auto_propagate = True
+nscd__default_configuration[3].name = hosts
+nscd__default_configuration[3].comment = hosts caching is broken with gethostby* calls, hence is now disabled
+by default. Specifically, the caching does not obey DNS TTLs, and
+thus could lead to problems if the positive-time-to-live is
+significantly larger than the actual TTL.
+
+You should really use a caching nameserver instead of nscd for this
+sort of request. However, you can easily re-enable this by default.
+
+nscd__default_configuration[3].enable_cache = False
+nscd__default_configuration[3].positive_time_to_live = 3600
+nscd__default_configuration[3].negative_time_to_live = 20
+nscd__default_configuration[3].suggested_size = 1001
+nscd__default_configuration[3].check_files = True
+nscd__default_configuration[3].persistent = True
+nscd__default_configuration[3].shared = True
+nscd__default_configuration[3].max_db_size = 33554432
+nscd__default_configuration[3].state = comment
+nscd__default_configuration[4].name = services
+nscd__default_configuration[4].enable_cache = True
+nscd__default_configuration[4].positive_time_to_live = 28800
+nscd__default_configuration[4].negative_time_to_live = 20
+nscd__default_configuration[4].suggested_size = 1001
+nscd__default_configuration[4].check_files = True
+nscd__default_configuration[4].persistent = True
+nscd__default_configuration[4].shared = True
+nscd__default_configuration[4].max_db_size = 33554432
+nscd__default_configuration[4].state = {{ "absent"
+               if (nscd__flavor == "unscd")
+               else "present" }}
+
+nscd__default_configuration[5].name = netgroup
+nscd__default_configuration[5].enable_cache = True
+nscd__default_configuration[5].positive_time_to_live = 28800
+nscd__default_configuration[5].negative_time_to_live = 20
+nscd__default_configuration[5].suggested_size = 1001
+nscd__default_configuration[5].check_files = True
+nscd__default_configuration[5].persistent = True
+nscd__default_configuration[5].shared = True
+nscd__default_configuration[5].max_db_size = 33554432
+nscd__default_configuration[5].state = {{ "absent"
+               if (nscd__flavor == "unscd")
+               else "present" }}
+
+nscd__combined_configuration = {{ nscd__default_configuration
+                                  + nscd__configuration
+                                  + nscd__group_configuration
+                                  + nscd__host_configuration }}
+

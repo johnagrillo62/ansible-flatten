@@ -1,0 +1,46 @@
+[0].hosts = all
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].roles[0] = geerlingguy.passenger
+[0].tasks[0].name = Ensure demo application is at correct release.
+[0].tasks[0].git.repo = https://github.com/geerlingguy/demo-rails-app.git
+[0].tasks[0].git.version = {{ app_version }}
+[0].tasks[0].git.dest = {{ app_directory }}
+[0].tasks[0].git.accept_hostkey = true
+[0].tasks[0].git.force = true
+[0].tasks[0].register = app_updated
+[0].tasks[0].notify = restart nginx
+[0].tasks[0].become = true
+[0].tasks[0].become_user = {{ app_user }}
+[0].tasks[1].name = Ensure secrets file is present.
+[0].tasks[1].template.src = templates/secrets.yml.j2
+[0].tasks[1].template.dest = {{ app_directory }}/config/secrets.yml
+[0].tasks[1].template.owner = {{ app_user }}
+[0].tasks[1].template.group = {{ app_user }}
+[0].tasks[1].template.mode = 0664
+[0].tasks[1].notify = restart nginx
+[0].tasks[2].name = Install required dependencies with bundler.
+[0].tasks[2].command = bundle install --path vendor/bundle chdir={{ app_directory }}
+[0].tasks[2].when = app_updated.changed == true
+[0].tasks[2].notify = restart nginx
+[0].tasks[3].name = Check if database exists.
+[0].tasks[3].stat = path={{ app_directory }}/db/{{ app_environment.RAILS_ENV }}.sqlite3
+[0].tasks[3].register = app_db_exists
+[0].tasks[4].name = Create database.
+[0].tasks[4].command = bundle exec rake db:create chdir={{ app_directory }}
+[0].tasks[4].when = app_db_exists.stat.exists == false
+[0].tasks[4].notify = restart nginx
+[0].tasks[5].name = Perform deployment-related rake tasks.
+[0].tasks[5].command = {{ item }} chdir={{ app_directory }}
+[0].tasks[5].with_items[0] = bundle exec rake db:migrate
+[0].tasks[5].with_items[1] = bundle exec rake assets:precompile
+[0].tasks[5].environment = {{ app_environment }}
+[0].tasks[5].when = app_updated.changed == true
+[0].tasks[5].notify = restart nginx
+[0].tasks[6].name = Ensure demo application has correct user for files.
+[0].tasks[6].file.path = {{ app_directory }}
+[0].tasks[6].file.state = directory
+[0].tasks[6].file.owner = {{ app_user }}
+[0].tasks[6].file.group = {{ app_user }}
+[0].tasks[6].file.recurse = yes
+[0].tasks[6].notify = restart nginx

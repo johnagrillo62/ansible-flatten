@@ -1,0 +1,3 @@
+docker_package_info.state = latest
+docker_package_info.pkgs[0] = docker
+docker_package_info.pkgs[1] = containerd

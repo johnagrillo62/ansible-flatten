@@ -1,0 +1,4 @@
+~d0.name = Restart opensearch
+~d1.ansible.builtin.service = 
+~d2.name = 'opensearch'
+~d2.state = 'restarted'

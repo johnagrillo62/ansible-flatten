@@ -1,0 +1,3 @@
+~d0.kubeadm_patches_dir = "{{ kube_config_dir }}/patches"
+~d0.kubeadm_patches = []
+~d0.kubeadm_ignore_preflight_errors = []

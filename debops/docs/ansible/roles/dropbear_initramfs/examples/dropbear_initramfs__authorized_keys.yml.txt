@@ -1,0 +1,2 @@
+dropbear_initramfs__authorized_keys[0].sshkeys = {{ lookup("file", "/path/to/admin23.pub") }}
+dropbear_initramfs__authorized_keys[0].exclusive = True

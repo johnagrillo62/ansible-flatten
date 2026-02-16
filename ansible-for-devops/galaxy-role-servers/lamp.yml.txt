@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].become = yes
+[0].roles[0] = geerlingguy.mysql
+[0].roles[1] = geerlingguy.apache
+[0].roles[2] = geerlingguy.php
+[0].roles[3] = geerlingguy.php-mysql

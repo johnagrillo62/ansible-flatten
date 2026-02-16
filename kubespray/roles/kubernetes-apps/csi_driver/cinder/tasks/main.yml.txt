@@ -1,0 +1,45 @@
+~d0.name = Cinder CSI Driver | Check Cinder credentials
+~d1.include_tasks = cinder-credential-check.yml
+~d0.name = Cinder CSI Driver | Write cacert file
+~d1.include_tasks = cinder-write-cacert.yml
+~d1.run_once = true
+~d1.loop = "{{ groups['k8s_cluster'] }}"
+~d1.loop_control = 
+~d2.loop_var = delegate_host_to_write_cacert
+~d1.when = 
+~d0.name = Cinder CSI Driver | Write Cinder cloud-config
+~d1.template = 
+~d2.src = "cinder-csi-cloud-config.j2"
+~d2.dest = "{{ kube_config_dir }}/cinder_cloud_config"
+~d2.group = "{{ kube_cert_group }}"
+~d2.mode = "0640"
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = Cinder CSI Driver | Get base64 cloud-config
+~d1.slurp = 
+~d2.src = "{{ kube_config_dir }}/cinder_cloud_config"
+~d1.register = cloud_config_secret
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = Cinder CSI Driver | Generate Manifests
+~d1.template = 
+~d2.src = "{{ item.file }}.j2"
+~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
+~d2.mode = "0644"
+~d1.with_items = 
+~d2.{name = cinder-csi-driver, file: cinder-csi-driver.yml}
+~d2.{name = cinder-csi-cloud-config-secret, file: cinder-csi-cloud-config-secret.yml}
+~d2.{name = cinder-csi-controllerplugin, file: cinder-csi-controllerplugin-rbac.yml}
+~d2.{name = cinder-csi-controllerplugin, file: cinder-csi-controllerplugin.yml}
+~d2.{name = cinder-csi-nodeplugin, file: cinder-csi-nodeplugin-rbac.yml}
+~d2.{name = cinder-csi-nodeplugin, file: cinder-csi-nodeplugin.yml}
+~d2.{name = cinder-csi-poddisruptionbudget, file: cinder-csi-poddisruptionbudget.yml}
+~d1.register = cinder_csi_manifests
+~d1.when = inventory_hostname == groups['kube_control_plane'][0]
+~d0.name = Cinder CSI Driver | Apply Manifests
+~d1.kube = 
+~d2.kubectl = "{{ bin_dir }}/kubectl"
+~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
+~d2.state = "latest"
+~d1.with_items = 
+~d1.when = 
+~d1.loop_control = 
+~d2.label = "{{ item.item.file }}"

@@ -1,0 +1,24 @@
+mailman__hyperkitty_original_configuration[0].name = general
+mailman__hyperkitty_original_configuration[0].options[0].name = base_url
+mailman__hyperkitty_original_configuration[0].options[0].comment = This is your HyperKitty installation, preferably on the localhost. This
+address will be used by Mailman to forward incoming emails to HyperKitty
+for archiving. It does not need to be publicly available, in fact it's
+better if it is not.
+
+mailman__hyperkitty_original_configuration[0].options[0].value = http://localhost/mailman3/hyperkitty/
+mailman__hyperkitty_original_configuration[0].options[1].name = api_key
+mailman__hyperkitty_original_configuration[0].options[1].comment = Shared API key, must be the identical to the value in HyperKitty's
+settings.
+
+mailman__hyperkitty_original_configuration[0].options[1].value = SecretArchiverAPIKey
+mailman__hyperkitty_default_configuration[0].name = general
+mailman__hyperkitty_default_configuration[0].options[0].name = base_url
+mailman__hyperkitty_default_configuration[0].options[0].value = {{ "https://" + mailman__fqdn + "/hyperkitty/" }}
+mailman__hyperkitty_default_configuration[0].options[1].name = api_key
+mailman__hyperkitty_default_configuration[0].options[1].value = {{ ansible_local.mailman.archiver_key | d("SecretArchiverAPIKey") }}
+mailman__hyperkitty_combined_configuration = {{ mailman__hyperkitty_original_configuration
+                                                + mailman__hyperkitty_default_configuration
+                                                + mailman__hyperkitty_configuration
+                                                + mailman__hyperkitty_group_configuration
+                                                + mailman__hyperkitty_host_configuration }}
+

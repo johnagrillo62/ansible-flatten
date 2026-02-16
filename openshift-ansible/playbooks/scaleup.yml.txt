@@ -1,0 +1,13 @@
+[0].name = Pre-scaleup hostfile checks
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = no
+[0].tasks[0].import_role.name = openshift_node
+[0].tasks[0].import_role.tasks_from = scaleup_checks.yml
+[1].name = Pre-scaleup checks
+[1].hosts = new_workers
+[1].tasks[0].import_role.name = openshift_node
+[1].tasks[0].import_role.tasks_from = version_checks.yml
+[2].name = install nodes
+[2].hosts = new_workers
+[2].roles[0] = openshift_node

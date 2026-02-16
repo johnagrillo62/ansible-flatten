@@ -1,0 +1,4 @@
+~d0.name = Restart etherpad-lite
+~d1.ansible.builtin.service = 
+~d2.name = 'etherpad-lite'
+~d2.state = 'restarted'

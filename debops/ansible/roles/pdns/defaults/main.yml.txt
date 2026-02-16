@@ -1,0 +1,198 @@
+pdns__base_packages = {{ ["pdns-server"]
+                         + (["pdns-backend-pgsql"]
+                            if "gpgsql" in pdns__backends
+                            else []) }}
+
+pdns__allow[0] = 0.0.0.0/0
+pdns__allow[1] = ::/0
+pdns__local_address = {{ (ansible_all_ipv4_addresses
+                          + ansible_all_ipv6_addresses)
+                         | difference(ansible_all_ipv6_addresses | d([])
+                                      | ansible.utils.ipaddr("link-local")) }}
+
+pdns__local_port = 53
+pdns__primary = False
+pdns__secondary = False
+pdns__autosecondary = False
+pdns__resolver = {{ ansible_local.resolvconf.nameservers[0]
+                     | d(ansible_dns.nameservers[0]) }} 
+pdns__backends[0] = gpgsql
+pdns__api = {{ True
+               if "debops_service_pdns_nginx" in group_names
+               else False }}
+
+pdns__api_key = {{ lookup("password", secret + "/pdns/" + ansible_fqdn
+                          + "/api_key chars=ascii_letters,digits length=22")
+                   if pdns__api
+                   else "" }}
+
+pdns__metrics = {{ pdns__api }}
+pdns__http_port = 16836
+pdns__nginx_fqdn = powerdns.{{ ansible_domain }}
+pdns__dnsupdate = True
+pdns__postgresql_delegate_to = {{ ansible_local.postgresql.delegate_to
+                                   | d(ansible_fqdn) }} 
+pdns__postgresql_server = {{ ansible_local.postgresql.server | d("localhost") }}
+pdns__postgresql_port = {{ ansible_local.postgresql.port | d("5432") }}
+pdns__postgresql_database = pdns
+pdns__postgresql_role = pdns
+pdns__postgresql_password = {{ lookup("password", secret + "/postgresql/"
+                                      + pdns__postgresql_delegate_to + "/"
+                                      + pdns__postgresql_port + "/credentials/"
+                                      + pdns__postgresql_role
+                                      + "/password chars=ascii_letters,digits "
+                                      + "length=22")
+                               if "gpgsql" in pdns__backends
+                               else "" }}
+
+pdns__postgresql_schema = /usr/share/pdns-backend-pgsql/schema/schema.pgsql.sql
+pdns__postgresql_dnssec = True
+pdns__original_configuration[0].name = include-dir
+pdns__original_configuration[0].comment = Directory to scan for additional config files.
+pdns__original_configuration[0].value = /etc/powerdns/pdns.d
+pdns__original_configuration[1].name = launch
+pdns__original_configuration[1].comment = Which backends to launch and order to query them in.
+pdns__original_configuration[1].value = 
+pdns__original_configuration[2].name = security-poll-suffix
+pdns__original_configuration[2].comment = Zone name from which to query security update notifications.
+pdns__original_configuration[2].value = 
+pdns__original_configuration[3].name = setgid
+pdns__original_configuration[3].comment = Run as an unprivileged group instead of root. Explicitly configuring this
+is no longer necessary since pdns 4.3.0.
+pdns__original_configuration[3].value = pdns
+pdns__original_configuration[3].state = {{ "present"
+               if ansible_local.pdns.version is version("4.3.0", "<")
+               else "absent" }}
+
+pdns__original_configuration[4].name = setuid
+pdns__original_configuration[4].comment = Run as an unprivileged user instead of root. Explicitly configuring this
+is no longer necessary since pdns 4.3.0.
+pdns__original_configuration[4].value = pdns
+pdns__original_configuration[4].state = {{ "present"
+               if ansible_local.pdns.version is version("4.3.0", "<")
+               else "absent" }}
+
+pdns__default_configuration[0].name = local-address
+pdns__default_configuration[0].comment = Local IP addresses to which we bind. Accepts IPv6 addresses since pdns
+4.3.0.
+pdns__default_configuration[0].value = {{ (pdns__local_address if ansible_local.pdns.version is version("4.3.0", ">=")
+                else (pdns__local_address | ansible.utils.ipv4)) | join(",") }} 
+pdns__default_configuration[1].name = local-ipv6
+pdns__default_configuration[1].comment = Local IPv6 addresses to which we bind. Will be deprecated in pdns 4.3.0
+and removed in pdns 4.5.0.
+pdns__default_configuration[1].value = {{ pdns__local_address | ansible.utils.ipv6 | join(",") }}
+pdns__default_configuration[1].state = {{ "present"
+               if ansible_local.pdns.version is version("4.3.0", "<")
+               else "absent" }}
+
+pdns__default_configuration[2].name = local-port
+pdns__default_configuration[2].comment = Local TCP and UDP port to bind to.
+pdns__default_configuration[2].value = {{ pdns__local_port }}
+pdns__default_configuration[3].name = resolver
+pdns__default_configuration[3].comment = Recursive DNS server to use for ALIAS lookups and the internal stub
+resolver. Only one address can be given.
+pdns__default_configuration[3].value = {{ pdns__resolver }}
+pdns__default_configuration[4].name = {{ "primary"
+              if ansible_local.pdns.version is version("4.5.0", ">=")
+              else "master" }}
+
+pdns__default_configuration[4].comment = Turn on primary operation. Note: the name of this setting was changed
+with the release of pdns 4.5.0.
+pdns__default_configuration[4].value = True
+pdns__default_configuration[4].state = {{ "present" if pdns__primary else "absent" }}
+pdns__default_configuration[5].name = {{ "secondary"
+              if ansible_local.pdns.version is version("4.5.0", ">=")
+              else "slave" }}
+
+pdns__default_configuration[5].comment = Turn on secondary operation. Note: the name of this setting was changed
+with the release of pdns 4.5.0.
+pdns__default_configuration[5].value = True
+pdns__default_configuration[5].state = {{ "present" if pdns__secondary else "absent" }}
+pdns__default_configuration[6].name = {{ "autosecondary"
+              if ansible_local.pdns.version is version("4.5.0", ">=")
+              else "superslave"
+                   if ansible_local.pdns.version is version("4.2.0", ">=")
+                   else "supermaster" }}
+
+pdns__default_configuration[6].comment = Turn on autosecondary operation. Note: the name of this setting was
+changed with the release of pdns 4.2.0, and once more with the release of
+pdns 4.5.0.
+pdns__default_configuration[6].value = True
+pdns__default_configuration[6].state = {{ "present" if pdns__autosecondary else "absent" }}
+pdns__default_configuration[7].name = api
+pdns__default_configuration[7].comment = Enable/Disable the built-in webserver and HTTP API.
+pdns__default_configuration[7].value = True
+pdns__default_configuration[7].state = {{ "present" if pdns__api else "absent" }}
+pdns__default_configuration[8].name = api-key
+pdns__default_configuration[8].comment = Static pre-shared authentication key for access to the REST API.
+pdns__default_configuration[8].value = {{ pdns__api_key }}
+pdns__default_configuration[8].state = {{ "present" if pdns__api else "absent" }}
+pdns__default_configuration[9].name = dnsupdate
+pdns__default_configuration[9].comment = Enable/Disable DNS update (RFC2136) support.
+pdns__default_configuration[9].value = True
+pdns__default_configuration[9].state = {{ "present" if pdns__dnsupdate else "absent" }}
+pdns__default_configuration[10].name = allow-dnsupdate-from
+pdns__default_configuration[10].comment = Allow DNS updates from these IP ranges.
+pdns__default_configuration[10].value = {{ pdns__allow_dnsupdate_from | join(",") }}
+pdns__default_configuration[10].state = {{ "present" if pdns__dnsupdate else "absent" }}
+pdns__default_configuration[11].name = launch
+pdns__default_configuration[11].comment = Which backends to launch and order to query them in.
+pdns__default_configuration[11].value = {{ pdns__backends | join(",") }}
+pdns__default_configuration[12].name = gpgsql-host
+pdns__default_configuration[12].comment = The PostgreSQL backend host.
+pdns__default_configuration[12].value = {{ pdns__postgresql_server }}
+pdns__default_configuration[12].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[13].name = gpgsql-port
+pdns__default_configuration[13].comment = The PostgreSQL backend port.
+pdns__default_configuration[13].value = {{ pdns__postgresql_port }}
+pdns__default_configuration[13].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[14].name = gpgsql-dbname
+pdns__default_configuration[14].comment = The PostgreSQL backend database name.
+pdns__default_configuration[14].value = {{ pdns__postgresql_database }}
+pdns__default_configuration[14].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[15].name = gpgsql-user
+pdns__default_configuration[15].comment = The username to authenticate to the PostgreSQL backend with.
+pdns__default_configuration[15].value = {{ pdns__postgresql_role }}
+pdns__default_configuration[15].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[16].name = gpgsql-password
+pdns__default_configuration[16].comment = The password to authenticate to the PostgreSQL backend with.
+pdns__default_configuration[16].value = {{ pdns__postgresql_password }}
+pdns__default_configuration[16].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[17].name = gpgsql-dnssec
+pdns__default_configuration[17].comment = Whether to enable DNSSEC processing for the PostgreSQL backend.
+pdns__default_configuration[17].value = {{ pdns__postgresql_dnssec }}
+pdns__default_configuration[17].state = {{ "present" if "gpgsql" in pdns__backends else "absent" }}
+pdns__default_configuration[18].name = webserver
+pdns__default_configuration[18].comment = Enable/Disable the built-in webserver and metrics endpoint.
+pdns__default_configuration[18].value = True
+pdns__default_configuration[18].state = {{ "present" if pdns__metrics else "absent" }}
+pdns__default_configuration[19].name = webserver-port
+pdns__default_configuration[19].comment = The TCP port the built-in webserver will listen on.
+pdns__default_configuration[19].value = {{ pdns__http_port }}
+pdns__default_configuration[19].state = {{ "present" if pdns__api or pdns__metrics else "absent" }}
+pdns__combined_configuration = {{ pdns__original_configuration
+                                  + pdns__default_configuration
+                                  + pdns__configuration
+                                  + pdns__group_configuration
+                                  + pdns__host_configuration }}
+
+pdns__etc_services__dependent_list[0].name = powerdns-http
+pdns__etc_services__dependent_list[0].port = {{ pdns__http_port }}
+pdns__etc_services__dependent_list[0].protocols[0] = tcp
+pdns__etc_services__dependent_list[0].comment = Added by debops.pdns Ansible role.
+pdns__ferm__dependent_rules[0].name = pdns
+pdns__ferm__dependent_rules[0].by_role = debops.pdns
+pdns__ferm__dependent_rules[0].type = accept
+pdns__ferm__dependent_rules[0].protocol[0] = tcp
+pdns__ferm__dependent_rules[0].protocol[1] = udp
+pdns__ferm__dependent_rules[0].dport[0] = {{ pdns__local_port }}
+pdns__ferm__dependent_rules[0].saddr = {{ pdns__allow }}
+pdns__nginx__dependent_servers[0].name = {{ pdns__nginx_fqdn }}
+pdns__nginx__dependent_servers[0].filename = debops.pdns
+pdns__nginx__dependent_servers[0].allow = {{ pdns__nginx_allow }}
+pdns__nginx__dependent_servers[0].type = proxy
+pdns__nginx__dependent_servers[0].proxy_pass = http://127.0.0.1:{{ pdns__http_port }}
+pdns__nginx__dependent_servers[0].webroot_create = False
+pdns__postgresql__dependent_roles[0].role = {{ pdns__postgresql_role }}
+pdns__postgresql__dependent_roles[0].port = {{ pdns__postgresql_port }}
+pdns__postgresql__dependent_roles[0].password = {{ pdns__postgresql_password }}

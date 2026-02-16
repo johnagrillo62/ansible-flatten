@@ -1,0 +1,1 @@
+~d0.cni_bin_owner = "{{ kube_owner }}"

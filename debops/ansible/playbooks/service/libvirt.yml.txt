@@ -1,0 +1,12 @@
+~d0.name = Manage libvirt hosts
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_libvirt' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = python
+~d3.tags = [ 'role::python', 'skip::python' ]
+~d3.python__dependent_packages3 = 
+~d3.python__dependent_packages2 = 
+~d2.role = libvirt
+~d3.tags = [ 'role::libvirt', 'skip::libvirt' ]

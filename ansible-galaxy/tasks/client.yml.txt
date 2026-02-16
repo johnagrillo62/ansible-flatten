@@ -1,0 +1,75 @@
+[0].name = Build Galaxy client
+[0].block[0].name = Ensure client_build_hash.txt exists
+[0].block[0].copy.content = new-unbuilt
+[0].block[0].copy.dest = {{ galaxy_static_dir }}/client_build_hash.txt
+[0].block[0].copy.mode = 0644
+[0].block[0].copy.force = no
+[0].block[1].name = Get current client commit id
+[0].block[1].slurp.src = {{ galaxy_static_dir }}/client_build_hash.txt
+[0].block[1].register = __galaxy_client_build_version_result
+[0].block[2].name = Check if Galaxy was checked out from git
+[0].block[2].stat.path = {{ galaxy_server_dir }}/.git
+[0].block[2].register = __galaxy_from_git
+[0].block[3].name = Get current Galaxy commit id
+[0].block[3].git.dest = {{ galaxy_server_dir }}
+[0].block[3].git.repo = {{ galaxy_repo }}
+[0].block[3].git.update = no
+[0].block[3].register = __galaxy_git_stat_result
+[0].block[3].when = __galaxy_from_git.stat.exists
+[0].block[4].name = Set client build version fact
+[0].block[4].set_fact.__galaxy_client_build_version = {{ galaxy_client_force_build | ternary('FORCE-BUILD', __galaxy_client_build_version_result.content | b64decode | trim) }}
+[0].block[5].name = Set galaxy commit ID fact
+[0].block[5].set_fact.__galaxy_current_commit_id = {{ __galaxy_git_stat_result.after if __galaxy_from_git.stat.exists else 'none' }}
+[0].block[5].when = __galaxy_from_git.stat.exists
+[0].block[6].name = Build Galaxy client if needed
+[0].block[6].block[0].name = Report client version mismatch
+[0].block[6].block[0].debug.msg = Galaxy client is out of date: {{ __galaxy_client_build_version }} != {{ __galaxy_current_commit_id }}
+[0].block[6].block[0].changed_when = true
+[0].block[6].block[0].when = __galaxy_from_git.stat.exists
+[0].block[6].block[1].name = Include client build tools process
+[0].block[6].block[1].include_tasks = _inc_client_install_tools.yml
+[0].block[6].block[2].name = Include client build process
+[0].block[6].block[2].include_tasks = _inc_client_build_{{ 'make' if galaxy_client_make_target is not none else 'steps' }}.yml
+[0].block[6].when = not __galaxy_from_git.stat.exists or (__galaxy_client_build_version != __galaxy_current_commit_id)
+[0].remote_user = {{ galaxy_remote_users.privsep | default(__galaxy_remote_user) }}
+[0].become = {{ true if galaxy_become_users.privsep is defined else __galaxy_become }}
+[0].become_user = {{ galaxy_become_users.privsep | default(__galaxy_become_user) }}
+[0].when = not galaxy_client_use_prebuilt
+[1].name = Install prebuilt client
+[1].block[0].name = Ensure prebuilt client is supported
+[1].block[0].assert.that[0] = __galaxy_major_version is version('23.0', '>=')
+[1].block[0].assert.success_msg = Prebuilt client is supported
+[1].block[0].assert.fail_msg = Prebuilt client is not supported for Galaxy version {{ __galaxy_major_version }}, '>= 23.0' required.
+[1].block[1].name = Include client install tools process
+[1].block[1].include_tasks = _inc_client_install_tools.yml
+[1].block[2].name = Install prebuilt client with yarn
+[1].block[2].yarn.executable = yarn --check-files
+[1].block[2].yarn.path = {{ galaxy_server_dir }}
+[1].block[2].environment.PATH = {{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}
+[1].block[2].environment.VIRTUAL_ENV = {{ galaxy_venv_dir }}
+[1].block[2].register = __yarn_install
+[1].block[2].changed_when = 'already up-to-date' not in __yarn_install.out | lower
+[1].block[2].when = __galaxy_major_version is version('26.0', '<')
+[1].block[3].name = Install prebuilt client with pnpm
+[1].block[3].command = pnpm install
+[1].block[3].args.chdir = {{ galaxy_server_dir }}
+[1].block[3].environment.PATH = {{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}
+[1].block[3].environment.VIRTUAL_ENV = {{ galaxy_venv_dir }}
+[1].block[3].register = __pnpm_install
+[1].block[3].when = __galaxy_major_version is version('26.0', '>=')
+[1].block[4].name = Stage prebuilt client (yarn)
+[1].block[4].command = yarn run stage
+[1].block[4].args.chdir = {{ galaxy_server_dir }}
+[1].block[4].environment.PATH = {{ galaxy_server_dir }}/client/node_modules/.bin:{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}
+[1].block[4].environment.VIRTUAL_ENV = {{ galaxy_venv_dir }}
+[1].block[4].when = __galaxy_major_version is version('26.0', '<') and __yarn_install.changed
+[1].block[5].name = Stage prebuilt client (pnpm)
+[1].block[5].command = pnpm run stage
+[1].block[5].args.chdir = {{ galaxy_server_dir }}
+[1].block[5].environment.PATH = {{ galaxy_server_dir }}/client/node_modules/.bin:{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}
+[1].block[5].environment.VIRTUAL_ENV = {{ galaxy_venv_dir }}
+[1].block[5].when = __galaxy_major_version is version('26.0', '>=') and __pnpm_install.changed
+[1].remote_user = {{ galaxy_remote_users.privsep | default(__galaxy_remote_user) }}
+[1].become = {{ true if galaxy_become_users.privsep is defined else __galaxy_become }}
+[1].become_user = {{ galaxy_become_users.privsep | default(__galaxy_become_user) }}
+[1].when = galaxy_client_use_prebuilt

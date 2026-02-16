@@ -1,0 +1,5 @@
+~d0.name = Render AWX Dockerfile and sources
+~d1.hosts = localhost
+~d1.gather_facts = true
+~d1.roles = 
+~d2.{role = sources}

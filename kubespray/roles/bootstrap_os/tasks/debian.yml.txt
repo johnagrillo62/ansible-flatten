@@ -1,0 +1,35 @@
+[0].name = Check if bootstrap is needed
+[0].raw = which python3
+[0].register = need_bootstrap
+[0].failed_when = false
+[0].changed_when = false
+[0].check_mode = false
+[0].tags[0] = facts
+[1].name = Check http::proxy in apt configuration files
+[1].raw = apt-config dump | grep -qsi 'Acquire::http::proxy'
+[1].register = need_http_proxy
+[1].failed_when = false
+[1].changed_when = false
+[1].check_mode = false
+[2].name = Add http_proxy to /etc/apt/apt.conf if http_proxy is defined
+[2].raw = echo 'Acquire::http::proxy "{{ http_proxy }}";' >> /etc/apt/apt.conf
+[2].become = true
+[2].when[0] = http_proxy is defined
+[2].when[1] = need_http_proxy.rc != 0
+[2].when[2] = not skip_http_proxy_on_os_packages
+[3].name = Check https::proxy in apt configuration files
+[3].raw = apt-config dump | grep -qsi 'Acquire::https::proxy'
+[3].register = need_https_proxy
+[3].failed_when = false
+[3].changed_when = false
+[3].check_mode = false
+[4].name = Add https_proxy to /etc/apt/apt.conf if https_proxy is defined
+[4].raw = echo 'Acquire::https::proxy "{{ https_proxy }}";' >> /etc/apt/apt.conf
+[4].become = true
+[4].when[0] = https_proxy is defined
+[4].when[1] = need_https_proxy.rc != 0
+[4].when[2] = not skip_http_proxy_on_os_packages
+[5].name = Install python3
+[5].raw = apt-get update && \ DEBIAN_FRONTEND=noninteractive apt-get install -y python3-minimal
+[5].become = true
+[5].when[0] = need_bootstrap.rc != 0

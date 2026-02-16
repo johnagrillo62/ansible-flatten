@@ -1,0 +1,5 @@
+~d0.name = Prepare configuration of dependent Ansible roles
+~d1.ansible.builtin.set_fact = 
+~d2.ifupdown__env_ferm__dependent_rules = '{{ ifupdown__ferm__dependent_rules }}'
+~d2.ifupdown__env_kmod__dependent_load = '{{ ifupdown__kmod__dependent_load }}'
+~d2.ifupdown__env_sysctl__dependent_parameters = '{{ ifupdown__sysctl__dependent_parameters }}'

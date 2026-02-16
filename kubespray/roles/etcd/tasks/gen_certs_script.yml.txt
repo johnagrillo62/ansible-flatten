@@ -1,0 +1,110 @@
+[0].name = Gen_certs | create etcd cert dir
+[0].file.path = {{ etcd_cert_dir }}
+[0].file.group = {{ etcd_cert_group }}
+[0].file.state = directory
+[0].file.owner = {{ etcd_owner }}
+[0].file.mode = 0700
+[1].name = Gen_certs | create etcd script dir (on {{ groups['etcd'][0] }})
+[1].file.path = {{ etcd_script_dir }}
+[1].file.state = directory
+[1].file.owner = root
+[1].file.mode = 0700
+[1].run_once = true
+[1].when = inventory_hostname == groups['etcd'][0]
+[2].name = Gen_certs | write openssl config
+[2].template.src = openssl.conf.j2
+[2].template.dest = {{ etcd_config_dir }}/openssl.conf
+[2].template.mode = 0640
+[2].run_once = true
+[2].delegate_to = {{ groups['etcd'][0] }}
+[2].when[0] = gen_certs | default(false)
+[2].when[1] = inventory_hostname == groups['etcd'][0]
+[3].name = Gen_certs | copy certs generation script
+[3].template.src = make-ssl-etcd.sh.j2
+[3].template.dest = {{ etcd_script_dir }}/make-ssl-etcd.sh
+[3].template.mode = 0700
+[3].run_once = true
+[3].when[0] = inventory_hostname == groups['etcd'][0]
+[4].name = Gen_certs | run cert generation script for etcd and kube control plane nodes
+[4].command = bash -x {{ etcd_script_dir }}/make-ssl-etcd.sh -f {{ etcd_config_dir }}/openssl.conf -d {{ etcd_cert_dir }}
+[4].environment.MASTERS = {{ groups['gen_master_certs_True'] | ansible.builtin.intersect(groups['etcd']) | join(' ') }}
+[4].environment.HOSTS = {{ groups['gen_node_certs_True'] | ansible.builtin.intersect(groups['kube_control_plane']) | join(' ') }}
+[4].run_once = true
+[4].delegate_to = {{ groups['etcd'][0] }}
+[4].when = gen_certs | default(false)
+[4].notify = Set etcd_secret_changed
+[5].name = Gen_certs | run cert generation script for all clients
+[5].command = bash -x {{ etcd_script_dir }}/make-ssl-etcd.sh -f {{ etcd_config_dir }}/openssl.conf -d {{ etcd_cert_dir }}
+[5].environment.HOSTS = {{ groups['gen_node_certs_True'] | ansible.builtin.intersect(groups['k8s_cluster']) | join(' ') }}
+[5].run_once = true
+[5].delegate_to = {{ groups['etcd'][0] }}
+[5].when[0] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[5].when[1] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[5].when[2] = gen_certs | default(false)
+[5].notify = Set etcd_secret_changed
+[6].name = Gen_certs | Gather etcd member/admin and kube_control_plane client certs from first etcd node
+[6].slurp.src = {{ item }}
+[6].register = etcd_master_certs
+[6].with_items[0] = {{ etcd_cert_dir }}/ca.pem
+[6].with_items[1] = {{ etcd_cert_dir }}/ca-key.pem
+[6].with_items[2] = [{% for node in groups['etcd'] %} '{{ etcd_cert_dir }}/admin-{{ node }}.pem', '{{ etcd_cert_dir }}/admin-{{ node }}-key.pem', '{{ etcd_cert_dir }}/member-{{ node }}.pem', '{{ etcd_cert_dir }}/member-{{ node }}-key.pem', {% endfor %}]
+[6].with_items[3] = [{% for node in (groups['kube_control_plane']) %} '{{ etcd_cert_dir }}/node-{{ node }}.pem', '{{ etcd_cert_dir }}/node-{{ node }}-key.pem', {% endfor %}]
+[6].delegate_to = {{ groups['etcd'][0] }}
+[6].when[0] = ('etcd' in group_names)
+[6].when[1] = sync_certs | default(false)
+[6].when[2] = inventory_hostname != groups['etcd'][0]
+[6].notify = Set etcd_secret_changed
+[7].name = Gen_certs | Write etcd member/admin and kube_control_plane client certs to other etcd nodes
+[7].copy.dest = {{ item.item }}
+[7].copy.content = {{ item.content | b64decode }}
+[7].copy.group = {{ etcd_cert_group }}
+[7].copy.owner = {{ etcd_owner }}
+[7].copy.mode = 0640
+[7].with_items = {{ etcd_master_certs.results }}
+[7].when[0] = ('etcd' in group_names)
+[7].when[1] = sync_certs | default(false)
+[7].when[2] = inventory_hostname != groups['etcd'][0]
+[7].loop_control.label = {{ item.item }}
+[8].name = Gen_certs | Gather node certs from first etcd node
+[8].slurp.src = {{ item }}
+[8].register = etcd_master_node_certs
+[8].with_items[0] = [{% for node in groups['k8s_cluster'] %} '{{ etcd_cert_dir }}/node-{{ node }}.pem', '{{ etcd_cert_dir }}/node-{{ node }}-key.pem', {% endfor %}]
+[8].delegate_to = {{ groups['etcd'][0] }}
+[8].when[0] = ('etcd' in group_names)
+[8].when[1] = inventory_hostname != groups['etcd'][0]
+[8].when[2] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[8].when[3] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[8].notify = Set etcd_secret_changed
+[9].name = Gen_certs | Write node certs to other etcd nodes
+[9].copy.dest = {{ item.item }}
+[9].copy.content = {{ item.content | b64decode }}
+[9].copy.group = {{ etcd_cert_group }}
+[9].copy.owner = {{ etcd_owner }}
+[9].copy.mode = 0640
+[9].with_items = {{ etcd_master_node_certs.results }}
+[9].when[0] = ('etcd' in group_names)
+[9].when[1] = inventory_hostname != groups['etcd'][0]
+[9].when[2] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[9].when[3] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[9].loop_control.label = {{ item.item }}
+[10].name = Gen_certs | Generate etcd certs
+[10].include_tasks = gen_nodes_certs_script.yml
+[10].when[0] = ('kube_control_plane' in group_names) and sync_certs | default(false) and inventory_hostname not in groups['etcd']
+[11].name = Gen_certs | Generate etcd certs on nodes if needed
+[11].include_tasks = gen_nodes_certs_script.yml
+[11].when[0] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[11].when[1] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[11].when[2] = ('k8s_cluster' in group_names) and sync_certs | default(false) and inventory_hostname not in groups['etcd']
+[12].name = Gen_certs | Pretend all control plane have all certs (with symlinks)
+[12].file.state = link
+[12].file.src = {{ etcd_cert_dir }}/node-{{ inventory_hostname }}{{ item[0] }}.pem
+[12].file.dest = {{ etcd_cert_dir }}/node-{{ item[1] }}{{ item[0] }}.pem
+[12].file.mode = 0640
+[12].loop = {{ suffixes | product(groups['kube_control_plane']) }}
+[12].vars.suffixes[0] = 
+[12].vars.suffixes[1] = -key
+[12].when[0] = ('kube_control_plane' in group_names)
+[12].when[1] = item[1] != inventory_hostname
+[12].register = symlink_created
+[12].failed_when[0] = symlink_created is failed
+[12].failed_when[1] = ('refusing to convert from file to symlink' not in symlink_created.msg)

@@ -1,0 +1,53 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret
+[1].name = Check for Ansible version without known vulnerabilities
+[1]["ansible.builtin.assert"].that[0] = ansible_version.full is version_compare("2.2.3.0", ">=")
+[1]["ansible.builtin.assert"].msg = VULNERABLE or unsupported Ansible version DETECTED, please update to
+Ansible >= v2.2.3 or a newer!
+To skip, add "--skip-tags play::security-assertions" parameter. Refer to
+the changelog of debops.cryptsetup for details. Exiting.
+
+[1].run_once = True
+[1].delegate_to = localhost
+[1].tags[0] = play::security-assertions
+[1].tags[1] = role::cryptsetup:backup
+[2].name = Assert that combined device configuration is valid
+[2]["ansible.builtin.assert"].that[0] = (cryptsetup__combined_devices | map(attribute="ciphertext_block_device") | unique | length) == (cryptsetup__combined_devices | length)
+[2]["ansible.builtin.assert"].that[1] = (cryptsetup__combined_devices | map(attribute="name") | unique | length) == (cryptsetup__combined_devices | length)
+[2].run_once = True
+[2].delegate_to = localhost
+[3].name = Assert that /dev/shm/ is stored in RAM (assumed to be non-persistent)
+[3]["ansible.builtin.command"] = df /dev/shm --type tmpfs
+[3].changed_when = False
+[4].name = Ensure specified packages are in there desired state
+[4]["ansible.builtin.package"].name = {{ q("flattened", cryptsetup__base_packages) }}
+[4]["ansible.builtin.package"].state = present
+[4].register = cryptsetup__register_packages
+[4].until = cryptsetup__register_packages is succeeded
+[5].name = Create keyfile and backup directories on the remote system
+[5]["ansible.builtin.file"].path = {{ item.path }}
+[5]["ansible.builtin.file"].state = directory
+[5]["ansible.builtin.file"].owner = root
+[5]["ansible.builtin.file"].group = root
+[5]["ansible.builtin.file"].mode = 0700
+[5].when = item.condition
+[5].loop[0].path = {{ cryptsetup__keyfile_remote_location }}
+[5].loop[0].condition = {{ (cryptsetup__combined_devices
+                      | selectattr("remote_keyfile", "undefined") | list | length) > 0 }} 
+[5].loop[1].path = {{ cryptsetup__header_backup_remote_location }}
+[5].loop[1].condition = {{ ((cryptsetup__combined_devices
+                       | selectattr("backup_header", "defined")
+                       | selectattr("backup_header") | list | length) > 0) or
+                     (cryptsetup__header_backup | bool and ((cryptsetup__combined_devices
+                                                           | selectattr("backup_header", "undefined")
+                                                           | list | length) > 0)) }}
+
+[6].name = Manage Cryptsetup devices in parallel
+[6]["ansible.builtin.include_tasks"] = manage_devices.yml
+[6].when = cryptsetup__devices_execution_strategy == 'parallel'
+[6].vars.cryptsetup__process_devices = {{ cryptsetup__combined_devices }}
+[7].name = Manage Cryptsetup devices sequentially
+[7]["ansible.builtin.include_tasks"] = manage_devices.yml
+[7].when = cryptsetup__devices_execution_strategy == 'serial'
+[7].with_items = {{ cryptsetup__combined_devices }}
+[7].loop_control.loop_var = cryptsetup__process_device

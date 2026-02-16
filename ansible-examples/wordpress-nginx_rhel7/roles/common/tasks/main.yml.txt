@@ -1,0 +1,16 @@
+[0].name = Copy the NGINX repository definition
+[0].copy = src=nginx.repo dest=/etc/yum.repos.d/
+[1].name = Copy the EPEL repository definition
+[1].copy = src=epel.repo dest=/etc/yum.repos.d/
+[2].name = Copy the REMI repository definition
+[2].copy = src=remi.repo dest=/etc/yum.repos.d/
+[3].name = Create the GPG key for NGINX
+[3].copy = src=RPM-GPG-KEY-NGINX dest=/etc/pki/rpm-gpg
+[4].name = Create the GPG key for EPEL
+[4].copy = src=RPM-GPG-KEY-EPEL-7 dest=/etc/pki/rpm-gpg
+[5].name = Create the GPG key for REMI
+[5].copy = src=RPM-GPG-KEY-remi dest=/etc/pki/rpm-gpg
+[6].name = Install Firewalld
+[6].yum = name=firewalld state=present
+[7].name = Firewalld service state
+[7].service = name=firewalld state=started enabled=yes

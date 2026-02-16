@@ -1,0 +1,14 @@
+doc[0][0].hosts = all
+doc[0][0].pre_tasks[0].local_action = shell echo "hi this is a pre_task step about {{ inventory_hostname }}"
+doc[0][0].roles[0].role = foo
+doc[0][0].roles[0].param1 = 1000
+doc[0][0].roles[0].param2 = 2000
+doc[0][0].roles[0].tags[0] = foo
+doc[0][0].roles[0].tags[1] = bar
+doc[0][0].roles[1].role = foo
+doc[0][0].roles[1].param1 = 8000
+doc[0][0].roles[1].param2 = 9000
+doc[0][0].roles[1].tags[0] = baz
+doc[0][0].tasks[0].shell = echo 'this is a loose task'
+doc[0][0].post_tasks[0].local_action = shell echo 'this is a post_task about {{ inventory_hostname }}'
+doc[1] = 

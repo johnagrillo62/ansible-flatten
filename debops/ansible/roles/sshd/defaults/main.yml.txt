@@ -1,0 +1,654 @@
+sshd__base_packages[0] = openssh-server
+sshd__base_packages[1] = openssh-client
+sshd__recommended_packages = {{ ["openssh-blacklist", "openssh-blacklist-extra"]
+                                if (ansible_distribution_release in
+                                    ["trusty", "xenial"]) else [] }}
+
+sshd__optional_packages[0] = molly-guard
+sshd__ldap_packages = {{ ["ldap-utils"]
+                         if (sshd__authorized_keys_lookup | bool and
+                             ("ldap" in sshd__authorized_keys_lookup_type))
+                         else [] }}
+
+sshd__version = {{ ansible_local.sshd.version | d("0.0") }}
+sshd__tcpwrappers_default = ALL
+sshd__ferm_weight = 30
+sshd__ferm_limit = True
+sshd__ferm_limit_seconds = {{ (60 * 5) }}
+sshd__ferm_limit_hits = 8
+sshd__ferm_limit_chain = filter-ssh
+sshd__ferm_limit_target = REJECT
+sshd__ferm_ports = {{ sshd__ports
+                      if ((ansible_local.sshd.socket_activation | d("disabled")) == "disabled")
+                      else ["22"] }}
+
+sshd__ports[0] = 22
+sshd__host_keys[0] = ed25519
+sshd__host_keys[1] = rsa
+sshd__host_keys[2] = ecdsa
+sshd__trusted_user_ca_keys_file = /etc/ssh/trusted-user-ca-keys.pem
+sshd__scan_for_host_certs = False
+sshd__original_configuration[0].name = Include_sshd_config.d
+sshd__original_configuration[0].option = Include
+sshd__original_configuration[0].value = /etc/ssh/sshd_config.d/*.conf
+sshd__original_configuration[0].state = {{ "absent" if ansible_distribution_release in ["stretch", "buster"] else "present" }}
+sshd__original_configuration[1].name = Port
+sshd__original_configuration[1].value = 22
+sshd__original_configuration[1].state = init
+sshd__original_configuration[1].separator = True
+sshd__original_configuration[2].name = AddressFamily
+sshd__original_configuration[2].value = any
+sshd__original_configuration[2].state = init
+sshd__original_configuration[3].name = ListenAddress_ipv4
+sshd__original_configuration[3].option = ListenAddress
+sshd__original_configuration[3].value = 0.0.0.0
+sshd__original_configuration[3].state = init
+sshd__original_configuration[4].name = ListenAddress_ipv6
+sshd__original_configuration[4].option = ListenAddress
+sshd__original_configuration[4].value = ::
+sshd__original_configuration[4].state = init
+sshd__original_configuration[5].name = HostKey
+sshd__original_configuration[5].raw = HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+sshd__original_configuration[5].state = init
+sshd__original_configuration[5].separator = True
+sshd__original_configuration[6].name = RekeyLimit
+sshd__original_configuration[6].comment = Ciphers and keyring
+sshd__original_configuration[6].value = default none
+sshd__original_configuration[6].state = init
+sshd__original_configuration[7].name = SyslogFacility
+sshd__original_configuration[7].comment = Logging
+sshd__original_configuration[7].value = AUTH
+sshd__original_configuration[7].state = init
+sshd__original_configuration[8].name = LogLevel
+sshd__original_configuration[8].value = INFO
+sshd__original_configuration[8].state = init
+sshd__original_configuration[9].name = LoginGraceTime
+sshd__original_configuration[9].comment = Authentication
+sshd__original_configuration[9].value = 2m
+sshd__original_configuration[9].state = init
+sshd__original_configuration[10].name = PermitRootLogin
+sshd__original_configuration[10].value = prohibit-password
+sshd__original_configuration[10].state = init
+sshd__original_configuration[11].name = StrictModes
+sshd__original_configuration[11].value = True
+sshd__original_configuration[11].state = init
+sshd__original_configuration[12].name = MaxAuthTries
+sshd__original_configuration[12].value = 6
+sshd__original_configuration[12].state = init
+sshd__original_configuration[13].name = MaxSessions
+sshd__original_configuration[13].value = 10
+sshd__original_configuration[13].state = init
+sshd__original_configuration[14].name = PubkeyAuthentication
+sshd__original_configuration[14].value = True
+sshd__original_configuration[14].state = init
+sshd__original_configuration[14].separator = True
+sshd__original_configuration[15].name = AuthorizedKeysFile
+sshd__original_configuration[15].comment = Expect .ssh/authorized_keys2 to be disregarded by default in future.
+sshd__original_configuration[15].value[0] = .ssh/authorized_keys
+sshd__original_configuration[15].value[1] = .ssh/authorized_keys2
+sshd__original_configuration[15].state = init
+sshd__original_configuration[16].name = AuthorizedPrincipalsFile
+sshd__original_configuration[16].value = none
+sshd__original_configuration[16].state = init
+sshd__original_configuration[16].separator = True
+sshd__original_configuration[17].name = AuthorizedKeysCommand
+sshd__original_configuration[17].value = none
+sshd__original_configuration[17].state = init
+sshd__original_configuration[17].separator = True
+sshd__original_configuration[18].name = AuthorizedKeysCommandUser
+sshd__original_configuration[18].value = nobody
+sshd__original_configuration[18].state = init
+sshd__original_configuration[19].name = HostbasedAuthentication
+sshd__original_configuration[19].comment = For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+sshd__original_configuration[19].value = False
+sshd__original_configuration[19].state = init
+sshd__original_configuration[20].name = IgnoreUserKnownHosts
+sshd__original_configuration[20].comment = Change to yes if you don't trust ~/.ssh/known_hosts for
+HostbasedAuthentication
+
+sshd__original_configuration[20].value = False
+sshd__original_configuration[20].state = init
+sshd__original_configuration[21].name = IgnoreRhosts
+sshd__original_configuration[21].comment = Don't read the user's ~/.rhosts and ~/.shosts files
+sshd__original_configuration[21].value = True
+sshd__original_configuration[21].state = init
+sshd__original_configuration[22].name = PasswordAuthentication
+sshd__original_configuration[22].comment = To disable tunneled clear text passwords, change to no here!
+sshd__original_configuration[22].value = True
+sshd__original_configuration[22].state = init
+sshd__original_configuration[23].name = ChallengeResponseAuthentication
+sshd__original_configuration[23].comment = Change to yes to enable challenge-response passwords (beware issues with
+some PAM modules and threads). From openssh-server version 8.7, this option
+is deprecated and is an alias of KbdInteractiveAuthentication.
+
+sshd__original_configuration[23].value = False
+sshd__original_configuration[23].state = init
+sshd__original_configuration[24].name = KbdInteractiveAuthentication
+sshd__original_configuration[24].comment = Change to yes to enable challenge-response passwords (beware issues with
+some PAM modules and threads)
+
+sshd__original_configuration[24].value = False
+sshd__original_configuration[24].state = init
+sshd__original_configuration[25].name = PermitEmptyPasswords
+sshd__original_configuration[25].value = False
+sshd__original_configuration[25].state = init
+sshd__original_configuration[26].name = KerberosAuthentication
+sshd__original_configuration[26].comment = Kerberos options
+sshd__original_configuration[26].value = False
+sshd__original_configuration[26].state = init
+sshd__original_configuration[27].name = KerberosOrLocalPasswd
+sshd__original_configuration[27].value = True
+sshd__original_configuration[27].state = init
+sshd__original_configuration[28].name = KerberosTicketCleanup
+sshd__original_configuration[28].value = True
+sshd__original_configuration[28].state = init
+sshd__original_configuration[29].name = KerberosGetAFSToken
+sshd__original_configuration[29].value = False
+sshd__original_configuration[29].state = init
+sshd__original_configuration[30].name = GSSAPIAuthentication
+sshd__original_configuration[30].comment = GSSAPI options
+sshd__original_configuration[30].value = False
+sshd__original_configuration[30].state = init
+sshd__original_configuration[31].name = GSSAPICleanupCredentials
+sshd__original_configuration[31].value = True
+sshd__original_configuration[31].state = init
+sshd__original_configuration[32].name = GSSAPIStrictAcceptorCheck
+sshd__original_configuration[32].value = True
+sshd__original_configuration[32].state = init
+sshd__original_configuration[33].name = GSSAPIKeyExchange
+sshd__original_configuration[33].value = False
+sshd__original_configuration[33].state = init
+sshd__original_configuration[34].name = UsePAM
+sshd__original_configuration[34].comment = Set this to 'yes' to enable PAM authentication, account processing,
+and session processing. If this is enabled, PAM authentication will
+be allowed through the ChallengeResponseAuthentication and
+PasswordAuthentication.  Depending on your PAM configuration,
+PAM authentication via ChallengeResponseAuthentication may bypass
+the setting of "PermitRootLogin without-password".
+If you just want the PAM account and session checks to run without
+PAM authentication, then enable this but set PasswordAuthentication
+and ChallengeResponseAuthentication to 'no'.
+
+sshd__original_configuration[34].value = True
+sshd__original_configuration[35].name = AllowAgentForwarding
+sshd__original_configuration[35].value = True
+sshd__original_configuration[35].state = init
+sshd__original_configuration[35].separator = True
+sshd__original_configuration[36].name = AllowTcpForwarding
+sshd__original_configuration[36].value = True
+sshd__original_configuration[36].state = init
+sshd__original_configuration[37].name = GatewayPorts
+sshd__original_configuration[37].value = False
+sshd__original_configuration[37].state = init
+sshd__original_configuration[38].name = X11Forwarding
+sshd__original_configuration[38].value = True
+sshd__original_configuration[39].name = X11DisplayOffset
+sshd__original_configuration[39].value = 10
+sshd__original_configuration[39].state = init
+sshd__original_configuration[40].name = X11UseLocalhost
+sshd__original_configuration[40].value = True
+sshd__original_configuration[40].state = init
+sshd__original_configuration[41].name = PermitTTY
+sshd__original_configuration[41].value = True
+sshd__original_configuration[41].state = init
+sshd__original_configuration[42].name = PrintMotd
+sshd__original_configuration[42].value = False
+sshd__original_configuration[43].name = PrintLastLog
+sshd__original_configuration[43].value = True
+sshd__original_configuration[43].state = init
+sshd__original_configuration[44].name = TCPKeepAlive
+sshd__original_configuration[44].value = True
+sshd__original_configuration[44].state = init
+sshd__original_configuration[45].name = PermitUserEnvironment
+sshd__original_configuration[45].value = False
+sshd__original_configuration[45].state = init
+sshd__original_configuration[46].name = Compression
+sshd__original_configuration[46].value = delayed
+sshd__original_configuration[46].state = init
+sshd__original_configuration[47].name = ClientAliveInterval
+sshd__original_configuration[47].value = 0
+sshd__original_configuration[47].state = init
+sshd__original_configuration[48].name = ClientAliveCountMax
+sshd__original_configuration[48].value = 3
+sshd__original_configuration[48].state = init
+sshd__original_configuration[49].name = UseDNS
+sshd__original_configuration[49].value = False
+sshd__original_configuration[49].state = init
+sshd__original_configuration[50].name = PidFile
+sshd__original_configuration[50].value = /var/run/sshd.pid
+sshd__original_configuration[50].state = init
+sshd__original_configuration[51].name = MaxStartups
+sshd__original_configuration[51].value = 10:30:100
+sshd__original_configuration[51].state = init
+sshd__original_configuration[52].name = PermitTunnel
+sshd__original_configuration[52].value = False
+sshd__original_configuration[52].state = init
+sshd__original_configuration[53].name = ChrootDirectory
+sshd__original_configuration[53].value = none
+sshd__original_configuration[53].state = init
+sshd__original_configuration[54].name = VersionAddendum
+sshd__original_configuration[54].value = none
+sshd__original_configuration[54].state = init
+sshd__original_configuration[55].name = Banner
+sshd__original_configuration[55].comment = no default banner path
+sshd__original_configuration[55].value = none
+sshd__original_configuration[55].state = init
+sshd__original_configuration[56].name = AcceptEnv
+sshd__original_configuration[56].comment = Allow client to pass locale environment variables
+sshd__original_configuration[56].value[0] = LANG
+sshd__original_configuration[56].value[1] = LC_*
+sshd__original_configuration[57].name = Subsystem_sftp
+sshd__original_configuration[57].option = Subsystem
+sshd__original_configuration[57].comment = override default of no subsystems
+sshd__original_configuration[57].value = sftp   /usr/lib/openssh/sftp-server
+sshd__original_configuration[58].name = Match_user_anoncvs
+sshd__original_configuration[58].option = Match
+sshd__original_configuration[58].comment = Example of overriding settings on a per-user basis
+sshd__original_configuration[58].value[0] = User anoncvs
+sshd__original_configuration[58].config = X11Forwarding no
+AllowTcpForwarding no
+PermitTTY no
+ForceCommand cvs server
+
+sshd__original_configuration[58].state = comment
+sshd__default_configuration[0].name = Port
+sshd__default_configuration[0].raw = {% for port in sshd__ports %}
+{{ 'Port {}'.format(port) }}
+{% endfor %}
+
+sshd__default_configuration[0].state = {{ "ignore"
+               if (sshd__ports | length == 1 and
+                   sshd__ports | first | string == "22")
+               else ("ignore"
+                     if ((ansible_local.sshd.socket_activation | d("disabled")) == "enabled")
+                     else "present") }}
+
+sshd__default_configuration[1].name = HostKey
+sshd__default_configuration[1].raw = {% for hostkey in sshd__host_keys %}
+{% if ('ssh_host_' + hostkey + '_key') in sshd__register_host_keys.stdout_lines %}
+{{ 'HostKey /etc/ssh/ssh_host_{}_key'.format(hostkey) }}
+{% endif %}
+{% endfor %}
+
+sshd__default_configuration[1].state = present
+sshd__default_configuration[2].name = HostCertificate
+sshd__default_configuration[2].raw = {% if (sshd__register_host_certs is defined and
+             "stdout_lines" in sshd__register_host_certs) %}
+{% for cert in sshd__register_host_certs.stdout_lines %}
+{% set sshd__key_matching_cert = cert | regex_replace('-cert', '') %}
+{% set sshd__key_matching_host_keys = sshd__key_matching_cert | regex_replace('ssh_host_(\w+)_key', '\\1') %}
+{% if sshd__key_matching_cert in sshd__register_host_keys.stdout_lines and sshd__key_matching_host_keys in sshd__host_keys %}
+{{ 'HostCertificate /etc/ssh/{}.pub'.format(cert) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+sshd__default_configuration[2].state = {{ "present"
+               if (sshd__register_host_certs is defined and
+                   "stdout_lines" in sshd__register_host_certs)
+               else "ignore" }}
+
+sshd__default_configuration[2].copy_id_from = HostKey
+sshd__default_configuration[3].name = AuthorizedKeysFile
+sshd__default_configuration[3].value[0].name = /etc/ssh/authorized_keys/%u
+sshd__default_configuration[3].value[0].weight = -100
+sshd__default_configuration[3].state = present
+sshd__default_configuration[4].name = TrustedUserCAKeys
+sshd__default_configuration[4].value = {{ sshd__trusted_user_ca_keys_file }}
+sshd__default_configuration[4].state = {{ "present"
+               if (sshd__trusted_user_ca_keys | d() | length > 0)
+               else "ignore" }}
+
+sshd__default_configuration[4].copy_id_from = AuthorizedKeysFile
+sshd__default_configuration[5].name = Match_group_sftponly
+sshd__default_configuration[5].option = Match
+sshd__default_configuration[5].comment = Support for strict SFTP UNIX accounts
+sshd__default_configuration[5].value = Group sftponly
+sshd__default_configuration[5].config = AuthorizedKeysFile /etc/ssh/authorized_keys/%u
+ChrootDirectory %h
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+PermitTunnel no
+ForceCommand internal-sftp
+
+sshd__default_configuration[5].state = present
+sshd__default_configuration[5].separator = True
+sshd__default_configuration[6].name = PermitRootLogin
+sshd__default_configuration[6].value = {{ "prohibit-password"
+               if (ansible_local.root_account.ssh_authorized_keys | d() | bool or
+                   ansible_local.system_users.configured | d() | bool)
+               else True }}
+
+sshd__default_configuration[6].state = present
+sshd__default_configuration[7].name = PasswordAuthentication
+sshd__default_configuration[7].value = {{ False
+               if (ansible_local.root_account.ssh_authorized_keys | d() | bool or
+                   ansible_local.system_users.configured | d() | bool)
+               else True }}
+
+sshd__default_configuration[7].state = present
+sshd__default_configuration[8].name = ChallengeResponseAuthentication
+sshd__default_configuration[8].value = False
+sshd__default_configuration[8].state = present
+sshd__default_configuration[9].name = KbdInteractiveAuthentication
+sshd__default_configuration[9].value = False
+sshd__default_configuration[9].state = present
+sshd__default_configuration[10].name = UseDNS
+sshd__default_configuration[10].value = True
+sshd__default_configuration[10].state = present
+sshd__default_configuration[11].name = Ciphers
+sshd__default_configuration[11].comment = List of ciphers which are allowed for connections
+sshd__default_configuration[11].raw = {% set sshd__tpl_ciphers_max_version = sshd__ciphers_map.keys() | select('version_compare', sshd__version, '<=') | max %}
+{% set sshd__tpl_ciphers = sshd__ciphers_map[sshd__tpl_ciphers_max_version] %}
+{% set sshd__tpl_ciphers = (sshd__tpl_ciphers + sshd__ciphers_additional) | unique %}
+{% if sshd__tpl_ciphers and sshd__paranoid | bool %}
+{{ 'Ciphers {}'.format(([sshd__tpl_ciphers | first] + sshd__ciphers_additional) | unique | join(",")) }}
+{% elif sshd__tpl_ciphers %}
+{{ 'Ciphers {}'.format(sshd__tpl_ciphers | join(",")) }}
+{% endif %}
+
+sshd__default_configuration[11].state = present
+sshd__default_configuration[11].copy_id_from = RekeyLimit
+sshd__default_configuration[12].name = KexAlgorithms
+sshd__default_configuration[12].comment = List of allowed key exchange algorithms
+sshd__default_configuration[12].raw = {% set sshd__tpl_kex_algorithms_max_version = sshd__kex_algorithms_map.keys() | select('version_compare', sshd__version, '<=') | max %}
+{% set sshd__tpl_kex_algorithms = sshd__kex_algorithms_map[sshd__tpl_kex_algorithms_max_version] %}
+{% set sshd__tpl_kex_algorithms = (sshd__tpl_kex_algorithms + sshd__kex_algorithms_additional) | unique %}
+{% if sshd__tpl_kex_algorithms and sshd__paranoid | bool %}
+{{ 'KexAlgorithms {}'.format(([sshd__tpl_kex_algorithms | first] + sshd__kex_algorithms_additional) | unique | join(",")) }}
+{% elif sshd__tpl_kex_algorithms %}
+{{ 'KexAlgorithms {}'.format(sshd__tpl_kex_algorithms | join(",")) }}
+{% endif %}
+
+sshd__default_configuration[12].state = present
+sshd__default_configuration[12].copy_id_from = RekeyLimit
+sshd__default_configuration[13].name = MACs
+sshd__default_configuration[13].comment = List of allowed Message Authentication Code algorithms
+sshd__default_configuration[13].raw = {% set sshd__tpl_macs_max_version = sshd__macs_map.keys() | select('version_compare', sshd__version, '<=') | max %}
+{% set sshd__tpl_macs = sshd__macs_map[sshd__tpl_macs_max_version] %}
+{% set sshd__tpl_macs = (sshd__tpl_macs + sshd__macs_additional) | unique %}
+{% if sshd__tpl_macs and sshd__paranoid | bool %}
+{{ 'MACs {}'.format(([sshd__tpl_macs | first] + sshd__macs_additional) | unique | join(",")) }}
+{% elif sshd__tpl_macs %}
+{{ 'MACs {}'.format(sshd__tpl_macs | join(",")) }}
+{% endif %}
+
+sshd__default_configuration[13].state = present
+sshd__default_configuration[13].copy_id_from = RekeyLimit
+sshd__default_configuration[14].name = UsePrivilegeSeparation
+sshd__default_configuration[14].comment = Privilege Separation is turned on for security
+sshd__default_configuration[14].value = sandbox
+sshd__default_configuration[14].state = {{ "present" if (sshd__version is version("7.5", "<")) else "ignore" }}
+sshd__default_configuration[14].copy_id_from = RekeyLimit
+sshd__default_configuration[15].name = KeyRegenerationInterval
+sshd__default_configuration[15].comment = Lifetime and size of ephemeral version 1 server key
+sshd__default_configuration[15].value = 3600
+sshd__default_configuration[15].state = {{ "present" if (sshd__version is version("7.4", "<")) else "ignore" }}
+sshd__default_configuration[15].copy_id_from = RekeyLimit
+sshd__default_configuration[16].name = ServerKeyBits
+sshd__default_configuration[16].value = 1024
+sshd__default_configuration[16].state = {{ "present" if (sshd__version is version("7.4", "<")) else "ignore" }}
+sshd__default_configuration[16].copy_id_from = RekeyLimit
+sshd__default_configuration[17].name = AuthorizedKeysCommand
+sshd__default_configuration[17].value = /etc/ssh/authorized_keys_lookup
+sshd__default_configuration[17].state = {{ "present"
+               if (sshd__authorized_keys_lookup | bool and
+                   sshd__version is version("6.2", ">="))
+               else "ignore" }}
+
+sshd__default_configuration[18].name = AuthorizedKeysCommandUser
+sshd__default_configuration[18].value = {{ sshd__authorized_keys_lookup_user }}
+sshd__default_configuration[18].state = {{ "present"
+               if (sshd__authorized_keys_lookup | bool and
+                   sshd__version is version("6.2", ">="))
+               else "ignore" }}
+
+sshd__combined_configuration = {{ sshd__original_configuration
+                                  + sshd__default_configuration
+                                  + sshd__configuration
+                                  + sshd__group_configuration
+                                  + sshd__host_configuration }}
+
+sshd__known_hosts_file = /etc/ssh/ssh_known_hosts
+sshd__known_hosts_command = ssh-keyscan -H -T 10
+sshd__ciphers_map["6.5"][0] = chacha20-poly1305@openssh.com
+sshd__ciphers_map["6.5"][1] = aes256-gcm@openssh.com
+sshd__ciphers_map["6.5"][2] = aes128-gcm@openssh.com
+sshd__ciphers_map["6.5"][3] = aes256-ctr
+sshd__ciphers_map["6.5"][4] = aes192-ctr
+sshd__ciphers_map["6.5"][5] = aes128-ctr
+sshd__ciphers_map["6.0"][0] = aes256-ctr
+sshd__ciphers_map["6.0"][1] = aes192-ctr
+sshd__ciphers_map["6.0"][2] = aes128-ctr
+sshd__kex_algorithms_map["6.5"][0] = curve25519-sha256@libssh.org
+sshd__kex_algorithms_map["6.5"][1] = ecdh-sha2-nistp521
+sshd__kex_algorithms_map["6.5"][2] = ecdh-sha2-nistp384
+sshd__kex_algorithms_map["6.5"][3] = ecdh-sha2-nistp256
+sshd__kex_algorithms_map["6.5"][4] = diffie-hellman-group-exchange-sha256
+sshd__kex_algorithms_map["6.0"][0] = diffie-hellman-group-exchange-sha256
+sshd__macs_map["6.5"][0] = hmac-sha2-512-etm@openssh.com
+sshd__macs_map["6.5"][1] = hmac-sha2-256-etm@openssh.com
+sshd__macs_map["6.5"][2] = umac-128-etm@openssh.com
+sshd__macs_map["6.5"][3] = hmac-sha2-512
+sshd__macs_map["6.5"][4] = hmac-sha2-256
+sshd__macs_map["6.5"][5] = umac-128@openssh.com
+sshd__macs_map["6.0"][0] = hmac-sha2-512
+sshd__macs_map["6.0"][1] = hmac-sha2-256
+sshd__macs_map["6.0"][2] = hmac-ripemd160
+sshd__moduli_minimum = 2048
+sshd__paranoid = False
+sshd__authorized_keys_lookup = {{ ansible_local.ldap.posix_enabled | d() | bool }}
+sshd__authorized_keys_lookup_user = sshd
+sshd__authorized_keys_lookup_type[0] = ldap
+sshd__authorized_keys_lookup_type[1] = sss
+sshd__ldap_enabled = {{ ansible_local.ldap.enabled
+                        if (ansible_local | d() and ansible_local.ldap | d() and
+                            ansible_local.ldap.enabled is defined)
+                        else False }}
+
+sshd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+sshd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+sshd__ldap_device_object_classes[0] = ldapPublicKey
+sshd__ldap_device_attributes.sshPublicKey = {{ sshd__env_register_host_public_keys.stdout_lines }}
+sshd__ldap_self_rdn = uid={{ sshd__authorized_keys_lookup_user }}
+sshd__ldap_self_object_classes[0] = account
+sshd__ldap_self_object_classes[1] = simpleSecurityObject
+sshd__ldap_self_attributes.uid = {{ sshd__ldap_self_rdn.split("=")[1] }}
+sshd__ldap_self_attributes.userPassword = {{ sshd__ldap_bindpw }}
+sshd__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+sshd__ldap_self_attributes.description = Account used by the "sshd" service to access the LDAP directory
+sshd__ldap_binddn = {{ ([sshd__ldap_self_rdn] + sshd__ldap_device_dn) | join(",") }}
+sshd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                               + sshd__ldap_binddn | to_uuid + ".password length=32"))
+                       if sshd__ldap_enabled | bool
+                       else "" }}
+
+sshd__ldap_filter = {{ sshd__ldap_filter_map["service+host"] }}
+sshd__ldap_posix_urns = {{ ansible_local.ldap.urn_patterns | d([])
+                           | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
+                           | list }}
+
+sshd__ldap_filter_map.service = (& (objectClass=posixAccount) (uid=$username) (| (authorizedService=all) (authorizedService=$service) (authorizedService=shell) ) )
+sshd__ldap_filter_map.host = (& (objectClass=posixAccount) (uid=$username) (| (host=posix:all) (host=posix:$fqdn) (host=posix:\2a.$domain) {{ sshd__ldap_posix_urns | join(" ") }} ) )
+sshd__ldap_filter_map.service+host = (& (objectClass=posixAccount) (uid=$username) (| (authorizedService=all) (authorizedService=$service) (authorizedService=shell) ) (| (host=posix:all) (host=posix:$fqdn) (host=posix:\2a.$domain) {{ sshd__ldap_posix_urns | join(" ") }} ) )
+sshd__pam_deploy_state = present
+sshd__pam_access_file = {{ "/etc/security/access-sshd.conf"
+                           if ("sshd" in ansible_local.pam_access.rules | d([]))
+                           else "/etc/security/access.conf" }}
+
+sshd__ferm__dependent_rules[0].type = accept
+sshd__ferm__dependent_rules[0].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[0].interface = {{ sshd__ferm_interface }}
+sshd__ferm__dependent_rules[0].weight = 0
+sshd__ferm__dependent_rules[0].weight_class = sshd-chain
+sshd__ferm__dependent_rules[0].name = sshd_jump-filter-ssh
+sshd__ferm__dependent_rules[0].target = {{ sshd__ferm_limit_chain }}
+sshd__ferm__dependent_rules[0].rule_state = {{ "present" if sshd__ferm_limit | bool else "absent" }}
+sshd__ferm__dependent_rules[0].comment = Create a separate "iptables" chain for SSH rules
+sshd__ferm__dependent_rules[1].chain = {{ sshd__ferm_limit_chain if (sshd__ferm_limit | bool) else "INPUT" }}
+sshd__ferm__dependent_rules[1].type = accept
+sshd__ferm__dependent_rules[1].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[1].saddr = {{ sshd__whitelist + sshd__group_whitelist + sshd__host_whitelist }}
+sshd__ferm__dependent_rules[1].interface = {{ [] if (sshd__ferm_limit | bool) else sshd__ferm_interface }}
+sshd__ferm__dependent_rules[1].weight = 1
+sshd__ferm__dependent_rules[1].weight_class = sshd-chain
+sshd__ferm__dependent_rules[1].name = sshd_whitelist
+sshd__ferm__dependent_rules[1].subchain = False
+sshd__ferm__dependent_rules[1].accept_any = False
+sshd__ferm__dependent_rules[1].comment = Accept any hosts in the whitelist unconditionally
+sshd__ferm__dependent_rules[2].chain = {{ sshd__ferm_limit_chain if sshd__ferm_limit | bool else "INPUT" }}
+sshd__ferm__dependent_rules[2].type = accept
+sshd__ferm__dependent_rules[2].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[2].saddr = {{ sshd__allow + sshd__group_allow + sshd__host_allow }}
+sshd__ferm__dependent_rules[2].interface = {{ [] if (sshd__ferm_limit | bool) else sshd__ferm_interface }}
+sshd__ferm__dependent_rules[2].weight = 2
+sshd__ferm__dependent_rules[2].weight_class = sshd-chain
+sshd__ferm__dependent_rules[2].name = sshd_allow
+sshd__ferm__dependent_rules[2].subchain = False
+sshd__ferm__dependent_rules[2].accept_any = {{ False if sshd__ferm_limit | bool else True }}
+sshd__ferm__dependent_rules[2].comment = Accept any hosts in the allow list. If there are any hosts specified,
+block connections from other hosts using TCP Wrappers.
+
+sshd__ferm__dependent_rules[3].chain = {{ sshd__ferm_limit_chain }}
+sshd__ferm__dependent_rules[3].type = recent
+sshd__ferm__dependent_rules[3].weight = 3
+sshd__ferm__dependent_rules[3].weight_class = sshd-chain
+sshd__ferm__dependent_rules[3].name = sshd_block-ssh
+sshd__ferm__dependent_rules[3].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[3].state[0] = NEW
+sshd__ferm__dependent_rules[3].subchain = False
+sshd__ferm__dependent_rules[3].recent_name = ssh-new
+sshd__ferm__dependent_rules[3].recent_update = True
+sshd__ferm__dependent_rules[3].recent_seconds = {{ sshd__ferm_limit_seconds }}
+sshd__ferm__dependent_rules[3].recent_hitcount = {{ sshd__ferm_limit_hits }}
+sshd__ferm__dependent_rules[3].recent_target = REJECT
+sshd__ferm__dependent_rules[3].rule_state = {{ "present" if sshd__ferm_limit | bool else "absent" }}
+sshd__ferm__dependent_rules[3].comment = Block new SSH connections that have been marked as recent if they make
+too many new connection attempts.
+
+sshd__ferm__dependent_rules[4].chain = {{ sshd__ferm_limit_chain }}
+sshd__ferm__dependent_rules[4].type = recent
+sshd__ferm__dependent_rules[4].weight = 4
+sshd__ferm__dependent_rules[4].weight_class = sshd-chain
+sshd__ferm__dependent_rules[4].name = sshd_mark-ssh
+sshd__ferm__dependent_rules[4].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[4].state[0] = NEW
+sshd__ferm__dependent_rules[4].subchain = False
+sshd__ferm__dependent_rules[4].recent_set_name = ssh-new
+sshd__ferm__dependent_rules[4].recent_log = False
+sshd__ferm__dependent_rules[4].rule_state = {{ "present" if sshd__ferm_limit | bool else "absent" }}
+sshd__ferm__dependent_rules[4].comment = Mark new connections to the SSH service for recent tracking
+sshd__ferm__dependent_rules[5].chain = {{ sshd__ferm_limit_chain }}
+sshd__ferm__dependent_rules[5].type = accept
+sshd__ferm__dependent_rules[5].weight = 5
+sshd__ferm__dependent_rules[5].weight_class = sshd-chain
+sshd__ferm__dependent_rules[5].role = sshd
+sshd__ferm__dependent_rules[5].role_weight = 60
+sshd__ferm__dependent_rules[5].name = sshd_accept-ssh
+sshd__ferm__dependent_rules[5].dport = {{ sshd__ferm_ports }}
+sshd__ferm__dependent_rules[5].rule_state = {{ "present" if sshd__ferm_limit | bool else "absent" }}
+sshd__ferm__dependent_rules[5].comment = Accept connections to the SSH service
+sshd__tcpwrappers__dependent_allow[0].daemon = sshd
+sshd__tcpwrappers__dependent_allow[0].client = {{ sshd__whitelist + sshd__group_whitelist + sshd__host_whitelist }}
+sshd__tcpwrappers__dependent_allow[0].accept_any = {{ False if (sshd__allow + sshd__group_allow + sshd__host_allow) else True }}
+sshd__tcpwrappers__dependent_allow[0].weight = 25
+sshd__tcpwrappers__dependent_allow[0].filename = sshd_dependent_whitelist
+sshd__tcpwrappers__dependent_allow[0].comment = Whitelist of hosts allowed to connect to ssh
+sshd__tcpwrappers__dependent_allow[1].daemon = sshd
+sshd__tcpwrappers__dependent_allow[1].client = {{ sshd__allow + sshd__group_allow + sshd__host_allow }}
+sshd__tcpwrappers__dependent_allow[1].default = {{ sshd__tcpwrappers_default }}
+sshd__tcpwrappers__dependent_allow[1].accept_any = {{ True if (sshd__whitelist + sshd__group_whitelist + sshd__host_whitelist) else False }}
+sshd__tcpwrappers__dependent_allow[1].weight = 30
+sshd__tcpwrappers__dependent_allow[1].filename = sshd_dependent_allow
+sshd__tcpwrappers__dependent_allow[1].comment = List of hosts allowed to connect to ssh
+sshd__ldap__dependent_tasks[0].name = Add missing LDAP object classes to {{ sshd__ldap_device_dn | join(",") }}
+sshd__ldap__dependent_tasks[0].dn = {{ sshd__ldap_device_dn }}
+sshd__ldap__dependent_tasks[0].attributes.objectClass = {{ sshd__ldap_device_object_classes }}
+sshd__ldap__dependent_tasks[0].state = {{ "present"
+               if ((ansible_local.ldap.posix_enabled | d()) | bool and
+                   sshd__ldap_device_dn | d())
+               else "ignore" }}
+
+sshd__ldap__dependent_tasks[1].name = Update SSH host public keys in {{ sshd__ldap_device_dn | join(",") }}
+sshd__ldap__dependent_tasks[1].dn = {{ sshd__ldap_device_dn }}
+sshd__ldap__dependent_tasks[1].attributes = {{ sshd__ldap_device_attributes }}
+sshd__ldap__dependent_tasks[1].state = {{ "exact"
+               if ((ansible_local.ldap.posix_enabled | d()) | bool and
+                   sshd__ldap_device_dn | d())
+               else "ignore" }}
+
+sshd__ldap__dependent_tasks[2].name = Create sshd account for {{ sshd__ldap_device_dn | join(",") }}
+sshd__ldap__dependent_tasks[2].dn = {{ sshd__ldap_binddn }}
+sshd__ldap__dependent_tasks[2].objectClass = {{ sshd__ldap_self_object_classes }}
+sshd__ldap__dependent_tasks[2].attributes = {{ sshd__ldap_self_attributes }}
+sshd__ldap__dependent_tasks[2].no_log = {{ debops__no_log | d(True) }}
+sshd__ldap__dependent_tasks[2].state = {{ "present"
+               if (sshd__authorized_keys_lookup | bool and
+                   ("ldap" in sshd__authorized_keys_lookup_type))
+               else "ignore" }}
+
+sshd__pam_access__dependent_rules[0].name = sshd
+sshd__pam_access__dependent_rules[0].options[0].name = allow-root-ansible-controllers
+sshd__pam_access__dependent_rules[0].options[0].comment = Grant access via SSH to root account from the Ansible Controller hosts
+sshd__pam_access__dependent_rules[0].options[0].permission = allow
+sshd__pam_access__dependent_rules[0].options[0].users = root
+sshd__pam_access__dependent_rules[0].options[0].origins = {{ ansible_local.core.ansible_controllers | d([]) }}
+sshd__pam_access__dependent_rules[0].options[1].name = allow-root
+sshd__pam_access__dependent_rules[0].options[1].comment = Grant access via SSH to root account on the same DNS domain
+sshd__pam_access__dependent_rules[0].options[1].permission = allow
+sshd__pam_access__dependent_rules[0].options[1].users = root
+sshd__pam_access__dependent_rules[0].options[1].origins = .{{ ansible_domain }}
+sshd__pam_access__dependent_rules[0].options[2].name = deny-root
+sshd__pam_access__dependent_rules[0].options[2].comment = Deny access to root account via SSH from anywhere else
+sshd__pam_access__dependent_rules[0].options[2].permission = deny
+sshd__pam_access__dependent_rules[0].options[2].users = root
+sshd__pam_access__dependent_rules[0].options[2].origins = ALL
+sshd__pam_access__dependent_rules[0].options[3].name = allow-system-groups
+sshd__pam_access__dependent_rules[0].options[3].comment = Grant access via SSH to members of UNIX groups defined on this host
+
+sshd__pam_access__dependent_rules[0].options[3].permission = allow
+sshd__pam_access__dependent_rules[0].options[3].groups = {{ ansible_local.system_groups.access.sshd
+                    | d(["admins", "sshusers", "sftponly"]) }} 
+sshd__pam_access__dependent_rules[0].options[3].origins = ALL
+sshd__pam_access__dependent_rules[0].options[4].name = allow-ldap-groups
+sshd__pam_access__dependent_rules[0].options[4].comment = Grant access via SSH to members of UNIX groups defined in LDAP
+
+sshd__pam_access__dependent_rules[0].options[4].permission = allow
+sshd__pam_access__dependent_rules[0].options[4].groups[0] = admins
+sshd__pam_access__dependent_rules[0].options[4].groups[1] = sshusers
+sshd__pam_access__dependent_rules[0].options[4].groups[2] = sftponly
+sshd__pam_access__dependent_rules[0].options[4].origins = ALL
+sshd__pam_access__dependent_rules[0].options[4].state = {{ "present"
+                   if (ansible_local.ldap.posix_enabled | d() | bool)
+                   else "absent" }}
+
+sshd__pam_access__dependent_rules[0].options[5].name = allow-domain
+sshd__pam_access__dependent_rules[0].options[5].comment = Grant access via SSH to users on the same DNS domain. The SSH server
+needs to have UseDNS option enabled for this rule to work correctly.
+
+sshd__pam_access__dependent_rules[0].options[5].permission = allow
+sshd__pam_access__dependent_rules[0].options[5].users = ALL
+sshd__pam_access__dependent_rules[0].options[5].origins = .{{ ansible_domain }}
+sshd__pam_access__dependent_rules[0].options[6].name = deny-all
+sshd__pam_access__dependent_rules[0].options[6].comment = Deny access via SSH by anyone from anywhere
+sshd__pam_access__dependent_rules[0].options[6].permission = deny
+sshd__pam_access__dependent_rules[0].options[6].users = ALL
+sshd__pam_access__dependent_rules[0].options[6].origins = ALL
+sshd__pam_access__dependent_rules[0].options[6].weight = 99999
+sshd__sudo__dependent_sudoers[0].name = sshd
+sshd__sudo__dependent_sudoers[0].options[0].name = env_keep_ssh
+sshd__sudo__dependent_sudoers[0].options[0].comment = Allow molly-guard to detect that we connected via ssh even if
+combined with sudo and tmux.
+https://superuser.com/questions/666931/getting-molly-guard-to-work-with-sudo
+It is not perfect, but works in most cases.
+A case where it does not work is when `sudo tmux` is started via
+local tty and then attached to it via ssh.
+Or `sudo tmux` is executed via ssh and then attached locally.
+But when a new shell is created in tmux, the environment variables in
+that new shell are correct.
+sshd__sudo__dependent_sudoers[0].options[0].value = Defaults env_keep += SSH_CONNECTION
+

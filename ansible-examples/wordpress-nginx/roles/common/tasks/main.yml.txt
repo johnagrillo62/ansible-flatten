@@ -1,0 +1,11 @@
+[0].name = Install libselinux-python
+[0].yum = name=libselinux-python state=present
+[1].name = Reload ansible_facts
+[1].setup = null
+[2].name = Copy the EPEL repository definition
+[2].copy = src=epel.repo dest=/etc/yum.repos.d/epel.repo
+[3].name = Create the GPG key for EPEL
+[3].copy = src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+[4].name = Set up iptables rules
+[4].copy = src=iptables-save dest=/etc/sysconfig/iptables
+[4].notify = restart iptables

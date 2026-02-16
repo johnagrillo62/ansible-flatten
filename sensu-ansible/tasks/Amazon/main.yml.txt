@@ -1,0 +1,23 @@
+~d0.name = Include ansible_distribution vars
+~d1.tags = setup
+~d1.include_vars = 
+~d2.file = "{{ ansible_distribution }}.yml"
+~d0.name = Set epel_version override when AmazonLinux AMIv2
+~d1.tags = setup
+~d1.set_fact = 
+~d2.epel_version = 7
+~d1.when = ansible_distribution_version == 'Candidate'
+~d0.name = Ensure the Sensu Core Yum repo is present
+~d1.tags = setup
+~d1.yum_repository = 
+~d2.name = sensu
+~d2.description = The Sensu Core yum repository
+~d2.baseurl = "{{ sensu_yum_repo_url }}"
+~d2.gpgkey = "{{ sensu_yum_key_url }}"
+~d2.gpgcheck = yes
+~d2.enabled = yes
+~d0.name = Ensure Sensu is installed
+~d1.tags = setup
+~d1.yum = 
+~d2.name = "{{ sensu_package }}"
+~d2.state = "{{ sensu_pkg_state }}"

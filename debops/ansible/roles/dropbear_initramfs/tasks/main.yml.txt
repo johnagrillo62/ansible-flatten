@@ -1,0 +1,56 @@
+~d0.name = Ensure specified packages are in there desired state
+~d1.ansible.builtin.package = 
+~d2.name = '{{ q("flattened", (dropbear_initramfs__base_packages
+~d2.state = '{{ "present" if (dropbear_initramfs__deploy_state == "present") else "absent" }}'
+~d1.register = dropbear_initramfs__register_packages
+~d1.until = dropbear_initramfs__register_packages is succeeded
+~d1.tags = [ 'role::dropbear_initramfs:pkgs' ]
+~d0.name = Configure network in initramfs using kernel command line
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/initramfs-tools/conf.d/role.conf.j2'
+~d2.dest = '/etc/initramfs-tools/conf.d/50_debops.dropbear_initramfs.conf'
+~d2.mode = '0644'
+~d1.when = (dropbear_initramfs__deploy_state == "present")
+~d1.notify = [ 'Update initramfs' ]
+~d0.name = Configure dropbear options
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/dropbear/initramfs/dropbear.conf.j2'
+~d2.dest = '{{ dropbear_initramfs__config_file }}'
+~d2.mode = '0644'
+~d1.when = (dropbear_initramfs__deploy_state == "present")
+~d1.notify = [ 'Update initramfs' ]
+~d0.name = Configure to bring up additional interfaces/addresses in initramfs
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/initramfs-tools/scripts/local-top/debops_dropbear_initramfs.j2'
+~d2.dest = '/etc/initramfs-tools/scripts/local-top/debops_dropbear_initramfs'
+~d2.mode = '0755'
+~d1.when = (dropbear_initramfs__deploy_state == "present")
+~d1.notify = [ 'Update initramfs' ]
+~d0.name = Configure to bring down additional interfaces/addresses in initramfs
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/initramfs-tools/scripts/local-bottom/debops_dropbear_initramfs.j2'
+~d2.dest = '/etc/initramfs-tools/scripts/local-bottom/debops_dropbear_initramfs'
+~d2.mode = '0755'
+~d1.when = (dropbear_initramfs__deploy_state == "present")
+~d1.notify = [ 'Update initramfs' ]
+~d0.name = Configure authorized ssh keys
+~d1.ansible.posix.authorized_key = 
+~d2.key = "{{ (item.key
+~d2.user = '{{ item.user | d("root") }}'
+~d2.path = '{{ "/etc/initramfs-tools/root/.ssh/authorized_keys"
+~d2.key_options = '{{ (item.key_options if item.key_options is string else item.key_options | join(","))
+~d2.state = '{{ (item.state | d("present")) if (dropbear_initramfs__deploy_state == "present") else "absent" }}'
+~d2.exclusive = '{{ item.exclusive | d(omit) }}'
+~d2.comment = '{{ item.comment | d(omit) }}'
+~d2.manage_dir = False
+~d1.notify = [ 'Update initramfs' ]
+~d1.loop = '{{ q("flattened", dropbear_initramfs__combined_authorized_keys) }}'
+~d1.loop_control = 
+~d2.label = '{{ {"key": item.key} }}'
+~d0.name = Remove files in deploy state absent
+~d1.ansible.builtin.file = 
+~d2.path = '{{ item }}'
+~d2.state = 'absent'
+~d1.when = (dropbear_initramfs__deploy_state == 'absent')
+~d1.notify = [ 'Update initramfs' ]
+~d1.with_items = 

@@ -1,0 +1,4 @@
+~d0.name = Restart open-iscsi
+~d1.ansible.builtin.service = 
+~d2.name = 'open-iscsi'
+~d2.state = 'restarted'

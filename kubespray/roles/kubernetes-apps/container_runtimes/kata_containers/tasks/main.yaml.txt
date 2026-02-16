@@ -1,0 +1,25 @@
+[0].name = Kata Containers | Create addon dir
+[0].file.path = {{ kube_config_dir }}/addons/kata_containers
+[0].file.owner = root
+[0].file.group = root
+[0].file.mode = 0755
+[0].file.recurse = true
+[1].name = Kata Containers | Templates list
+[1].set_fact.kata_containers_templates[0].name = runtimeclass-kata-qemu
+[1].set_fact.kata_containers_templates[0].file = runtimeclass-kata-qemu.yml
+[1].set_fact.kata_containers_templates[0].type = runtimeclass
+[2].name = Kata Containers | Create manifests
+[2].template.src = {{ item.file }}.j2
+[2].template.dest = {{ kube_config_dir }}/addons/kata_containers/{{ item.file }}
+[2].template.mode = 0644
+[2].with_items = {{ kata_containers_templates }}
+[2].register = kata_containers_manifests
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = Kata Containers | Apply manifests
+[3].kube.name = {{ item.item.name }}
+[3].kube.kubectl = {{ bin_dir }}/kubectl
+[3].kube.resource = {{ item.item.type }}
+[3].kube.filename = {{ kube_config_dir }}/addons/kata_containers/{{ item.item.file }}
+[3].kube.state = latest
+[3].with_items = {{ kata_containers_manifests.results }}
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]

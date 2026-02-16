@@ -1,0 +1,6 @@
+[0].name = restart mysql
+[0].service.name = mysqld
+[0].service.state = restarted
+[1].name = restart iptables
+[1].service.name = iptables
+[1].service.state = restarted

@@ -1,0 +1,4 @@
+~d0.name = Restart rabbitmq-server
+~d1.ansible.builtin.service = 
+~d2.name = 'rabbitmq-server'
+~d2.state = 'restarted'

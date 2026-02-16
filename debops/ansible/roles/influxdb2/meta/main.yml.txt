@@ -1,0 +1,14 @@
+collections[0] = debops.debops
+galaxy_info.author = Maciej Delmanowski
+galaxy_info.description = Install and manage InfluxDBv2 server
+galaxy_info.company = DebOps
+galaxy_info.license = GPL-3.0-only
+galaxy_info.min_ansible_version = 2.9.0
+galaxy_info.platforms[0].name = Debian
+galaxy_info.platforms[0].versions[0] = all
+galaxy_info.galaxy_tags[0] = clustering
+galaxy_info.galaxy_tags[1] = database
+galaxy_info.galaxy_tags[2] = nosql
+galaxy_info.galaxy_tags[3] = search
+galaxy_info.galaxy_tags[4] = monitoring
+galaxy_info.galaxy_tags[5] = influxdb

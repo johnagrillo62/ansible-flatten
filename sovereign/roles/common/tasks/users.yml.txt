@@ -1,0 +1,4 @@
+[0].name = Create main user account
+[0].user = name={{ main_user_name }} state=present shell={{ main_user_shell }} groups=sudo
+[1].name = Give main user account sudo power
+[1].template = src=roles/common/templates/sudoers.j2 dest=/etc/sudoers.d/sudoers owner=root group=root mode=0440 validate='visudo -cf %s'

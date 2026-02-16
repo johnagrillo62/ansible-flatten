@@ -1,0 +1,23 @@
+resources__enabled = True
+resources__src = {{ inventory_dir | realpath + "/../resources/" }}
+resources__time_format = %Y-%m-%dT%H:%M:%S
+resources__parent_dirs_create = True
+resources__parent_dirs_recurse = True
+resources__parent_dirs_owner = {{ omit }}
+resources__parent_dirs_group = {{ omit }}
+resources__parent_dirs_mode = {{ omit }}
+resources__templates[0] = {{ resources__src + "templates/by-group/all" }}
+resources__group_templates = {{ group_names | map("regex_replace", "^(.*)$", resources__src + "templates/by-group/\1") | list }}
+resources__host_templates[0] = {{ resources__src + "templates/by-host/" + inventory_hostname }}
+resources__combined_file_capabilities = {{ resources__file_capabilities
+                                           + resources__group_file_capabilities
+                                           + resources__host_file_capabilities }}
+
+resources__combined_commands = {{ resources__commands
+                                  + resources__group_commands
+                                  + resources__host_commands }}
+
+resources__combined_replacements = {{ resources__replacements
+                                      + resources__group_replacements
+                                      + resources__host_replacements }}
+

@@ -1,0 +1,40 @@
+[0].name = Cert Manager | Remove legacy addon dir and manifests
+[0].file.path = {{ kube_config_dir }}/addons/cert_manager
+[0].file.state = absent
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[0].tags[0] = upgrade
+[1].name = Cert Manager | Remove legacy namespace
+[1].command = {{ kubectl }} delete namespace {{ cert_manager_namespace }}
+
+[1].ignore_errors = true
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].tags[0] = upgrade
+[2].name = Cert Manager | Create addon dir
+[2].file.path = {{ kube_config_dir }}/addons/cert_manager
+[2].file.state = directory
+[2].file.owner = root
+[2].file.group = root
+[2].file.mode = 0755
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = Cert Manager | Templates list
+[3].set_fact.cert_manager_templates[0].name = cert-manager
+[3].set_fact.cert_manager_templates[0].file = cert-manager.yml
+[3].set_fact.cert_manager_templates[0].type = all
+[3].set_fact.cert_manager_templates[1].name = cert-manager.crds
+[3].set_fact.cert_manager_templates[1].file = cert-manager.crds.yml
+[3].set_fact.cert_manager_templates[1].type = crd
+[4].name = Cert Manager | Create manifests
+[4].template.src = {{ item.file }}.j2
+[4].template.dest = {{ kube_config_dir }}/addons/cert_manager/{{ item.file }}
+[4].template.mode = 0644
+[4].with_items = {{ cert_manager_templates }}
+[4].register = cert_manager_manifests
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[5].name = Cert Manager | Apply manifests
+[5].kube.name = {{ item.item.name }}
+[5].kube.kubectl = {{ bin_dir }}/kubectl
+[5].kube.resource = {{ item.item.type }}
+[5].kube.filename = {{ kube_config_dir }}/addons/cert_manager/{{ item.item.file }}
+[5].kube.state = latest
+[5].with_items = {{ cert_manager_manifests.results }}
+[5].when[0] = inventory_hostname == groups['kube_control_plane'][0]

@@ -1,0 +1,45 @@
+[0].name = Determine whether wallabag is configured
+[0].stat = path=/var/www/wallabag/inc/poche/config.inc.php
+[0].register = wallabag_config
+[1].name = Clone wallabag
+[1].git = repo=https://github.com/wallabag/wallabag.git dest=/var/www/wallabag version={{ wallabag_version }} accept_hostkey=yes
+[2].name = Remove wallabag 'install' directory if its configuration file is there
+[2].file = name=/var/www/wallabag/install state=absent
+[2].when = wallabag_config.stat.exists
+[3].name = Install wallabag dependencies
+[3].apt = pkg={{ item }} state=present
+[3].with_items[0] = php5
+[3].with_items[1] = php5-curl
+[3].with_items[2] = php5-mcrypt
+[3].with_items[3] = php5-pgsql
+[3].with_items[4] = php5-tidy
+[3].tags[0] = dependencies
+[4].name = Create database user for wallabag
+[4].postgresql_user = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ wallabag_db_username }} password="{{ wallabag_db_password }}" state=present
+[5].name = Create database for wallabag
+[5].postgresql_db = login_host=localhost login_user={{ db_admin_username }} login_password="{{ db_admin_password }}" name={{ wallabag_db_database }} state=present owner={{ wallabag_db_username }}
+[5].notify = import wallabag sql
+[6].name = Get Composer installer
+[6].get_url = url=https://getcomposer.org/installer dest=/tmp/composer-installer
+[7].name = Install Composer
+[7].command = php /tmp/composer-installer chdir=/root creates=/root/composer.phar
+[8].name = Initialize composer
+[8].command = php /root/composer.phar install chdir=/var/www/wallabag creates=/var/www/wallabag/vendor/autoload.php
+[9].name = Set wallabag ownership
+[9].file = owner=root group=www-data path=/var/www/wallabag recurse=yes state=directory
+[10].name = Set wallabag assets, cache and db permissions
+[10].file = path=/var/www/wallabag/{{ item }} mode=0775 state=directory
+[10].with_items[0] = assets
+[10].with_items[1] = cache
+[10].with_items[2] = db
+[11].name = Create the configuration file
+[11].template = src=var_www_wallabag_inc_poche_config.inc.php.j2 dest=/var/www/wallabag/inc/poche/config.inc.php owner=root group=www-data
+[12].name = Rename existing Apache wallabag virtualhost
+[12].command = mv /etc/apache2/sites-available/wallabag /etc/apache2/sites-available/wallabag.conf removes=/etc/apache2/sites-available/wallabag
+[13].name = Remove old sites-enabled/wallabag symlink (new one will be created by a2ensite)
+[13].file = path=/etc/apache2/sites-enabled/wallabag state=absent
+[14].name = Configure the Apache HTTP server for wallabag
+[14].template = src=etc_apache2_sites-available_wallabag.j2 dest=/etc/apache2/sites-available/wallabag.conf owner=root group=root
+[15].name = Enable the wallabag site
+[15].command = a2ensite wallabag.conf creates=/etc/apache2/sites-enabled/wallabag.conf
+[15].notify = restart apache

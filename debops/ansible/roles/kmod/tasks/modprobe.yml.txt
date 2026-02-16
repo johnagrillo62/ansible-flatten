@@ -1,0 +1,23 @@
+[0].name = Remove module configuration
+[0]["ansible.builtin.file"].dest = /etc/modprobe.d/{{ module.filename | d(module.name | replace("_", "-") + ".conf") }}
+[0]["ansible.builtin.file"].state = absent
+[0].notify[0] = Refresh host facts
+[0].register = kmod__register_module_config_delete
+[0].when = module.name | d() and module.state | d('present') == 'absent'
+[1].name = Generate module configuration
+[1]["ansible.builtin.template"].src = etc/modprobe.d/module.conf.j2
+[1]["ansible.builtin.template"].dest = /etc/modprobe.d/{{ module.filename | d(module.name | replace("_", "-") + ".conf") }}
+[1]["ansible.builtin.template"].owner = root
+[1]["ansible.builtin.template"].group = root
+[1]["ansible.builtin.template"].mode = 0644
+[1].notify[0] = Refresh host facts
+[1].register = kmod__register_module_config_create
+[1].when = module.name | d() and module.state | d('present') != 'absent'
+[2].name = Unload kernel module if configuration changed
+[2]["community.general.modprobe"].name = {{ module.name }}
+[2]["community.general.modprobe"].state = absent
+[2].when = ((kmod__register_module_config_delete is changed or kmod__register_module_config_create is changed) and module.blacklist is not defined and ansible_local.kmod.modules | d() and module.name in ansible_local.kmod.modules and module.state | d('present') not in ['config'])
+[3].name = Load kernel module if configuration changed
+[3]["community.general.modprobe"].name = {{ module.name }}
+[3]["community.general.modprobe"].state = present
+[3].when = ((kmod__register_module_config_delete is changed or kmod__register_module_config_create is changed) and module.blacklist is not defined and module.state | d('present') not in ['config', 'absent', 'blacklist'])

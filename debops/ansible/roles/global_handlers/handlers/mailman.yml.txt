@@ -1,0 +1,8 @@
+~d0.name = Restart mailman3
+~d1.ansible.builtin.service = 
+~d2.name = 'mailman3'
+~d2.state = 'restarted'
+~d0.name = Restart mailman3-web
+~d1.ansible.builtin.service = 
+~d2.name = 'mailman3-web'
+~d2.state = 'restarted'

@@ -1,0 +1,20 @@
+gitusers_name_suffix = 
+gitusers_default_shell = /usr/bin/git-shell
+gitusers_default_groups_list[0] = sshusers
+gitusers_default_groups_append = yes
+gitusers_default_home_prefix = {{ (ansible_local.fhs.data | d("/srv"))
+                                  + "/gitusers" }} 
+gitusers_default_home_mode = 0750
+gitusers_git_scripts = {{ (ansible_local.fhs.home | d("/var/local"))
+                          + "/gitusers" }} 
+gitusers_default_www_prefix = {{ ansible_local.nginx.www if (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.www is defined) else "/srv/www" }}
+gitusers_default_www_group = {{ ansible_local.nginx.user if (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.user is defined) else "www-data" }}
+gitusers_default_domain = {{ ansible_domain }}
+gitusers_default_user_domain = {{ ansible_fqdn }}
+gitusers_default_hook_list = jekyll
+gitusers_default_hooks.jekyll[0] = post-receive.d/00_checkout
+gitusers_default_hooks.jekyll[1] = post-checkout.d/00_submodule
+gitusers_default_hooks.jekyll[2] = post-checkout.d/jekyll
+gitusers_default_hooks.deploy[0] = post-receive.d/00_checkout
+gitusers_default_hooks.deploy[1] = post-checkout.d/00_submodule
+gitusers_default_hooks.deploy[2] = post-checkout.d/deploy

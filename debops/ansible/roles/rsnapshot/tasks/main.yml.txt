@@ -1,0 +1,175 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Install required APT packages
+[2]["ansible.builtin.package"].name = {{ q("flattened", (rsnapshot__base_packages
+                              + rsnapshot__packages)) }} 
+[2]["ansible.builtin.package"].state = present
+[2].register = rsnapshot__register_packages
+[2].until = rsnapshot__register_packages is succeeded
+[3].name = Install custom backup scripts
+[3]["ansible.builtin.copy"].src = usr/local/sbin/
+[3]["ansible.builtin.copy"].dest = {{ (ansible_local.fhs.sbin | d("/usr/local/sbin")) + "/" }}
+[3]["ansible.builtin.copy"].mode = 0755
+[4].name = Create required directories
+[4]["ansible.builtin.file"].path = {{ item.path }}
+[4]["ansible.builtin.file"].mode = {{ item.mode }}
+[4]["ansible.builtin.file"].state = directory
+[4].loop[0].path = {{ rsnapshot__config_dir }}
+[4].loop[0].mode = 0755
+[4].loop[1].path = {{ rsnapshot__snapshot_root }}
+[4].loop[1].mode = 0700
+[5].name = Configure rsnapshot-scheduler
+[5]["ansible.builtin.template"].src = etc/rsnapshot-scheduler.conf.j2
+[5]["ansible.builtin.template"].dest = /etc/rsnapshot-scheduler.conf
+[5]["ansible.builtin.template"].mode = 0644
+[6].name = Configure rsnapshot backup scripts in cron
+[6]["ansible.builtin.template"].src = etc/cron/rsnapshot-wrapper.j2
+[6]["ansible.builtin.template"].dest = /etc/cron.{{ item }}/rsnapshot-wrapper
+[6]["ansible.builtin.template"].mode = 0755
+[6].loop[0] = hourly
+[6].loop[1] = daily
+[6].loop[2] = weekly
+[6].loop[3] = monthly
+[7].name = Ensure that rsnapshot SSH identities are present
+[7]["ansible.builtin.user"].name = root
+[7]["ansible.builtin.user"].generate_ssh_key = True
+[7]["ansible.builtin.user"].ssh_key_file = .ssh/{{ item.name }}
+[7]["ansible.builtin.user"].ssh_key_type = {{ item.type | d(rsnapshot__ssh_key_type) }}
+[7]["ansible.builtin.user"].ssh_key_bits = {{ item.bits | d(rsnapshot__ssh_key_bits) }}
+[7]["ansible.builtin.user"].ssh_key_comment = {{ item.comment | d(rsnapshot__ssh_key_comment) }}
+[7].loop = {{ q("flattened", (rsnapshot__ssh_default_identities + rsnapshot__ssh_identities)) | debops.debops.parse_kv_items }}
+[7].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[7].notify[0] = Refresh host facts
+[7].when = item.name | d() and item.state | d('present') not in ['absent', 'ignore']
+[8].name = Make sure /root/.ssh/known_hosts file exists
+[8]["ansible.builtin.command"] = touch /root/.ssh/known_hosts
+[8].args.creates = /root/.ssh/known_hosts
+[9].name = Make sure that Ansible local facts directory exists
+[9]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[9]["ansible.builtin.file"].state = directory
+[9]["ansible.builtin.file"].mode = 0755
+[10].name = Save rsnapshot local facts
+[10]["ansible.builtin.template"].src = etc/ansible/facts.d/rsnapshot.fact.j2
+[10]["ansible.builtin.template"].dest = /etc/ansible/facts.d/rsnapshot.fact
+[10]["ansible.builtin.template"].mode = 0755
+[10].notify[0] = Refresh host facts
+[10].tags[0] = meta::facts
+[11].name = Update Ansible facts if they were modified
+[11]["ansible.builtin.meta"] = flush_handlers
+[12].name = Gather facts from configured hosts
+[12]["ansible.builtin.setup"].gather_subset = !all
+[12]["ansible.builtin.setup"].fact_path = /dev/null
+[12].delegate_to = {{ item.name }}
+[12].delegate_facts = True
+[12].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[12].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[12].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and not item.fqdn | d() and hostvars[item.name] | d() and hostvars[item.name]['ansible_fqdn'] is not defined and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[13].name = Install required packages on hosts
+[13]["ansible.builtin.package"].name = {{ q("flattened", rsnapshot__host_packages) }}
+[13]["ansible.builtin.package"].state = present
+[13].register = rsnapshot__register_host_packages
+[13].until = rsnapshot__register_host_packages is succeeded
+[13].delegate_to = {{ item.name }}
+[13].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[13].loop_control.label = {{ {"name": item.name, "state": item.state | d("present"),
+                "packages": q("flattened", rsnapshot__host_packages)} }} 
+[13].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and (item.rsync | d(True)) | bool and hostvars[item.name] | d() and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[14].name = Install restricted rsync script used for backups
+[14].environment.rrsync_source = {{ item.rrsync_source | d(rsnapshot__rrsync_source) }}
+[14].environment.rrsync_binary = {{ item.rrsync_binary | d(rsnapshot__rrsync_binary) }}
+[14]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit
+if [ -r "${rrsync_source}.gz" ] ; then
+    gzip -d -c "${rrsync_source}.gz" > "${rrsync_binary}"
+elif [ -r "${rrsync_source}" ] ; then
+    cp "${rrsync_source}" "${rrsync_binary}"
+fi
+chmod 0755 "${rrsync_binary}"
+
+[14].args.executable = bash
+[14].args.creates = {{ item.rrsync_binary | d(rsnapshot__rrsync_binary) }}
+[14].delegate_to = {{ item.name }}
+[14].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[14].loop_control.label = {{ {"name": item.name, "state": item.state | d("present"),
+                "packages": q("flattened", rsnapshot__host_packages)} }} 
+[14].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and (item.rsync | d(True)) | bool and hostvars[item.name] | d() and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[15].name = Deploy root ssh public key on configured hosts
+[15]["ansible.posix.authorized_key"].user = {{ item.ssh_user | d("root") }}
+[15]["ansible.posix.authorized_key"].key = {{ ansible_local.rsnapshot.ssh_identities[item.ssh_identity | d(rsnapshot__ssh_main_identity)]
+             if (ansible_local.rsnapshot.ssh_identities | d() and
+                 ansible_local.rsnapshot.ssh_identities[item.ssh_identity | d(rsnapshot__ssh_main_identity)] | d())
+             else "" }}
+
+[15]["ansible.posix.authorized_key"].key_options = {{ item.ssh_options | d(rsnapshot__ssh_options) }},command="{{ item.ssh_command | d(rsnapshot__ssh_command) }}"
+[15]["ansible.posix.authorized_key"].state = {{ item.state | d("present") }}
+[15].delegate_to = {{ item.fqdn | d(item.name) }}
+[15].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[15].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[15].register = rsnapshot__register_ssh_keys
+[15].when = (item.name | d() and item.state | d('present') not in ['ignore'] and not (item.local | d()) | bool and (item.ssh_key | d(True)) | bool and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[16].name = Remove old SSH host fingerprints if keys were modified
+[16].environment.item_fqdn = {{ item.item.fqdn | d(hostvars[item.item.name].ansible_fqdn if hostvars[item.item.name] | d() else item.item.name) }}
+[16]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit
+if type dig > /dev/null ; then
+    host_names=(
+        "${item_fqdn}"
+        $(dig +short A "${item_fqdn}")
+        $(dig +short AAAA "${item_fqdn}")
+        $(dig +search +short "${item_fqdn}")
+    )
+    for address in ${host_names[@]} ; do
+        ssh-keygen -R ${address}
+    done
+else
+    ssh-keygen -R "${item_fqdn}"
+fi
+
+[16].args.executable = bash
+[16].loop = {{ rsnapshot__register_ssh_keys.results }}
+[16].loop_control.label = {{ {"name": item.item.name, "state": item.item.state | d("present")} }}
+[16].register = rsnapshot__register_keygen_remove
+[16].changed_when = rsnapshot__register_keygen_remove.changed | bool
+[16].when = (item.item.name | d() and item.item.state | d('present') not in ['absent', 'ignore'] and not (item.item.local | d()) | bool and (item.item.ssh_scan | d(True)) | bool and item is changed and (not rsnapshot__limit | d() or (item.item.name in rsnapshot__limit)))
+[17].name = Get list of already scanned host fingerprints
+[17]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && ssh-keygen -f /root/.ssh/known_hosts -F {{ item.fqdn | d(hostvars[item.name].ansible_fqdn if hostvars[item.name] | d() else item.name) }} | grep -q '^# Host {{ item.fqdn | d(hostvars[item.name].ansible_fqdn if hostvars[item.name] | d() else item.name) }} found'
+[17].args.executable = bash
+[17].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[17].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[17].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and not (item.local | d()) | bool and (item.ssh_scan | d(True)) | bool and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[17].register = rsnapshot__register_known_hosts
+[17].changed_when = False
+[17].failed_when = False
+[17].check_mode = False
+[18].name = Scan SSH fingerprints of the configured hosts
+[18]["ansible.builtin.shell"] = ssh-keyscan -H -T 10 -p {{ item.item.ssh_port | d("22") }} {{ item.item.fqdn | d(hostvars[item.item.name].ansible_fqdn if hostvars[item.item.name] | d() else item.item.name) }} >> /root/.ssh/known_hosts
+[18].loop = {{ rsnapshot__register_known_hosts.results }}
+[18].loop_control.label = {{ {"name": item.item.name, "state": item.item.state | d("present")} }}
+[18].register = rsnapshot__register_ssh_keyscan
+[18].changed_when = rsnapshot__register_ssh_keyscan.changed | bool
+[18].when = (item.item.name | d() and item.item.state | d('present') not in ['absent', 'ignore'] and not (item.item.local | d()) | bool and (item.item.ssh_scan | d(True)) | bool and item.rc | d() > 0 and (not rsnapshot__limit | d() or (item.item.name in rsnapshot__limit)))
+[19].name = Remove host configuration directories if requested
+[19]["ansible.builtin.file"].path = {{ rsnapshot__config_dir + "/" + item.name }}
+[19]["ansible.builtin.file"].state = absent
+[19].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[19].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[19].when = (item.name | d() and item.state | d('present') == 'absent' and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[20].name = Create host configuration directories
+[20]["ansible.builtin.file"].path = {{ rsnapshot__config_dir + "/" + item.name }}
+[20]["ansible.builtin.file"].state = directory
+[20]["ansible.builtin.file"].mode = 0755
+[20].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
+[20].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[20].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
+[21].name = Generate host configuration files
+[21]["ansible.builtin.template"].src = etc/rsnapshot/hosts/{{ item.1 }}.j2
+[21]["ansible.builtin.template"].dest = {{ rsnapshot__config_dir + "/" + item.0.name + "/" + item.1 }}
+[21]["ansible.builtin.template"].mode = 0644
+[21].loop = {{ (rsnapshot__combined_hosts | debops.debops.parse_kv_items(defaults={"options": (rsnapshot__combined_configuration | debops.debops.parse_kv_config),
+                                                                                "excludes": (rsnapshot__combined_excludes | debops.debops.parse_kv_items),
+                                                                                "includes": (rsnapshot__combined_includes | debops.debops.parse_kv_items)},
+                                                                      merge_keys=["excludes", "includes"]))
+            | product(["include.txt", "exclude.txt", "rsnapshot.conf"]) | list }}
+
+[21].loop_control.label = {{ {"name": item.0.name, "state": item.0.state | d("present"), "file": item.1} }}
+[21].when = (item.0.name | d() and item.0.state | d('present') not in ['absent', 'ignore'] and (not rsnapshot__limit | d() or (item.0.name in rsnapshot__limit)))

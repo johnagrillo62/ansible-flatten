@@ -1,0 +1,111 @@
+prosody__base_packages[0] = prosody
+prosody__base_packages[1] = lua-zlib
+prosody__base_packages[2] = lua-sec
+prosody__base_packages[3] = prosody-modules
+prosody__base_packages[4] = {{ "lua-event" if prosody__use_libevent | bool else [] }}
+prosody__pki = {{ ansible_local.pki.enabled | d() | bool }}
+prosody__pki_realm_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+prosody__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+prosody__pki_crt_filename = {{ ansible_local.pki.crt | d("default.crt") }}
+prosody__pki_key_filename = {{ ansible_local.pki.key | d("default.key") }}
+prosody__pki_hook_name = prosody
+prosody__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
+prosody__pki_hook_action = reload
+prosody__deploy_state = present
+prosody__domain = {{ ansible_domain }}
+prosody__use_libevent = false
+prosody__modules_default[0] = roster
+prosody__modules_default[1] = saslauth
+prosody__modules_default[2] = tls
+prosody__modules_default[3] = dialback
+prosody__modules_default[4] = disco
+prosody__modules_default[5] = private
+prosody__modules_default[6] = vcard
+prosody__modules_default[7] = privacy
+prosody__modules_default[8] = version
+prosody__modules_default[9] = uptime
+prosody__modules_default[10] = time
+prosody__modules_default[11] = ping
+prosody__modules_default[12] = pep
+prosody__modules_default[13] = admin_adhoc
+prosody__modules_default[14] = posix
+prosody__modules_default[15] = groups
+prosody__modules_default[16] = carbons
+prosody__modules_default[17] = mam
+prosody__modules_default[18] = blocking
+prosody__modules_default[19] = smacks
+prosody__modules = {{ prosody__modules_default }}
+prosody__authentication = internal_plain
+prosody__allow_registration = False
+prosody__config_ldap.ldap.hostname = ldap.{{ ansible_domain }}
+prosody__config_ldap.ldap.user.basedn = ou=users,..@TODO
+prosody__config_ldap.ldap.user.usernamefield = uid
+prosody__config_ldap.ldap.bind_dn = uid=....,dc=...@TODO
+prosody__config_ldap.ldap.bind_password = lookup..@TODO
+prosody__config_ldap.ldap.use_tls = True
+prosody__default_config_global.admins = {{ prosody__admins }}
+prosody__default_config_global.modules_enabled = {{ prosody__modules }}
+prosody__default_config_global.allow_registration = {{ prosody__allow_registration }}
+prosody__default_config_global.daemonize = True
+prosody__default_config_global.pidfile = /var/run/prosody/prosody.pid
+prosody__default_config_global.use_libevent = {{ prosody__use_libevent }}
+prosody__default_config_global.c2s_require_encryption = True
+prosody__default_config_global.s2s_require_encryption = True
+prosody__default_config_global.s2s_secure_auth = True
+prosody__default_config_global.s2s_insecure_domains = {{ prosody__insecure_domains }}
+prosody__default_config_global.authentication = {{ prosody__authentication }}
+prosody__default_config_global.log.info = /var/log/prosody/prosody.log
+prosody__default_config_global.log.error = /var/log/prosody/prosody.err
+prosody__config_http_server.http_port[0] = 5280
+prosody__config_http_server.http_interface[0] = *
+prosody__config_http_server.https_port[0] = 5281
+prosody__config_http_server.https_interface[0] = *
+prosody__config_http_server.https_ssl.certificate = {{ prosody__pki_realm_path + "/" + prosody__pki_realm + "/" + prosody__pki_crt_filename }}
+prosody__config_http_server.https_ssl.key = {{ prosody__pki_realm_path + "/" + prosody__pki_realm + "/" + prosody__pki_key_filename }}
+prosody__combined_config_global = {{ prosody__default_config_global | combine(prosody__config_http_server,
+                                                                              prosody__config_ldap if prosody__authentication == "ldap2" else {},
+                                                                              prosody__config_global,
+                                                                              prosody__group_config_global,
+                                                                              prosody__host_config_global) }}
+
+prosody__config_virtual_hosts[0].name = {{ ansible_domain }}
+prosody__config_virtual_hosts[0].enabled = false
+prosody__config_virtual_hosts[0].pki_realm = domain
+prosody__http_upload = True
+prosody__muc = True
+prosody__config_http_upload[0].domain = upload.{{ prosody__domain }}
+prosody__config_http_upload[0].params = "http_upload"
+prosody__config_muc[0].domain = conference.{{ prosody__domain }}
+prosody__config_muc[0].params = "muc"
+prosody__default_config_components = {{ (prosody__config_http_upload if prosody__http_upload | bool else [])
+                                      + (prosody__config_muc if prosody__muc | bool else []) }} 
+prosody__combined_config_components = {{ prosody__default_config_components
+                                         + prosody__config_components
+                                         + prosody__group_config_components
+                                         + prosody__host_config_components }}
+
+prosody__ferm__dependent_rules[0].type = accept
+prosody__ferm__dependent_rules[0].dport[0] = 5222
+prosody__ferm__dependent_rules[0].accept_any = True
+prosody__ferm__dependent_rules[0].weight = 40
+prosody__ferm__dependent_rules[0].by_role = prosody
+prosody__ferm__dependent_rules[0].name = prosody-xmpp-client
+prosody__ferm__dependent_rules[0].multiport = True
+prosody__ferm__dependent_rules[0].rule_state = {{ prosody__deploy_state }}
+prosody__ferm__dependent_rules[1].type = accept
+prosody__ferm__dependent_rules[1].dport[0] = 5269
+prosody__ferm__dependent_rules[1].accept_any = True
+prosody__ferm__dependent_rules[1].weight = 40
+prosody__ferm__dependent_rules[1].by_role = prosody
+prosody__ferm__dependent_rules[1].name = prosody-xmpp-server
+prosody__ferm__dependent_rules[1].multiport = True
+prosody__ferm__dependent_rules[1].rule_state = {{ prosody__deploy_state }}
+prosody__ferm__dependent_rules[2].type = accept
+prosody__ferm__dependent_rules[2].dport[0] = 5280
+prosody__ferm__dependent_rules[2].dport[1] = 5281
+prosody__ferm__dependent_rules[2].accept_any = True
+prosody__ferm__dependent_rules[2].weight = 40
+prosody__ferm__dependent_rules[2].by_role = prosody
+prosody__ferm__dependent_rules[2].name = prosody-http
+prosody__ferm__dependent_rules[2].multiport = True
+prosody__ferm__dependent_rules[2].rule_state = {{ prosody__deploy_state }}

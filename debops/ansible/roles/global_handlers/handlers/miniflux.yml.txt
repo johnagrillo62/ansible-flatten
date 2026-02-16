@@ -1,0 +1,4 @@
+~d0.name = Restart miniflux
+~d1.ansible.builtin.service = 
+~d2.name = 'miniflux'
+~d2.state = 'restarted'

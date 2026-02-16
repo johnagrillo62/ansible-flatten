@@ -1,0 +1,16 @@
+[0].hosts = all
+[0].roles[0] = common
+[1].hosts = dbservers
+[1].roles[0] = db
+[1].tags[0] = db
+[2].hosts = webservers
+[2].roles[0] = base-apache
+[2].roles[1] = web
+[2].tags[0] = web
+[3].hosts = lbservers
+[3].roles[0] = haproxy
+[3].tags[0] = lb
+[4].hosts = monitoring
+[4].roles[0] = base-apache
+[4].roles[1] = nagios
+[4].tags[0] = monitoring

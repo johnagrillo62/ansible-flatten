@@ -1,0 +1,10 @@
+[0].hosts = all
+[0].roles[0].role = common
+[1].hosts = mongo_servers
+[1].roles[0].role = mongod
+[2].hosts = mongoc_servers
+[2].roles[0].role = mongoc
+[3].hosts = mongos_servers
+[3].roles[0].role = mongos
+[4].hosts = mongo_servers
+[4].tasks[0].include = roles/mongod/tasks/shards.yml

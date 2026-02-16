@@ -1,0 +1,8 @@
+[0].name = Converge
+[0].hosts = all
+[0].become = true
+[0].vars.kata_containers_enabled = true
+[0].vars.container_manager = containerd
+[0].roles[0].role = kubespray_defaults
+[0].roles[1].role = container-engine/containerd
+[0].roles[2].role = container-engine/kata-containers

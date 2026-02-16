@@ -1,0 +1,4 @@
+[0].hosts = all
+[0].tasks[0].name = Install firewalld so we can disable it in the playbook.
+[0].tasks[0].dnf = name=firewalld state=present
+[1].import_playbook = ../nodejs-role/playbook.yml

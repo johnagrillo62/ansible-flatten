@@ -1,0 +1,408 @@
+elasticsearch__base_packages[0] = elasticsearch
+elasticsearch__version = {{ ansible_local.elasticsearch.version | d("0.0.0") }}
+elasticsearch__user = elasticsearch
+elasticsearch__group = elasticsearch
+elasticsearch__additional_groups = {{ ["ssl-cert"]
+                                      if elasticsearch__pki_enabled | bool
+                                      else [] }}
+
+elasticsearch__inventory_group_all = debops_service_elasticsearch
+elasticsearch__inventory_group_master = debops_service_elasticsearch_master
+elasticsearch__inventory_group_data = debops_service_elasticsearch_data
+elasticsearch__inventory_group_ingest = debops_service_elasticsearch_ingest
+elasticsearch__inventory_group_lb = debops_service_elasticsearch_lb
+elasticsearch__inventory_master_hosts = {{ (groups[elasticsearch__inventory_group_master]
+                                            | d(groups[elasticsearch__inventory_group_all]))
+                                           if elasticsearch__allow_tcp else [] }}
+
+elasticsearch__initial_master_nodes[0] = {{ elasticsearch__node_name }}
+elasticsearch__pki_enabled = {{ (ansible_local.pki.enabled | d()) | bool }}
+elasticsearch__pki_base_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
+elasticsearch__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+elasticsearch__pki_ca_file = {{ ansible_local.pki.ca | d("CA.crt") }}
+elasticsearch__pki_key_file = {{ ansible_local.pki.key | d("default.key") }}
+elasticsearch__pki_crt_file = public/cert_intermediate.pem
+elasticsearch__tls_ca_certificate = {{ elasticsearch__pki_base_path + "/"
+                                       + elasticsearch__pki_realm + "/"
+                                       + elasticsearch__pki_ca_file }}
+
+elasticsearch__tls_private_key = {{ elasticsearch__pki_base_path + "/"
+                                    + elasticsearch__pki_realm + "/"
+                                    + elasticsearch__pki_key_file }}
+
+elasticsearch__tls_certificate = {{ elasticsearch__pki_base_path + "/"
+                                    + elasticsearch__pki_realm + "/"
+                                    + elasticsearch__pki_crt_file }}
+
+elasticsearch__xpack_enabled = {{ True
+                                  if (elasticsearch__pki_enabled | bool and
+                                      elasticsearch__allow_tcp | d())
+                                  else False }}
+
+elasticsearch__api_base_url = {{ "https://" + ansible_fqdn + ":9200" }}
+elasticsearch__api_username = elastic
+elasticsearch__secret_path = {{ "elasticsearch/credentials/"
+                                + elasticsearch__cluster_name + "/built-in" }} 
+elasticsearch__api_password = {{ lookup("password", secret + "/"
+                                 + elasticsearch__secret_path + "/"
+                                 + elasticsearch__api_username + "/password") }}
+
+elasticsearch__combined_native_roles = {{ elasticsearch__native_roles
+                                          + elasticsearch__group_native_roles
+                                          + elasticsearch__host_native_roles }}
+
+elasticsearch__combined_native_users = {{ elasticsearch__native_users
+                                          + elasticsearch__group_native_users
+                                          + elasticsearch__host_native_users }}
+
+elasticsearch__network_host = {{ ["_local_", "_site_"]
+                                 if (ansible_local.ferm.enabled | d() and
+                                     ansible_local.ferm.enabled | bool)
+                                 else ["_local_"] }}
+
+elasticsearch__http_port = 9200
+elasticsearch__transport_tcp_port = 9300
+elasticsearch__domain = {{ ansible_domain }}
+elasticsearch__cluster_name = {{ elasticsearch__domain | replace(".", "-") }}
+elasticsearch__node_name = {{ ansible_hostname }}
+elasticsearch__discovery_hosts = {{ elasticsearch__inventory_master_hosts }}
+elasticsearch__discovery_minimum_master_nodes = {{ "1" if (elasticsearch__inventory_master_hosts | count <= 2)
+                                                       else ((elasticsearch__inventory_master_hosts | count / 2) | round(0, "floor") | int + 1) }} 
+elasticsearch__gateway_recover_after_nodes = {{ elasticsearch__discovery_minimum_master_nodes }}
+elasticsearch__node_master = {{ True
+                                if (elasticsearch__inventory_group_master in group_names)
+                                else (False
+                                      if (elasticsearch__inventory_group_data in group_names)
+                                      else (False
+                                            if (elasticsearch__inventory_group_ingest in group_names)
+                                            else (False
+                                                  if (elasticsearch__inventory_group_lb in group_names)
+                                                  else True))) }}
+
+elasticsearch__node_data = {{ True
+                              if (elasticsearch__inventory_group_data in group_names)
+                              else (False
+                                    if (elasticsearch__inventory_group_master in group_names)
+                                    else (False
+                                          if (elasticsearch__inventory_group_ingest in group_names)
+                                          else (False
+                                                if (elasticsearch__inventory_group_lb in group_names)
+                                                else True))) }}
+
+elasticsearch__node_ingest = {{ True
+                                if (elasticsearch__inventory_group_ingest in group_names)
+                                else (False
+                                      if (elasticsearch__inventory_group_master in group_names)
+                                      else (False
+                                            if (elasticsearch__inventory_group_data in group_names)
+                                            else (False
+                                                  if (elasticsearch__inventory_group_lb in group_names)
+                                                  else True))) }}
+
+elasticsearch__memory_lock = {{ True
+                                if (not (ansible_system_capabilities_enforced | d()) | bool or
+                                    ((ansible_system_capabilities_enforced | d()) | bool and
+                                     "cap_ipc_lock" in (ansible_system_capabilities | d([]))))
+                                else False }}
+
+elasticsearch__systemd_limit_memlock = infinity
+elasticsearch__jvm_memory_heap_size_multiplier = {{ "0.2"
+                                                    if (ansible_memtotal_mb | int / 2 <= 2048)
+                                                    else "0.45" }}
+
+elasticsearch__jvm_memory_min_heap_size = {{ (((ansible_memtotal_mb | int
+                                               * elasticsearch__jvm_memory_heap_size_multiplier | float)
+                                               | round | int) | string + "m")
+                                             if (ansible_memtotal_mb | int / 2 <= 32768)
+                                             else "32600m" }}
+
+elasticsearch__jvm_memory_max_heap_size = {{ elasticsearch__jvm_memory_min_heap_size }}
+elasticsearch__path_data[0] = /var/lib/elasticsearch
+elasticsearch__original_configuration[0].name = cluster.name
+elasticsearch__original_configuration[0].comment = Use a descriptive name for your cluster
+elasticsearch__original_configuration[0].value = node-1
+elasticsearch__original_configuration[0].state = comment
+elasticsearch__original_configuration[1].name = node.name
+elasticsearch__original_configuration[1].comment = Use a descriptive name for the node
+elasticsearch__original_configuration[1].value = node-1
+elasticsearch__original_configuration[1].state = comment
+elasticsearch__original_configuration[2].name = node.attr.rack
+elasticsearch__original_configuration[2].comment = Add custom attributes to the node
+elasticsearch__original_configuration[2].value = r1
+elasticsearch__original_configuration[2].state = comment
+elasticsearch__original_configuration[3].name = path.data
+elasticsearch__original_configuration[3].comment = Path to directory where to store the data
+(separate multiple locations by comma)
+
+elasticsearch__original_configuration[3].value = /var/lib/elasticsearch
+elasticsearch__original_configuration[4].name = path.logs
+elasticsearch__original_configuration[4].comment = Path to log files
+elasticsearch__original_configuration[4].value = /var/log/elasticsearch
+elasticsearch__original_configuration[5].name = bootstrap.memory_lock
+elasticsearch__original_configuration[5].comment = Lock the memory on startup
+
+Make sure that the heap size is set to about half the memory available
+on the system and that the owner of the process is allowed to use this
+limit.
+
+Elasticsearch performs poorly when the system is swapping the memory.
+
+elasticsearch__original_configuration[5].value = True
+elasticsearch__original_configuration[5].state = comment
+elasticsearch__original_configuration[6].name = network.host
+elasticsearch__original_configuration[6].comment = Set the bind address to a specific IP (IPv4 or IPv6)
+elasticsearch__original_configuration[6].value = 192.160.0.1
+elasticsearch__original_configuration[6].state = comment
+elasticsearch__original_configuration[7].name = http.port
+elasticsearch__original_configuration[7].comment = Set a custom port for HTTP
+elasticsearch__original_configuration[7].value = 9200
+elasticsearch__original_configuration[7].state = comment
+elasticsearch__original_configuration[8].name = {{ "discovery.zen.ping.unicast.hosts"
+              if (elasticsearch__version is version("7.0.0", "<"))
+              else "discovery.seed_hosts" }}
+
+elasticsearch__original_configuration[8].comment = Pass an initial list of hosts to perform discovery when new node is started:
+The default list of hosts is ["127.0.0.1", "[::1]"]
+
+elasticsearch__original_configuration[8].value[0] = host1
+elasticsearch__original_configuration[8].value[1] = host2
+elasticsearch__original_configuration[8].state = comment
+elasticsearch__original_configuration[9].name = cluster.initial_master_nodes
+elasticsearch__original_configuration[9].comment = Bootstrap the cluster using an initial set of master-eligible nodes:
+elasticsearch__original_configuration[9].value[0] = node-1
+elasticsearch__original_configuration[9].value[1] = node-2
+elasticsearch__original_configuration[9].state = comment
+elasticsearch__original_configuration[10].name = action.destructive_requires_name
+elasticsearch__original_configuration[10].comment = Require explicit names when deleting indices
+elasticsearch__original_configuration[10].value = True
+elasticsearch__original_configuration[10].state = comment
+elasticsearch__default_configuration[0].name = cluster.name
+elasticsearch__default_configuration[0].value = {{ elasticsearch__cluster_name }}
+elasticsearch__default_configuration[0].state = present
+elasticsearch__default_configuration[1].name = node.roles
+elasticsearch__default_configuration[1].comment = Roles assigned to the node
+elasticsearch__default_configuration[1].state = {{ "present" if (elasticsearch__version is version("7.9.0", ">=") and elasticsearch__node_master) else "absent" }}
+elasticsearch__default_configuration[1].value[0] = master
+elasticsearch__default_configuration[2].name = node.roles
+elasticsearch__default_configuration[2].state = {{ "present" if (elasticsearch__version is version("7.9.0", ">=") and elasticsearch__node_data) else "absent" }}
+elasticsearch__default_configuration[2].value[0] = data
+elasticsearch__default_configuration[3].name = node.roles
+elasticsearch__default_configuration[3].state = {{ "present" if (elasticsearch__version is version("7.9.0", ">=") and elasticsearch__node_ingest) else "absent" }}
+elasticsearch__default_configuration[3].value[0] = ingest
+elasticsearch__default_configuration[4].name = node.master
+elasticsearch__default_configuration[4].comment = Type of the node
+elasticsearch__default_configuration[4].value = {{ elasticsearch__node_master }}
+elasticsearch__default_configuration[4].state = {{ "present" if (elasticsearch__version is version("7.9.0", "<")) else "absent" }}
+elasticsearch__default_configuration[5].name = node.data
+elasticsearch__default_configuration[5].value = {{ elasticsearch__node_data }}
+elasticsearch__default_configuration[5].state = {{ "present" if (elasticsearch__version is version("7.9.0", "<")) else "absent" }}
+elasticsearch__default_configuration[6].name = node.ingest
+elasticsearch__default_configuration[6].value = {{ elasticsearch__node_ingest }}
+elasticsearch__default_configuration[6].state = {{ "present" if (elasticsearch__version is version("7.9.0", "<")) else "absent" }}
+elasticsearch__default_configuration[7].name = node.name
+elasticsearch__default_configuration[7].value = {{ elasticsearch__node_name }}
+elasticsearch__default_configuration[7].state = present
+elasticsearch__default_configuration[8].name = network.host
+elasticsearch__default_configuration[8].value = {{ elasticsearch__network_host }}
+elasticsearch__default_configuration[8].state = present
+elasticsearch__default_configuration[9].name = http.port
+elasticsearch__default_configuration[9].value = {{ elasticsearch__http_port }}
+elasticsearch__default_configuration[9].state = present
+elasticsearch__default_configuration[10].name = {{ "transport.tcp.port"
+              if (elasticsearch__version is version("7.1.0", "<"))
+              else "transport.port" }}
+
+elasticsearch__default_configuration[10].comment = Set a custom port for TCP transport
+elasticsearch__default_configuration[10].value = {{ elasticsearch__transport_tcp_port }}
+elasticsearch__default_configuration[10].state = present
+elasticsearch__default_configuration[11].name = {{ "discovery.zen.ping.unicast.hosts"
+              if (elasticsearch__version is version("7.0.0", "<"))
+              else "discovery.seed_hosts" }}
+
+elasticsearch__default_configuration[11].value = 
+elasticsearch__default_configuration[11].state = present
+elasticsearch__default_configuration[12].name = {{ "discovery.zen.ping.unicast.hosts"
+              if (elasticsearch__version is version("7.0.0", "<"))
+              else "discovery.seed_hosts" }}
+
+elasticsearch__default_configuration[12].value = {{ elasticsearch__discovery_hosts }}
+elasticsearch__default_configuration[12].state = {{ "present" if elasticsearch__discovery_hosts else "absent" }}
+elasticsearch__default_configuration[13].name = discovery.zen.minimum_master_nodes
+elasticsearch__default_configuration[13].comment = Prevent the "split brain" by configuring the majority of nodes
+(total number of master-eligible nodes / 2 + 1)
+
+elasticsearch__default_configuration[13].value = {{ elasticsearch__discovery_minimum_master_nodes }}
+elasticsearch__default_configuration[13].state = {{ "present" if (elasticsearch__version is version("7.0.0", "<")) else "absent" }}
+elasticsearch__default_configuration[14].name = cluster.initial_master_nodes
+elasticsearch__default_configuration[14].value = 
+elasticsearch__default_configuration[14].state = present
+elasticsearch__default_configuration[15].name = cluster.initial_master_nodes
+elasticsearch__default_configuration[15].value = {{ elasticsearch__initial_master_nodes }}
+elasticsearch__default_configuration[15].state = {{ "absent"
+               if (elasticsearch__version is version("7.0.0", "<"))
+               else "present" }}
+
+elasticsearch__default_configuration[16].name = gateway.recover_after_nodes
+elasticsearch__default_configuration[16].comment = Block initial recovery after a full cluster restart until N nodes are started
+elasticsearch__default_configuration[16].value = {{ elasticsearch__gateway_recover_after_nodes }}
+elasticsearch__default_configuration[16].state = {{ "present" if (elasticsearch__version is version("7.7.0", "<")) else "absent" }}
+elasticsearch__default_configuration[17].name = action.destructive_requires_name
+elasticsearch__default_configuration[17].value = True
+elasticsearch__default_configuration[17].state = present
+elasticsearch__default_configuration[18].name = bootstrap.memory_lock
+elasticsearch__default_configuration[18].value = {{ True if elasticsearch__memory_lock | bool else False }}
+elasticsearch__default_configuration[18].state = present
+elasticsearch__default_configuration[19].name = path.data
+elasticsearch__default_configuration[19].value = {{ elasticsearch__path_data }}
+elasticsearch__default_configuration[19].state = present
+elasticsearch__default_configuration[20].name = xpack.security.enabled
+elasticsearch__default_configuration[20].value = True
+elasticsearch__default_configuration[20].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[21].name = xpack.security.http.ssl.enabled
+elasticsearch__default_configuration[21].value = True
+elasticsearch__default_configuration[21].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[22].name = xpack.security.http.ssl.verification_mode
+elasticsearch__default_configuration[22].value = certificate
+elasticsearch__default_configuration[22].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[23].name = xpack.security.http.ssl.client_authentication
+elasticsearch__default_configuration[23].value = optional
+elasticsearch__default_configuration[23].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[24].name = xpack.security.http.ssl.key
+elasticsearch__default_configuration[24].value = {{ elasticsearch__tls_private_key }}
+elasticsearch__default_configuration[24].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[25].name = xpack.security.http.ssl.certificate
+elasticsearch__default_configuration[25].value = {{ elasticsearch__tls_certificate }}
+elasticsearch__default_configuration[25].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[26].name = xpack.security.http.ssl.certificate_authorities
+elasticsearch__default_configuration[26].value = {{ elasticsearch__tls_ca_certificate }}
+elasticsearch__default_configuration[26].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[27].name = xpack.security.transport.ssl.enabled
+elasticsearch__default_configuration[27].value = True
+elasticsearch__default_configuration[27].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[28].name = xpack.security.transport.ssl.verification_mode
+elasticsearch__default_configuration[28].value = certificate
+elasticsearch__default_configuration[28].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[29].name = xpack.security.transport.ssl.client_authentication
+elasticsearch__default_configuration[29].value = required
+elasticsearch__default_configuration[29].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[30].name = xpack.security.transport.ssl.key
+elasticsearch__default_configuration[30].value = {{ elasticsearch__tls_private_key }}
+elasticsearch__default_configuration[30].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[31].name = xpack.security.transport.ssl.certificate
+elasticsearch__default_configuration[31].value = {{ elasticsearch__tls_certificate }}
+elasticsearch__default_configuration[31].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__default_configuration[32].name = xpack.security.transport.ssl.certificate_authorities
+elasticsearch__default_configuration[32].value = {{ elasticsearch__tls_ca_certificate }}
+elasticsearch__default_configuration[32].state = {{ "present" if elasticsearch__xpack_enabled | bool else "absent" }}
+elasticsearch__plugin_configuration = {{ lookup("template",
+                                         "lookup/elasticsearch__plugin_configuration.j2")
+                                         | from_yaml }}
+
+elasticsearch__dependent_role = 
+elasticsearch__dependent_state = present
+elasticsearch__dependent_configuration_filter = {{ lookup("template",
+                                                   "lookup/elasticsearch__dependent_configuration_filter.j2")
+                                                   | from_yaml }}
+
+elasticsearch__combined_configuration = {{ lookup("flattened", (elasticsearch__original_configuration
+                                           + elasticsearch__default_configuration
+                                           + elasticsearch__plugin_configuration
+                                           + elasticsearch__dependent_configuration_filter
+                                           + elasticsearch__configuration
+                                           + elasticsearch__master_configuration
+                                           + elasticsearch__data_configuration
+                                           + elasticsearch__ingest_configuration
+                                           + elasticsearch__lb_configuration
+                                           + elasticsearch__group_configuration
+                                           + elasticsearch__host_configuration)) }}
+
+elasticsearch__configuration_sections[0].name = Cluster
+elasticsearch__configuration_sections[0].part = cluster
+elasticsearch__configuration_sections[1].name = Node
+elasticsearch__configuration_sections[1].part = node
+elasticsearch__configuration_sections[2].name = Paths
+elasticsearch__configuration_sections[2].part = path
+elasticsearch__configuration_sections[3].name = Memory
+elasticsearch__configuration_sections[3].part = bootstrap
+elasticsearch__configuration_sections[4].name = Network
+elasticsearch__configuration_sections[4].parts[0] = network
+elasticsearch__configuration_sections[4].parts[1] = http
+elasticsearch__configuration_sections[4].parts[2] = transport
+elasticsearch__configuration_sections[5].name = Discovery
+elasticsearch__configuration_sections[5].part = discovery
+elasticsearch__configuration_sections[6].name = Gateway
+elasticsearch__configuration_sections[6].part = gateway
+elasticsearch__configuration_sections[7].name = X-Pack
+elasticsearch__configuration_sections[7].part = xpack
+elasticsearch__configuration_sections[8].name = Search Guard
+elasticsearch__configuration_sections[8].part = searchguard
+elasticsearch__configuration_sections[9].name = ReadonlyREST
+elasticsearch__configuration_sections[9].part = readonlyrest
+elasticsearch__combined_plugins = {{ lookup("flattened", (elasticsearch__plugins
+                                     + elasticsearch__master_plugins
+                                     + elasticsearch__data_plugins
+                                     + elasticsearch__ingest_plugins
+                                     + elasticsearch__lb_plugins
+                                     + elasticsearch__group_plugins
+                                     + elasticsearch__host_plugins)) }}
+
+elasticsearch__java_policy = // default permissions granted to all domains
+grant {
+    // allows anyone to listen on dynamic ports
+    permission java.net.SocketPermission "localhost:0", "listen";
+
+    // "standard" properties that can be read by anyone
+    permission java.util.PropertyPermission "java.version", "read";
+    permission java.util.PropertyPermission "java.vendor", "read";
+    permission java.util.PropertyPermission "java.vendor.url", "read";
+    permission java.util.PropertyPermission "java.class.version", "read";
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "os.version", "read";
+    permission java.util.PropertyPermission "os.arch", "read";
+    permission java.util.PropertyPermission "file.separator", "read";
+    permission java.util.PropertyPermission "path.separator", "read";
+    permission java.util.PropertyPermission "line.separator", "read";
+    permission java.util.PropertyPermission
+                   "java.specification.version", "read";
+    permission java.util.PropertyPermission "java.specification.vendor", "read";
+    permission java.util.PropertyPermission "java.specification.name", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.version", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.vendor", "read";
+    permission java.util.PropertyPermission
+                   "java.vm.specification.name", "read";
+    permission java.util.PropertyPermission "java.vm.version", "read";
+    permission java.util.PropertyPermission "java.vm.vendor", "read";
+    permission java.util.PropertyPermission "java.vm.name", "read";
+
+    permission java.io.FilePermission "{{ elasticsearch__pki_base_path }}/-", "read";
+    permission java.io.FilePermission "{{ elasticsearch__pki_base_path }}/", "read";
+    permission java.io.FilePermission "/etc/ssl/certs/-", "read";
+    permission java.io.FilePermission "/etc/ssl/certs/", "read";
+};
+
+elasticsearch__etc_services__dependent_list[0].name = elasticsearch-http
+elasticsearch__etc_services__dependent_list[0].port = {{ elasticsearch__http_port }}
+elasticsearch__etc_services__dependent_list[1].name = elasticsearch-tcp
+elasticsearch__etc_services__dependent_list[1].port = {{ elasticsearch__transport_tcp_port }}
+elasticsearch__sysctl__dependent_parameters[0].name = elasticsearch
+elasticsearch__sysctl__dependent_parameters[0].weight = 80
+elasticsearch__sysctl__dependent_parameters[0].options[0].name = vm.max_map_count
+elasticsearch__sysctl__dependent_parameters[0].options[0].comment = Elasticsearch uses a mmapfs directory by default to store its
+indices. The default operating system limits on mmap counts is likely
+to be too low, which may result in out of memory exceptions.
+Ref: https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
+
+elasticsearch__sysctl__dependent_parameters[0].options[0].value = 262144
+elasticsearch__extrepo__dependent_sources[0] = elastic
+elasticsearch__ferm__dependent_rules[0].name = elasticsearch_http
+elasticsearch__ferm__dependent_rules[0].type = accept
+elasticsearch__ferm__dependent_rules[0].dport = {{ elasticsearch__http_port }}
+elasticsearch__ferm__dependent_rules[0].saddr = {{ elasticsearch__allow_http }}
+elasticsearch__ferm__dependent_rules[0].accept_any = False
+elasticsearch__ferm__dependent_rules[1].name = elasticsearch_tcp
+elasticsearch__ferm__dependent_rules[1].type = accept
+elasticsearch__ferm__dependent_rules[1].dport = {{ elasticsearch__transport_tcp_port }}
+elasticsearch__ferm__dependent_rules[1].saddr = {{ elasticsearch__allow_tcp }}
+elasticsearch__ferm__dependent_rules[1].accept_any = False

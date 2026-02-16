@@ -1,0 +1,11 @@
+[0].name = Disable default Apache site
+[0].command = a2dissite 000-default removes=/etc/apache2/sites-enabled/000-default
+[0].notify = restart apache
+[1].name = Enable Apache headers module
+[1].command = a2enmod headers creates=/etc/apache2/mods-enabled/headers.load
+[1].notify = restart apache
+[2].name = Create ServerName configuration file for Apache
+[2].template = src=fqdn.j2 dest=/etc/apache2/conf-available/fqdn.conf
+[3].name = Set ServerName for Apache
+[3].command = a2enconf fqdn creates=/etc/apache2/conf-enabled/fqdn.conf
+[3].notify = restart apache

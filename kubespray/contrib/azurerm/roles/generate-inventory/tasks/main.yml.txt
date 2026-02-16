@@ -1,0 +1,11 @@
+~d0.name = Query Azure VMs
+~d1.command = azure vm list-ip-address --json {{ azure_resource_group }}
+~d1.register = vm_list_cmd
+~d0.name = Set vm_list
+~d1.set_fact = 
+~d2.vm_list = "{{ vm_list_cmd.stdout }}"
+~d0.name = Generate inventory
+~d1.template = 
+~d2.src = inventory.j2
+~d2.dest = "{{ playbook_dir }}/inventory"
+~d2.mode = "0644"

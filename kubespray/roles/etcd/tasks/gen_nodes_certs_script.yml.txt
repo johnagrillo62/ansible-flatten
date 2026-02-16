@@ -1,0 +1,22 @@
+[0].name = Gen_certs | Set cert names per node
+[0].set_fact.my_etcd_node_certs[0] = ca.pem
+[0].set_fact.my_etcd_node_certs[1] = node-{{ inventory_hostname }}.pem
+[0].set_fact.my_etcd_node_certs[2] = node-{{ inventory_hostname }}-key.pem
+[0].tags[0] = facts
+[1].name = Check_certs | Set 'sync_certs' to true on nodes
+[1].set_fact.sync_certs = true
+[1].with_items[0] = {{ my_etcd_node_certs }}
+[2].name = Gen_certs | Gather node certs
+[2].vars.ansible_ssh_retries = 10
+[2].shell = set -o pipefail && tar cfz - -C {{ etcd_cert_dir }} {{ my_etcd_node_certs | join(' ') }} | base64 --wrap=0
+[2].args.executable = /bin/bash
+[2].no_log = {{ not (unsafe_show_logs | bool) }}
+[2].register = etcd_node_certs
+[2].check_mode = false
+[2].delegate_to = {{ groups['etcd'][0] }}
+[2].changed_when = false
+[3].name = Gen_certs | Copy certs on nodes
+[3].shell = set -o pipefail && base64 -d <<< '{{ etcd_node_certs.stdout | quote }}' | tar xz -C {{ etcd_cert_dir }}
+[3].args.executable = /bin/bash
+[3].no_log = {{ not (unsafe_show_logs | bool) }}
+[3].changed_when = false

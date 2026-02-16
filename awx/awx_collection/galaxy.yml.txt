@@ -1,0 +1,14 @@
+~d0.authors = 
+~d0.dependencies = {}
+~d0.description = Ansible content that interacts with the AWX or Automation Platform Controller API.
+~d0.documentation = https://github.com/ansible/awx/blob/devel/awx_collection/README.md
+~d0.homepage = https://www.ansible.com/
+~d0.issues = https://github.com/ansible/awx/issues?q=is%3Aissue+label%3Acomponent%3Aawx_collection
+~d0.license = 
+~d0.name = awx
+~d0.namespace = awx
+~d0.readme = README.md
+~d0.repository = https://github.com/ansible/awx
+~d0.tags = 
+~d0.version = 0.0.1-devel
+~d0.build_ignore = 

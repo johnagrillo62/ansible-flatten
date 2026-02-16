@@ -1,0 +1,13 @@
+[0].name = Detect if vault cert directory exist
+[0].stat.path = {{ vault_cert_dir }}
+[0].register = vault_cert_dir_stat
+[1].name = Set vault_addr for http
+[1].set_fact.vault_addr = http://127.0.0.1:1234
+[1].set_fact.vault_addr_from_host = http://localhost:1234
+[1].set_fact.vault_addr_from_container = http://tools_vault_1:1234
+[1].when = vault_cert_dir_stat.stat.exists == false
+[2].name = Set vault_addr for https
+[2].set_fact.vault_addr = https://127.0.0.1:1234
+[2].set_fact.vault_addr_from_host = https://localhost:1234
+[2].set_fact.vault_addr_from_container = https://tools_vault_1:1234
+[2].when = vault_cert_dir_stat.stat.exists == true

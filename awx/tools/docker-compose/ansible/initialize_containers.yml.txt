@@ -1,0 +1,7 @@
+[0].name = Run any pre-hooks for other container
+[0].hosts = localhost
+[0].gather_facts = false
+[0].tasks[0].name = Initialize vault
+[0].tasks[0].include_role.name = vault
+[0].tasks[0].include_role.tasks_from = initialize
+[0].tasks[0].when = enable_vault | bool

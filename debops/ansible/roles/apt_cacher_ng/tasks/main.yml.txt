@@ -1,0 +1,71 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = secret
+[2].name = Disable autoconfiguration
+[2]["ansible.builtin.debconf"].name = apt-cacher-ng
+[2]["ansible.builtin.debconf"].question = apt-cacher-ng/gentargetmode
+[2]["ansible.builtin.debconf"].vtype = select
+[2]["ansible.builtin.debconf"].value = No automated setup
+[2].when = apt_cacher_ng__deploy_state == 'present'
+[3].name = Add/remove configuration file diversions
+[3]["debops.debops.dpkg_divert"].path = {{ item.path }}
+[3]["debops.debops.dpkg_divert"].state = {{ "present" if apt_cacher_ng__deploy_state == "present"
+               else "absent" }} 
+[3]["debops.debops.dpkg_divert"].delete = True
+[3].loop = {{ apt_cacher_ng__configuration_files }}
+[3].when = item.divert | d(True)
+[4].name = Install/remove packages
+[4]["ansible.builtin.package"].name = {{ q("flattened", apt_cacher_ng__base_packages) }}
+[4]["ansible.builtin.package"].state = {{ "present" if apt_cacher_ng__deploy_state == "present"
+               else "absent" }} 
+[4].register = apt_cacher_ng__register_packages
+[4].until = apt_cacher_ng__register_packages is succeeded
+[5].name = Generate configuration files
+[5]["ansible.builtin.template"].src = {{ item.src | d(item.path | regex_replace("^/", "")) }}.j2
+[5]["ansible.builtin.template"].dest = {{ item.path }}
+[5]["ansible.builtin.template"].owner = {{ item.owner | d("root") }}
+[5]["ansible.builtin.template"].group = {{ item.group | d("root") }}
+[5]["ansible.builtin.template"].mode = {{ item.mode | d("0640") }}
+[5].loop = {{ apt_cacher_ng__configuration_files }}
+[5].notify[0] = Restart apt-cacher-ng
+[5].when = apt_cacher_ng__deploy_state == 'present'
+[6].name = Create the cache directory
+[6]["ansible.builtin.file"].state = directory
+[6]["ansible.builtin.file"].path = {{ apt_cacher_ng__cache_dir }}
+[6]["ansible.builtin.file"].owner = {{ apt_cacher_ng__cache_dir_owner }}
+[6]["ansible.builtin.file"].group = {{ apt_cacher_ng__cache_dir_group }}
+[6]["ansible.builtin.file"].mode = {{ apt_cacher_ng__dir_perms }}
+[6].when = apt_cacher_ng__deploy_state == 'present'
+[7].name = Lazy check cache directory permissions
+[7]["ansible.builtin.file"].state = file
+[7]["ansible.builtin.file"].path = {{ apt_cacher_ng__cache_dir }}/_expending_damaged
+[7]["ansible.builtin.file"].owner = {{ apt_cacher_ng__cache_dir_owner }}
+[7]["ansible.builtin.file"].group = {{ apt_cacher_ng__cache_dir_group }}
+[7]["ansible.builtin.file"].mode = {{ apt_cacher_ng__file_perms }}
+[7].failed_when = False
+[7].register = apt_cacher_ng__register_cache_perms
+[7].when = (apt_cacher_ng__deploy_state == 'present' and apt_cacher_ng__cache_dir_enforce_permissions == 'lazy')
+[8].name = Change cache directory permissions
+[8]["ansible.builtin.shell"] = chown --recursive {{ apt_cacher_ng__cache_dir_owner }}:{{ apt_cacher_ng__cache_dir_group }} .
+find . -type d -exec chmod {{ apt_cacher_ng__dir_perms }} {} \;
+find . -type f -exec chmod {{ apt_cacher_ng__file_perms }} {} \;
+
+[8].args.chdir = {{ apt_cacher_ng__cache_dir }}
+[8].register = apt_cacher_ng__register_chmod
+[8].changed_when = apt_cacher_ng__register_chmod.changed | bool
+[8].when = (apt_cacher_ng__deploy_state == 'present' and (apt_cacher_ng__cache_dir_enforce_permissions == "strict" or (apt_cacher_ng__cache_dir_enforce_permissions == "lazy" and apt_cacher_ng__register_cache_perms is changed)))
+[9].name = Enable/disable service
+[9]["ansible.builtin.service"].name = apt-cacher-ng
+[9]["ansible.builtin.service"].state = {{ "started" if apt_cacher_ng__enabled | d(True) else "stopped" }}
+[9]["ansible.builtin.service"].enabled = {{ True if apt_cacher_ng__enabled | d(True) else False }}
+[9].when = apt_cacher_ng__deploy_state == 'present'
+[10].name = Remove configuration files
+[10]["ansible.builtin.file"].path = {{ item.path }}
+[10]["ansible.builtin.file"].state = absent
+[10].loop = {{ apt_cacher_ng__configuration_files }}
+[10].when = (apt_cacher_ng__deploy_state in ['absent', 'purge'] and not item.divert | d(True))
+[11].name = Remove the cache directory
+[11]["ansible.builtin.file"].path = {{ apt_cacher_ng__cache_dir }}
+[11]["ansible.builtin.file"].state = absent
+[11].when = apt_cacher_ng__deploy_state == 'purge'

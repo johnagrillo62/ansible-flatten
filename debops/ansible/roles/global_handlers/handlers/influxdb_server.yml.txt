@@ -1,0 +1,4 @@
+~d0.name = Restart influxdb
+~d1.ansible.builtin.service = 
+~d2.name = 'influxdb'
+~d2.state = 'restarted'

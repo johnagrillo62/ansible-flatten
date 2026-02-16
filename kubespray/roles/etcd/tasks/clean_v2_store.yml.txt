@@ -1,0 +1,26 @@
+[0].name = Cleanup v2 store when upgrade etcd from <3.6 to >=3.6
+[0].when[0] = etcd_cluster_setup
+[0].when[1] = etcd_current_version != ''
+[0].when[2] = etcd_current_version is version('3.6.0', '<')
+[0].when[3] = etcd_version is version('3.6.0', '>=')
+[0].block[0].name = Ensure etcd version is >=3.5.26
+[0].block[0].when[0] = etcd_current_version is version('3.5.26', '<')
+[0].block[0].fail.msg = You need to upgrade etcd to 3.5.26 or later before upgrade to 3.6. Current version is {{ etcd_current_version }}.
+[0].block[1].name = Change etcd configuration temporally to limit number of WALs and snapshots to clean up v2 store
+[0].block[1]["ansible.builtin.lineinfile"].path = /etc/etcd.env
+[0].block[1]["ansible.builtin.lineinfile"].regexp = {{ item.regexp }}
+[0].block[1]["ansible.builtin.lineinfile"].line = {{ item.line }}
+[0].block[1].loop[0].regexp = ^ETCD_SNAPSHOT_COUNT=
+[0].block[1].loop[0].line = ETCD_SNAPSHOT_COUNT=1
+[0].block[1].loop[1].regexp = ^ETCD_MAX_WALS=
+[0].block[1].loop[1].line = ETCD_MAX_WALS=1
+[0].block[1].loop[2].regexp = ^ETCD_MAX_SNAPSHOTS=
+[0].block[1].loop[2].line = ETCD_MAX_SNAPSHOTS=1
+[0].block[1].loop[3].regexp = ^ETCD_ENABLE_V2=
+[0].block[1].loop[3].line = ETCD_ENABLE_V2=false
+[0].block[2].name = Stop etcd
+[0].block[2].service.name = etcd
+[0].block[2].service.state = stopped
+[0].block[3].name = Start etcd
+[0].block[3].service.name = etcd
+[0].block[3].service.state = started

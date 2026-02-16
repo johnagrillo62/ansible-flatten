@@ -1,0 +1,10 @@
+[0].hosts = $servername
+[0].remote_user = root
+[0].tasks[0].name = Create a new database and user
+[0].tasks[0].mongodb_user = login_user=admin login_password=${mongo_admin_pass} login_port=${mongos_port} database=test user=admin password=${mongo_admin_pass} state=present
+[0].tasks[1].name = Pause for the user to get created and replicated
+[0].tasks[1].pause = minutes=3
+[0].tasks[2].name = Execute the collection creation script
+[0].tasks[2].command = /usr/bin/mongo localhost:${mongos_port}/test -u admin -p ${mongo_admin_pass} /tmp/testsharding.js
+[0].tasks[3].name = Enable sharding on the database and collection
+[0].tasks[3].command = /usr/bin/mongo localhost:${mongos_port}/admin -u admin -p ${mongo_admin_pass} /tmp/enablesharding.js

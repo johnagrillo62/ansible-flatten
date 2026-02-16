@@ -1,0 +1,67 @@
+[0].name = Rescan LVM Volume Groups
+[0]["ansible.builtin.command"] = vgscan
+[0].register = lvm__register_vgscan
+[0].changed_when = lvm__register_vgscan.changed | bool
+[0].when = ((lvm__register_devices_filter | d() and lvm__register_devices_filter is changed) or (lvm__register_devices_global_filter | d() and lvm__register_devices_global_filter is changed))
+[1].name = Unmount filesystems if requested
+[1]["ansible.posix.mount"].name = {{ item.mount }}
+[1]["ansible.posix.mount"].src = {{ "/dev/mapper/" + item.vg | regex_replace("-", "--") + "-" + item.lv | regex_replace("-", "--") }}
+[1]["ansible.posix.mount"].fstype = {{ item.fs_type | d(lvm__default_fs_type) }}
+[1]["ansible.posix.mount"].state = absent
+[1].with_items = {{ lvm__logical_volumes }}
+[1].when = lvm__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.mount | d(False) and item.state | d('present') == 'absent'
+[2].name = Remove Logical Volumes if requested
+[2]["community.general.lvol"].vg = {{ item.vg }}
+[2]["community.general.lvol"].lv = {{ item.lv }}
+[2]["community.general.lvol"].size = {{ item.size }}
+[2]["community.general.lvol"].force = {{ item.force | d(omit) }}
+[2]["community.general.lvol"].state = absent
+[2].with_items = {{ lvm__logical_volumes }}
+[2].when = lvm__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.state | d('present') == 'absent'
+[3].name = Manage LVM Volume Groups
+[3]["community.general.lvg"].vg = {{ item.vg }}
+[3]["community.general.lvg"].pvs = {{ item.pvs if item.pvs is string else (item.pvs | join(",")) }}
+[3]["community.general.lvg"].state = {{ item.state | d("present") }}
+[3]["community.general.lvg"].pesize = {{ item.pesize | d(omit) }}
+[3]["community.general.lvg"].force = {{ item.force | d(omit) }}
+[3]["community.general.lvg"].vg_options = {{ item.options | d(omit) }}
+[3].with_items = {{ lvm__volume_groups }}
+[3].when = item.vg | d(False) and item.pvs | d(False)
+[4].name = Manage LVM Thin Pools
+[4]["community.general.lvol"].vg = {{ item.vg }}
+[4]["community.general.lvol"].thinpool = {{ item.thinpool }}
+[4]["community.general.lvol"].size = {{ item.size }}
+[4]["community.general.lvol"].opts = {{ item.opts | d(omit) }}
+[4].with_items = {{ lvm__thin_pools }}
+[4].when = lvm__thin_pools | d(False) and item.vg | d() and item.thinpool | d() and item.size | d() and item.state | d('present') != 'absent'
+[5].name = Manage LVM Logical Volumes
+[5]["community.general.lvol"].lv = {{ item.lv }}
+[5]["community.general.lvol"].vg = {{ item.vg }}
+[5]["community.general.lvol"].size = {{ item.size }}
+[5]["community.general.lvol"].opts = {{ item.opts | d(omit) }}
+[5]["community.general.lvol"].thinpool = {{ item.thinpool | d(omit) }}
+[5]["community.general.lvol"].force = {{ item.force | d(omit) }}
+[5]["community.general.lvol"].shrink = {{ item.force | d(False) }}
+[5]["community.general.lvol"].state = present
+[5].with_items = {{ lvm__logical_volumes }}
+[5].when = lvm__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.state | d('present') != 'absent'
+[5].register = lvm__register_logical_volumes
+[6].name = Manage filesystems
+[6]["community.general.filesystem"].dev = {{ "/dev/mapper/" + item.vg | regex_replace("-", "--") + "-" + item.lv | regex_replace("-", "--") }}
+[6]["community.general.filesystem"].fstype = {{ item.fs_type | d(lvm__default_fs_type) }}
+[6]["community.general.filesystem"].force = {{ item.fs_force | d(omit) }}
+[6]["community.general.filesystem"].opts = {{ item.fs_opts | d(omit) }}
+[6]["community.general.filesystem"].resizefs = {{ item.fs_resizefs | d(omit) }}
+[6].with_items = {{ lvm__logical_volumes }}
+[6].when = lvm__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.state | d('present') != 'absent' and ((item.mount | d() and item.fs | d(True)) or item.fs | d()) and (not ansible_check_mode or (ansible_check_mode and lvm__register_logical_volumes is not changed))
+[7].name = Manage mount points
+[7]["ansible.posix.mount"].name = {{ item.mount }}
+[7]["ansible.posix.mount"].src = {{ "/dev/mapper/" + item.vg | regex_replace("-", "--") + "-" + item.lv | regex_replace("-", "--") }}
+[7]["ansible.posix.mount"].fstype = {{ item.fs_type | d(lvm__default_fs_type) }}
+[7]["ansible.posix.mount"].opts = {{ item.mount_opts | d(lvm__default_mount_options) }}
+[7]["ansible.posix.mount"].state = {{ item.mount_state | d("mounted") }}
+[7]["ansible.posix.mount"].dump = {{ item.mount_dump | d(omit) }}
+[7]["ansible.posix.mount"].passno = {{ item.mount_passno | d(omit) }}
+[7]["ansible.posix.mount"].fstab = {{ item.mount_fstab | d(omit) }}
+[7].with_items = {{ lvm__logical_volumes }}
+[7].when = lvm__logical_volumes | d(False) and item.vg | d() and item.lv | d() and item.size | d() and item.fs | d(True) and item.mount | d() and item.state | d('present') != 'absent'

@@ -1,0 +1,4 @@
+collections[0].source = ./awx_collection
+collections[0].type = dir
+collections[1] = flowerysong.hvault
+collections[2] = community.docker

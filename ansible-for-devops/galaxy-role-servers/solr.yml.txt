@@ -1,0 +1,4 @@
+[0].hosts = all
+[0].become = yes
+[0].roles[0] = geerlingguy.java
+[0].roles[1] = geerlingguy.solr

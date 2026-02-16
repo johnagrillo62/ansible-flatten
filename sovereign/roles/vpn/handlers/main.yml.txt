@@ -1,0 +1,4 @@
+[0].name = restart dnsmasq
+[0].service = name=dnsmasq state=restarted
+[1].name = restart openvpn
+[1].service = name=openvpn@server state=restarted

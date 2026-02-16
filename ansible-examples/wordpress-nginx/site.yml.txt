@@ -1,0 +1,8 @@
+[0].name = Install WordPress, MySQL, Nginx, and PHP-FPM
+[0].hosts = all
+[0].remote_user = root
+[0].roles[0] = common
+[0].roles[1] = mysql
+[0].roles[2] = nginx
+[0].roles[3] = php-fpm
+[0].roles[4] = wordpress

@@ -1,0 +1,75 @@
+[0].name = Docker | Get package facts
+[0].package_facts.manager = auto
+[1].name = Docker | Find docker packages
+[1].set_fact.docker_packages_list = {{ ansible_facts.packages.keys() | select('search', '^docker+') }}
+[1].set_fact.containerd_package = {{ ansible_facts.packages.keys() | select('search', '^containerd+') }}
+[2].name = Docker | Stop all running container
+[2].shell = set -o pipefail && {{ docker_bin_dir }}/docker ps -q | xargs -r {{ docker_bin_dir }}/docker kill
+[2].args.executable = /bin/bash
+[2].register = stop_all_containers
+[2].retries = 5
+[2].until = stop_all_containers.rc == 0
+[2].changed_when = true
+[2].delay = 5
+[2].ignore_errors = true
+[2].when = docker_packages_list | length>0
+[3].name = Reset | remove all containers
+[3].shell = set -o pipefail && {{ docker_bin_dir }}/docker ps -aq | xargs -r docker rm -fv
+[3].args.executable = /bin/bash
+[3].register = remove_all_containers
+[3].retries = 4
+[3].until = remove_all_containers.rc == 0
+[3].delay = 5
+[3].when = docker_packages_list | length>0
+[4].name = Docker | Stop docker service
+[4].service.name = {{ item }}
+[4].service.enabled = false
+[4].service.state = stopped
+[4].loop[0] = docker
+[4].loop[1] = docker.socket
+[4].loop[2] = containerd
+[4].when = docker_packages_list | length>0
+[5].name = Docker | Remove dpkg hold
+[5].dpkg_selections.name = {{ item }}
+[5].dpkg_selections.selection = install
+[5].when = ansible_pkg_mgr == 'apt'
+[5].changed_when = false
+[5].with_items[0] = {{ docker_packages_list }}
+[5].with_items[1] = {{ containerd_package }}
+[6].name = Docker | Remove docker package
+[6].package.name = {{ item }}
+[6].package.state = absent
+[6].changed_when = false
+[6].with_items[0] = {{ docker_packages_list }}
+[6].with_items[1] = {{ containerd_package }}
+[6].when[0] = not ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]
+[6].when[1] = not is_ostree
+[6].when[2] = docker_packages_list | length > 0
+[7].name = Docker | ensure docker-ce repository is removed
+[7].apt_repository.repo = {{ item }}
+[7].apt_repository.state = absent
+[7].with_items = {{ docker_repo_info.repos }}
+[7].when = ansible_pkg_mgr == 'apt'
+[8].name = Docker | Remove docker repository on Fedora
+[8].file.name = {{ yum_repo_dir }}/docker.repo
+[8].file.state = absent
+[8].when = ansible_distribution == "Fedora" and not is_ostree
+[9].name = Docker | Remove docker repository on RedHat/CentOS/Oracle/AlmaLinux Linux
+[9].file.name = {{ yum_repo_dir }}/docker-ce.repo
+[9].file.state = absent
+[9].when[0] = ansible_os_family == "RedHat"
+[9].when[1] = ansible_distribution != "Fedora"
+[9].when[2] = not is_ostree
+[10].name = Docker | Remove docker configuration files
+[10].file.name = {{ item }}
+[10].file.state = absent
+[10].loop[0] = /etc/systemd/system/docker.service.d/
+[10].loop[1] = /etc/systemd/system/docker.socket
+[10].loop[2] = /etc/systemd/system/docker.service
+[10].loop[3] = /etc/systemd/system/containerd.service
+[10].loop[4] = /etc/systemd/system/containerd.service.d
+[10].loop[5] = /var/lib/docker
+[10].loop[6] = /etc/docker
+[10].ignore_errors = true
+[11].name = Docker | systemctl daemon-reload
+[11].systemd_service.daemon_reload = true

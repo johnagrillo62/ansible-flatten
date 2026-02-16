@@ -1,0 +1,10 @@
+~d0.name = Get crictl completion
+~d1.command = "{{ bin_dir }}/crictl completion"
+~d1.changed_when = false
+~d1.register = cri_completion
+~d1.check_mode = false
+~d0.name = Install crictl completion
+~d1.copy = 
+~d2.dest = /etc/bash_completion.d/crictl
+~d2.content = "{{ cri_completion.stdout }}"
+~d2.mode = "0644"

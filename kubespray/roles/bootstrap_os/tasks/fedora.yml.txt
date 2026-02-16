@@ -1,0 +1,20 @@
+[0].name = Check if bootstrap is needed
+[0].raw = which python
+[0].register = need_bootstrap
+[0].failed_when = false
+[0].changed_when = false
+[0].tags[0] = facts
+[1].name = Add proxy to dnf.conf if http_proxy is defined
+[1]["community.general.ini_file"].path = /etc/dnf/dnf.conf
+[1]["community.general.ini_file"].section = main
+[1]["community.general.ini_file"].option = proxy
+[1]["community.general.ini_file"].value = {{ http_proxy | default(omit) }}
+[1]["community.general.ini_file"].state = {{ http_proxy | default(False) | ternary('present', 'absent') }}
+[1]["community.general.ini_file"].no_extra_spaces = true
+[1]["community.general.ini_file"].mode = 0644
+[1].become = true
+[1].when = not skip_http_proxy_on_os_packages
+[2].name = Install ansible requirements
+[2].raw = dnf install --assumeyes python3 python3-dnf libselinux-python3
+[2].become = true
+[2].when[0] = need_bootstrap.rc != 0

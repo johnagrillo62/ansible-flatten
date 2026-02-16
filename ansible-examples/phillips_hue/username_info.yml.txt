@@ -1,0 +1,4 @@
+~d0.username = elY1xx9p5twUBYDjELgMUuQT99kLaVqGT1p0eDrl
+~d0.ip_address = "192.168.86.30"
+~d0.body_info = 
+~d1.devicetype = "Ansible!"

@@ -1,0 +1,9 @@
+firewall_allowed_tcp_ports[0] = 22
+firewall_allowed_tcp_ports[1] = 80
+firewall_allowed_tcp_ports[2] = 443
+pip_install_packages[0] = pyopenssl
+nginx_remove_default_vhost = True
+nginx_ppa_version = stable
+nginx_docroot = /var/www/html
+certificate_dir = /etc/ssl/private
+server_hostname = https.test

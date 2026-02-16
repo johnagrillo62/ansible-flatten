@@ -1,0 +1,14 @@
+~d0.collections = [ 'debops.debops' ]
+~d0.dependencies = []
+~d0.galaxy_info = 
+~d1.author = 'Maciej Delmanowski, Robin Schneider'
+~d1.description = 'Configure unattended upgrades on Debian-based hosts'
+~d1.company = 'DebOps'
+~d1.license = 'GPL-3.0-only'
+~d1.min_ansible_version = '2.0.0'
+~d1.platforms = 
+~d2.name = 'Ubuntu'
+~d3.versions = [ 'all' ]
+~d2.name = 'Debian'
+~d3.versions = [ 'all' ]
+~d1.galaxy_tags = 

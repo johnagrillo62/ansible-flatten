@@ -1,0 +1,4 @@
+~d0.name = Restart sks
+~d1.ansible.builtin.service = 
+~d2.name = 'sks'
+~d2.state = 'restarted'

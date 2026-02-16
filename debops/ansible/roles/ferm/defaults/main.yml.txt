@@ -1,0 +1,287 @@
+ferm__enabled = {{ True
+                   if (ansible_system_capabilities is undefined or
+                       (((ansible_system_capabilities_enforced | d()) | bool and
+                         "cap_net_admin" in ansible_system_capabilities) or
+                        not (ansible_system_capabilities_enforced | d(True)) | bool))
+                   else False }}
+
+ferm__flush = {{ ferm__enabled | bool }}
+ferm__iptables_backend_enabled = {{ False
+                                    if ansible_distribution_release in
+                                    ["stretch", "trusty", "xenial",
+                                     "bionic", "focal"]
+                                    else True }}
+
+ferm__iptables_backend_type = legacy
+ferm__base_packages[0] = ferm
+ferm__base_packages[1] = patch
+ferm__base_packages[2] = iptables
+ferm__base_packages[3] = arptables
+ferm__base_packages[4] = ebtables
+ferm__domains = {{ lookup("flattened",
+                          ((["ip"] if (ansible_all_ipv4_addresses | d()) else [])
+                           + (["ip6"] if (ansible_all_ipv6_addresses | d()) else [])),
+                          wantlist=True) }}
+
+ferm__ansible_controllers_ports[0] = ssh
+ferm__fast_mode = False
+ferm__use_cache = False
+ferm__extra_options = 
+ferm__default_policy_input = DROP
+ferm__default_policy_output = ACCEPT
+ferm__default_policy_forward = DROP
+ferm__filter_icmp = True
+ferm__filter_icmp_limit = 10/second
+ferm__filter_icmp_burst = 10
+ferm__filter_icmp_expire = {{ (60 * 60) }}
+ferm__filter_syn = True
+ferm__filter_syn_limit = 40/second
+ferm__filter_syn_burst = 40
+ferm__filter_syn_expire = {{ (60 * 60) }}
+ferm__filter_recent = True
+ferm__filter_recent_name = badguys
+ferm__filter_recent_time = {{ (60 * 60 * 2) }}
+ferm__mark_portscan = False
+ferm__log = True
+ferm__log_type = LOG
+ferm__log_map.LOG = LOG log-ip-options log-prefix "$msg"
+ferm__log_map.ULOG = ULOG ulog-nlgroup {{ ferm__log_group }} ulog-prefix "$msg"
+ferm__log_map.NFLOG = NFLOG nflog-group {{ ferm__log_group }} nflog-prefix "$msg"
+ferm__log_target = {{ ferm__log_map[ferm__log_type] }}
+ferm__log_limit = 2/min
+ferm__log_burst = 5
+ferm__log_group = 32
+ferm__include_legacy = True
+ferm__mdns_state = present
+ferm__fix_dependent_rules = {{ lookup("template",
+                               "lookup/ferm__fix_dependent_rules.j2",
+                               convert_data=False) | from_yaml }}
+
+ferm__combined_rules = {{ ferm__default_rules
+                          + ferm__fix_dependent_rules
+                          + ferm__rules
+                          + ferm__group_rules
+                          + ferm__host_rules }}
+
+ferm__parsed_rules = {{ lookup("template",
+                        "lookup/ferm__parsed_rules.j2",
+                        convert_data=False) | from_yaml }}
+
+ferm__default_weight_map.pre-hook = 00
+ferm__default_weight_map.function = 00
+ferm__default_weight_map.custom = 00
+ferm__default_weight_map.loopback = 01
+ferm__default_weight_map.default_policy = 05
+ferm__default_weight_map.policy = 05
+ferm__default_weight_map.ansible-controller = 05
+ferm__default_weight_map.any-whitelist = 10
+ferm__default_weight_map.filter-icmp = 15
+ferm__default_weight_map.connection-tracking = 20
+ferm__default_weight_map.filter-syn = 25
+ferm__default_weight_map.any-blacklist = 30
+ferm__default_weight_map.sshd-chain = 40
+ferm__default_weight_map.any-forward = 60
+ferm__default_weight_map.default = 100
+ferm__default_weight_map.accept = 100
+ferm__default_weight_map.any-service = 100
+ferm__default_weight_map.reject = 900
+ferm__default_weight_map.any-reject = 900
+ferm__default_weight_map.post-hook = 950
+ferm__combined_weight_map = {{ ferm__default_weight_map
+                               | combine(ferm__weight_map) }} 
+ferm__default_rules[0].name = policy_filter_input
+ferm__default_rules[0].type = default_policy
+ferm__default_rules[0].chain = INPUT
+ferm__default_rules[0].policy = {{ ferm__default_policy_input }}
+ferm__default_rules[1].name = policy_filter_forward
+ferm__default_rules[1].type = default_policy
+ferm__default_rules[1].chain = FORWARD
+ferm__default_rules[1].policy = {{ ferm__default_policy_forward }}
+ferm__default_rules[2].name = policy_filter_output
+ferm__default_rules[2].type = default_policy
+ferm__default_rules[2].chain = OUTPUT
+ferm__default_rules[2].policy = {{ ferm__default_policy_output }}
+ferm__default_rules[3].name = firewall_hooks
+ferm__default_rules[3].type = custom
+ferm__default_rules[3].comment = Run custom hooks at various firewall stages
+ferm__default_rules[3].rules = @hook pre   "run-parts /etc/ferm/hooks/pre.d";
+@hook post  "run-parts /etc/ferm/hooks/post.d";
+@hook flush "run-parts /etc/ferm/hooks/flush.d";
+
+ferm__default_rules[4].name = firewall_variables
+ferm__default_rules[4].type = custom
+ferm__default_rules[4].comment = Define custom variables available in the firewall
+ferm__default_rules[4].rules = @def $domains      = ({{ ferm__domains | unique | join(" ") }});
+@def $ipv4_enabled = {{ "1" if "ip" in ferm__domains else "0" }};
+@def $ipv6_enabled = {{ "1" if "ip6" in ferm__domains else "0" }};
+
+ferm__default_rules[5].name = firewall_log
+ferm__default_rules[5].type = custom
+ferm__default_rules[5].comment = Custom log function used by other rules
+ferm__default_rules[5].rules = @def &log($msg) = {
+    mod limit limit {{ ferm__log_limit }}
+              limit-burst {{ ferm__log_burst }}
+        {{ ferm__log_target }};
+}
+
+ferm__default_rules[5].rule_state = {{ "present" if (ferm__log | bool) else "absent" }}
+ferm__default_rules[6].name = accept_loopback
+ferm__default_rules[6].type = accept
+ferm__default_rules[6].weight_class = loopback
+ferm__default_rules[6].interface = lo
+ferm__default_rules[7].name = accept_ansible_controller
+ferm__default_rules[7].type = ansible_controller
+ferm__default_rules[7].weight_class = ansible-controller
+ferm__default_rules[7].comment = Accept SSH connections from Ansible Controllers
+ferm__default_rules[7].dport = {{ ferm__ansible_controllers_ports }}
+ferm__default_rules[7].interface = {{ ferm__ansible_controllers_interfaces }}
+ferm__default_rules[7].multiport = True
+ferm__default_rules[7].accept_any = False
+ferm__default_rules[8].name = filter_icmp_flood
+ferm__default_rules[8].type = hashlimit
+ferm__default_rules[8].weight_class = filter-icmp
+ferm__default_rules[8].protocol = icmp
+ferm__default_rules[8].rule_state = {{ "present" if (ferm__filter_icmp | bool) else "absent" }}
+ferm__default_rules[8].hashlimit = {{ ferm__filter_icmp_limit }}
+ferm__default_rules[8].hashlimit_burst = {{ ferm__filter_icmp_burst }}
+ferm__default_rules[8].hashlimit_expire = {{ ferm__filter_icmp_expire }}
+ferm__default_rules[8].hashlimit_target = ACCEPT
+ferm__default_rules[8].target = DROP
+ferm__default_rules[9].name = connection_tracking
+ferm__default_rules[9].type = connection_tracking
+ferm__default_rules[9].weight_class = connection-tracking
+ferm__default_rules[9].chain[0] = INPUT
+ferm__default_rules[9].chain[1] = OUTPUT
+ferm__default_rules[9].chain[2] = FORWARD
+ferm__default_rules[10].name = filter_syn_flood
+ferm__default_rules[10].type = hashlimit
+ferm__default_rules[10].weight_class = filter-syn
+ferm__default_rules[10].protocol = tcp
+ferm__default_rules[10].protocol_syn = True
+ferm__default_rules[10].rule_state = {{ "present" if (ferm__filter_syn | bool) else "absent" }}
+ferm__default_rules[10].hashlimit = {{ ferm__filter_syn_limit }}
+ferm__default_rules[10].hashlimit_burst = {{ ferm__filter_syn_burst }}
+ferm__default_rules[10].hashlimit_expire = {{ ferm__filter_syn_expire }}
+ferm__default_rules[10].hashlimit_target = RETURN
+ferm__default_rules[10].target = DROP
+ferm__default_rules[11].name = block_recent_badguys
+ferm__default_rules[11].type = recent
+ferm__default_rules[11].weight_class = any-blacklist
+ferm__default_rules[11].comment = Reject packets marked as "badguys"
+ferm__default_rules[11].rule_state = {{ "present" if (ferm__filter_recent | bool) else "absent" }}
+ferm__default_rules[11].recent_name = {{ ferm__filter_recent_name }}
+ferm__default_rules[11].recent_update = True
+ferm__default_rules[11].recent_seconds = {{ ferm__filter_recent_time }}
+ferm__default_rules[11].recent_target = REJECT
+ferm__default_rules[12].name = clean_recent_badguys
+ferm__default_rules[12].type = recent
+ferm__default_rules[12].weight_class = any-blacklist
+ferm__default_rules[12].comment = Reject packets marked as "badguys"
+ferm__default_rules[12].rule_state = {{ "present" if (ferm__filter_recent | bool) else "absent" }}
+ferm__default_rules[12].recent_name = {{ ferm__filter_recent_name }}
+ferm__default_rules[12].recent_remove = True
+ferm__default_rules[12].recent_log = False
+ferm__default_rules[13].name = accept_dhcpv6_client_solicit
+ferm__default_rules[13].type = accept
+ferm__default_rules[13].weight_class = any-service
+ferm__default_rules[13].comment = Initial DHCPv6 Solicit message is sent to multicast
+ferm__default_rules[13].domain[0] = ip6
+ferm__default_rules[13].saddr[0] = fe80::/10
+ferm__default_rules[13].daddr[0] = ff02::1:2/128
+ferm__default_rules[13].protocol[0] = udp
+ferm__default_rules[13].sport[0] = dhcpv6-client
+ferm__default_rules[13].dport[0] = dhcpv6-server
+ferm__default_rules[13].rule_state = {{ "present" if ("ip6" in ferm__domains) else "absent" }}
+ferm__default_rules[14].name = accept_dhcpv6_client
+ferm__default_rules[14].type = accept
+ferm__default_rules[14].weight_class = any-service
+ferm__default_rules[14].comment = DHCPv6 responses seem to be neither RELATED nor ESTABLISHED.
+ferm__default_rules[14].domain[0] = ip6
+ferm__default_rules[14].saddr[0] = fe80::/10
+ferm__default_rules[14].daddr[0] = fe80::/10
+ferm__default_rules[14].protocol[0] = udp
+ferm__default_rules[14].sport[0] = dhcpv6-server
+ferm__default_rules[14].dport[0] = dhcpv6-client
+ferm__default_rules[14].rule_state = {{ "present" if ("ip6" in ferm__domains) else "absent" }}
+ferm__default_rules[15].name = accept_mdns
+ferm__default_rules[15].type = accept
+ferm__default_rules[15].dport = mdns
+ferm__default_rules[15].comment = Accept Multicast DNS packets from other hosts
+ferm__default_rules[15].saddr = {{ ferm__mdns_allow }}
+ferm__default_rules[15].daddr[0] = 224.0.0.251
+ferm__default_rules[15].daddr[1] = ff02::fb
+ferm__default_rules[15].accept_any = True
+ferm__default_rules[15].protocol = udp
+ferm__default_rules[15].rule_state = {{ ferm__mdns_state }}
+ferm__default_rules[16].name = avahi
+ferm__default_rules[16].type = accept
+ferm__default_rules[16].dport = mdns
+ferm__default_rules[16].saddr = {{ avahi__allow | d([]) }}
+ferm__default_rules[16].protocol = udp
+ferm__default_rules[16].accept_any = True
+ferm__default_rules[16].rule_state = {{ "present"
+                    if ((ansible_local.nsswitch.conf | d() and
+                         ("mdns4_minimal" in q("flattened",
+                                               ansible_local.nsswitch.conf.hosts | d([])) or
+                          "mdns_minimal" in q("flattened",
+                                              ansible_local.nsswitch.conf.hosts | d([])))) and
+                        (ansible_local | d(True) and ansible_local.avahi | d(True) and
+                         ((ansible_local["avahi"] | d({})).enabled | d(True)) | bool))
+                    else "absent" }}
+
+ferm__default_rules[17].name = jump_to_legacy_input_rules
+ferm__default_rules[17].type = accept
+ferm__default_rules[17].weight = -10
+ferm__default_rules[17].weight_class = reject
+ferm__default_rules[17].comment = Jump to legacy firewall rules
+ferm__default_rules[17].target = debops-legacy-input-rules
+ferm__default_rules[17].rule_state = {{ "present" if (ferm__include_legacy | bool) else "absent" }}
+ferm__default_rules[18].name = include_legacy_input_rules
+ferm__default_rules[18].type = include
+ferm__default_rules[18].weight_class = post-hook
+ferm__default_rules[18].chain = debops-legacy-input-rules
+ferm__default_rules[18].comment = Include legacy firewall rules
+ferm__default_rules[18].include = /etc/ferm/filter-input.d/
+ferm__default_rules[18].rule_state = {{ "present" if (ferm__include_legacy | bool) else "absent" }}
+ferm__default_rules[19].name = block_portscans
+ferm__default_rules[19].type = recent
+ferm__default_rules[19].weight = 85
+ferm__default_rules[19].comment = Mark potential port scanners as bad guys
+ferm__default_rules[19].recent_set_name = {{ ferm__filter_recent_name }}
+ferm__default_rules[19].rule_state = {{ "present" if (ferm__mark_portscan | bool) else "absent" }}
+ferm__default_rules[20].name = reject_all
+ferm__default_rules[20].type = reject
+ferm__default_rules[21].name = fail2ban-hook
+ferm__default_rules[21].type = fail2ban
+ferm__default_rules[21].comment = Reload fail2ban rules
+ferm__default_rules[21].rule_state = {{ "present" if (ferm__fail2ban | bool) else "absent" }}
+ferm__default_rules[21].rules = @hook post "type fail2ban-server > /dev/null && (fail2ban-client ping > /dev/null && systemctl restart fail2ban > /dev/null || true) || true";
+@hook flush "type fail2ban-server > /dev/null && (fail2ban-client ping > /dev/null && systemctl restart fail2ban > /dev/null || true) || true";
+
+ferm__default_rules[21].weight_class = post-hook
+ferm__default_rules[22].name = forward_external_in
+ferm__default_rules[22].rule_state = absent
+ferm__default_rules[22].weight = 1
+ferm__default_rules[22].weight_class = any-forward
+ferm__default_rules[22].type = accept
+ferm__default_rules[22].chain = FORWARD
+ferm__default_rules[23].name = forward_external_out
+ferm__default_rules[23].rule_state = absent
+ferm__default_rules[23].weight = 2
+ferm__default_rules[23].weight_class = any-forward
+ferm__default_rules[23].type = accept
+ferm__default_rules[23].chain = FORWARD
+ferm__default_rules[24].name = forward_internal
+ferm__default_rules[24].rule_state = absent
+ferm__default_rules[24].weight = 3
+ferm__default_rules[24].weight_class = any-forward
+ferm__default_rules[24].type = accept
+ferm__default_rules[24].chain = FORWARD
+ferm__default_rules[25].name = fix_bootpc_checksum
+ferm__default_rules[25].type = custom
+ferm__default_rules[25].rules = # Add checksums to BOOTP packets from virtual machines and containers.
+# https://www.redhat.com/archives/libvir-list/2010-August/msg00035.html
+@hook post "iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill";
+
+ferm__default_rules[25].rule_state = ignore
+ferm__fail2ban = True

@@ -1,0 +1,69 @@
+scenarios.separate[0].node_groups[0] = kube_control_plane
+scenarios.separate[1].node_groups[0] = kube_node
+scenarios.separate[2].node_groups[0] = etcd
+scenarios.ha[0].node_groups[0] = kube_control_plane
+scenarios.ha[0].node_groups[1] = etcd
+scenarios.ha[1].node_groups[0] = kube_control_plane
+scenarios.ha[1].node_groups[1] = etcd
+scenarios.ha[2].node_groups[0] = kube_node
+scenarios.ha[2].node_groups[1] = etcd
+scenarios.default[0].node_groups[0] = kube_control_plane
+scenarios.default[0].node_groups[1] = etcd
+scenarios.default[1].node_groups[0] = kube_node
+scenarios.all-in-one[0].node_groups[0] = kube_control_plane
+scenarios.all-in-one[0].node_groups[1] = etcd
+scenarios.all-in-one[0].node_groups[2] = kube_node
+scenarios.ha-recover[0].node_groups[0] = kube_control_plane
+scenarios.ha-recover[0].node_groups[1] = etcd
+scenarios.ha-recover[1].node_groups[0] = kube_control_plane
+scenarios.ha-recover[1].node_groups[1] = etcd
+scenarios.ha-recover[1].node_groups[2] = broken_kube_control_plane
+scenarios.ha-recover[1].node_groups[3] = broken_etcd
+scenarios.ha-recover[2].node_groups[0] = kube_node
+scenarios.ha-recover[2].node_groups[1] = etcd
+scenarios.ha-recover-noquorum[0].node_groups[0] = kube_control_plane
+scenarios.ha-recover-noquorum[0].node_groups[1] = etcd
+scenarios.ha-recover-noquorum[0].node_groups[2] = broken_kube_control_plane
+scenarios.ha-recover-noquorum[0].node_groups[3] = broken_etcd
+scenarios.ha-recover-noquorum[1].node_groups[0] = kube_control_plane
+scenarios.ha-recover-noquorum[1].node_groups[1] = etcd
+scenarios.ha-recover-noquorum[1].node_groups[2] = broken_kube_control_plane
+scenarios.ha-recover-noquorum[1].node_groups[3] = broken_etcd
+scenarios.ha-recover-noquorum[2].node_groups[0] = kube_node
+scenarios.ha-recover-noquorum[2].node_groups[1] = etcd
+scenarios.node-etcd-client[0].node_groups[0] = kube_node
+scenarios.node-etcd-client[0].node_groups[1] = kube_control_plane
+scenarios.node-etcd-client[0].node_groups[2] = etcd
+scenarios.node-etcd-client[1].node_groups[0] = kube_node
+scenarios.node-etcd-client[1].node_groups[1] = etcd
+scenarios.node-etcd-client[2].node_groups[0] = kube_node
+scenarios.node-etcd-client[2].node_groups[1] = etcd
+scenarios.node-etcd-client[3].node_groups[0] = kube_node
+ci_job_id = {{ lookup('ansible.builtin.env', 'CI_JOB_ID', default=undefined) }}
+pod_name = {{ lookup('ansible.builtin.env', 'POD_NAME', default=undefined) }}
+pod_uid = {{ lookup('ansible.builtin.env', 'POD_UID', default=undefined) }}
+pod_namespace = {{ lookup('ansible.builtin.env', 'POD_NAMESPACE', default=undefined) }}
+cloudinit_config = #cloud-config
+ users:
+   - name: {{ lookup('env', 'ANSIBLE_REMOTE_USER') }}
+     sudo: ALL=(ALL) NOPASSWD:ALL
+     shell: /bin/bash
+     lock_passwd: False
+     ssh_authorized_keys:
+       - {{ ssh_key.public_key }}
+ fs_setup:
+   - device: '/dev/disk/by-id/virtio-2825A83CBDC8A32D5E'
+     filesystem: 'ext4'
+     partition: 'none'
+ mounts:
+   - ['/dev/disk/by-id/virtio-2825A83CBDC8A32D5E', '/tmp/releases']
+
+ignition_config.ignition.version = 3.2.0
+ignition_config.passwd.users[0].name = {{ lookup('env', 'ANSIBLE_REMOTE_USER') }}
+ignition_config.passwd.users[0].groups[0] = sudo
+ignition_config.passwd.users[0].groups[1] = wheel
+ignition_config.passwd.users[0].sshAuthorizedKeys[0] = {{ ssh_key.public_key }}
+ignition_config.storage.filesystems[0].device = /dev/disk/by-id/virtio-2825A83CBDC8A32D5E
+ignition_config.storage.filesystems[0].format = ext4
+ignition_config.storage.filesystems[0].path = /tmp/releases
+ignition_config.storage.filesystems[0].wipeFilesystem = true

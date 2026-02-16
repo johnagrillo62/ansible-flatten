@@ -1,0 +1,19 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Remove legacy diversions
+[1]["debops.debops.dpkg_divert"].path = {{ item.name }}
+[1]["debops.debops.dpkg_divert"].divert = {{ item.diversion | d(item.name + ".dpkg-divert") }}
+[1]["debops.debops.dpkg_divert"].state = absent
+[1]["debops.debops.dpkg_divert"].delete = True
+[1].with_items = {{ debops_legacy__remove_combined_diversions | debops.debops.parse_kv_items }}
+[1].when = debops_legacy__enabled | bool and item.state | d('present') == 'absent'
+[2].name = Remove legacy packages
+[2]["ansible.builtin.package"].name = {{ item.name }}
+[2]["ansible.builtin.package"].state = absent
+[2].with_items = {{ debops_legacy__remove_combined_packages | debops.debops.parse_kv_items }}
+[2].when = debops_legacy__enabled | bool and item.state | d('present') == 'absent'
+[3].name = Remove legacy files and directories
+[3]["ansible.builtin.file"].path = {{ item.name }}
+[3]["ansible.builtin.file"].state = absent
+[3].with_items = {{ debops_legacy__remove_combined_files | debops.debops.parse_kv_items }}
+[3].when = debops_legacy__enabled | bool and item.state | d('present') == 'absent'

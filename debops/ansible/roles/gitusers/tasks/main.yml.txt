@@ -1,0 +1,16 @@
+[0].name = Create directory for gituser homes
+[0]["ansible.builtin.file"].path = {{ gitusers_default_home_prefix }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0751
+[1].name = Configure groups
+[1]["ansible.builtin.include_tasks"] = groups_present.yml
+[2].name = Configure users
+[2]["ansible.builtin.include_tasks"] = gitusers.yml
+[3].name = Configure git-shell
+[3]["ansible.builtin.include_tasks"] = git-shell.yml
+[4].name = Configure sshkeys
+[4]["ansible.builtin.include_tasks"] = sshkeys.yml
+[5].name = Remove groups if requested
+[5]["ansible.builtin.include_tasks"] = groups_absent.yml

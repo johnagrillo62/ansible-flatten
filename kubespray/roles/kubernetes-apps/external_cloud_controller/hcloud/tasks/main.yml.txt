@@ -1,0 +1,25 @@
+[0].name = External Hcloud Cloud Controller | Generate Manifests
+[0].template.src = {{ item.file }}.j2
+[0].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[0].template.group = {{ kube_cert_group }}
+[0].template.mode = 0640
+[0].with_items[0].name = external-hcloud-cloud-secret
+[0].with_items[0].file = external-hcloud-cloud-secret.yml
+[0].with_items[1].name = external-hcloud-cloud-service-account
+[0].with_items[1].file = external-hcloud-cloud-service-account.yml
+[0].with_items[2].name = external-hcloud-cloud-role-bindings
+[0].with_items[2].file = external-hcloud-cloud-role-bindings.yml
+[0].with_items[3].name = {{ 'external-hcloud-cloud-controller-manager-ds-with-networks' if external_hcloud_cloud.with_networks else 'external-hcloud-cloud-controller-manager-ds' }}
+[0].with_items[3].file = {{ 'external-hcloud-cloud-controller-manager-ds-with-networks.yml' if external_hcloud_cloud.with_networks else 'external-hcloud-cloud-controller-manager-ds.yml' }}
+[0].register = external_hcloud_manifests
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[0].tags = external-hcloud
+[1].name = External Hcloud Cloud Controller | Apply Manifests
+[1].kube.kubectl = {{ bin_dir }}/kubectl
+[1].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[1].kube.state = latest
+[1].with_items[0] = {{ external_hcloud_manifests.results }}
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].when[1] = not item is skipped
+[1].loop_control.label = {{ item.item.file }}
+[1].tags = external-hcloud

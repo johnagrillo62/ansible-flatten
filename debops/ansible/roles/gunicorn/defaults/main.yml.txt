@@ -1,0 +1,28 @@
+gunicorn__binary = {{ "gunicorn3"
+                      if (ansible_local | d() and ansible_local.python | d() and
+                          (ansible_local.python.installed3 | d()) | bool)
+                      else "gunicorn" }}
+
+gunicorn__workers = {{ ansible_processor_vcpus | int + 1 }}
+gunicorn__user = www-data
+gunicorn__group = www-data
+gunicorn__systemd_timeout = 90
+gunicorn__logrotate__dependent_config[0].filename = gunicorn
+gunicorn__logrotate__dependent_config[0].logs[0] = /var/log/gunicorn/*.log
+gunicorn__logrotate__dependent_config[0].divert = True
+gunicorn__logrotate__dependent_config[0].options = rotate 4
+compress
+delaycompress
+missingok
+notifempty
+weekly
+sharedscripts
+su {{ gunicorn__user }} {{ gunicorn__group }}
+
+gunicorn__logrotate__dependent_config[0].postrotate = invoke-rc.d --quiet gunicorn reload >/dev/null
+
+gunicorn__logrotate__dependent_config[0].comment = Log rotation for Green Unicorn logs
+gunicorn__python__dependent_packages3[0] = gunicorn3
+gunicorn__python__dependent_packages3[1] = python3-setproctitle
+gunicorn__python__dependent_packages2[0] = gunicorn
+gunicorn__python__dependent_packages2[1] = python-setproctitle

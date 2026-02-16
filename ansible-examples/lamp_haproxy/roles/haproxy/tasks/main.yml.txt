@@ -1,0 +1,7 @@
+[0].name = Download and install haproxy
+[0].yum = name=haproxy state=present
+[1].name = Configure the haproxy cnf file with hosts
+[1].template = src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
+[1].notify = restart haproxy
+[2].name = Start the haproxy service
+[2].service = name=haproxy state=started enabled=yes

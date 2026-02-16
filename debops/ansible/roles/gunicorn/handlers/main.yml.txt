@@ -1,0 +1,10 @@
+~d0.name = Reload systemd daemon (gunicorn)
+~d1.ansible.builtin.systemd = 
+~d2.daemon_reload = True
+~d1.when = ansible_service_mgr == 'systemd'
+~d0.name = Restart gunicorn
+~d1.ansible.builtin.service = 
+~d2.name = 'gunicorn'
+~d2.state = 'restarted'
+~d0.name = Start Green Unicorn instances
+~d1.ansible.builtin.script = 'script/start-gunicorn-instances'

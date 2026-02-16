@@ -1,0 +1,57 @@
+neurodebian__deploy_state = present
+neurodebian__upstream = {{ True
+                           if (ansible_distribution_release in ["trusty"])
+                           else False }}
+
+neurodebian__support_packages[0] = neurodebian
+neurodebian__support_packages[1] = netselect
+neurodebian__apt_key_fingerprint = DD95 CC43 0502 E37E F840  ACEE A5D3 2F01 2649 A5A9
+neurodebian__apt_components[0] = main
+neurodebian__apt_components[1] = {{ ["contrib", "non-free"]
+        if (ansible_local.apt.nonfree | d() | bool)
+        else [] }}
+
+neurodebian__apt_source_types[0] = deb
+neurodebian__region = {{ ansible_local.locales.system_region | d("US") }}
+neurodebian__region_mirror_map.AU = au
+neurodebian__region_mirror_map.CA = us-nh
+neurodebian__region_mirror_map.CN = cn-hf
+neurodebian__region_mirror_map.DE = de-m
+neurodebian__region_mirror_map.ES = de-m
+neurodebian__region_mirror_map.FR = de-md
+neurodebian__region_mirror_map.GB = de-m
+neurodebian__region_mirror_map.GR = gr
+neurodebian__region_mirror_map.IT = de-m
+neurodebian__region_mirror_map.JP = jp
+neurodebian__region_mirror_map.NZ = au
+neurodebian__region_mirror_map.PL = de-md
+neurodebian__region_mirror_map.RU = de-md
+neurodebian__region_mirror_map.US = us-nh
+neurodebian__apt_mirror_map.au = http://mirror.aarnet.edu.au/pub/neurodebian
+neurodebian__apt_mirror_map.cn-bj1 = http://mirrors.tuna.tsinghua.edu.cn/neurodebian
+neurodebian__apt_mirror_map.cn-hf = http://mirrors.ustc.edu.cn/neurodebian
+neurodebian__apt_mirror_map.cn-zj = http://mirrors.zju.edu.cn/neurodebian
+neurodebian__apt_mirror_map.de-m = http://neurodebian.g-node.org/
+neurodebian__apt_mirror_map.de-md = http://neurodebian.ovgu.de/debian
+neurodebian__apt_mirror_map.gr = http://neurobot.bio.auth.gr/neurodebian
+neurodebian__apt_mirror_map.jp = http://neuroimaging.sakura.ne.jp/neurodebian
+neurodebian__apt_mirror_map.us-ca = http://neurodeb.pirsquared.org/
+neurodebian__apt_mirror_map.us-nh = http://neuro.debian.net/debian
+neurodebian__apt_mirror_map.us-tn = http://masi.vuse.vanderbilt.edu/neurodebian
+neurodebian__apt_mirror = {{ neurodebian__region_mirror_map[neurodebian__region]
+                             | d("us-nh") }} 
+neurodebian__apt_mirror_uri = {{ neurodebian__apt_mirror_map[neurodebian__apt_mirror] }}
+neurodebian__apt_preferences__dependent_list[0].package = *
+neurodebian__apt_preferences__dependent_list[0].reason = Pin NeuroDebian with priority 80 which is lower then the official Debian backports (100).
+This also works when `apt_preferences__preset_list` is set which increases
+Debian backports to 400 and decreases Debian testing to 50.
+neurodebian__apt_preferences__dependent_list[0].by_role = debops.neurodebian
+neurodebian__apt_preferences__dependent_list[0].pin = release o=NeuroDebian
+neurodebian__apt_preferences__dependent_list[0].priority = 80
+neurodebian__apt_preferences__dependent_list[0].state = {{ "present" if (neurodebian__deploy_state == "present") else "absent" }}
+neurodebian__keyring__dependent_apt_keys[0].id = {{ neurodebian__apt_key_fingerprint if neurodebian__upstream | bool else "" }}
+neurodebian__keyring__dependent_apt_keys[0].state = {{ "present"
+               if (neurodebian__deploy_state == "present" and
+                   neurodebian__upstream | bool)
+               else "absent" }}
+

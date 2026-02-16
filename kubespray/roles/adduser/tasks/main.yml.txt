@@ -1,0 +1,12 @@
+[0].name = User | Create User Group
+[0].group.name = {{ user.group | default(user.name) }}
+[0].group.system = {{ user.system | default(omit) }}
+[1].name = User | Create User
+[1].user.comment = {{ user.comment | default(omit) }}
+[1].user.create_home = {{ user.create_home | default(omit) }}
+[1].user.group = {{ user.group | default(user.name) }}
+[1].user.home = {{ user.home | default(omit) }}
+[1].user.shell = {{ user.shell | default(omit) }}
+[1].user.name = {{ user.name }}
+[1].user.system = {{ user.system | default(omit) }}
+[1].when = user.name != "root"

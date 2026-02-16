@@ -1,0 +1,47 @@
+fhs__enabled = True
+fhs__default_directories[0].name = facts
+fhs__default_directories[0].path = /etc/ansible/facts.d
+fhs__default_directories[1].name = bin
+fhs__default_directories[1].path = /usr/local/bin
+fhs__default_directories[2].name = etc
+fhs__default_directories[2].path = /usr/local/etc
+fhs__default_directories[3].name = lib
+fhs__default_directories[3].path = /usr/local/lib
+fhs__default_directories[4].name = sbin
+fhs__default_directories[4].path = /usr/local/sbin
+fhs__default_directories[5].name = share
+fhs__default_directories[5].path = /usr/local/share
+fhs__default_directories[6].name = src
+fhs__default_directories[6].path = /usr/local/src
+fhs__default_directories[7].name = data
+fhs__default_directories[7].path = /srv
+fhs__default_directories[8].name = srv
+fhs__default_directories[8].path = /srv
+fhs__default_directories[9].name = www
+fhs__default_directories[9].path = /srv/www
+fhs__default_directories[10].name = backup
+fhs__default_directories[10].path = /var/backups
+fhs__default_directories[11].name = home
+fhs__default_directories[11].path = /var/local
+fhs__default_directories[11].mode = 02775
+fhs__default_directories[12].name = var
+fhs__default_directories[12].path = /var/local
+fhs__default_directories[12].mode = 02775
+fhs__default_directories[13].name = app
+fhs__default_directories[13].path = /var/local
+fhs__default_directories[13].mode = 02775
+fhs__default_directories[14].name = cache
+fhs__default_directories[14].path = /var/cache
+fhs__default_directories[15].name = log
+fhs__default_directories[15].path = /var/log
+fhs__default_directories[15].mode = {{ "u=rwX,g=rwX,o=rX"
+              if (ansible_distribution in ["Ubuntu", "Linux Mint"])
+              else omit }}
+
+fhs__default_directories[16].name = spool
+fhs__default_directories[16].path = /var/spool
+fhs__combined_directories = {{ fhs__default_directories
+                               + fhs__directories
+                               + fhs__group_directories
+                               + fhs__host_directories }}
+

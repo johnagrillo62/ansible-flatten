@@ -1,0 +1,45 @@
+core__reset_facts = False
+core__reset_tags = False
+core__active_controller = {{ ((ansible_env.SSH_CLIENT.split(" ") | first)
+                              if (ansible_env | d() and ansible_env.SSH_CLIENT | d())
+                              else "") }}
+
+core__admin_groups[0] = admins
+core__admin_users = {{ ((ansible_local.core.admin_users
+                         if (ansible_local.core.admin_users | d())
+                         else [])
+                        + [ansible_user
+                           if (ansible_user is defined and
+                               ansible_user not in
+                               (core__admin_blacklist_default_users
+                                + core__admin_blacklist_users))
+                           else lookup("env", "USER")])
+                        | unique }}
+
+core__admin_blacklist_default_users[0] = admin
+core__admin_blacklist_default_users[1] = ansible
+core__admin_blacklist_default_users[2] = debian
+core__admin_blacklist_default_users[3] = pi
+core__admin_blacklist_default_users[4] = root
+core__admin_blacklist_default_users[5] = ubuntu
+core__admin_blacklist_default_users[6] = user
+core__admin_public_email[0] = {{ ("root@" + ansible_domain)
+                                if ansible_domain | d()
+                                else "root" }}
+
+core__cache_valid_time = {{ (60 * 60 * 24) }}
+core__distribution = {{ ansible_lsb.id
+                        if (ansible_lsb.id | d())
+                        else ansible_distribution }}
+
+core__distribution_release = {{ ansible_lsb.codename
+                                if (ansible_lsb.codename | d())
+                                else ansible_distribution_release }}
+
+core__homedir_umask = 0027
+core__unsafe_writes = False
+core__base_packages[0] = bash
+core__base_packages[1] = libcap2-bin
+core__base_packages[2] = lsb-release
+core__base_packages[3] = dbus
+core__base_packages[4] = dirmngr

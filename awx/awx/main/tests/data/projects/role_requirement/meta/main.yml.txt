@@ -1,0 +1,12 @@
+~d0.galaxy_info = 
+~d1.author = "For Test"
+~d1.company = AWX
+~d1.license = MIT
+~d1.min_ansible_version = 1.4
+~d1.platforms = 
+~d2.name = EL
+~d3.versions = 
+~d2.name = Fedora
+~d3.versions = 
+~d1.categories = 
+~d0.dependencies = []

@@ -1,0 +1,13 @@
+[0].name = Test youki
+[0].hosts = all
+[0].gather_facts = false
+[0].tasks[0].name = Get kubespray defaults
+[0].tasks[0].import_role.name = ../../../../../kubespray_defaults
+[0].tasks[1].name = Test version
+[0].tasks[1].command = {{ bin_dir }}/youki --version
+[0].tasks[1].register = youki_version
+[0].tasks[1].failed_when = youki_version is failed or 'youki' not in youki_version.stdout
+
+[1].name = Test run container
+[1].import_playbook = ../../../molecule/test_runtime.yml
+[1].vars.container_runtime = youki

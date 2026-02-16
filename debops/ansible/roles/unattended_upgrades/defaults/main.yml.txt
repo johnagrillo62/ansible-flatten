@@ -1,0 +1,45 @@
+unattended_upgrades__enabled = True
+unattended_upgrades__release = False
+unattended_upgrades__base_packages[0] = unattended-upgrades
+unattended_upgrades__periodic = {{ False
+                                   if (ansible_local.apt.suite | d() == "archive")
+                                   else unattended_upgrades__enabled }}
+
+unattended_upgrades__periodic_download = {{ unattended_upgrades__periodic }}
+unattended_upgrades__periodic_autoclean = 7
+unattended_upgrades__periodic_verbosity = 0
+unattended_upgrades__origins_lookup[0] = {{ ansible_distribution + "_" + (ansible_distribution_release.split("/")[0]) }}
+unattended_upgrades__origins_lookup[1] = {{ ansible_distribution }}
+unattended_upgrades__origins_lookup[2] = default
+unattended_upgrades__security_origins.Debian[0] = o=Debian,n=${distro_codename},l=Debian-Security
+unattended_upgrades__security_origins.Debian[1] = o=Debian,n=${distro_codename}-security,l=Debian-Security
+unattended_upgrades__security_origins.Debian[2] = o=${distro_id},n=${distro_codename}-updates
+unattended_upgrades__security_origins.Devuan[0] = o=Devuan,n=${distro_codename}-security,l=Devuan-Security
+unattended_upgrades__security_origins.Devuan[1] = o=Devuan,n=${distro_codename}-updates
+unattended_upgrades__security_origins.Ubuntu[0] = o=Ubuntu,n=${distro_codename},a=${distro_codename}-security
+unattended_upgrades__security_origins.Ubuntu[1] = o=Ubuntu,n=${distro_codename},a=${distro_codename}-updates
+unattended_upgrades__security_origins.default[0] = o=${distro_id},n=${distro_codename},l=${distro_id}-Security
+unattended_upgrades__security_origins.default[1] = o=${distro_id},n=${distro_codename}-updates
+unattended_upgrades__release_origins.Debian[0] = o=${distro_id},n=${distro_codename}
+unattended_upgrades__release_origins.Debian[1] = o=${distro_id} Backports,n=${distro_codename}-backports
+unattended_upgrades__release_origins.Devuan[0] = o=${distro_id},n=${distro_codename}
+unattended_upgrades__release_origins.Devuan[1] = o=${distro_id} Backports,n=${distro_codename}-backports
+unattended_upgrades__release_origins.Ubuntu[0] = o=Ubuntu,n=${distro_codename},a=${distro_codename}
+unattended_upgrades__release_origins.Ubuntu[1] = o=Ubuntu,n=${distro_codename},a=${distro_codename}-backports
+unattended_upgrades__release_origins.default[0] = o=${distro_id},n=${distro_codename}
+unattended_upgrades__release_origins.default[1] = o=${distro_id},n=${distro_codename}-backports
+unattended_upgrades__auto_fix_interrupted_dpkg = True
+unattended_upgrades__ignore_app_require_restart = True
+unattended_upgrades__minimal_steps = True
+unattended_upgrades__install_on_shutdown = False
+unattended_upgrades__mail_from = 
+unattended_upgrades__mail_to = {{ ansible_local.core.admin_private_email
+                                  | d(["root@" + ansible_domain]) }} 
+unattended_upgrades__mail_only_on_error = True
+unattended_upgrades__remove_unused = False
+unattended_upgrades__auto_reboot = False
+unattended_upgrades__auto_reboot_time = {{ "02:30"
+                                            if (ansible_virtualization_role in ["host", "NA"])
+                                            else ("02:%02d" | format(55 | random(seed=inventory_hostname, start=40))) }}
+
+unattended_upgrades__bandwidth_limit = 

@@ -1,0 +1,12 @@
+~d0.hosts = all
+~d1.remote_user = root
+~d1.vars = 
+~d2.env = 
+~d3.HI = test2
+~d3.http_proxy = http://proxy.example.com:8080
+~d1.tasks = 
+~d2.shell = echo $HI
+~d3.environment = 
+~d4.HI = test1
+~d2.shell = echo $HI
+~d3.environment = "{{ env }}"

@@ -1,0 +1,8 @@
+~d0.name = Manage console configuration
+~d1.collections = [ 'debops.debops' ]
+~d1.hosts = [ 'debops_all_hosts', 'debops_service_console' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = console
+~d3.tags = [ 'role::console' ]

@@ -1,0 +1,17 @@
+~d0.name = Download sonobuoy
+~d1.get_url = 
+~d2.url = "https://github.com/vmware-tanzu/sonobuoy/releases/download/v{{ sonobuoy_version }}/sonobuoy_{{ sonobuoy_version }}_linux_{{ sonobuoy_arch }}.tar.gz"
+~d2.dest = /tmp/sonobuoy.tar.gz
+~d2.mode = "0644"
+~d0.name = Extract sonobuoy
+~d1.unarchive = 
+~d2.src = /tmp/sonobuoy.tar.gz
+~d2.dest = /usr/local/bin/
+~d2.copy = false
+~d0.name = Run sonobuoy
+~d1.command = "{{ sonobuoy_path }} run --mode {{ sonobuoy_mode }} --e2e-parallel {{ sonobuoy_parallel }} --wait"
+~d0.name = Run sonobuoy retrieve
+~d1.command = "{{ sonobuoy_path }} retrieve"
+~d1.register = sonobuoy_retrieve
+~d0.name = Run inspect results
+~d1.command = "{{ sonobuoy_path }} results {{ sonobuoy_retrieve.stdout }} --plugin e2e --mode report"

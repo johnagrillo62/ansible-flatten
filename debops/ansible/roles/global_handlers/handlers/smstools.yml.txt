@@ -1,0 +1,12 @@
+~d0.name = Restart smstools
+~d1.ansible.builtin.service = 
+~d2.name = 'smstools'
+~d2.state = 'restarted'
+~d0.name = Restart xinetd
+~d1.ansible.builtin.service = 
+~d2.name = 'xinetd'
+~d2.state = 'restarted'
+~d0.name = Reload xinetd
+~d1.ansible.builtin.service = 
+~d2.name = 'xinetd'
+~d2.state = 'reloaded'

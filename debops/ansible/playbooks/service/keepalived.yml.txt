@@ -1,0 +1,14 @@
+~d0.name = Manage Advanced Package Manager
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_keepalived' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = sysctl
+~d3.tags = [ 'role::sysctl', 'skip::sysctl' ]
+~d3.sysctl__dependent_parameters = 
+~d2.role = ferm
+~d3.tags = [ 'role::ferm', 'skip::ferm' ]
+~d3.ferm__dependent_rules = 
+~d2.role = keepalived
+~d3.tags = [ 'role::keepalived', 'skip::keepalived' ]

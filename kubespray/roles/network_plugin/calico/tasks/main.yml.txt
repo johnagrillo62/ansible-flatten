@@ -1,0 +1,6 @@
+[0].name = Calico Pre tasks
+[0].import_tasks = pre.yml
+[1].name = Calico repos
+[1].import_tasks = repos.yml
+[2].name = Calico install
+[2].include_tasks = install.yml

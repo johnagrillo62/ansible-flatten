@@ -1,0 +1,30 @@
+[0].name = Calico-rr | Configure route reflector
+[0].block[0].name = Set the retry count
+[0].block[0].set_fact.retry_count = {{ 0 if retry_count is undefined else retry_count | int + 1 }}
+[0].block[1].name = Calico | Set label for route reflector
+[0].block[1].shell = {{ bin_dir }}/calicoctl.sh label node  {{ inventory_hostname }} calico-rr-id={{ calico_rr_id }} --overwrite
+[0].block[1].changed_when = false
+[0].block[1].register = calico_rr_id_label
+[0].block[1].until = calico_rr_id_label is succeeded
+[0].block[1].delay = {{ retry_stagger | random + 3 }}
+[0].block[1].retries = 10
+[0].block[1].when = calico_rr_id is defined
+[0].block[2].name = Calico-rr | Fetch current node object
+[0].block[2].command = {{ bin_dir }}/calicoctl.sh get node {{ inventory_hostname }} -ojson
+[0].block[2].changed_when = false
+[0].block[2].register = calico_rr_node
+[0].block[2].until = calico_rr_node is succeeded
+[0].block[2].delay = {{ retry_stagger | random + 3 }}
+[0].block[2].retries = 10
+[0].block[3].name = Calico-rr | Set route reflector cluster ID
+[0].block[3].set_fact.calico_rr_node_patched = {{ calico_rr_node.stdout | from_json | combine({ 'spec': { 'bgp': { 'routeReflectorClusterID': cluster_id }}}, recursive=True) }}
+[0].block[4].name = Calico-rr | Configure route reflector
+[0].block[4].shell = {{ bin_dir }}/calicoctl.sh replace -f-
+[0].block[4].args.stdin = {{ calico_rr_node_patched | to_json }}
+[0].rescue[0].name = Fail if retry limit is reached
+[0].rescue[0].fail.msg = Ended after 10 retries
+[0].rescue[0].when = retry_count | int == 10
+[0].rescue[1].name = Retrying node configuration
+[0].rescue[1].debug.msg = Failed to configure route reflector - Retrying...
+[0].rescue[2].name = Retry node configuration
+[0].rescue[2].include_tasks = update-node.yml

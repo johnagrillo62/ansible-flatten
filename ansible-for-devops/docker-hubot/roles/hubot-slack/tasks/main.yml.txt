@@ -1,0 +1,29 @@
+[0].name = Install dependencies.
+[0].package.name = sudo
+[0].package.state = present
+[1].name = Install required Node.js packages.
+[1].npm.name = {{ item }}
+[1].npm.state = present
+[1].npm.global = yes
+[1].with_items[0] = yo
+[1].with_items[1] = generator-hubot
+[2].name = Ensure hubot user exists.
+[2].user.name = hubot
+[2].user.create_home = yes
+[2].user.home = {{ hubot_home }}
+[3].name = Generate hubot.
+[3].command = yo hubot --owner="{{ hubot_owner }}" --name="{{ hubot_name }}" --description="{{ hubot_description }}" --adapter=slack --defaults chdir={{ hubot_home }}
+
+[3].become = yes
+[3].become_user = hubot
+[4].name = Remove certain scripts from external-scripts.json.
+[4].lineinfile.path = {{ hubot_home }}/external-scripts.json
+[4].lineinfile.regexp = {{ item }}
+[4].lineinfile.state = absent
+[4].with_items[0] = redis-brain
+[4].with_items[1] = heroku
+[4].become = yes
+[4].become_user = hubot
+[5].name = Remove the hubot-scripts.json file.
+[5].file.path = {{ hubot_home }}/hubot-scripts.json
+[5].file.state = absent

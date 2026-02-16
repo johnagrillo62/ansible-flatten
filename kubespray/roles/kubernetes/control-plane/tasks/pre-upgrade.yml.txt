@@ -1,0 +1,19 @@
+[0].name = Pre-upgrade | Delete control plane manifests if etcd secrets changed
+[0].file.path = /etc/kubernetes/manifests/{{ item }}.manifest
+[0].file.state = absent
+[0].with_items[0][0] = kube-apiserver
+[0].with_items[0][1] = kube-controller-manager
+[0].with_items[0][2] = kube-scheduler
+[0].register = kube_apiserver_manifest_replaced
+[0].when = etcd_secret_changed | default(false)
+[1].name = Pre-upgrade | Delete control plane containers forcefully
+[1].shell = set -o pipefail && docker ps -af name=k8s_{{ item }}* -q | xargs --no-run-if-empty docker rm -f
+[1].args.executable = /bin/bash
+[1].with_items[0][0] = kube-apiserver
+[1].with_items[0][1] = kube-controller-manager
+[1].with_items[0][2] = kube-scheduler
+[1].when = kube_apiserver_manifest_replaced.changed
+[1].register = remove_control_plane_container
+[1].retries = 10
+[1].until = remove_control_plane_container.rc == 0
+[1].delay = 1

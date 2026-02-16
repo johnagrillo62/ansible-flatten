@@ -1,0 +1,26 @@
+[0].name = Install required packages
+[0]["ansible.builtin.package"].name = {{ (ntp__base_packages + ntp__packages) | flatten }}
+[0]["ansible.builtin.package"].state = present
+[0].register = ntp__register_apt_install
+[0].until = ntp__register_apt_install is succeeded
+[1].name = Query available systemd services
+[1]["ansible.builtin.service_facts"] = null
+[1].when = ansible_service_mgr == "systemd"
+[2].name = Manage systemd-timesyncd state
+[2]["ansible.builtin.service"].name = systemd-timesyncd
+[2]["ansible.builtin.service"].state = {{ "started" if (ntp__daemon in ["systemd-timesyncd"]) else "stopped" }}
+[2]["ansible.builtin.service"].enabled = {{ True if (ntp__daemon in ["systemd-timesyncd"]) else False }}
+[2].when[0] = ansible_service_mgr == "systemd"
+[2].when[1] = ("systemd-timesyncd.service" in ansible_facts.services and ansible_facts.services['systemd-timesyncd.service'].status != 'not-found')
+[3].name = Install chrony
+[3]["ansible.builtin.include_tasks"] = chrony.yml
+[3].when = ntp__daemon == 'chrony'
+[4].name = Install ntpd
+[4]["ansible.builtin.include_tasks"] = ntpd.yml
+[4].when = ntp__daemon in [ 'ntpd', 'ntpdate' ]
+[5].name = Install OpenNTPd
+[5]["ansible.builtin.include_tasks"] = openntpd.yml
+[5].when = ntp__daemon == 'openntpd'
+[6].name = Include systemd-timesyncd configuration
+[6]["ansible.builtin.include_tasks"] = systemd-timesyncd.yml
+[6].when = (ansible_service_mgr == "systemd" and ntp__daemon == 'systemd-timesyncd')

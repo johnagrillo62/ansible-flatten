@@ -1,0 +1,2 @@
+[0].name = restart znc
+[0].service = name=znc state=restarted

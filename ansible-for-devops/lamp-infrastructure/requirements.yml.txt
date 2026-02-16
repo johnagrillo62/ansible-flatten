@@ -1,0 +1,9 @@
+roles[0].name = geerlingguy.firewall
+roles[1].name = geerlingguy.repo-epel
+roles[2].name = geerlingguy.varnish
+roles[3].name = geerlingguy.apache
+roles[4].name = geerlingguy.php
+roles[5].name = geerlingguy.php-mysql
+roles[6].name = geerlingguy.php-memcached
+roles[7].name = geerlingguy.mysql
+roles[8].name = geerlingguy.memcached

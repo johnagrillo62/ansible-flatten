@@ -1,0 +1,28 @@
+apt_listchanges__deploy_state = present
+apt_listchanges__base_packages[0] = apt-listchanges
+apt_listchanges__mail_to = {{ ansible_local.core.admin_private_email | d(["root"]) }}
+apt_listchanges__apt_frontend = {{ "none"
+                                   if (ansible_local | d() and ansible_local.apticron | d() and
+                                       ansible_local.apticron.enabled | bool)
+                                   else (ansible_local.apt_listchanges.apt.frontend
+                                         if (ansible_local.apt_listchanges.apt | d() and
+                                             ansible_local.apt_listchanges.apt.frontend | d())
+                                         else "mail") }}
+
+apt_listchanges__apt_which = news
+apt_listchanges__apticron_frontend = mail
+apt_listchanges__apticron_which = both
+apt_listchanges__profiles.cmdline = {{ apt_listchanges__profile_cmdline }}
+apt_listchanges__profiles.apt = {{ apt_listchanges__profile_apt }}
+apt_listchanges__profiles.apticron = {{ apt_listchanges__profile_apticron }}
+apt_listchanges__profile_cmdline.frontend = pager
+apt_listchanges__profile_apt.frontend = {{ apt_listchanges__apt_frontend }}
+apt_listchanges__profile_apt.email_address = {{ apt_listchanges__mail_to | join(",") }}
+apt_listchanges__profile_apt.confirm = 0
+apt_listchanges__profile_apt.which = {{ apt_listchanges__apt_which }}
+apt_listchanges__profile_apt.save_seen = /var/lib/apt/listchanges.db
+apt_listchanges__profile_apticron.frontend = {{ apt_listchanges__apticron_frontend }}
+apt_listchanges__profile_apticron.email_address = {{ apt_listchanges__mail_to | join(",") }}
+apt_listchanges__profile_apticron.confirm = 0
+apt_listchanges__profile_apticron.which = {{ apt_listchanges__apticron_which }}
+apt_listchanges__profile_apticron.save_seen = /var/lib/apt/listchanges.db

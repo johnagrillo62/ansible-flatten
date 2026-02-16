@@ -1,0 +1,9 @@
+~d0.name = Test radvd and restart
+~d1.ansible.builtin.command = radvd --configtest
+~d1.register = global_handlers__radvd_register_test_config
+~d1.changed_when = global_handlers__radvd_register_test_config.changed | bool
+~d1.notify = [ 'Restart radvd' ]
+~d0.name = Restart radvd
+~d1.ansible.builtin.service = 
+~d2.name = 'radvd'
+~d2.state = 'restarted'

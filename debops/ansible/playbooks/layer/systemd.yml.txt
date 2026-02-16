@@ -1,0 +1,10 @@
+~d0.name = Configure system and service manager
+~d1.import_playbook = '../service/systemd.yml'
+~d0.name = Configure system journal and log service
+~d1.import_playbook = '../service/journald.yml'
+~d0.name = Configure network manager service
+~d1.import_playbook = '../service/networkd.yml'
+~d0.name = Configure time synchronization service
+~d1.import_playbook = '../service/timesyncd.yml'
+~d0.name = Configure system resolver
+~d1.import_playbook = '../service/resolved.yml'

@@ -1,0 +1,21 @@
+[0].name = Update ca-certificates.crt
+[0]["ansible.builtin.command"] = update-ca-certificates
+[0].register = global_handlers__pki_register_update_cacerts
+[0].changed_when = global_handlers__pki_register_update_cacerts.changed | bool
+[0].notify[0] = Install ca-certificates.crt into Postfix chroot
+[1].name = Regenerate ca-certificates.crt
+[1]["ansible.builtin.command"] = update-ca-certificates --fresh
+[1].register = global_handlers__pki_register_regenerate_cacerts
+[1].changed_when = global_handlers__pki_register_regenerate_cacerts.changed | bool
+[1].notify[0] = Install ca-certificates.crt into Postfix chroot
+[2].name = Reconfigure ca-certificates
+[2].environment.DEBIAN_FRONTEND = noninteractive
+[2].environment.DEBCONF_NONINTERACTIVE_SEEN = true
+[2]["ansible.builtin.command"] = dpkg-reconfigure --frontend=noninteractive ca-certificates
+[2].register = global_handlers__pki_register_reconfigure_cacerts
+[2].changed_when = global_handlers__pki_register_reconfigure_cacerts.changed | bool
+[2].notify[0] = Install ca-certificates.crt into Postfix chroot
+[3].name = Install ca-certificates.crt into Postfix chroot
+[3]["ansible.builtin.shell"] = test -d /var/spool/postfix && cp -f /etc/ssl/certs/ca-certificates.crt /var/spool/postfix/etc/ssl/certs/ca-certificates.crt || true
+[3].register = global_handlers__pki_register_postfix_chroot
+[3].changed_when = global_handlers__pki_register_postfix_chroot.changed | bool

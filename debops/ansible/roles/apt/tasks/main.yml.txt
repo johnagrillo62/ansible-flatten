@@ -1,0 +1,182 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = debops.debops.global_handlers
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = debops.debops.secret
+[2].name = Validate configuration of APT repositories
+[2]["ansible.builtin.assert"].that[0] = item.filename is defined
+[2]["ansible.builtin.assert"].that[1] = item.repo is defined or item.uris is defined or item.state in ["divert", "absent"]
+[2]["ansible.builtin.assert"].fail_msg = You need to specify "filename" and either "repo" or "uris" as parameters
+[2]["ansible.builtin.assert"].quiet = True
+[2].loop = {{ apt__combined_repositories | debops.debops.parse_kv_items }}
+[2].loop_control.label = {{ item.name }}
+[3].name = Configure custom APT keys
+[3]["ansible.builtin.apt_key"].data = {{ item.data | d(omit) }}
+[3]["ansible.builtin.apt_key"].file = {{ item.file | d(omit) }}
+[3]["ansible.builtin.apt_key"].id = {{ item.id | d(omit) }}
+[3]["ansible.builtin.apt_key"].keyring = {{ item.keyring | d(omit) }}
+[3]["ansible.builtin.apt_key"].keyserver = {{ item.keyserver | d(omit) }}
+[3]["ansible.builtin.apt_key"].url = {{ item.url | d(omit) }}
+[3]["ansible.builtin.apt_key"].state = {{ item.state | d("present") }}
+[3].loop = {{ q("flattened", apt__keys
+                           + apt__group_keys
+                           + apt__host_keys) }}
+
+[3].register = apt__register_apt_key
+[3].until = apt__register_apt_key is succeeded
+[3].when = apt__enabled | bool and (item.url | d() or item.data | d() or item.id | d() or item.file | d())
+[3].tags[0] = role::apt:keys
+[4].name = Add/remove diversion of repository sources
+[4]["debops.debops.dpkg_divert"].path = /etc/apt/sources.list.d/{{ item.filename }}
+[4]["debops.debops.dpkg_divert"].state = {{ "present"
+               if (item.state | d("present") == "divert")
+               else "absent" }}
+
+[4]["debops.debops.dpkg_divert"].delete = True
+[4].loop = {{ apt__combined_repositories | debops.debops.parse_kv_items }}
+[4].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[4].register = apt__register_divert_repositories
+[4].when = (apt__enabled | bool and item.filename and item.repo is undefined and item.uris is undefined and (item.state | d("present")) in [ "divert", "absent" ])
+[5].name = Configure custom APT repositories
+[5]["ansible.builtin.apt_repository"].update_cache = False
+[5]["ansible.builtin.apt_repository"].repo = {{ item.repo }}
+[5]["ansible.builtin.apt_repository"].codename = {{ item.codename | d(omit) }}
+[5]["ansible.builtin.apt_repository"].filename = {{ item.filename | regex_replace(".list$", "") | regex_replace(".sources$", "") }}
+[5]["ansible.builtin.apt_repository"].mode = {{ item.mode | d(omit) }}
+[5]["ansible.builtin.apt_repository"].state = {{ item.state | d("present") }}
+[5].loop = {{ apt__combined_repositories | debops.debops.parse_kv_items }}
+[5].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[5].register = apt__register_apt_repositories
+[5].when = (apt__enabled | bool and item.repo | d() and item.uris is undefined and (item.state | d("present")) not in [ "divert", "ignore", "init" ])
+[6].name = Configure custom APT Deb822 repositories
+[6]["ansible.builtin.deb822_repository"].uris = {{ item.uris }}
+[6]["ansible.builtin.deb822_repository"].name = {{ item.filename | regex_replace(".sources$", "") | regex_replace(".list$", "") }}
+[6]["ansible.builtin.deb822_repository"].allow_downgrade_to_insecure = {{ item.allow_downgrade_to_insecure | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].allow_insecure = {{ item.allow_insecure | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].allow_weak = {{ item.allow_weak | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].architectures = {{ item.architectures | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].by_hash = {{ item.by_hash | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].check_date = {{ item.check_date | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].check_valid_until = {{ item.check_valid_until | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].components = {{ item.components | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].data_max_future = {{ item.date_max_future | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].enabled = {{ item.enabled | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].inrelease_path = {{ item.inrelease_path | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].languages = {{ item.languages | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].mode = {{ item.mode | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].pdiffs = {{ item.pdiffs | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].signed_by = {{ item.signed_by | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].state = {{ item.state | d("present") }}
+[6]["ansible.builtin.deb822_repository"].suites = {{ item.suites | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].targets = {{ item.targets | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].trusted = {{ item.trusted | d(omit) }}
+[6]["ansible.builtin.deb822_repository"].types = {{ item.types | d("deb") }}
+[6].loop = {{ apt__combined_repositories | debops.debops.parse_kv_items }}
+[6].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[6].register = apt__register_deb822_repositories
+[6].when = (apt__enabled|bool and item.uris | d() and item.repo is undefined and (item.state | d("present")) not in [ "divert", "ignore", "init" ])
+[7].name = Remove APT auth configuration if requested
+[7]["ansible.builtin.file"].path = {{ "/etc/apt/auth.conf.d/" + (item.filename | d(item.name | regex_replace(".conf$", "") + ".conf")) }}
+[7]["ansible.builtin.file"].state = absent
+[7].loop = {{ q("flattened", (apt__auth_files + apt__group_auth_files + apt__host_auth_files)) }}
+[7].when = apt__enabled | bool and item.state | d('present') == 'absent'
+[7].no_log = {{ debops__no_log | d(True) }}
+[8].name = Generate APT auth configuration
+[8]["ansible.builtin.template"].src = etc/apt/auth.conf.d/template.conf.j2
+[8]["ansible.builtin.template"].dest = {{ "/etc/apt/auth.conf.d/" + (item.filename | d(item.name | regex_replace(".conf$", "") + ".conf")) }}
+[8]["ansible.builtin.template"].mode = 0640
+[8].loop = {{ q("flattened", (apt__auth_files + apt__group_auth_files + apt__host_auth_files)) }}
+[8].when = apt__enabled | bool and item.machine | d() and item.login | d() and item.password | d() and item.state | d('present') not in ['absent', 'ignore']
+[8].no_log = {{ debops__no_log | d(True) }}
+[9].name = Update APT cache on first run
+[9]["ansible.builtin.apt"].update_cache = True
+[9]["ansible.builtin.apt"].cache_valid_time = {{ apt__cache_valid_time }}
+[9].register = apt__register_apt_first_update
+[9].until = apt__register_apt_first_update is succeeded
+[9].when = (apt__enabled | bool and not (ansible_local.apt.configured | d()) | bool)
+[10].name = Install required packages
+[10]["ansible.builtin.apt"].name = {{ (apt__base_packages + apt__packages) | flatten }}
+[10]["ansible.builtin.apt"].state = present
+[10]["ansible.builtin.apt"].install_recommends = False
+[10].register = apt__register_packages
+[10].until = apt__register_packages is succeeded
+[10].when = apt__enabled | bool
+[11].name = Enable extra architectures
+[11]["ansible.builtin.command"] = dpkg --add-architecture {{ item }}
+[11].loop = {{ q("flattened", apt__extra_architectures
+                           + apt__group_extra_architectures
+                           + apt__host_extra_architectures) }}
+
+[11].register = apt__register_add_architecture
+[11].changed_when = apt__register_add_architecture.changed | bool
+[11].when = apt__enabled | bool and item not in ansible_facts.ansible_local.apt.foreign_architectures | d()
+[11].notify[0] = Refresh host facts
+[12].name = Add/remove diversion of APT configuration files
+[12]["debops.debops.dpkg_divert"].path = {{ "/etc/apt/apt.conf.d/" + (item.filename | d(item.name | regex_replace(".conf$", "") + ".conf")) }}
+[12]["debops.debops.dpkg_divert"].state = {{ "present"
+               if (item.state | d("present") == "divert")
+               else "absent" }}
+
+[12]["debops.debops.dpkg_divert"].delete = True
+[12].loop = {{ apt__combined_configuration | debops.debops.parse_kv_items }}
+[12].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[12].when = apt__enabled | bool and item.state | d("present") in [ "divert", "absent" ]
+[13].name = Delete APT configuration files on remote hosts
+[13]["ansible.builtin.file"].path = {{ "/etc/apt/apt.conf.d/" + (item.filename | d(item.name | regex_replace(".conf$", "") + ".conf")) }}
+[13]["ansible.builtin.file"].state = absent
+[13].loop = {{ apt__combined_configuration | debops.debops.parse_kv_items }}
+[13].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[13].when = apt__enabled | bool and item.raw | d() and item.state | d('present') == 'absent'
+[14].name = Generate APT configuration files
+[14]["ansible.builtin.template"].src = etc/apt/apt.conf.d/template.conf.j2
+[14]["ansible.builtin.template"].dest = {{ "/etc/apt/apt.conf.d/" + (item.filename | d(item.name | regex_replace(".conf$", "") + ".conf")) }}
+[14]["ansible.builtin.template"].mode = 0644
+[14].loop = {{ apt__combined_configuration | debops.debops.parse_kv_items }}
+[14].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
+[14].when = apt__enabled | bool and item.raw | d() and item.state | d('present') not in [ 'divert', 'absent', 'ignore', 'init' ]
+[15].name = Make sure that Ansible local facts directory exists
+[15]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[15]["ansible.builtin.file"].state = directory
+[15]["ansible.builtin.file"].mode = 0755
+[15].tags[0] = meta::facts
+[16].name = Save APT local facts
+[16]["ansible.builtin.template"].src = etc/ansible/facts.d/apt.fact.j2
+[16]["ansible.builtin.template"].dest = /etc/ansible/facts.d/apt.fact
+[16]["ansible.builtin.template"].mode = 0755
+[16].notify[0] = Refresh host facts
+[16].tags[0] = meta::facts
+[17].name = Update Ansible facts if they were modified
+[17]["ansible.builtin.meta"] = flush_handlers
+[18].name = Add/remove diversion of /etc/apt/sources.list
+[18]["debops.debops.dpkg_divert"].path = /etc/apt/sources.list
+[18]["debops.debops.dpkg_divert"].state = {{ apt__deploy_state }}
+[18]["debops.debops.dpkg_divert"].delete = True
+[18].register = apt__register_sources_diversion
+[18].when = (apt__enabled | bool and apt__deploy_state in ['absent', 'present'])
+[19].name = Configure operating system sources.list
+[19]["ansible.builtin.template"].src = etc/apt/sources.list.j2
+[19]["ansible.builtin.template"].dest = /etc/apt/sources.list
+[19]["ansible.builtin.template"].mode = 0644
+[19].register = apt__register_sources_template
+[19].when = (apt__enabled | bool and apt__deploy_state == 'present')
+[20].name = Update APT cache
+[20]["ansible.builtin.apt"].update_cache = True
+[20]["ansible.builtin.apt"].cache_valid_time = {{ omit
+                         if (apt__register_sources_template is changed or
+                             apt__register_sources_diversion is changed or
+                             apt__register_apt_repositories is changed)
+                         else apt__cache_valid_time }}
+
+[20].register = apt__register_apt_update
+[20].until = apt__register_apt_update is succeeded
+[20].when = apt__enabled | bool
+[21].name = Purge APT packages if requested
+[21]["ansible.builtin.apt"].name = {{ (apt__purge_packages
+               + apt__purge_group_packages
+               + apt__purge_host_packages) | flatten }}
+
+[21]["ansible.builtin.apt"].state = absent
+[21]["ansible.builtin.apt"].purge = True
+[21]["ansible.builtin.apt"].autoremove = True
+[21].register = apt__register_purge_packages
+[21].until = apt__register_purge_packages is succeeded
+[21].when = apt__enabled | bool

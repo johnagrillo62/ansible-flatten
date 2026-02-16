@@ -1,0 +1,2 @@
+[0].name = restart memcached
+[0].service = name=memcached state=restarted

@@ -1,0 +1,48 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Install required packages
+[1]["ansible.builtin.package"].name = {{ q("flattened", tzdata__base_packages + tzdata__packages) }}
+[1]["ansible.builtin.package"].state = {{ "present"
+               if ((ansible_local.tzdata.configured | d()) | bool)
+               else "latest" }}
+
+[1].register = tzdata__register_packages
+[1].until = tzdata__register_packages is succeeded
+[1].when = tzdata__enabled | bool
+[2].name = Make sure that Ansible local facts directory exists
+[2]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[2]["ansible.builtin.file"].state = directory
+[2]["ansible.builtin.file"].mode = 0755
+[2].when = tzdata__enabled | bool and not ansible_local | d()
+[3].name = Save tzdata local facts
+[3]["ansible.builtin.template"].src = etc/ansible/facts.d/tzdata.fact.j2
+[3]["ansible.builtin.template"].dest = /etc/ansible/facts.d/tzdata.fact
+[3]["ansible.builtin.template"].mode = 0755
+[3].notify[0] = Refresh host facts
+[3].when = tzdata__enabled | bool
+[3].tags[0] = meta::facts
+[4].name = Update Ansible facts if they were modified
+[4]["ansible.builtin.meta"] = flush_handlers
+[5].name = Configure the time zone
+[5]["community.general.timezone"].name = {{ tzdata__timezone }}
+[5].register = tzdata__register_timezone
+[5].notify[0] = Refresh host facts
+[5].when = (tzdata__enabled | bool and ansible_service_mgr == "systemd" and (ansible_local.tzdata.timezone | d('Etc/UTC')) != tzdata__timezone)
+[6].name = Execute legacy timezone tasks
+[6]["ansible.builtin.include_tasks"] = legacy.yml
+[6].when = (tzdata__enabled | bool and ansible_service_mgr != "systemd" and (ansible_local.tzdata.timezone | d('Etc/UTC')) != tzdata__timezone)
+[7].name = Update Ansible facts if time zone was modified
+[7]["ansible.builtin.meta"] = flush_handlers
+[8].name = Get list of currently running systemd services
+[8]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && systemctl list-units --state active | awk 'match($1, /\./) {print $1}'
+[8].args.executable = bash
+[8].register = tzdata__register_services
+[8].changed_when = tzdata__register_services.changed | bool
+[8].when = (tzdata__enabled | bool and ansible_service_mgr == 'systemd' and tzdata__register_timezone is changed)
+[9].name = Request restart of services affected by time zone modification
+[9]["ansible.builtin.systemd"].name = {{ item }}
+[9]["ansible.builtin.systemd"].state = restarted
+[9]["ansible.builtin.systemd"].no_block = True
+[9].loop = {{ q("flattened", (tzdata__restart_default_services
+                            + tzdata__restart_services)) }} 
+[9].when = (tzdata__enabled | bool and ansible_service_mgr == 'systemd' and tzdata__register_timezone is changed and item in tzdata__register_services.stdout_lines)

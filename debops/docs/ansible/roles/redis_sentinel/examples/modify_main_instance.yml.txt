@@ -1,0 +1,6 @@
+~d0.redis_sentinel__instances = 
+~d1.name = 'main'
+~d2.bind = [ '0.0.0.0', '::' ]
+~d0.redis_sentinel__monitors = 
+~d1.name = 'redis-ha'
+~d2.host = '{{ ansible_fqdn }}'

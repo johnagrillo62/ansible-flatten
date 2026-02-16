@@ -1,0 +1,25 @@
+users__enabled = True
+users__acl_enabled = {{ True if ("acl" in users__base_packages) else False }}
+users__default_shell = 
+users__shell_package_map./bin/bash = bash
+users__shell_package_map./bin/csh = csh
+users__shell_package_map./usr/bin/fish = fish
+users__shell_package_map./bin/ksh = ksh
+users__shell_package_map./bin/zsh = zsh
+users__base_packages[0] = acl
+users__shell_packages = {{ lookup("template", "lookup/users__shell_packages.j2") | from_yaml }}
+users__default_home_mode = 0751
+users__chroot_groups[0] = sftponly
+users__chroot_shell = /usr/sbin/nologin
+users__dotfiles_enabled = False
+users__dotfiles_repo = {{ ansible_local.yadm.dotfiles | d("") }}
+users__combined_accounts = {{ users__groups
+                              + users__group_groups
+                              + users__host_groups
+                              + users__dependent_groups
+                              + users__default_accounts
+                              + users__accounts
+                              + users__group_accounts
+                              + users__host_accounts
+                              + users__dependent_accounts }}
+

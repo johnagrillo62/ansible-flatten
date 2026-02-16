@@ -1,0 +1,18 @@
+[0].name = Install php-fpm and deps
+[0].yum = name={{ item }} state=present
+[0].with_items[0] = php
+[0].with_items[1] = php-fpm
+[0].with_items[2] = php-enchant
+[0].with_items[3] = php-IDNA_Convert
+[0].with_items[4] = php-mbstring
+[0].with_items[5] = php-mysql
+[0].with_items[6] = php-PHPMailer
+[0].with_items[7] = php-process
+[0].with_items[8] = php-simplepie
+[0].with_items[9] = php-xml
+[1].name = Disable default pool
+[1].command = mv /etc/php-fpm.d/www.conf /etc/php-fpm.d/www.disabled creates=/etc/php-fpm.d/www.disabled
+[1].notify = restart php-fpm
+[2].name = Copy php-fpm configuration
+[2].template = src=wordpress.conf dest=/etc/php-fpm.d/
+[2].notify = restart php-fpm

@@ -1,0 +1,5 @@
+~d0.cloud_image = fedora-41
+~d0.cluster_layout = 
+~d1.node_groups = ['kube_control_plane', 'etcd', 'kube_node']
+~d1.node_groups = ['kube_node']
+~d0.kube_network_plugin = "kube-router"

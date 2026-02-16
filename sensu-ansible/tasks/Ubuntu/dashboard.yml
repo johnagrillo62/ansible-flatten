@@ -1,0 +1,21 @@
+---
+# tasks/Ubuntu/dashboard.yml: Deployment of the Uchiwa dashboard
+# Specific to Ubuntu
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: dashboard
+
+- name: Install Uchiwa
+  tags: dashboard
+  apt:
+    name: uchiwa
+    state: present
+
+- name: Deploy Uchiwa config
+  tags: dashboard
+  template:
+    src: uchiwa_config.json.j2
+    dest: "{{ sensu_config_path }}/uchiwa.json"
+  notify: restart uchiwa service

@@ -1,0 +1,16 @@
+dependency.name = galaxy
+dependency.options.force = false
+dependency.options.role-file = molecule/_common/requirements.yml
+dependency.options.requirements-file = molecule/_common/requirements.yml
+driver.name = docker
+platforms[0].name = galaxy-scenario-prebuilt_client
+platforms[0].image = ${FROM_IMAGE:-centos:7}
+platforms[0].platform = linux/amd64
+platforms[0].command = 
+platforms[0].volumes[0] = /sys/fs/cgroup:/sys/fs/cgroup:rw
+platforms[0].privileged = true
+platforms[0].dockerfile = ../_common/Dockerfile.j2
+platforms[0].pre_build_image = false
+provisioner.name = ansible
+provisioner.env.GALAXY_VERSION = ${GALAXY_VERSION:-dev}
+verifier.name = ansible

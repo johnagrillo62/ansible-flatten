@@ -1,0 +1,7 @@
+[0].name = this is a play at the top level of a file
+[0].hosts = all
+[0].remote_user = root
+[0].tasks[0].name = say hi
+[0].tasks[0].tags = foo
+[0].tasks[0].shell = echo "hi..."
+[1].include = intro_example.yml

@@ -1,0 +1,15 @@
+[0].name = Test container manager
+[0].hosts = all
+[0].gather_facts = false
+[0].become = true
+[0].tasks[0].name = Get kubespray defaults
+[0].tasks[0].import_role.name = ../../kubespray_defaults
+[0].tasks[1].name = Collect services facts
+[0].tasks[1]["ansible.builtin.service_facts"] = null
+[0].tasks[2].name = Check container manager service is running
+[0].tasks[2].assert.that[0] = ansible_facts.services[container_manager + '.service'].state == 'running'
+[0].tasks[2].assert.that[1] = ansible_facts.services[container_manager + '.service'].status == 'enabled'
+[0].tasks[3].name = Check runtime version
+[0].tasks[3].command = {{ bin_dir }}/crictl --runtime-endpoint {{ cri_socket }} version
+[0].tasks[3].register = cri_version
+[0].tasks[3].failed_when = cri_version is failed or ("RuntimeName:  " + cri_name) not in cri_version.stdout

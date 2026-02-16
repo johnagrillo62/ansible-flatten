@@ -1,0 +1,13 @@
+~d0.name = Check if MTA is installed
+~d1.environment = 
+~d2.LC_MESSAGES = 'C'
+~d1.ansible.builtin.shell = set -o nounset -o pipefail -o errexit &&
+~d1.args = 
+~d2.executable = '/bin/bash'
+~d1.register = nullmailer__register_mta
+~d1.changed_when = False
+~d1.failed_when = False
+~d1.check_mode = False
+~d0.name = Set nullmailer deployment state
+~d1.ansible.builtin.set_fact = 
+~d2.nullmailer__deploy_state = '{{ "present"

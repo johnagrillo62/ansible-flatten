@@ -1,0 +1,4 @@
+[0].name = Setup HomeAssistant as standalone
+[0].import_playbook = homeassistant-plain.yml
+[1].name = Setup HomeAssistant behind nginx
+[1].import_playbook = homeassistant-nginx.yml

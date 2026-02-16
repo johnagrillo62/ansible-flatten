@@ -1,0 +1,10 @@
+[0].name = Install memcached
+[0].yum = name=memcached state=present
+[1].name = Deliver configuration file
+[1].template = src=memcached.conf.j2 dest=/etc/sysconfig/memcached backup=yes
+[1].notify = restart memcached
+[2].name = Deliver init script
+[2].template = src=init.sh.j2 dest=/etc/init.d/memcached mode=0755
+[2].notify = restart memcached
+[3].name = Start memcached service
+[3].service = name=memcached state=started enabled=yes

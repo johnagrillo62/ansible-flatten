@@ -1,0 +1,69 @@
+dhcpd__base_packages[0] = isc-dhcp-server
+dhcpd__options = 
+dhcpd__interfacesv4[0] = {{ ansible_local.ifupdown.external_interface
+                           if ansible_local.ifupdown.external_interface | d()
+                           else ansible_default_ipv4.interface }}
+
+dhcpd__interfacesv6 = {{ dhcpd__interfacesv4
+                         if ansible_default_ipv6.address | d()
+                         else [] }}
+
+dhcpd__authoritative = False
+dhcpd__log_facility = daemon
+dhcpd__default_lease_time = {{ 60 * 60 * 12 }}
+dhcpd__max_lease_time = {{ 60 * 60 * 24 }}
+dhcpd__preferred_lifetime = {{ (dhcpd__default_lease_time | float * (5 / 8)) | int }}
+dhcpd__dhcpv6_set_tee_times = True
+dhcpd__update_static_leases = False
+dhcpd__domain_name = {{ ansible_domain }}
+dhcpd__domain_search = {{ ansible_dns.search | d([]) }}
+dhcpd__name_servers = {{ ansible_local.resolvconf.upstream_nameservers
+                         if (ansible_local.resolvconf.upstream_nameservers | d())
+                         else (ansible_dns.nameservers
+                               if ("127.0.0.1" not in ansible_dns.nameservers)
+                               else []) }}
+
+dhcpd__global_options_map.DHCPv4 = 
+dhcpd__global_options_map.DHCPv6 = 
+dhcpd__ipxe = False
+dhcpd__ipxe_dhcp_space = True
+dhcpd__ipxe_tftp_server = {{ ansible_default_ipv4.address }}
+dhcpd__ipxe_chain_filename = undionly.kpxe
+dhcpd__ipxe_efi_chain_filename = ipxe.efi
+dhcpd__ipxe_filename = menu.ipxe
+dhcpd__ipxe_options = 
+dhcpd__subnets = {{ dhcpd__default_subnets }}
+dhcpd__default_subnets[0].comment = Autodetected IPv4 subnet
+dhcpd__default_subnets[0].subnet = {{ ansible_default_ipv4.network
+                + "/" + ansible_default_ipv4.netmask }} 
+dhcpd__default_subnets[0].routers = {{ [ansible_default_ipv4.gateway]
+                 if ansible_default_ipv4.gateway | d()
+                 else [] }}
+
+dhcpd__default_subnets[1].comment = Autodetected IPv6 subnet
+dhcpd__default_subnets[1].subnet = {{ ansible_default_ipv6.address | d()
+                + "/" + ansible_default_ipv6.prefix | d() }} 
+dhcpd__default_subnets[1].state = {{ "present" if ansible_default_ipv6.address | d() else "absent" }}
+dhcpd__etc_services__dependent_list[0].name = dhcp-failover
+dhcpd__etc_services__dependent_list[0].port = 647
+dhcpd__etc_services__dependent_list[0].protocols[0] = tcp
+dhcpd__etc_services__dependent_list[0].protocols[1] = udp
+dhcpd__etc_services__dependent_list[0].comment = Added by debops.dhcpd Ansible role
+dhcpd__ferm__dependent_rules[0].name = accept_dhcpv6_server
+dhcpd__ferm__dependent_rules[0].by_role = debops.dhcpd
+dhcpd__ferm__dependent_rules[0].type = accept
+dhcpd__ferm__dependent_rules[0].interface = {{ dhcpd__interfacesv6 }}
+dhcpd__ferm__dependent_rules[0].protocol = udp
+dhcpd__ferm__dependent_rules[0].dport[0] = dhcpv6-server
+dhcpd__ferm__dependent_rules[0].rule_state = {{ "present" if dhcpd__interfacesv6 else "absent" }}
+dhcpd__ferm__dependent_rules[1].name = accept_dhcp_failover
+dhcpd__ferm__dependent_rules[1].by_role = debops.dhcpd
+dhcpd__ferm__dependent_rules[1].type = accept
+dhcpd__ferm__dependent_rules[1].saddr = {{ (dhcpd__failovers | map(attribute="primary") | list
+                + dhcpd__failovers | map(attribute="secondary") | list)
+               if dhcpd__failovers
+               else omit }}
+
+dhcpd__ferm__dependent_rules[1].protocol = tcp
+dhcpd__ferm__dependent_rules[1].dport[0] = dhcp-failover
+dhcpd__ferm__dependent_rules[1].rule_state = {{ "present" if dhcpd__failovers else "absent" }}

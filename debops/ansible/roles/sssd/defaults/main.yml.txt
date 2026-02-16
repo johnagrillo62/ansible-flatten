@@ -1,0 +1,225 @@
+sssd__base_packages[0][0] = sssd
+sssd__base_packages[0][1] = libnss-sss
+sssd__base_packages[0][2] = libsss-sudo
+sssd__base_packages[0][3] = libpam-sss
+sssd__mkhomedir_umask = {{ ansible_local.core.homedir_umask | d("0027") }}
+sssd__ldap_enabled = {{ ansible_local.ldap.enabled
+                        if (ansible_local | d() and ansible_local.ldap | d() and
+                            ansible_local.ldap.enabled is defined)
+                        else False }}
+
+sssd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+sssd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+sssd__ldap_self_rdn = uid=sssd
+sssd__ldap_self_object_classes[0] = account
+sssd__ldap_self_object_classes[1] = simpleSecurityObject
+sssd__ldap_self_attributes.uid = {{ sssd__ldap_self_rdn.split("=")[1] }}
+sssd__ldap_self_attributes.userPassword = {{ sssd__ldap_bindpw }}
+sssd__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+sssd__ldap_self_attributes.description = Account used by the "sssd" service to access the LDAP directory
+sssd__ldap_binddn = {{ ([sssd__ldap_self_rdn] + sssd__ldap_device_dn) | join(",") }}
+sssd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                               + sssd__ldap_binddn | to_uuid + ".password length=32"))
+                       if sssd__ldap_enabled | bool
+                       else "" }}
+
+sssd__ldap_posix_urns = {{ (ansible_local.ldap.urn_patterns
+                            if (ansible_local.ldap.urn_patterns | d())
+                            else [])
+                           | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
+                           | list }}
+
+sssd__ldap_host_filter = (| (host=posix:all) (host=posix:{{ ansible_fqdn }}) (host=posix:\2a.{{ ansible_domain }}) {{ sssd__ldap_posix_urns | join(" ") }} )
+sssd__default_configuration[0].section = sssd
+sssd__default_configuration[0].title = Global directives
+sssd__default_configuration[0].options[0].name = config_file_version
+sssd__default_configuration[0].options[0].comment = Indicates the syntax of the config file, SSSD 0.6.0 and later uses version 2
+sssd__default_configuration[0].options[0].value = 2
+sssd__default_configuration[0].options[1].name = domains
+sssd__default_configuration[0].options[1].comment = A domain is a label for a source of user information, sssd supports multiple domains
+sssd__default_configuration[0].options[1].value = default
+sssd__default_configuration[0].options[2].name = services
+sssd__default_configuration[0].options[2].comment = Services to offer (nss, pam, sudo, autofs, ssh, pac, ifp)
+sssd__default_configuration[0].options[2].value[0] = nss
+sssd__default_configuration[0].options[2].value[1] = pam
+sssd__default_configuration[0].options[2].value[2] = sudo
+sssd__default_configuration[0].options[2].value[3] = ssh
+sssd__default_configuration[0].options[2].state = {{ "present" if ansible_distribution_release in ["stretch", "buster", "bionic"] else "ignore" }}
+sssd__default_configuration[0].options[3].name = debug_level
+sssd__default_configuration[0].options[3].comment = Note that debug level is a bitmap and only applies to a given section
+of the config file, so you might want to set it in other sections as
+well if you want to enable debugging (see sssd.conf(5)).
+
+sssd__default_configuration[0].options[3].value = 0x0770
+sssd__default_configuration[0].options[3].state = comment
+sssd__default_configuration[1].section = nss
+sssd__default_configuration[1].title = Name Service Switch directives
+sssd__default_configuration[1].options[0].name = filter_users
+sssd__default_configuration[1].options[0].comment = Users which should be excluded from being fetched via sss (default: root)
+sssd__default_configuration[1].options[0].value = root
+sssd__default_configuration[1].options[0].state = comment
+sssd__default_configuration[1].options[1].name = filter_groups
+sssd__default_configuration[1].options[1].comment = Groups which should be excluded from being fetched via sss (default: root)
+sssd__default_configuration[1].options[1].value = root
+sssd__default_configuration[1].options[1].state = comment
+sssd__default_configuration[2].section = pam
+sssd__default_configuration[2].title = Pluggable Authentication Modules directives
+sssd__default_configuration[2].options[0].name = offline_credentials_expiration
+sssd__default_configuration[2].options[0].comment = How long should offline logins be allowed (in days since last successful online login, default: 0 - no limit)
+sssd__default_configuration[2].options[0].value = 0
+sssd__default_configuration[2].options[0].state = comment
+sssd__default_configuration[2].options[1].name = offline_failed_login_attempts
+sssd__default_configuration[2].options[1].comment = How many failed offline login attempts are allowed
+sssd__default_configuration[2].options[1].value = 5
+sssd__default_configuration[2].options[2].name = offline_failed_login_delay
+sssd__default_configuration[2].options[2].comment = Delay (in minutes) between login attempts after offline_failed_login_attempts has been reached
+sssd__default_configuration[2].options[2].value = 1
+sssd__default_configuration[3].section = sudo
+sssd__default_configuration[3].title = Sudo directives
+sssd__default_configuration[3].options[0].name = sudo_timed
+sssd__default_configuration[3].options[0].comment = Whether to evaluate the sudoNotBefore and sudoNotAfter attributes
+sssd__default_configuration[3].options[0].value = False
+sssd__default_configuration[3].options[0].state = comment
+sssd__default_configuration[4].section = ssh
+sssd__default_configuration[4].title = Secure SHell directives
+sssd__default_configuration[4].options[0].name = ssh_hash_known_hosts
+sssd__default_configuration[4].options[0].comment = Whether to hash the managed known_hosts file
+sssd__default_configuration[4].options[0].value = True
+sssd__default_configuration[4].options[0].state = comment
+sssd__default_configuration[4].options[1].name = ssh_known_hosts_timeout
+sssd__default_configuration[4].options[1].comment = How many seconds to keep a host in the managed known_hosts file
+sssd__default_configuration[4].options[1].value = 180
+sssd__default_configuration[4].options[1].state = comment
+sssd__default_configuration[5].section = domain/default
+sssd__default_configuration[5].title = Default domain directives
+sssd__default_configuration[5].options[0].name = id_provider
+sssd__default_configuration[5].options[0].comment = The identification provider to use for the domain. Possible providers
+include e.g. ldap, ipa and ad (see the corresponding sssd-* man pages).
+
+sssd__default_configuration[5].options[0].value = ldap
+sssd__default_configuration[5].options[1].name = auth_provider
+sssd__default_configuration[5].options[1].comment = The authentication provider to use for the domain. Possible providers
+include e.g. ldap, krb5, ipa and ad (see the corresponding sssd-* man
+pages).
+
+sssd__default_configuration[5].options[1].value = ldap
+sssd__default_configuration[5].options[2].name = chpass_provider
+sssd__default_configuration[5].options[2].comment = The password change provider to use for the domain. Possible providers
+include e.g. ldap, krb5, ipa and ad (see the corresponding sssd-* man
+pages).
+
+sssd__default_configuration[5].options[2].value = ldap
+sssd__default_configuration[5].options[3].name = sudo_provider
+sssd__default_configuration[5].options[3].comment = The SUDO rules provider to use for the domain. Possible providers
+include e.g. ldap, ipa and ad (see the corresponding sssd-* man
+pages).
+
+sssd__default_configuration[5].options[3].value = ldap
+sssd__default_configuration[5].options[4].name = access_provider
+sssd__default_configuration[5].options[4].comment = The access control provider to use for the domain. Possible providers
+include e.g. permit, deny, ldap, ipa, ad and simple (see the
+corresponding sssd-* man pages).
+
+sssd__default_configuration[5].options[4].value = ldap
+sssd__default_configuration[5].options[5].name = ldap_access_order
+sssd__default_configuration[5].options[5].comment = SSSD has builtin support for checking authorizedServices and host
+attributes, but it looks for "*" rather than "all" or "posix:all"
+as in DebOps, and it also only checks the attributes for posixAccount
+and not posixGroup entries, therefore the authorized_service and host
+checks cannot be enabled by default.
+
+sssd__default_configuration[5].options[5].value = pwd_expire_policy_renew
+sssd__default_configuration[5].options[6].name = ldap_uri
+sssd__default_configuration[5].options[6].comment = The location at which the LDAP server(s) should be reachable.
+sssd__default_configuration[5].options[6].value = {{ ansible_local.ldap.uri | d("") }}
+sssd__default_configuration[5].options[7].name = ldap_default_bind_dn
+sssd__default_configuration[5].options[7].comment = The DN to bind with for normal lookups.
+sssd__default_configuration[5].options[7].value = {{ sssd__ldap_binddn }}
+sssd__default_configuration[5].options[8].name = ldap_default_authtok
+sssd__default_configuration[5].options[8].value = {{ sssd__ldap_bindpw }}
+sssd__default_configuration[5].options[9].name = ldap_schema
+sssd__default_configuration[5].options[9].comment = Specifies the schema used on the LDAP server (rfc2307, rfc2307bis, ipa, ad)
+sssd__default_configuration[5].options[9].value = rfc2307bis
+sssd__default_configuration[5].options[10].name = ldap_pwd_policy
+sssd__default_configuration[5].options[10].comment = Which policy should be used to evaluate password expiration
+(none, shadow, mit_kerberos). Note that if you enable this, users
+without shadowAccount attributes *will* be denied access.
+
+sssd__default_configuration[5].options[10].value = shadow
+sssd__default_configuration[5].options[10].state = comment
+sssd__default_configuration[5].options[11].name = ldap_connection_expire_timeout
+sssd__default_configuration[5].options[11].comment = The idle timelimit for connections with the LDAP server. This should be
+lower than the server's olcIdleTimeout (default: 900).
+
+sssd__default_configuration[5].options[11].value = 600
+sssd__default_configuration[5].options[12].name = min_id
+sssd__default_configuration[5].options[12].comment = First valid UID/GID number expected to be in the LDAP directory.
+UIDs/GIDs lower than this value will be ignored.
+
+sssd__default_configuration[5].options[12].value = {{ ansible_local.ldap.uid_gid_min | d("10000") }}
+sssd__default_configuration[5].options[13].name = max_id
+sssd__default_configuration[5].options[13].comment = Last valid UID/GID number expected to be in the LDAP directory.
+UIDs/GIDs higher than this value will be ignored (0 = no limit).
+
+sssd__default_configuration[5].options[13].value = {{ ansible_local.ldap.uid_gid_max | d("0") }}
+sssd__default_configuration[5].options[14].name = cache_credentials
+sssd__default_configuration[5].options[14].comment = Whether user credentials should also be cached (in hashed form) in a
+local cache in order to allow offline logins (see also the
+"offline_credentials_expiration" parameter in the [pam] section).
+
+sssd__default_configuration[5].options[14].value = True
+sssd__default_configuration[5].options[15].name = enumerate
+sssd__default_configuration[5].options[15].comment = Enumeration means that sssd will download and cache ALL users and
+groups from the remote server. This means that they will be available
+in case of sudden network outages, etc, but is not suitable for
+large environments.
+
+sssd__default_configuration[5].options[15].value = False
+sssd__default_configuration[5].options[16].name = ldap_enumeration_refresh_timeout
+sssd__default_configuration[5].options[16].comment = Specifies how often re-enumeration should be performed (in seconds).
+sssd__default_configuration[5].options[16].value = 300
+sssd__default_configuration[5].options[17].name = ldap_id_use_start_tls
+sssd__default_configuration[5].options[17].comment = SSL options
+sssd__default_configuration[5].options[17].value = {{ True
+                  if (ansible_local | d() and ansible_local.ldap | d() and
+                      (ansible_local.ldap.start_tls | d()) | bool)
+                  else False }}
+
+sssd__default_configuration[5].options[18].name = ldap_tls_reqcert
+sssd__default_configuration[5].options[18].value = demand
+sssd__default_configuration[5].options[19].name = ldap_tls_cacert
+sssd__default_configuration[5].options[19].value = /etc/ssl/certs/ca-certificates.crt
+sssd__default_configuration[5].options[20].name = ldap_group_name
+sssd__default_configuration[5].options[20].comment = Use the 'gid' attribute instead of 'cn' as the POSIX group name.
+
+sssd__default_configuration[5].options[20].value = gid
+sssd__default_configuration[5].options[21].name = ldap_search_base
+sssd__default_configuration[5].options[21].comment = The search base that will be used for queries. "ldap_search_base"
+defines the default search base which will be used unless a more
+specific "ldap_*_search_base" has been defined.
+Format: search_base[?scope?[filter][?search_base?scope?[filter]]*]
+
+sssd__default_configuration[5].options[21].value = {{ sssd__ldap_base_dn | join(",") }}
+sssd__default_configuration[5].options[22].name = ldap_user_search_base
+sssd__default_configuration[5].options[22].value = {{ sssd__ldap_base_dn | join(",") + "?subtree?" + sssd__ldap_host_filter }}
+sssd__default_configuration[5].options[23].name = ldap_group_search_base
+sssd__default_configuration[5].options[23].value = {{ sssd__ldap_base_dn | join(",") + "?subtree?" + sssd__ldap_host_filter }}
+sssd__default_configuration[5].options[24].name = ldap_sudo_search_base
+sssd__default_configuration[5].options[24].value = {{ sssd__ldap_base_dn | join(",") + "?subtree?" + "" }}
+sssd__default_configuration[5].options[24].state = comment
+sssd__combined_configuration = {{ sssd__default_configuration
+                                   + sssd__configuration
+                                   + sssd__group_configuration
+                                   + sssd__host_configuration }}
+
+sssd__ldap__dependent_tasks[0].name = Create sssd account for {{ sssd__ldap_device_dn | join(",") }}
+sssd__ldap__dependent_tasks[0].dn = {{ sssd__ldap_binddn }}
+sssd__ldap__dependent_tasks[0].objectClass = {{ sssd__ldap_self_object_classes }}
+sssd__ldap__dependent_tasks[0].attributes = {{ sssd__ldap_self_attributes }}
+sssd__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+sssd__ldap__dependent_tasks[0].state = {{ "present"
+               if ((ansible_local.ldap.posix_enabled | d()) | bool and
+                   sssd__ldap_device_dn | d())
+               else "ignore" }}
+
+sssd__nsswitch__dependent_services[0] = sss

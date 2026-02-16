@@ -1,0 +1,15 @@
+[0].hosts = lamp_db
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].pre_tasks[0].name = Create dynamic MySQL variables.
+[0].pre_tasks[0].set_fact.mysql_users[0].name = mycompany_user
+[0].pre_tasks[0].set_fact.mysql_users[0].host = {{ groups['lamp_www'][0] }}
+[0].pre_tasks[0].set_fact.mysql_users[0].password = secret
+[0].pre_tasks[0].set_fact.mysql_users[0].priv = *.*:SELECT
+[0].pre_tasks[0].set_fact.mysql_users[1].name = mycompany_user
+[0].pre_tasks[0].set_fact.mysql_users[1].host = {{ groups['lamp_www'][1] }}
+[0].pre_tasks[0].set_fact.mysql_users[1].password = secret
+[0].pre_tasks[0].set_fact.mysql_users[1].priv = *.*:SELECT
+[0].pre_tasks[0].set_fact.mysql_replication_master = {{ groups['a4d.lamp.db.1'][0] }}
+[0].roles[0] = geerlingguy.firewall
+[0].roles[1] = geerlingguy.mysql

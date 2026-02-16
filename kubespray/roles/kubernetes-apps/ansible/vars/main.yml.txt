@@ -1,0 +1,3 @@
+~d0.dns_autoscaler_manifests = 
+~d0.coredns_manifests = 
+~d0.nodelocaldns_manifests = 

@@ -1,0 +1,2 @@
+[0].name = Remove node
+[0]["ansible.builtin.import_playbook"] = playbooks/remove_node.yml

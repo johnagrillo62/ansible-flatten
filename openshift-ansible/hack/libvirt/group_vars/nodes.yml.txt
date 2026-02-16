@@ -1,0 +1,8 @@
+openshift_additional_repos[0].name = origin-pr
+openshift_additional_repos[0].baseurl = https://rpms.svc.ci.openshift.org/openshift-origin-v4.0/
+openshift_additional_repos[0].enabled = 1
+openshift_additional_repos[0].gpgcheck = 0
+openshift_additional_repos[1].name = origin-pr-dependencies
+openshift_additional_repos[1].baseurl = https://cbs.centos.org/repos/paas7-openshift-origin311-testing/x86_64/os/
+openshift_additional_repos[1].enabled = 1
+openshift_additional_repos[1].gpgcheck = 0

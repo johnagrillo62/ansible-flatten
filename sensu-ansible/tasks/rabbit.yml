@@ -1,0 +1,76 @@
+---
+# tasks/rabbit.yml: Deploy RabbitMQ and set-up vhost for Sensu messaging
+
+- name: Include ansible_distribution vars
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+  tags: rabbitmq
+
+- include_tasks: "{{ ansible_distribution }}/rabbit.yml"
+  tags: rabbitmq
+
+- name: Ensure RabbitMQ SSL directory exists
+  tags: rabbitmq
+  file:
+    dest: "{{ sensu_rabbitmq_config_path }}/ssl"
+    state: directory
+
+- name: Ensure RabbitMQ SSL certs/keys are in place
+  tags: rabbitmq
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ sensu_rabbitmq_config_path }}/ssl/{{ item.dest }}"
+    remote_src: "{{ sensu_ssl_deploy_remote_src }}"
+  loop:
+    - { src: "{{ sensu_ssl_server_cacert }}", dest: cacert.pem }
+    - { src: "{{ sensu_ssl_server_cert }}", dest: cert.pem }
+    - { src: "{{ sensu_ssl_server_key }}", dest: key.pem }
+  notify:
+    - restart rabbitmq service
+    - restart sensu-api service
+    - restart sensu-server service
+    - restart sensu-enterprise service
+  when: sensu_ssl_manage_certs
+
+- name: Deploy RabbitMQ config
+  tags: rabbitmq
+  template:
+    dest: "{{ sensu_rabbitmq_config_path }}/rabbitmq.config"
+    src: "{{ sensu_rabbitmq_config_template }}"
+    owner: root
+    group: "{{ __root_group }}"
+    mode: 0644
+  notify: restart rabbitmq service
+
+- name: Ensure RabbitMQ is running
+  tags: rabbitmq
+  service:
+    name: "{{ sensu_rabbitmq_service_name }}"
+    state: started
+    enabled: true
+  register: sensu_rabbitmq_state
+
+- name: Wait for RabbitMQ to be up and running before asking to create a vhost
+  tags: rabbitmq
+  pause:
+    seconds: 3
+  when: sensu_rabbitmq_state is changed
+
+- block:
+    - name: Ensure Sensu RabbitMQ vhost exists
+      rabbitmq_vhost:
+        name: "{{ sensu_rabbitmq_vhost }}"
+        state: present
+
+    - name: Ensure Sensu RabbitMQ user has access to the Sensu vhost
+      rabbitmq_user:
+        user: "{{ sensu_rabbitmq_user_name }}"
+        password: "{{ sensu_rabbitmq_password }}"
+        vhost: "{{ sensu_rabbitmq_vhost }}"
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+        state: present
+  become: true
+  become_user: rabbitmq
+  tags: rabbitmq

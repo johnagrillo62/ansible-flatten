@@ -1,0 +1,49 @@
+sysfs__enabled = {{ False
+                    if (ansible_virtualization_type in ["lxc", "openvz"] and
+                        ansible_virtualization_role == "guest")
+                    else True }}
+
+sysfs__base_packages[0] = sysfsutils
+sysfs__default_attributes[0].name = ksm
+sysfs__default_attributes[0].comment = Kernel Same-page Merging (KSM) configuration.
+These parameters can be useful on hosts that are used as Virtual Machine
+hypervisors, to allow for lower memory footprint of virtual machines,
+however this feature has certain security risks.
+https://www.linux-kvm.org/page/KSM
+https://en.wikipedia.org/wiki/Kernel_same-page_merging
+
+sysfs__default_attributes[0].state = defined
+sysfs__default_attributes[0].options[0].name = kernel/mm/ksm/run
+sysfs__default_attributes[0].options[0].comment = Enable Kernel Same-page Merging
+sysfs__default_attributes[0].options[0].value = 1
+sysfs__default_attributes[0].options[1].name = kernel/mm/ksm/sleep_milisecs
+sysfs__default_attributes[0].options[1].comment = How long to sleep between scans, in miliseconds
+sysfs__default_attributes[0].options[1].value = 20
+sysfs__default_attributes[0].options[2].name = kernel/mm/ksm/pages_to_scan
+sysfs__default_attributes[0].options[2].comment = How many pages to scan in one run
+sysfs__default_attributes[0].options[2].value = 100
+sysfs__default_attributes[1].name = transparent_hugepages
+sysfs__default_attributes[1].comment = Configuration of Transparent HugePages support.
+Disable THP by default to increase performance in certain applications
+like MongoDB, Redis, MariaDB, PostgreSQL. This is only effective when
+real HugePages support is configured.
+https://www.kernel.org/doc/Documentation/vm/transhuge.txt
+https://stackoverflow.com/a/42592382/6996970
+
+sysfs__default_attributes[1].state = defined
+sysfs__default_attributes[1].options[0].name = kernel/mm/transparent_hugepage/enabled
+sysfs__default_attributes[1].options[0].value = never
+sysfs__default_attributes[1].options[1].name = kernel/mm/transparent_hugepage/defrag
+sysfs__default_attributes[1].options[1].value = never
+sysfs__default_attributes[1].options[2].name = kernel/mm/transparent_hugepage/khugepaged/defrag
+sysfs__default_attributes[1].options[2].value = 0
+sysfs__dependent_attributes_filter = {{ lookup("template",
+                                               "lookup/sysfs__dependent_attributes_filter.j2")
+                                               | from_yaml }}
+
+sysfs__combined_attributes = {{ sysfs__default_attributes
+                                + sysfs__dependent_attributes_filter
+                                + sysfs__attributes
+                                + sysfs__group_attributes
+                                + sysfs__host_attributes }}
+

@@ -1,0 +1,7 @@
+~d0.unbound__server = 
+~d1.name = 'access-control'
+~d2.value = 
+~d3.name = '127.0.0.0/8'
+~d4.args = 'allow_snoop'
+~d3.name = '::1/128'
+~d4.args = 'allow_snoop'

@@ -1,0 +1,42 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Install required packages
+[1]["ansible.builtin.package"].name = {{ q("flattened", fcgiwrap__packages) }}
+[1]["ansible.builtin.package"].state = present
+[1].register = fcgiwrap__register_install
+[1].until = fcgiwrap__register_install is succeeded
+[2].name = Check the fcgiwrap version
+[2].environment.LC_MESSAGES = C
+[2]["ansible.builtin.shell"] = dpkg-query -W -f='${Version}
+' 'fcgiwrap'
+[2].register = fcgiwrap__register_version
+[2].changed_when = False
+[2].failed_when = False
+[2].check_mode = False
+[3].name = Make sure required system groups exist
+[3]["ansible.builtin.group"].name = {{ item.group | d(item.user) }}
+[3]["ansible.builtin.group"].system = {{ item.system | d(True) }}
+[3]["ansible.builtin.group"].state = present
+[3].with_items = {{ fcgiwrap__instances }}
+[3].when = fcgiwrap__instances and item.user | d(False)
+[4].name = Make sure required system accounts exist
+[4]["ansible.builtin.user"].name = {{ item.user }}
+[4]["ansible.builtin.user"].group = {{ item.group | d(item.user) }}
+[4]["ansible.builtin.user"].shell = {{ item.shell | d(omit) }}
+[4]["ansible.builtin.user"].home = {{ item.home | d(omit) }}
+[4]["ansible.builtin.user"].createhome = {{ item.createhome | d(False) }}
+[4]["ansible.builtin.user"].system = {{ item.system | d(True) }}
+[4]["ansible.builtin.user"].state = present
+[4].with_items = {{ fcgiwrap__instances }}
+[4].when = fcgiwrap__instances and item.user | d(False)
+[5].name = Disable default fcgiwrap init script
+[5]["ansible.builtin.service"].name = fcgiwrap
+[5]["ansible.builtin.service"].state = stopped
+[5]["ansible.builtin.service"].enabled = False
+[5].when = fcgiwrap__disable_default | bool and fcgiwrap__register_install is changed
+[6].name = Configure fcgiwrap instances in sysvinit
+[6]["ansible.builtin.include_tasks"] = configure_sysvinit.yml
+[6].when = ansible_service_mgr != 'systemd'
+[7].name = Configure fcgiwrap instances in systemd
+[7]["ansible.builtin.include_tasks"] = configure_systemd.yml
+[7].when = ansible_service_mgr == 'systemd'

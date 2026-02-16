@@ -1,0 +1,7 @@
+redis_server__configuration[0].name = main
+redis_server__configuration[0].options[0].name = save
+redis_server__configuration[0].options[0].value = 
+redis_server__configuration[0].options[0].dynamic = True
+redis_server__configuration[0].options[1].name = save
+redis_server__configuration[0].options[1].value[0] = 1200 1
+redis_server__configuration[0].options[1].dynamic = True

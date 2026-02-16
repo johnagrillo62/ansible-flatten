@@ -1,0 +1,9 @@
+crio_conmon = {{ bin_dir }}/crio-conmon
+crio_runtime_bin_dir = {{ bin_dir }}
+crio_bin_files[0] = crio-conmon
+crio_bin_files[1] = crio-conmonrs
+crio_bin_files[2] = crio-crun
+crio_bin_files[3] = crio-runc
+crio_bin_files[4] = crio
+crio_bin_files[5] = pinns
+crio_status_command = crio status

@@ -1,0 +1,13 @@
+~d0.master_config_path = "/opt/app-root/src/master-config.yaml"
+~d0.admin_kubeconfig_path = "/opt/app-root/src/.kube/config"
+~d0.ansible_ssh_user = ec2-user
+~d0.ansible_become = "yes"
+~d0.ansible_become_user = "root"
+~d0.openshift_uninstall_images = false
+~d0.openshift_install_examples = true
+~d0.openshift_deployment_type = origin
+~d0.openshift_release = 3.6
+~d0.openshift_image_tag = v3.6.0
+~d0.openshift_logging_install_logging = null  # defaults to "true" if loggingPublicURL is set in master-config.yaml
+~d0.openshift_logging_image_version = v3.6.0
+~d0.openshift_disable_check = ""

@@ -1,0 +1,255 @@
+rspamd__base_packages[0] = rspamd
+rspamd__base_packages[1] = {{ "bind9-dnsutils" if rspamd__dkim_update_method is search("nsupdate") else [] }}
+rspamd__base_packages[2] = {{ "krb5-user" if rspamd__dkim_update_method == "nsupdate_gsstsig" else [] }}
+rspamd__dkim_enabled = False
+rspamd__dkim_domains[0] = {{ ansible_domain }}
+rspamd__dkim_log_dir = /var/log/rspamd
+rspamd__dkim_keygen_default_configuration[0].name = key_directory
+rspamd__dkim_keygen_default_configuration[0].value = /var/lib/rspamd/dkim/
+rspamd__dkim_keygen_default_configuration[1].name = key_archive
+rspamd__dkim_keygen_default_configuration[1].value = /var/lib/rspamd/dkim-archive/
+rspamd__dkim_keygen_default_configuration[2].name = update_script
+rspamd__dkim_keygen_default_configuration[2].value = /usr/local/sbin/rspamd-dkim-update
+rspamd__dkim_keygen_default_configuration[3].name = future_config
+rspamd__dkim_keygen_default_configuration[3].value = dkim-future.conf
+rspamd__dkim_keygen_default_configuration[4].name = active_config
+rspamd__dkim_keygen_default_configuration[4].value = dkim-active.conf
+rspamd__dkim_keygen_default_configuration[5].name = expired_config
+rspamd__dkim_keygen_default_configuration[5].value = dkim-expired.conf
+rspamd__dkim_keygen_default_configuration[6].name = future_period
+rspamd__dkim_keygen_default_configuration[6].value = 1
+rspamd__dkim_keygen_default_configuration[7].name = active_period
+rspamd__dkim_keygen_default_configuration[7].value = 3
+rspamd__dkim_keygen_default_configuration[8].name = expired_period
+rspamd__dkim_keygen_default_configuration[8].value = 1
+rspamd__dkim_keygen_default_configuration[9].name = domains
+rspamd__dkim_keygen_default_configuration[9].value = {{ rspamd__dkim_domains }}
+rspamd__dkim_keygen_default_configuration[10].name = key_types
+rspamd__dkim_keygen_default_configuration[10].value[0].type = ed25519
+rspamd__dkim_keygen_default_configuration[10].value[1].type = rsa
+rspamd__dkim_keygen_default_configuration[10].value[1].extra_args[0] = --bits
+rspamd__dkim_keygen_default_configuration[10].value[1].extra_args[1] = 2048
+rspamd__dkim_keygen_combined_configuration = {{
+  rspamd__dkim_keygen_default_configuration
+   + rspamd__dkim_keygen_configuration
+   + rspamd__dkim_keygen_group_configuration
+   + rspamd__dkim_keygen_host_configuration }}
+
+rspamd__dkim_update_method = email
+rspamd__dkim_update_default_configuration[0].name = method
+rspamd__dkim_update_default_configuration[0].value = {{ rspamd__dkim_update_method }}
+rspamd__dkim_update_default_configuration[1].name = log_file
+rspamd__dkim_update_default_configuration[1].value = {{ rspamd__dkim_log_dir + "/rspamd-dkim-update.log" }}
+rspamd__dkim_update_default_configuration[2].name = email_to
+rspamd__dkim_update_default_configuration[2].value = {{ ansible_local.core.admin_public_email[0]
+               | d("root@" + ansible_domain) }} 
+rspamd__dkim_update_default_configuration[3].name = email_from
+rspamd__dkim_update_default_configuration[3].value = {{ "noreply@" + ansible_domain }}
+rspamd__dkim_update_default_configuration[4].name = email_host
+rspamd__dkim_update_default_configuration[4].value = localhost
+rspamd__dkim_update_default_configuration[5].name = email_port
+rspamd__dkim_update_default_configuration[5].value = 25
+rspamd__dkim_update_default_configuration[6].name = email_subject
+rspamd__dkim_update_default_configuration[6].value = Rspamd DKIM DNS updates
+rspamd__dkim_update_default_configuration[7].name = nsupdate_keyfile
+rspamd__dkim_update_default_configuration[7].value = {{ "" if rspamd__dkim_update_method in ["email", "nsupdate"]
+               else "/etc/rspamd/dkim_dns_key" }} 
+rspamd__dkim_update_default_configuration[8].name = nsupdate_gsstsig_princ
+rspamd__dkim_update_default_configuration[8].value = {{ "" if rspamd__dkim_update_method != "nsupdate_gsstsig"
+               else "rspamd@" + ansible_domain | upper }} 
+rspamd__dkim_update_default_configuration[9].name = nsupdate_ttl
+rspamd__dkim_update_default_configuration[9].value = 3600
+rspamd__dkim_update_default_configuration[10].name = nsupdate_server
+rspamd__dkim_update_default_configuration[10].value = {{ ansible_dns.nameservers[0] | d("") }}
+rspamd__dkim_update_combined_configuration = {{
+  rspamd__dkim_update_default_configuration
+   + rspamd__dkim_update_configuration
+   + rspamd__dkim_update_group_configuration
+   + rspamd__dkim_update_host_configuration }}
+
+rspamd__redis_host = {{ ansible_local.redis_server.host | d("127.0.0.1") }}
+rspamd__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
+rspamd__redis_password = {{ ansible_local.redis_server.password | d("") }}
+rspamd__redis_db = 0
+rspamd__default_local_configuration[0].file = worker-proxy.inc
+rspamd__default_local_configuration[0].comment = Proxy worker configuration
+https://rspamd.com/doc/workers/rspamd_proxy.html
+
+rspamd__default_local_configuration[0].options[0].name = bind_socket
+rspamd__default_local_configuration[0].options[0].value = localhost:11332
+rspamd__default_local_configuration[0].options[1].name = milter
+rspamd__default_local_configuration[0].options[1].value = True
+rspamd__default_local_configuration[0].options[2].name = timeout
+rspamd__default_local_configuration[0].options[2].value = 120
+rspamd__default_local_configuration[0].options[3].name = upstream "local"
+rspamd__default_local_configuration[0].options[3].options[0].name = default
+rspamd__default_local_configuration[0].options[3].options[0].value = True
+rspamd__default_local_configuration[0].options[3].options[1].name = self_scan
+rspamd__default_local_configuration[0].options[3].options[1].value = True
+rspamd__default_local_configuration[1].file = worker-controller.inc
+rspamd__default_local_configuration[1].comment = Controller worker configuration
+https://rspamd.com/doc/workers/controller.html
+
+rspamd__default_local_configuration[1].options[0].name = password
+rspamd__default_local_configuration[1].options[0].value = {{ rspamd__controller_password_hash }}
+rspamd__default_local_configuration[2].file = redis.conf
+rspamd__default_local_configuration[2].comment = Redis configuration
+https://rspamd.com/doc/configuration/redis.html
+
+rspamd__default_local_configuration[2].options[0].name = servers
+rspamd__default_local_configuration[2].options[0].value = {{ rspamd__redis_host }}:{{ rspamd__redis_port }}
+rspamd__default_local_configuration[2].options[1].name = db
+rspamd__default_local_configuration[2].options[1].value = {{ rspamd__redis_db }}
+rspamd__default_local_configuration[2].options[2].name = password
+rspamd__default_local_configuration[2].options[2].value = {{ rspamd__redis_password }}
+rspamd__default_local_configuration[3].file = milter_headers.conf
+rspamd__default_local_configuration[3].comment = Milter headers configuration
+https://rspamd.com/doc/modules/milter_headers.html
+
+rspamd__default_local_configuration[3].options[0].name = use
+rspamd__default_local_configuration[3].options[0].value[0] = x-spamd-bar
+rspamd__default_local_configuration[3].options[0].value[1] = x-spam-level
+rspamd__default_local_configuration[3].options[0].value[2] = authentication-results
+rspamd__default_local_configuration[3].options[1].name = authenticated_headers
+rspamd__default_local_configuration[3].options[1].value[0] = authentication-results
+rspamd__default_local_configuration[4].file = dkim_signing.conf
+rspamd__default_local_configuration[4].comment = DKIM signing configuration
+https://rspamd.com/doc/modules/dkim_signing.html
+
+rspamd__default_local_configuration[4].state = {{ "present" if rspamd__dkim_enabled | d(False) else "absent" }}
+rspamd__default_local_configuration[4].options[0].name = allow_username_mismatch
+rspamd__default_local_configuration[4].options[0].value = True
+rspamd__default_local_configuration[4].options[1].name = include_dkim_keys
+rspamd__default_local_configuration[4].options[1].raw = .include(try=true,priority=1,duplicate=merge) "/var/lib/rspamd/dkim/dkim-active.conf"
+rspamd__default_local_configuration[5].file = arc.conf
+rspamd__default_local_configuration[5].comment = ARC signature check configuration
+https://rspamd.com/doc/modules/arc.html
+
+rspamd__default_local_configuration[5].state = {{ "present" if rspamd__dkim_enabled | d(False) else "absent" }}
+rspamd__default_local_configuration[5].options[0].name = allow_username_mismatch
+rspamd__default_local_configuration[5].options[0].value = True
+rspamd__default_local_configuration[5].options[1].name = include_dkim_keys
+rspamd__default_local_configuration[5].options[1].raw = .include(try=true,priority=1,duplicate=merge) "/var/lib/rspamd/dkim/dkim-active.conf"
+rspamd__combined_local_configuration = {{ rspamd__default_local_configuration
+                                           + rspamd__local_configuration
+                                           + rspamd__group_local_configuration
+                                           + rspamd__host_local_configuration }}
+
+rspamd__combined_override_configuration = {{ rspamd__default_override_configuration
+                                              + rspamd__override_configuration
+                                              + rspamd__group_override_configuration
+                                              + rspamd__host_override_configuration }}
+
+rspamd__controller_password = {{ lookup("password",
+                                        secret
+                                         + "/credentials/"
+                                         + inventory_hostname
+                                         + "/rspamd/controller_password"
+                                         + " chars=ascii_letters,digits"
+                                         + " length=32") }}
+
+rspamd__controller_password_salt = {{ (lookup("password",
+                                              secret
+                                               + "/credentials/"
+                                               + inventory_hostname
+                                               + "/rspamd/salt"
+                                               + " chars=ascii_letters,digits"
+                                               + " length=21"))[:21]
+                                      + ("Oeu"
+                                          | shuffle(seed=inventory_hostname)
+                                          | join)[1] }}
+
+rspamd__controller_password_hash = {{ rspamd__controller_password
+                                      | password_hash("bcrypt",
+                                                      salt=rspamd__controller_password_salt) }}
+
+rspamd__nginx_enabled = False
+rspamd__nginx_fqdns[0] = rspamd.{{ ansible_domain }}
+rspamd__nginx_fqdns[1] = {{ ansible_hostname }}-rspamd.{{ ansible_domain }}
+rspamd__nginx_access_policy = 
+rspamd__logrotate__dependent_config[0].filename = rspamd-dkim
+rspamd__logrotate__dependent_config[0].logs = {{ rspamd__dkim_log_dir + "/rspamd-dkim-update.log" }}
+rspamd__logrotate__dependent_config[0].options = notifempty
+missingok
+yearly
+maxsize 16M
+rotate 10
+compress
+
+rspamd__logrotate__dependent_config[0].comment = Rspamd DKIM key rotation logs
+rspamd__etc_services__dependent_list[0].name = rspamd-proxy
+rspamd__etc_services__dependent_list[0].port = 11332
+rspamd__etc_services__dependent_list[0].protocols[0] = tcp
+rspamd__etc_services__dependent_list[0].comment = Added by debops.rspamd Ansible role.
+rspamd__etc_services__dependent_list[1].name = rspamd-normal
+rspamd__etc_services__dependent_list[1].port = 11333
+rspamd__etc_services__dependent_list[1].protocols[0] = tcp
+rspamd__etc_services__dependent_list[1].comment = Added by debops.rspamd Ansible role.
+rspamd__etc_services__dependent_list[2].name = rspamd-controller
+rspamd__etc_services__dependent_list[2].port = 11334
+rspamd__etc_services__dependent_list[2].protocols[0] = tcp
+rspamd__etc_services__dependent_list[2].comment = Added by debops.rspamd Ansible role.
+rspamd__etc_services__dependent_list[3].name = rspamd-fuzzy
+rspamd__etc_services__dependent_list[3].port = 11335
+rspamd__etc_services__dependent_list[3].protocols[0] = udp
+rspamd__etc_services__dependent_list[3].comment = Added by debops.rspamd Ansible role.
+rspamd__nginx__dependent_servers[0].name = {{ rspamd__nginx_fqdns }}
+rspamd__nginx__dependent_servers[0].filename = debops.rspamd
+rspamd__nginx__dependent_servers[0].by_role = debops.rspamd
+rspamd__nginx__dependent_servers[0].access_policy = {{ rspamd__nginx_access_policy }}
+rspamd__nginx__dependent_servers[0].webroot_create = False
+rspamd__nginx__dependent_servers[0].type = proxy
+rspamd__nginx__dependent_servers[0].proxy_pass = http://localhost:11334
+rspamd__ferm__dependent_rules[0].type = accept
+rspamd__ferm__dependent_rules[0].dport[0] = rspamd-proxy
+rspamd__ferm__dependent_rules[0].protocol[0] = tcp
+rspamd__ferm__dependent_rules[0].saddr = {{ rspamd__proxy_allow }}
+rspamd__ferm__dependent_rules[0].accept_any = False
+rspamd__ferm__dependent_rules[0].weight = 50
+rspamd__ferm__dependent_rules[0].role = rspamd
+rspamd__ferm__dependent_rules[1].type = accept
+rspamd__ferm__dependent_rules[1].dport[0] = rspamd-normal
+rspamd__ferm__dependent_rules[1].protocol[0] = tcp
+rspamd__ferm__dependent_rules[1].saddr = {{ rspamd__normal_allow }}
+rspamd__ferm__dependent_rules[1].accept_any = False
+rspamd__ferm__dependent_rules[1].weight = 50
+rspamd__ferm__dependent_rules[1].role = rspamd
+rspamd__ferm__dependent_rules[2].type = accept
+rspamd__ferm__dependent_rules[2].dport[0] = rspamd-controller
+rspamd__ferm__dependent_rules[2].protocol[0] = tcp
+rspamd__ferm__dependent_rules[2].saddr = {{ rspamd__controller_allow }}
+rspamd__ferm__dependent_rules[2].accept_any = False
+rspamd__ferm__dependent_rules[2].weight = 50
+rspamd__ferm__dependent_rules[2].role = rspamd
+rspamd__ferm__dependent_rules[3].type = accept
+rspamd__ferm__dependent_rules[3].dport[0] = rspamd-fuzzy
+rspamd__ferm__dependent_rules[3].protocol[0] = udp
+rspamd__ferm__dependent_rules[3].saddr = {{ rspamd__fuzzy_allow }}
+rspamd__ferm__dependent_rules[3].accept_any = False
+rspamd__ferm__dependent_rules[3].weight = 50
+rspamd__ferm__dependent_rules[3].role = rspamd
+rspamd__postfix__dependent_maincf[0].name = smtpd_milters
+rspamd__postfix__dependent_maincf[0].comment = Added by the rspamd role
+rspamd__postfix__dependent_maincf[0].value[0].name = inet:localhost:11332
+rspamd__postfix__dependent_maincf[0].value[0].weight = -400
+rspamd__postfix__dependent_maincf[0].state = present
+rspamd__postfix__dependent_maincf[1].name = non_smtpd_milters
+rspamd__postfix__dependent_maincf[1].comment = Added by the rspamd role
+rspamd__postfix__dependent_maincf[1].value[0].name = inet:localhost:11332
+rspamd__postfix__dependent_maincf[1].value[0].weight = -400
+rspamd__postfix__dependent_maincf[1].state = present
+rspamd__postfix__dependent_maincf[2].name = milter_mail_macros
+rspamd__postfix__dependent_maincf[2].comment = Added by the rspamd role
+rspamd__postfix__dependent_maincf[2].value = {{ "i {auth_type} {auth_authen} {auth_author} "
+               + "{client_addr} {client_name} {mail_addr} "
+               + "{mail_host} {mail_mailer}" }}
+
+rspamd__postfix__dependent_maincf[2].state = present
+rspamd__postfix__dependent_maincf[3].name = milter_default_action
+rspamd__postfix__dependent_maincf[3].comment = Added by the rspamd role
+rspamd__postfix__dependent_maincf[3].value = accept
+rspamd__postfix__dependent_maincf[3].state = comment
+rspamd__postfix__dependent_maincf[4].name = milter_protocol
+rspamd__postfix__dependent_maincf[4].comment = Added by the rspamd role
+rspamd__postfix__dependent_maincf[4].value = 6
+rspamd__postfix__dependent_maincf[4].state = comment

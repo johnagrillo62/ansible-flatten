@@ -1,0 +1,145 @@
+[0].name = Build static_dir_by_host dict
+[0].set_fact._galaxy_static_dir_by_host_dict = {{
+  _galaxy_static_dir_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name ~ '/')
+  })
+}}
+[0].loop = {{ galaxy_themes_subdomains }}
+[0].loop_control.loop_var = subdomain
+[0].when = galaxy_manage_subdomain_static
+[1].name = Add base domain to static_dir_by_host dict
+[1].set_fact._galaxy_static_dir_by_host_dict = {{
+  _galaxy_static_dir_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: (galaxy_static_dir ~ '/')})
+}}
+[1].when = galaxy_manage_subdomain_static
+[2].name = Build static_images_dir_by_host dict
+[2].set_fact._galaxy_static_images_dir_by_host_dict = {{
+  _galaxy_static_images_dir_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name ~ '/images')
+  })
+}}
+[2].loop = {{ galaxy_themes_subdomains }}
+[2].loop_control.loop_var = subdomain
+[2].when = galaxy_manage_subdomain_static
+[3].name = Add base domain to static_images_dir_by_host dict
+[3].set_fact._galaxy_static_images_dir_by_host_dict = {{
+  _galaxy_static_images_dir_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: (galaxy_static_dir ~ '/images')})
+}}
+[3].when = galaxy_manage_subdomain_static
+[4].name = Build static_welcome_html_by_host dict
+[4].set_fact._galaxy_static_welcome_html_by_host_dict = {{
+  _galaxy_static_welcome_html_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name ~ '/welcome.html')
+  })
+}}
+[4].loop = {{ galaxy_themes_subdomains }}
+[4].loop_control.loop_var = subdomain
+[4].when = galaxy_manage_subdomain_static
+[5].name = Add base domain to static_welcome_html_by_host dict
+[5].set_fact._galaxy_static_welcome_html_by_host_dict = {{
+  _galaxy_static_welcome_html_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: (galaxy_static_dir ~ '/welcome.html')})
+}}
+[5].when = galaxy_manage_subdomain_static
+[6].name = Build static_scripts_dir_by_host dict
+[6].set_fact._galaxy_static_scripts_dir_by_host_dict = {{
+  _galaxy_static_scripts_dir_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name ~ '/scripts')
+  })
+}}
+[6].loop = {{ galaxy_themes_subdomains }}
+[6].loop_control.loop_var = subdomain
+[6].when = galaxy_manage_subdomain_static
+[7].name = Add base domain to static_scripts_dir_by_host dict
+[7].set_fact._galaxy_static_scripts_dir_by_host_dict = {{
+  _galaxy_static_scripts_dir_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: (galaxy_static_dir ~ '/scripts')})
+}}
+[7].when = galaxy_manage_subdomain_static
+[8].name = Build static_favicon_dir_by_host dict
+[8].set_fact._galaxy_static_favicon_dir_by_host_dict = {{
+  _galaxy_static_favicon_dir_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name)
+  })
+}}
+[8].loop = {{ galaxy_themes_subdomains }}
+[8].loop_control.loop_var = subdomain
+[8].when = galaxy_manage_subdomain_static
+[9].name = Add base domain to static_favicon_dir_by_host dict
+[9].set_fact._galaxy_static_favicon_dir_by_host_dict = {{
+  _galaxy_static_favicon_dir_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: galaxy_static_dir})
+}}
+[9].when = galaxy_manage_subdomain_static
+[10].name = Build static_robots_txt_by_host dict
+[10].set_fact._galaxy_static_robots_txt_by_host_dict = {{
+  _galaxy_static_robots_txt_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (galaxy_themes_static_path ~ '/static-' ~ subdomain.name)
+  })
+}}
+[10].loop = {{ galaxy_themes_subdomains }}
+[10].loop_control.loop_var = subdomain
+[10].when = galaxy_manage_subdomain_static
+[11].name = Add base domain to static_robots_txt_by_host dict
+[11].set_fact._galaxy_static_robots_txt_by_host_dict = {{
+  _galaxy_static_robots_txt_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: galaxy_static_dir})
+}}
+[11].when = galaxy_manage_subdomain_static
+[12].name = Build themes_config_file_by_host dict for subdomains
+[12].set_fact._galaxy_themes_config_file_by_host_dict = {{
+  _galaxy_themes_config_file_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): ('themes_conf-' ~ subdomain.name ~ '.yml')
+  })
+}}
+[12].loop = {{ galaxy_themes_subdomains }}
+[12].loop_control.loop_var = subdomain
+[12].when[0] = galaxy_manage_themes
+[12].when[1] = galaxy_themes_subdomains | length > 0
+[12].when[2] = subdomain.theme is defined
+[13].name = Add base domain to themes_config_file_by_host dict
+[13].set_fact._galaxy_themes_config_file_by_host_dict = {{
+  _galaxy_themes_config_file_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: (galaxy_config.galaxy.themes_config_file | default((galaxy_config_dir, 'themes_conf.yml') | path_join))})
+}}
+[13].when[0] = galaxy_manage_themes
+[13].when[1] = galaxy_themes_subdomains | length > 0
+[14].name = Build brand_by_host dict
+[14].set_fact._galaxy_brand_by_host_dict = {{
+  _galaxy_brand_by_host_dict | default({}) |
+  combine({
+    (subdomain.name ~ '.' ~ galaxy_themes_instance_domain): (subdomain.name[0]|upper ~ subdomain.name[1:])
+  })
+}}
+[14].loop = {{ galaxy_themes_subdomains }}
+[14].loop_control.loop_var = subdomain
+[14].when = galaxy_auto_brand
+[15].name = Add base domain to brand_by_host dict
+[15].set_fact._galaxy_brand_by_host_dict = {{
+  _galaxy_brand_by_host_dict | default({}) |
+  combine({galaxy_themes_instance_domain: galaxy_themes_instance_domain})
+}}
+[15].when = galaxy_auto_brand
+[16].name = Override galaxy_app_config_default with proper dict values
+[16].set_fact.galaxy_app_config_default = {{
+  galaxy_app_config_default |
+  combine({
+    'static_dir_by_host': _galaxy_static_dir_by_host_dict | default({}),
+    'static_images_dir_by_host': _galaxy_static_images_dir_by_host_dict | default({}),
+    'static_welcome_html_by_host': _galaxy_static_welcome_html_by_host_dict | default({}),
+    'static_scripts_dir_by_host': _galaxy_static_scripts_dir_by_host_dict | default({}),
+    'static_favicon_dir_by_host': _galaxy_static_favicon_dir_by_host_dict | default({}),
+    'static_robots_txt_by_host': _galaxy_static_robots_txt_by_host_dict | default({}),
+    'themes_config_file_by_host': _galaxy_themes_config_file_by_host_dict | default({}),
+    'brand_by_host': _galaxy_brand_by_host_dict | default({})
+  })
+}}

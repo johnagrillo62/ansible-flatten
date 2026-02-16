@@ -1,0 +1,13 @@
+firewall_allowed_tcp_ports[0] = 22
+firewall_allowed_tcp_ports[1] = 111
+firewall_allowed_tcp_ports[2] = 24007
+firewall_allowed_tcp_ports[3] = 24009
+firewall_allowed_tcp_ports[4] = 24010
+firewall_allowed_tcp_ports[5] = 49152
+firewall_allowed_tcp_ports[6] = 49153
+firewall_allowed_tcp_ports[7] = 38465
+firewall_allowed_tcp_ports[8] = 38466
+firewall_allowed_udp_ports[0] = 111
+gluster_mount_dir = /mnt/gluster
+gluster_brick_dir = /srv/gluster/brick
+gluster_brick_name = gluster

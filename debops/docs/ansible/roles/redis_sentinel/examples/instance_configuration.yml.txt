@@ -1,0 +1,9 @@
+~d0.redis_sentinel__configuration = 
+~d1.name = 'main'
+~d2.options = 
+~d3.'deny-scripts-reconfig' = False
+~d3.name = 'syslog-ident'
+~d4.value = 'sentinel-main-instance'
+~d4.prefix = ''
+~d3.name = 'client-reconfig-script redis-ha'
+~d4.value = '/tmp/sentinel-reconfig.sh'

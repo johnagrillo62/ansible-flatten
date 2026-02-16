@@ -1,0 +1,3 @@
+~d0.macvlan_interface = eth0
+~d0.enable_nat_default_gateway = true
+~d0.sysctl_file_path = "/etc/sysctl.d/99-sysctl.conf"

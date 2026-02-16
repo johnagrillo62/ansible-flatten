@@ -1,0 +1,34 @@
+~d0.hosts = all
+~d1.become = yes
+~d1.vars = 
+~d2.node_apps_location = /usr/local/opt/node
+~d1.tasks = 
+~d2.name = Install EPEL repo.
+~d3.dnf = name=epel-release state=present
+~d2.name = Import Remi GPG key.
+~d3.rpm_key = 
+~d4.key = "https://rpms.remirepo.net/RPM-GPG-KEY-remi2018"
+~d4.state = present
+~d2.name = Install Remi repo.
+~d3.dnf = 
+~d4.name = "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+~d4.state = present
+~d2.name = Ensure firewalld is stopped (since this is a test server).
+~d3.service = name=firewalld state=stopped
+~d2.name = Install Node.js and npm.
+~d3.dnf = name=npm state=present enablerepo=epel
+~d2.name = Install Forever (to run our Node.js app).
+~d3.npm = name=forever global=yes state=present
+~d2.name = Ensure Node.js app folder exists.
+~d3.file = "path={{ node_apps_location }} state=directory"
+~d2.name = Copy example Node.js app to server.
+~d3.copy = "src=app dest={{ node_apps_location }}"
+~d2.name = Install app dependencies defined in package.json.
+~d3.npm = "path={{ node_apps_location }}/app"
+~d2.name = Check list of running Node.js apps.
+~d3.command = npx forever list
+~d3.register = forever_list
+~d3.changed_when = false
+~d2.name = Start example Node.js app.
+~d3.command = "npx forever start {{ node_apps_location }}/app/app.js"
+~d3.when = "forever_list.stdout.find(node_apps_location + '/app/app.js') == -1"

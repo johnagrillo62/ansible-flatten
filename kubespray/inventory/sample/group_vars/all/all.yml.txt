@@ -1,0 +1,14 @@
+bin_dir = /usr/local/bin
+loadbalancer_apiserver_port = 6443
+loadbalancer_apiserver_healthcheck_port = 8081
+no_proxy_exclude_workers = false
+kube_webhook_token_auth = false
+kube_webhook_token_auth_url_skip_tls_verify = false
+ntp_enabled = false
+ntp_manage_config = false
+ntp_servers[0] = 0.pool.ntp.org iburst
+ntp_servers[1] = 1.pool.ntp.org iburst
+ntp_servers[2] = 2.pool.ntp.org iburst
+ntp_servers[3] = 3.pool.ntp.org iburst
+unsafe_show_logs = false
+allow_unsupported_distribution_setup = false

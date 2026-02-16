@@ -1,0 +1,5 @@
+~d0.name = Remove shortcut for the occ command
+~d1.ansible.builtin.file = 
+~d2.path = '{{ owncloud__occ_bin_file_path }}'
+~d2.state = 'absent'
+~d1.tags = [ 'role::owncloud:occ' ]

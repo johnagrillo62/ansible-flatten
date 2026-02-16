@@ -1,0 +1,66 @@
+[0].name = Set kubeadm_discovery_address
+[0].set_fact.kubeadm_discovery_address = {%- if "127.0.0.1" in kube_apiserver_endpoint or "localhost" in kube_apiserver_endpoint -%} {{ first_kube_control_plane_address | ansible.utils.ipwrap }}:{{ kube_apiserver_port }} {%- else -%} {{ kube_apiserver_endpoint | regex_replace('https://', '') }} {%- endif %}
+[0].tags[0] = facts
+[1].name = Obtain kubeadm certificate key for joining control planes nodes
+[1].when[0] = not kube_external_ca_mode
+[1].run_once = true
+[1].block[0].name = Upload certificates so they are fresh and not expired
+[1].block[0].command = {{ bin_dir }}/kubeadm init phase --config {{ kube_config_dir }}/kubeadm-config.yaml upload-certs --upload-certs
+[1].block[0].register = kubeadm_upload_cert
+[1].block[0].delegate_to = {{ first_kube_control_plane }}
+[1].block[1].name = Parse certificate key if not set
+[1].block[1].set_fact.kubeadm_certificate_key = {{ kubeadm_upload_cert.stdout_lines[-1] | trim }}
+[2].name = Wait for k8s apiserver
+[2].wait_for.host = {{ kubeadm_discovery_address | regex_replace('\\]?:\\d+$', '') | regex_replace('^\\[', '') }}
+[2].wait_for.port = {{ kubeadm_discovery_address.split(':')[-1] }}
+[2].wait_for.timeout = 180
+[3].name = Check already run
+[3].debug.msg = {{ kubeadm_already_run.stat.exists }}
+[4].name = Reset cert directory
+[4].shell = if [ -f /etc/kubernetes/manifests/kube-apiserver.yaml ]; then {{ bin_dir }}/kubeadm reset -f --cert-dir {{ kube_cert_dir }}; fi
+[4].environment.PATH = {{ bin_dir }}:{{ ansible_env.PATH }}
+[4].when[0] = inventory_hostname != first_kube_control_plane
+[4].when[1] = kubeadm_already_run is not defined or not kubeadm_already_run.stat.exists
+[4].when[2] = not kube_external_ca_mode
+[5].name = Get kubeconfig for join discovery process
+[5].command = {{ kubectl }} -n kube-public get cm cluster-info -o jsonpath='{.data.kubeconfig}'
+[5].register = kubeconfig_file_discovery
+[5].run_once = true
+[5].delegate_to = {{ groups['kube_control_plane'] | first }}
+[5].when[0] = kubeadm_use_file_discovery
+[5].when[1] = kubeadm_already_run is not defined or not kubeadm_already_run.stat.exists
+[6].name = Copy discovery kubeconfig
+[6].copy.dest = {{ kube_config_dir }}/cluster-info-discovery-kubeconfig.yaml
+[6].copy.content = {{ kubeconfig_file_discovery.stdout }}
+[6].copy.owner = root
+[6].copy.mode = 0644
+[6].when[0] = inventory_hostname != first_kube_control_plane
+[6].when[1] = kubeadm_use_file_discovery
+[6].when[2] = kubeadm_already_run is not defined or not kubeadm_already_run.stat.exists
+[7].name = Create kubeadm ControlPlane config
+[7].template.src = kubeadm-controlplane.yaml.j2
+[7].template.dest = {{ kube_config_dir }}/kubeadm-controlplane.yaml
+[7].template.mode = 0640
+[7].template.backup = true
+[7].template.validate = {{ kubeadm_config_validate_enabled | ternary(bin_dir + '/kubeadm config validate --config %s', omit) }}
+[7].when[0] = inventory_hostname != first_kube_control_plane
+[7].when[1] = not kubeadm_already_run.stat.exists
+[8].name = Joining control plane node to the cluster.
+[8].command = {{ bin_dir }}/kubeadm join --config {{ kube_config_dir }}/kubeadm-controlplane.yaml --ignore-preflight-errors={{ kubeadm_ignore_preflight_errors | join(',') }} --skip-phases={{ kubeadm_join_phases_skip | join(',') }}
+[8].environment.PATH = {{ bin_dir }}:{{ ansible_env.PATH }}
+[8].register = kubeadm_join_control_plane
+[8].retries = 3
+[8].throttle = 1
+[8].until = kubeadm_join_control_plane is succeeded
+[8].when[0] = inventory_hostname != first_kube_control_plane
+[8].when[1] = kubeadm_already_run is not defined or not kubeadm_already_run.stat.exists
+[9].name = Wait for new control plane nodes to be Ready
+[9].when = kubeadm_already_run.stat.exists
+[9].run_once = true
+[9].command = {{ kubectl }} get nodes --selector node-role.kubernetes.io/control-plane -o jsonpath-as-json="{.items[*].status.conditions[?(@.type == 'Ready')]}"
+
+[9].register = control_plane_node_ready_conditions
+[9].retries = {{ control_plane_node_become_ready_tries }}
+[9].delay = 5
+[9].delegate_to = {{ groups['kube_control_plane'][0] }}
+[9].until = control_plane_node_ready_conditions.stdout | from_json | selectattr('status', '==', 'True') | length == (groups['kube_control_plane'] | length)

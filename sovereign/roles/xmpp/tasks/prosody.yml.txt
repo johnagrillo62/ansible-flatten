@@ -1,0 +1,29 @@
+[0].name = Ensure repository key for Prosody is in place
+[0].apt_key = url=https://prosody.im/files/prosody-debian-packages.key state=present
+[0].tags[0] = dependencies
+[1].name = Add Prosody repository
+[1].apt_repository = repo="deb http://packages.prosody.im/debian {{ ansible_distribution_release }} main"
+[1].tags[0] = dependencies
+[2].name = Install Prosody and dependencies from official repository
+[2].apt = pkg={{ item }} update_cache=yes
+[2].with_items[0] = prosody
+[2].with_items[1] = lua-sec
+[2].tags[0] = dependencies
+[3].name = Add prosody user to ssl-cert group
+[3].user = name=prosody group=ssl-cert
+[4].name = Add cert postrenew task
+[4].copy = src=etc_letsencrypt_postrenew_prosody.sh dest=/etc/letsencrypt/postrenew/prosody.sh mode=0755
+[5].name = Create Prosody data directory
+[5].file = state=directory path=/decrypted/prosody owner=prosody group=prosody
+[6].name = Configure Prosody
+[6].template = src=prosody.cfg.lua.j2 dest=/etc/prosody/prosody.cfg.lua group=prosody owner=root mode=0644
+[6].notify = restart prosody
+[7].name = Create Prosody accounts
+[7].command = prosodyctl register {{ item.name }} {{ prosody_virtual_domain }} "{{ item.password }}"
+[7].with_items = {{ prosody_accounts }}
+[7].tags[0] = skip_ansible_lint
+[8].name = Set firewall rules for Prosody
+[8].ufw = rule=allow port={{ item }} proto=tcp
+[8].with_items[0] = 5222
+[8].with_items[1] = 5269
+[8].tags = ufw

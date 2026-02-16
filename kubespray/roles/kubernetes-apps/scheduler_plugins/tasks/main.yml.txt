@@ -1,0 +1,74 @@
+[0].name = Scheduler Plugins | Ensure dir exists
+[0].file.path = {{ kube_config_dir }}/scheduler-plugins
+[0].file.state = directory
+[0].file.owner = root
+[0].file.group = root
+[0].file.mode = 0755
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[0].tags[0] = scheduler_plugins
+[1].name = Scheduler Plugins | Create manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/scheduler-plugins/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = appgroup
+[1].with_items[0].file = appgroup.diktyo.x-k8s.io_appgroups.yaml
+[1].with_items[0].type = crd
+[1].with_items[1].name = networktopology
+[1].with_items[1].file = networktopology.diktyo.x-k8s.io_networktopologies.yaml
+[1].with_items[1].type = crd
+[1].with_items[2].name = elasticquotas
+[1].with_items[2].file = scheduling.x-k8s.io_elasticquotas.yaml
+[1].with_items[2].type = crd
+[1].with_items[3].name = podgroups
+[1].with_items[3].file = scheduling.x-k8s.io_podgroups.yaml
+[1].with_items[3].type = crd
+[1].with_items[4].name = noderesourcetopologies
+[1].with_items[4].file = topology.node.k8s.io_noderesourcetopologies.yaml
+[1].with_items[4].type = crd
+[1].with_items[5].name = namespace
+[1].with_items[5].file = namespace.yaml
+[1].with_items[5].type = namespace
+[1].with_items[6].name = sa
+[1].with_items[6].file = sa-scheduler-plugins.yaml
+[1].with_items[6].type = serviceaccount
+[1].with_items[7].name = rbac
+[1].with_items[7].file = rbac-scheduler-plugins.yaml
+[1].with_items[7].type = rbac
+[1].with_items[8].name = cm
+[1].with_items[8].file = cm-scheduler-plugins.yaml
+[1].with_items[8].type = configmap
+[1].with_items[9].name = deploy
+[1].with_items[9].file = deploy-scheduler-plugins.yaml
+[1].with_items[9].type = deployment
+[1].register = scheduler_plugins_manifests
+[1].when = inventory_hostname == groups['kube_control_plane'][0]
+[1].tags[0] = scheduler_plugins
+[2].name = Scheduler Plugins | Apply manifests
+[2].kube.name = {{ item.item.name }}
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.resource = {{ item.item.type }}
+[2].kube.filename = {{ kube_config_dir }}/scheduler-plugins/{{ item.item.file }}
+[2].kube.state = latest
+[2].with_items = {{ scheduler_plugins_manifests.results }}
+[2].when = inventory_hostname == groups['kube_control_plane'][0]
+[2].tags[0] = scheduler_plugins
+[3].name = Scheduler Plugins | Wait for controller pods to be ready
+[3].command = {{ kubectl }} -n {{ scheduler_plugins_namespace }} get pods -l app=scheduler-plugins-controller -o jsonpath='{.items[?(@.status.containerStatuses[0].ready==false)].metadata.name}'
+[3].register = controller_pods_not_ready
+[3].until = controller_pods_not_ready.stdout.find("scheduler-plugins-controller")==-1
+[3].retries = 30
+[3].delay = 10
+[3].ignore_errors = true
+[3].changed_when = false
+[3].when = inventory_hostname == groups['kube_control_plane'][0]
+[3].tags[0] = scheduler_plugins
+[4].name = Scheduler Plugins | Wait for scheduler pods to be ready
+[4].command = {{ kubectl }} -n {{ scheduler_plugins_namespace }} get pods -l component=scheduler -o jsonpath='{.items[?(@.status.containerStatuses[0].ready==false)].metadata.name}'
+[4].register = scheduler_pods_not_ready
+[4].until = scheduler_pods_not_ready.stdout.find("scheduler-plugins-scheduler")==-1
+[4].retries = 30
+[4].delay = 10
+[4].ignore_errors = true
+[4].changed_when = false
+[4].when = inventory_hostname == groups['kube_control_plane'][0]
+[4].tags[0] = scheduler_plugins

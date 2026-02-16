@@ -1,0 +1,46 @@
+[0].name = Install required packages
+[0]["ansible.builtin.package"].name = {{ q("flattened", (nfs__base_packages
+                              + nfs__packages)) }} 
+[0]["ansible.builtin.package"].state = present
+[0].register = nfs__register_packages
+[0].until = nfs__register_packages is succeeded
+[1].name = Configure NFS client
+[1]["ansible.builtin.template"].src = {{ item }}.j2
+[1]["ansible.builtin.template"].dest = /{{ item }}
+[1]["ansible.builtin.template"].owner = root
+[1]["ansible.builtin.template"].group = root
+[1]["ansible.builtin.template"].mode = 0644
+[1].with_items[0] = etc/default/nfs-common
+[1].register = nfs__register_config
+[2].name = Ensure that the NFS mount points exist
+[2]["ansible.builtin.file"].path = {{ item.path }}
+[2]["ansible.builtin.file"].owner = {{ item.owner | d("root") }}
+[2]["ansible.builtin.file"].group = {{ item.group | d("root") }}
+[2]["ansible.builtin.file"].mode = {{ item.mode | d("0755") }}
+[2]["ansible.builtin.file"].state = directory
+[2].loop = {{ q("flattened", nfs__shares
+                           + nfs__group_shares
+                           + nfs__host_shares) }}
+
+[2].when = item.path | d() and item.src | d() and item.state | d('mounted') == 'present'
+[3].name = Manage NFS mount points
+[3]["ansible.posix.mount"].name = {{ item.path }}
+[3]["ansible.posix.mount"].src = {{ item.src }}
+[3]["ansible.posix.mount"].fstype = {{ item.fstype | d(nfs__default_mount_type) }}
+[3]["ansible.posix.mount"].opts = {{ lookup("template", "lookup/mount_options.j2") | from_yaml }}
+[3]["ansible.posix.mount"].state = {{ item.state | d("mounted") }}
+[3]["ansible.posix.mount"].passno = {{ item.passno | d(omit) }}
+[3]["ansible.posix.mount"].dump = {{ item.dump | d(omit) }}
+[3]["ansible.posix.mount"].fstab = {{ item.fstab | d(omit) }}
+[3].loop = {{ q("flattened", nfs__shares
+                           + nfs__group_shares
+                           + nfs__host_shares) }}
+
+[3].register = nfs__register_devices
+[3].when = item.path | d() and item.src | d()
+[4].name = Restart 'remote-fs.target' systemd unit
+[4]["ansible.builtin.systemd"].name = remote-fs.target
+[4]["ansible.builtin.systemd"].state = restarted
+[4]["ansible.builtin.systemd"].daemon_reload = True
+[4].loop = {{ nfs__register_devices.results }}
+[4].when = (ansible_service_mgr == 'systemd' and item is changed and (lookup("template", "lookup/mount_options.j2") is match(".*x-systemd.automount.*")))

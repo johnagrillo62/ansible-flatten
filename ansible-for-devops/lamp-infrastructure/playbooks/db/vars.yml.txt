@@ -1,0 +1,7 @@
+firewall_allowed_tcp_ports[0] = 22
+firewall_allowed_tcp_ports[1] = 3306
+mysql_replication_user.name = replication
+mysql_replication_user.password = secret
+mysql_databases[0].name = mycompany_database
+mysql_databases[0].collation = utf8_general_ci
+mysql_databases[0].encoding = utf8

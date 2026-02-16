@@ -1,0 +1,6 @@
+apiVersion = 1
+providers[0].name = awx-dashboards
+providers[0].type = file
+providers[0].allowUiUpdates = true
+providers[0].options.foldersFromFilesStructure = true
+providers[0].options.path = /etc/grafana/provisioning/dashboards/

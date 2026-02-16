@@ -1,0 +1,12 @@
+collections[0] = debops.debops
+galaxy_info.company = DebOps
+galaxy_info.author = Robin Schneider
+galaxy_info.description = Setup and manage Home Assistant
+galaxy_info.license = GPL-3.0-only
+galaxy_info.min_ansible_version = 2.2.2
+galaxy_info.platforms[0].name = Debian
+galaxy_info.platforms[0].versions[0] = bullseye
+galaxy_info.galaxy_tags[0] = automation
+galaxy_info.galaxy_tags[1] = home
+galaxy_info.galaxy_tags[2] = homeassistant
+galaxy_info.galaxy_tags[3] = iot

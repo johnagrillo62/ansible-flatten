@@ -1,0 +1,10 @@
+dhcrelay__base_packages[0] = isc-dhcp-relay
+dhcrelay__servers[0] = {{ ansible_default_ipv4.gateway
+                         if ansible_default_ipv4.gateway | d()
+                         else [] }}
+
+dhcrelay__interfaces[0] = {{ ansible_local.ifupdown.internal_interface
+                            if ansible_local.ifupdown.internal_interface | d()
+                            else ansible_default_ipv4.interface }}
+
+dhcrelay__options = 

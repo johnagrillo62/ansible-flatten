@@ -1,0 +1,41 @@
+[0].name = Save etcd snapshot
+[0].command = {{ bin_dir }}/etcdctl snapshot save /tmp/snapshot.db
+[0].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[0].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[0].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[0].environment.ETCDCTL_ENDPOINTS = {{ etcd_access_addresses.split(',') | first }}
+[0].environment.ETCDCTL_API = 3
+[0].when = etcd_snapshot is not defined
+[1].name = Transfer etcd snapshot to host
+[1].copy.src = {{ etcd_snapshot }}
+[1].copy.dest = /tmp/snapshot.db
+[1].copy.mode = 0640
+[1].when = etcd_snapshot is defined
+[2].name = Stop etcd
+[2].systemd_service.name = etcd
+[2].systemd_service.state = stopped
+[3].name = Remove etcd data-dir
+[3].file.path = {{ etcd_data_dir }}
+[3].file.state = absent
+[4].name = Restore etcd snapshot
+[4].shell = {{ bin_dir }}/etcdctl snapshot restore /tmp/snapshot.db --name {{ etcd_member_name }} --initial-cluster {{ etcd_member_name }}={{ etcd_peer_url }} --initial-cluster-token k8s_etcd --initial-advertise-peer-urls {{ etcd_peer_url }} --data-dir {{ etcd_data_dir }}
+[4].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[4].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[4].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[4].environment.ETCDCTL_ENDPOINTS = {{ etcd_access_addresses }}
+[4].environment.ETCDCTL_API = 3
+[5].name = Remove etcd snapshot
+[5].file.path = /tmp/snapshot.db
+[5].file.state = absent
+[6].name = Change etcd data-dir owner
+[6].file.path = {{ etcd_data_dir }}
+[6].file.owner = etcd
+[6].file.group = etcd
+[6].file.recurse = true
+[7].name = Reconfigure etcd
+[7].replace.path = /etc/etcd.env
+[7].replace.regexp = ^(ETCD_INITIAL_CLUSTER=).*
+[7].replace.replace = \1{{ etcd_member_name }}={{ etcd_peer_url }}
+[8].name = Start etcd
+[8].systemd_service.name = etcd
+[8].systemd_service.state = started

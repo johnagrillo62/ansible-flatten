@@ -1,0 +1,14 @@
+~d0.name = Set no_proxy to all assigned cluster IPs and hostnames
+~d1.set_fact = 
+~d2.no_proxy_prepare = >-
+~d1.delegate_to = localhost
+~d1.connection = local
+~d1.delegate_facts = true
+~d1.become = false
+~d1.run_once = true
+~d0.name = Populates no_proxy to all hosts
+~d1.set_fact = 
+~d2.no_proxy = "{{ hostvars.localhost.no_proxy_prepare | select }}"
+~d2.proxy_env = "{{ proxy_env | combine({
+~d4.'no_proxy' = hostvars.localhost.no_proxy_prepare,
+~d4.'NO_PROXY' = hostvars.localhost.no_proxy_prepare

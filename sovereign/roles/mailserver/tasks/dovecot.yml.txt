@@ -1,0 +1,70 @@
+[0].name = Install Dovecot and related packages
+[0].apt = pkg={{ item }} update_cache=yes state=present
+[0].with_items[0] = dovecot-core
+[0].with_items[1] = dovecot-imapd
+[0].with_items[2] = dovecot-lmtpd
+[0].with_items[3] = dovecot-managesieved
+[0].with_items[4] = dovecot-pgsql
+[0].with_items[5] = dovecot-pop3d
+[0].with_items[6] = dovecot-antispam
+[0].tags[0] = dependencies
+[1].name = Install Postgres for Dovecot
+[1].apt = pkg=postgresql state=present
+[1].tags[0] = dependencies
+[2].name = Create vmail group
+[2].group = name=vmail state=present gid=5000
+[3].name = Create vmail user
+[3].user = name=vmail group=vmail state=present uid=5000 home=/decrypted shell=/usr/sbin/nologin
+[4].name = Ensure mail domain directories are in place
+[4].file = state=directory path=/decrypted/{{ item.name }} owner=vmail group=dovecot mode=0770
+[4].with_items = {{ mail_virtual_domains }}
+[5].name = Ensure mail directories are in place
+[5].file = state=directory path=/decrypted/{{ item.domain }}/{{ item.account }} owner=vmail group=dovecot
+[5].with_items = {{ mail_virtual_users }}
+[6].name = Copy dovecot.conf into place
+[6].copy = src=etc_dovecot_dovecot.conf dest=/etc/dovecot/dovecot.conf
+[7].name = Create before.d sieve scripts directory
+[7].file = path=/etc/dovecot/sieve/before.d state=directory owner=vmail group=dovecot recurse=yes mode=0770
+[7].notify = restart dovecot
+[8].name = Configure sieve script moving spam into Junk folder
+[8].copy = src=etc_dovecot_sieve_before.d_no-spam.sieve dest=/etc/dovecot/sieve/before.d/no-spam.sieve owner=vmail group=dovecot
+[8].notify = restart dovecot
+[9].name = Copy additional Dovecot configuration files in place
+[9].copy = src=etc_dovecot_conf.d_{{ item }} dest=/etc/dovecot/conf.d/{{ item }}
+[9].with_items[0] = 10-auth.conf
+[9].with_items[1] = 10-mail.conf
+[9].with_items[2] = 10-master.conf
+[9].with_items[3] = 90-antispam.conf
+[9].with_items[4] = 90-plugin.conf
+[9].with_items[5] = 90-sieve.conf
+[9].with_items[6] = auth-sql.conf.ext
+[9].notify = restart dovecot
+[10].name = Template 10-ssl.conf
+[10].template = src=etc_dovecot_conf.d_10-ssl.conf.j2 dest=/etc/dovecot/conf.d/10-ssl.conf
+[10].notify = restart dovecot
+[11].name = Template 15-lda.conf
+[11].template = src=etc_dovecot_conf.d_15-lda.conf.j2 dest=/etc/dovecot/conf.d/15-lda.conf
+[11].notify = restart dovecot
+[12].name = Template 20-imap.conf
+[12].template = src=etc_dovecot_conf.d_20-imap.conf.j2 dest=/etc/dovecot/conf.d/20-imap.conf
+[12].notify = restart dovecot
+[13].name = Template dovecot-sql.conf.ext
+[13].template = src=etc_dovecot_dovecot-sql.conf.ext.j2 dest=/etc/dovecot/dovecot-sql.conf.ext
+[13].notify = restart dovecot
+[14].name = Ensure correct permissions on Dovecot config directory
+[14].file = state=directory path=/etc/dovecot group=dovecot owner=vmail mode=0770 recurse=yes
+[14].notify = restart dovecot
+[15].name = Set firewall rules for dovecot
+[15].ufw = rule=allow port={{ item }} proto=tcp
+[15].with_items[0] = imaps
+[15].with_items[1] = pop3s
+[15].tags = ufw
+[16].name = Update post-certificate-renewal task
+[16].copy.content = #!/bin/bash
+
+service dovecot restart
+
+[16].copy.dest = /etc/letsencrypt/postrenew/dovecot.sh
+[16].copy.mode = 0755
+[16].copy.owner = root
+[16].copy.group = root

@@ -1,0 +1,4 @@
+storage_classes[0].name = cinder-csi
+storage_classes[0].is_default = false
+storage_classes[0].parameters.availability = nova
+storage_classes[0].parameters.allowVolumeExpansion = false

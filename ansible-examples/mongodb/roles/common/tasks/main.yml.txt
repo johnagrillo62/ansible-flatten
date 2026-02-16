@@ -1,0 +1,24 @@
+[0].name = Create the hosts file for all machines
+[0].template = src=hosts.j2 dest=/etc/hosts
+[1].name = Create the repository for 10Gen
+[1].copy = src=10gen.repo.j2 dest=/etc/yum.repos.d/10gen.repo
+[2].name = Create the EPEL Repository.
+[2].copy = src=epel.repo.j2 dest=/etc/yum.repos.d/epel.repo
+[3].name = Create the GPG key for EPEL
+[3].copy = src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+[4].name = Create the mongod user
+[4].user = name=mongod comment="MongoD"
+[5].name = Create the data directory for the namenode metadata
+[5].file = path={{ mongodb_datadir_prefix }} owner=mongod group=mongod state=directory
+[6].name = Install the mongodb package
+[6].yum = name={{ item }} state=installed
+[6].with_items[0] = libselinux-python
+[6].with_items[1] = mongo-10gen
+[6].with_items[2] = mongo-10gen-server
+[6].with_items[3] = bc
+[6].with_items[4] = python-pip
+[7].name = Install the latest pymongo package
+[7].pip = name=pymongo state=latest use_mirrors=no
+[8].name = Create the iptables file
+[8].template = src=iptables.j2 dest=/etc/sysconfig/iptables
+[8].notify = restart iptables

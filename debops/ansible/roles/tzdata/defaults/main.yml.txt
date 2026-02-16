@@ -1,0 +1,5 @@
+tzdata__enabled = True
+tzdata__timezone = {{ ansible_local.tzdata.timezone | d("Etc/UTC") }}
+tzdata__base_packages[0] = tzdata
+tzdata__restart_default_services[0] = cron.service
+tzdata__restart_default_services[1] = rsyslog.service

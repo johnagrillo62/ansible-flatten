@@ -1,0 +1,14 @@
+[0].name = Install logwatch
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = libdate-manip-perl
+[0].with_items[1] = logwatch
+[0].tags[0] = dependencies
+[1].name = Configure logwatch
+[1].template = src=etc_logwatch_conf_logwatch.conf.j2 dest=/etc/logwatch/conf/logwatch.conf
+[2].name = Configure rspamd to let logs through
+[2].template = src=etc_rspamd_rspamd.conf.local.j2 dest=/etc/rspamd/rspamd.conf.local
+[2].notify = restart rspamd
+[3].name = Remove logwatch's dist cronjob
+[3].file = state=absent path=/etc/cron.daily/00logwatch
+[4].name = Configure weekly logwatch cronjob
+[4].cron = special_time=weekly job=/usr/sbin/logwatch name=logwatch

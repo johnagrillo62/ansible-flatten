@@ -1,0 +1,21 @@
+dependencies[0].role = kubernetes-apps/container_runtimes/kata_containers
+dependencies[0].when = kata_containers_enabled
+dependencies[0].tags[0] = apps
+dependencies[0].tags[1] = kata-containers
+dependencies[0].tags[2] = container-runtimes
+dependencies[1].role = kubernetes-apps/container_runtimes/gvisor
+dependencies[1].when = gvisor_enabled
+dependencies[1].tags[0] = apps
+dependencies[1].tags[1] = gvisor
+dependencies[1].tags[2] = container-runtimes
+dependencies[2].role = kubernetes-apps/container_runtimes/crun
+dependencies[2].when = crun_enabled
+dependencies[2].tags[0] = apps
+dependencies[2].tags[1] = crun
+dependencies[2].tags[2] = container-runtimes
+dependencies[3].role = kubernetes-apps/container_runtimes/youki
+dependencies[3].when[0] = youki_enabled
+dependencies[3].when[1] = container_manager == 'crio'
+dependencies[3].tags[0] = apps
+dependencies[3].tags[1] = youki
+dependencies[3].tags[2] = container-runtimes

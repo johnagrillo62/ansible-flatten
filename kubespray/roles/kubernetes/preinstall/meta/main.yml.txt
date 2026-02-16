@@ -1,0 +1,4 @@
+dependencies[0].role = adduser
+dependencies[0].user = {{ addusers.kube }}
+dependencies[0].when[0] = not is_fedora_coreos
+dependencies[0].tags[0] = kubelet

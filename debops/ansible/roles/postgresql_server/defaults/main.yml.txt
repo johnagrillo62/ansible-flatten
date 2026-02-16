@@ -1,0 +1,186 @@
+postgresql_server__upstream = False
+postgresql_server__upstream_key_id = B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+postgresql_server__upstream_apt_repo = deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+postgresql_server__base_packages[0] = postgresql
+postgresql_server__base_packages[1] = postgresql-client
+postgresql_server__base_packages[2] = postgresql-contrib
+postgresql_server__base_packages[3] = pgtop
+postgresql_server__preferred_version = 
+postgresql_server__user = postgres
+postgresql_server__group = postgres
+postgresql_server__delegate_to = {{ inventory_hostname }}
+postgresql_server__pgbadger_logs = False
+postgresql_server__listen_addresses[0] = localhost
+postgresql_server__max_connections = 100
+postgresql_server__admins = {{ ["root", "*postgres*"] +
+                               ansible_local.core.admin_users | d([]) }} 
+postgresql_server__admin_password = {{ lookup('password', secret + '/credentials/' +
+                                       inventory_hostname + '/postgresql/default/' +
+                                       postgresql_server__user + '/password length=' +
+                                       postgresql_server__password_length +
+                                       ' chars=' + postgresql_server__password_characters) }}
+
+postgresql_server__password_length = 64
+postgresql_server__password_characters = ascii_letters,digits,.-_~&()*=
+postgresql_server__trusted = {{ ansible_local.core.admin_users | d([]) }}
+postgresql_server__log_destination = {{ "stderr"
+                                        if (postgresql_server__pgbadger_logs | bool)
+                                        else "syslog" }}
+
+postgresql_server__locale = en_US.UTF-8
+postgresql_server__locale_messages = C
+postgresql_server__timezone = {{ ansible_local.tzdata.timezone | d("Etc/UTC") }}
+postgresql_server__start_conf = auto
+postgresql_server__pki = {{ ansible_local.pki.enabled | d() | bool }}
+postgresql_server__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+postgresql_server__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+postgresql_server__pki_ca = CA.crt
+postgresql_server__pki_crt = default.crt
+postgresql_server__pki_key = default.key
+postgresql_server__pki_crl = default.crl
+postgresql_server__ssl_ciphers = ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
+postgresql_server__shmmax_limiter = 0.8
+postgresql_server__shm_memory_limiter = 0.4
+postgresql_server__wal_level = minimal
+postgresql_server__archive_command = 
+postgresql_server__hba_system[0].comment = Database superuser account, do not disable
+postgresql_server__hba_system[0].type = local
+postgresql_server__hba_system[0].database = all
+postgresql_server__hba_system[0].user = *postgres*
+postgresql_server__hba_system[0].method = peer
+postgresql_server__hba_system[0].options = map=system
+postgresql_server__hba_system[1].comment = Block remote connections to admin account
+postgresql_server__hba_system[1].type = host
+postgresql_server__hba_system[1].database = all
+postgresql_server__hba_system[1].user = *postgres*
+postgresql_server__hba_system[1].address = all
+postgresql_server__hba_system[1].method = reject
+postgresql_server__hba_replication[0].comment = Remote replication connections
+postgresql_server__hba_replication[0].type = hostssl
+postgresql_server__hba_replication[0].database = replication
+postgresql_server__hba_replication[0].user = replication
+postgresql_server__hba_replication[0].address = samenet
+postgresql_server__hba_replication[0].method = md5
+postgresql_server__hba_public[0].comment = Allow public connections to postgres database
+postgresql_server__hba_public[0].type = local
+postgresql_server__hba_public[0].database = postgres
+postgresql_server__hba_public[0].user = all
+postgresql_server__hba_public[0].method = md5
+postgresql_server__hba_public[1].comment = Allow public connections to postgres database
+postgresql_server__hba_public[1].type = hostssl
+postgresql_server__hba_public[1].database = postgres
+postgresql_server__hba_public[1].user = all
+postgresql_server__hba_public[1].address = samenet
+postgresql_server__hba_public[1].method = md5
+postgresql_server__hba_trusted[0].comment = Access through local UNIX socket
+postgresql_server__hba_trusted[0].type = local
+postgresql_server__hba_trusted[0].database = samerole
+postgresql_server__hba_trusted[0].user = @trusted
+postgresql_server__hba_trusted[0].method = peer
+postgresql_server__hba_local[0].comment = Access through local UNIX socket with password
+postgresql_server__hba_local[0].type = local
+postgresql_server__hba_local[0].database = samerole
+postgresql_server__hba_local[0].user = all
+postgresql_server__hba_local[0].method = md5
+postgresql_server__hba_local[1].comment = Access from localhost over IPv6
+postgresql_server__hba_local[1].type = host
+postgresql_server__hba_local[1].database = samerole
+postgresql_server__hba_local[1].user = all
+postgresql_server__hba_local[1].address = ::1/128
+postgresql_server__hba_local[1].method = md5
+postgresql_server__hba_local[2].comment = Access from localhost over IPv4
+postgresql_server__hba_local[2].type = host
+postgresql_server__hba_local[2].database = samerole
+postgresql_server__hba_local[2].user = all
+postgresql_server__hba_local[2].address = 127.0.0.1/32
+postgresql_server__hba_local[2].method = md5
+postgresql_server__hba_local[3].comment = Access from localhost
+postgresql_server__hba_local[3].type = host
+postgresql_server__hba_local[3].database = samerole
+postgresql_server__hba_local[3].user = all
+postgresql_server__hba_local[3].address = localhost
+postgresql_server__hba_local[3].method = md5
+postgresql_server__hba_remote[0].comment = Remote connections from local networks
+postgresql_server__hba_remote[0].type = hostssl
+postgresql_server__hba_remote[0].database = samerole
+postgresql_server__hba_remote[0].user = all
+postgresql_server__hba_remote[0].address = samenet
+postgresql_server__hba_remote[0].method = md5
+postgresql_server__ident_system[0].map = system
+postgresql_server__ident_system[0].user = {{ postgresql_server__admins }}
+postgresql_server__ident_system[0].role = *postgres*
+postgresql_server__data_directory = /var/lib/postgresql
+postgresql_server__log_directory = /var/log/postgresql
+postgresql_server__clusters[0] = {{ postgresql_server__cluster_main }}
+postgresql_server__cluster_main.name = main
+postgresql_server__cluster_main.port = 5432
+postgresql_server__autopostgresqlbackup = {{ False
+                                             if (ansible_distribution_release in ["bullseye"])
+                                             else True }}
+
+postgresql_server__auto_backup = True
+postgresql_server__auto_backup_dir = /var/lib/autopostgresqlbackup
+postgresql_server__auto_backup_pg_opts = 
+postgresql_server__auto_backup_pg_dump_opts = 
+postgresql_server__auto_backup_extension = sql
+postgresql_server__auto_backup_mail = quiet
+postgresql_server__auto_backup_mail_size = 4000
+postgresql_server__auto_backup_mail_to = backup@{{ ansible_domain }}
+postgresql_server__auto_backup_create_database = True
+postgresql_server__auto_backup_isolate_databases = True
+postgresql_server__auto_backup_weekly = 6
+postgresql_server__auto_backup_monthly = 01
+postgresql_server__auto_backup_encryption = False
+postgresql_server__auto_backup_encryption_key = 
+postgresql_server__auto_backup_encryption_cipher = aes256
+postgresql_server__auto_backup_encryption_suffix = .enc
+postgresql_server__auto_backup_compression = gzip
+postgresql_server__auto_backup_pre_script = 
+postgresql_server__auto_backup_post_script = 
+postgresql_server__auto_backup_permissions = 0600
+postgresql_server__etc_services__dependent_list.name = postgresql
+postgresql_server__etc_services__dependent_list.custom = {% for item in postgresql_server__clusters %}
+{% if item.port is defined and item.port != "5432" %}
+postgresql-{{ (item.port | int - 5430) }}    {{ item.port }}/tcp
+{% endif %}
+{% endfor %}
+
+postgresql_server__keyring__dependent_apt_keys[0].id = {{ postgresql_server__upstream_key_id }}
+postgresql_server__keyring__dependent_apt_keys[0].repo = {{ postgresql_server__upstream_apt_repo }}
+postgresql_server__keyring__dependent_apt_keys[0].state = {{ "present" if postgresql_server__upstream | bool else "absent" }}
+postgresql_server__locales__dependent_list[0].name = {{ postgresql_server__locale }}
+postgresql_server__locales__dependent_list[0].state = present
+postgresql_server__ferm__dependent_rules.type = custom
+postgresql_server__ferm__dependent_rules.by_role = debops.postgresql_server
+postgresql_server__ferm__dependent_rules.name = postgresql_custom_rules
+postgresql_server__ferm__dependent_rules.weight_class = default
+postgresql_server__ferm__dependent_rules.rules = {% set postgresql_server__tpl_ports = [] %}
+{% for cluster in postgresql_server__clusters %}
+{% set _ = postgresql_server__tpl_ports.append(cluster.port) %}
+{% endfor %}
+{% if postgresql_server__tpl_ports | d() and postgresql_server__allow | d() %}
+domain $domains table filter chain INPUT {
+    protocol tcp dport ({{ postgresql_server__tpl_ports | unique | join(" ") }}) {
+        @def $ITEMS = ( @ipfilter( ({{ postgresql_server__allow | unique | join(" ") }}) ) );
+        @if @ne($ITEMS,"") {
+                saddr $ITEMS ACCEPT;
+        }
+    }
+}
+
+{% endif %}
+{% for cluster in postgresql_server__clusters %}
+{% if cluster.name | d() and cluster.port | d() and cluster.allow | d() %}
+domain $domains table filter chain INPUT {
+    protocol tcp dport ({{ cluster.port }}) {
+        @def $ITEMS = ( @ipfilter( ({{ cluster.allow | unique | join(" ") }}) ) );
+        @if @ne($ITEMS,"") {
+                saddr $ITEMS ACCEPT;
+        }
+    }
+}
+{% endif %}
+{% endfor %}
+
+postgresql_server__python__dependent_packages3[0] = python3-psycopg2
+postgresql_server__python__dependent_packages2[0] = python-psycopg2

@@ -1,0 +1,10 @@
+[0].hosts = k8s-master
+[0].become = yes
+[0].tasks[0].name = Remove phpMyAdmin with Helm.
+[0].tasks[0]["community.kubernetes.helm"].name = phpmyadmin
+[0].tasks[0]["community.kubernetes.helm"].chart_ref = bitnami/phpmyadmin
+[0].tasks[0]["community.kubernetes.helm"].release_namespace = default
+[0].tasks[0]["community.kubernetes.helm"].state = absent
+[0].tasks[1].name = Delete helm binary.
+[0].tasks[1].file.path = /usr/local/bin/helm
+[0].tasks[1].file.state = absent

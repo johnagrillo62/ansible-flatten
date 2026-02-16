@@ -1,0 +1,14 @@
+[0].name = Ensure directory exists for local self-signed TLS certs.
+[0].file.path = {{ certificate_dir }}/{{ server_hostname }}
+[0].file.state = directory
+[1].name = Generate an OpenSSL private key.
+[1].openssl_privatekey.path = {{ certificate_dir }}/{{ server_hostname }}/privkey.pem
+[2].name = Generate an OpenSSL CSR.
+[2].openssl_csr.path = {{ certificate_dir }}/{{ server_hostname }}.csr
+[2].openssl_csr.privatekey_path = {{ certificate_dir }}/{{ server_hostname }}/privkey.pem
+[2].openssl_csr.common_name = {{ server_hostname }}
+[3].name = Generate a Self Signed OpenSSL certificate.
+[3].openssl_certificate.path = {{ certificate_dir }}/{{ server_hostname }}/fullchain.pem
+[3].openssl_certificate.privatekey_path = {{ certificate_dir }}/{{ server_hostname }}/privkey.pem
+[3].openssl_certificate.csr_path = {{ certificate_dir }}/{{ server_hostname }}.csr
+[3].openssl_certificate.provider = selfsigned

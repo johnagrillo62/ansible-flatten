@@ -1,0 +1,28 @@
+[0].name = Install Apache.
+[0].hosts = all
+[0].become = true
+[0].vars.apache_package = apache2
+[0].vars.apache_service = apache2
+[0].handlers[0].name = restart apache
+[0].handlers[0]["ansible.builtin.service"].name = {{ apache_service }}
+[0].handlers[0]["ansible.builtin.service"].state = restarted
+[0].pre_tasks[0].name = Override Apache vars for Red Hat.
+[0].pre_tasks[0]["ansible.builtin.set_fact"].apache_package = httpd
+[0].pre_tasks[0]["ansible.builtin.set_fact"].apache_service = httpd
+[0].pre_tasks[0].when = ansible_os_family == 'RedHat'
+[0].tasks[0].name = Ensure Apache is installed.
+[0].tasks[0]["ansible.builtin.package"].name = {{ apache_package }}
+[0].tasks[0]["ansible.builtin.package"].state = present
+[0].tasks[1].name = Copy a web page.
+[0].tasks[1]["ansible.builtin.copy"].content = <html>
+<head><title>Hello world!</title></head>
+<body>Hello world!</body>
+</html>
+
+[0].tasks[1]["ansible.builtin.copy"].dest = /var/www/html/index.html
+[0].tasks[1]["ansible.builtin.copy"].mode = 0664
+[0].tasks[1].notify = restart apache
+[0].tasks[2].name = Ensure Apache is running and starts at boot.
+[0].tasks[2]["ansible.builtin.service"].name = {{ apache_service }}
+[0].tasks[2]["ansible.builtin.service"].state = started
+[0].tasks[2]["ansible.builtin.service"].enabled = true

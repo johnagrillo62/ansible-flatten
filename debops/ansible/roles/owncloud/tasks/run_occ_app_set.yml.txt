@@ -1,0 +1,6 @@
+~d0.name = Run occ commands for each app setting
+~d1.ansible.builtin.include_tasks = 'run_occ.yml'
+~d1.loop_control = 
+~d2.loop_var = 'owncloud__apps_setting_item'
+~d1.when = ("apps" in owncloud__occ_config_current and
+~d1.with_dict = '{{ owncloud__apps_item.value }}'

@@ -1,0 +1,17 @@
+[0].name = Update DebOps in the background with async
+[0].become = {{ controller__install_systemwide | bool }}
+[0]["ansible.builtin.command"] = debops-update
+[0].async = {{ controller__async_timeout | int }}
+[0].poll = 0
+[0].register = controller__register_update_async
+[0].changed_when = controller__register_update_async.changed | bool
+[0].when = not controller__update_method == 'sync'
+[1].name = Update DebOps in the background with batch
+[1].become = {{ controller__install_systemwide | bool }}
+[1]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+type debops-update > /dev/null 2>&1 && (echo 'debops-update' | batch > /dev/null 2>&1) || true
+
+[1].args.executable = bash
+[1].register = controller__register_update_batch
+[1].changed_when = controller__register_update_batch.changed | bool
+[1].when = (not controller__update_method == 'sync' and (ansible_local | d() and ansible_local.atd | d() and ansible_local.atd.enabled | bool))

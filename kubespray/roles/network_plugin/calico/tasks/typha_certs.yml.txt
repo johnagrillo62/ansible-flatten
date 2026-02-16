@@ -1,0 +1,32 @@
+[0].name = Calico | Check if typha-server exists
+[0].command = {{ kubectl }} -n kube-system get secret typha-server
+[0].register = typha_server_secret
+[0].changed_when = false
+[0].failed_when = false
+[1].name = Calico | Ensure calico certs dir
+[1].file.path = /etc/calico/certs
+[1].file.state = directory
+[1].file.mode = 0755
+[1].when = typha_server_secret.rc != 0
+[2].name = Calico | Copy ssl script for typha certs
+[2].template.src = make-ssl-calico.sh.j2
+[2].template.dest = {{ bin_dir }}/make-ssl-typha.sh
+[2].template.mode = 0755
+[2].when = typha_server_secret.rc != 0
+[3].name = Calico | Copy ssl config for typha certs
+[3].copy.src = openssl.conf
+[3].copy.dest = /etc/calico/certs/openssl.conf
+[3].copy.mode = 0644
+[3].when = typha_server_secret.rc != 0
+[4].name = Calico | Generate typha certs
+[4].command = {{ bin_dir }}/make-ssl-typha.sh -f /etc/calico/certs/openssl.conf -c {{ kube_cert_dir }} -d /etc/calico/certs -s typha
+[4].when = typha_server_secret.rc != 0
+[5].name = Calico | Create typha tls secrets
+[5].command = {{ kubectl }} -n kube-system create secret tls {{ item.name }} --cert {{ item.cert }} --key {{ item.key }}
+[5].with_items[0].name = typha-server
+[5].with_items[0].cert = /etc/calico/certs/typha-server.crt
+[5].with_items[0].key = /etc/calico/certs/typha-server.key
+[5].with_items[1].name = typha-client
+[5].with_items[1].cert = /etc/calico/certs/typha-client.crt
+[5].with_items[1].key = /etc/calico/certs/typha-client.key
+[5].when = typha_server_secret.rc != 0

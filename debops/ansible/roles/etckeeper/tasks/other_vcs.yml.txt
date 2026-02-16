@@ -1,0 +1,15 @@
+[0].name = Set user, email for the bzr repository
+[0]["ansible.builtin.command"] = etckeeper vcs whoami '{{ etckeeper__vcs_user }} <{{ etckeeper__vcs_email }}>'
+[0].register = etckeeper__register_bzr_owner
+[0].changed_when = etckeeper__register_bzr_owner.changed | bool
+[0].when = (etckeeper__vcs == 'bzr' and etckeeper__vcs_user | d() and etckeeper__vcs_email | d())
+[1].name = Set user, email for the darcs repository
+[1]["ansible.builtin.command"] = etckeeper vcs setpref author '{{ etckeeper__vcs_user }} <{{ etckeeper__vcs_email }}>'
+[1].register = etckeeper__register_darcs_owner
+[1].changed_when = etckeeper__register_darcs_owner.changed | bool
+[1].when = (etckeeper__vcs == 'darcs' and etckeeper__vcs_user | d() and etckeeper__vcs_email | d())
+[2].name = Set user, email for the hg repository
+[2]["ansible.builtin.command"] = etckeeper vcs --config 'ui.username={{ etckeeper__vcs_user }} <{{ etckeeper__vcs_email }}>'
+[2].register = etckeeper__register_hg_owner
+[2].changed_when = etckeeper__register_hg_owner.changed | bool
+[2].when = (etckeeper__vcs == 'hg' and etckeeper__vcs_user | d() and etckeeper__vcs_email | d())

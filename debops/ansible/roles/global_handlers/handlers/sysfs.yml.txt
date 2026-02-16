@@ -1,0 +1,4 @@
+[0].name = Restart sysfsutils
+[0]["ansible.builtin.service"].name = sysfsutils
+[0]["ansible.builtin.service"].state = restarted
+[0].when = (ansible_local.sysfs.enabled | d()) | bool

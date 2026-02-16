@@ -1,0 +1,2 @@
+[0].name = Refresh host facts
+[0]["ansible.builtin.setup:"] = null

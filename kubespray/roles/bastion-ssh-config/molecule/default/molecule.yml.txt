@@ -1,0 +1,14 @@
+role_name_check = 1
+dependency.name = galaxy
+platforms[0].name = bastion-01
+platforms[0].cloud_image = ubuntu-2204
+platforms[0].vm_cpu_cores = 1
+platforms[0].vm_memory = 512
+provisioner.name = ansible
+provisioner.env.ANSIBLE_ROLES_PATH = ../../../
+provisioner.config_options.defaults.callbacks_enabled = profile_tasks
+provisioner.config_options.defaults.timeout = 120
+provisioner.inventory.hosts.all.hosts = null
+provisioner.inventory.hosts.all.children.bastion.hosts.bastion-01 = null
+provisioner.playbooks.create = ../../../../tests/cloud_playbooks/create-kubevirt.yml
+verifier.name = testinfra

@@ -1,0 +1,26 @@
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = False
+[0].tasks[0].name = Create new Droplet.
+[0].tasks[0].digital_ocean_droplet.state = absent
+[0].tasks[0].digital_ocean_droplet.name = ansible-test
+[0].tasks[0].digital_ocean_droplet.private_networking = yes
+[0].tasks[0].digital_ocean_droplet.size = 1gb
+[0].tasks[0].digital_ocean_droplet.image_id = centos-stream-9-x64
+[0].tasks[0].digital_ocean_droplet.region = nyc3
+[0].tasks[0].digital_ocean_droplet.ssh_keys[0] = 138954
+[0].tasks[0].digital_ocean_droplet.unique_name = yes
+[0].tasks[0].register = do
+[0].tasks[1].name = Add new host to our inventory.
+[0].tasks[1].add_host.name = {{ do.data.ip_address }}
+[0].tasks[1].add_host.groups = do
+[0].tasks[1].add_host.ansible_ssh_extra_args = -o StrictHostKeyChecking=no
+[0].tasks[1].when = do.data is defined
+[0].tasks[1].changed_when = False
+[1].hosts = do
+[1].remote_user = root
+[1].gather_facts = False
+[1].tasks[0].name = Wait for hosts to become reachable.
+[1].tasks[0].wait_for_connection = null
+[1].tasks[1].name = Install tcpdump.
+[1].tasks[1].dnf = name=tcpdump state=present

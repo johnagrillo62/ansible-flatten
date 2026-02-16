@@ -1,0 +1,170 @@
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Get available PHP packages for selected version
+[1].environment.LC_ALL = C
+[1].environment.PHP_VERSION = {{ php__version }}
+[1]["ansible.builtin.script"] = script/php-filter-packages.sh {{ php__combined_packages }}
+[1].register = php__register_filtered_packages
+[1].changed_when = False
+[1].check_mode = False
+[2].name = Install PHP packages
+[2]["ansible.builtin.package"].name = {{ q("flattened", php__register_filtered_packages.stdout.strip().splitlines()) }}
+[2]["ansible.builtin.package"].state = present
+[2].register = php__register_packages
+[2].until = php__register_packages is succeeded
+[2].notify[0] = Restart php-fpm
+[3].name = Install PHP Composer from upstream
+[3]["ansible.builtin.get_url"].url = {{ php__composer_upstream_url }}
+[3]["ansible.builtin.get_url"].dest = {{ php__composer_upstream_dest }}
+[3]["ansible.builtin.get_url"].checksum = {{ php__composer_upstream_checksum }}
+[3]["ansible.builtin.get_url"].mode = 0755
+[3].when = php__composer_upstream_enabled | bool
+[4].name = Ensure older PHP packages are absent on reset
+[4]["ansible.builtin.include_tasks"] = packages_absent_for_version.yml
+[4].loop_control.loop_var = php__version_absent
+[4].when = php__reset | bool
+[4].with_items = {{ php__version_preference | difference(["php" + php__version | d("")]) | list }}
+[5].name = Create directory for php*-fpm logs
+[5]["ansible.builtin.file"].path = /var/log/php{{ php__version }}-fpm
+[5]["ansible.builtin.file"].state = directory
+[5]["ansible.builtin.file"].owner = root
+[5]["ansible.builtin.file"].group = root
+[5]["ansible.builtin.file"].mode = 0700
+[5].when = "fpm" in php__server_api_packages
+[6].name = Ensure that required directories exist
+[6]["ansible.builtin.file"].path = {{ item }}
+[6]["ansible.builtin.file"].state = directory
+[6]["ansible.builtin.file"].owner = root
+[6]["ansible.builtin.file"].group = root
+[6]["ansible.builtin.file"].mode = 0755
+[6].with_items[0] = {{ php__etc_base }}/ansible
+[6].with_items[1] = {{ php__etc_base }}/fpm/pool.d
+[7].name = Allow webadmins to control PHP-FPM system service using sudo
+[7]["ansible.builtin.template"].src = etc/sudoers.d/php-fpm_webadmins.j2
+[7]["ansible.builtin.template"].dest = /etc/sudoers.d/php-fpm_webadmins
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0440
+[7].when = (ansible_local | d() and ansible_local.sudo | d() and (ansible_local.sudo.installed | d()) | bool)
+[8].name = Generate php.ini configuration
+[8]["ansible.builtin.template"].src = etc/php/ansible/php.ini.j2
+[8]["ansible.builtin.template"].dest = {{ php__etc_base + "/" + item.path | d("ansible/") + (item.filename | d("00-ansible")) + ".ini" }}
+[8]["ansible.builtin.template"].owner = root
+[8]["ansible.builtin.template"].group = root
+[8]["ansible.builtin.template"].mode = 0644
+[8].loop = {{ q("flattened", php__default_configuration
+                           + php__configuration
+                           + php__group_configuration
+                           + php__host_configuration
+                           + php__dependent_configuration) }}
+
+[8].when = item.state | d('present') != 'absent'
+[8].notify[0] = Restart php-fpm
+[8].tags[0] = role::php:config
+[9].name = Remove php.ini configuration if requested
+[9]["ansible.builtin.file"].path = {{ php__etc_base + "/" + item.path | d("ansible/") + (item.filename | d("00-ansible")) + ".ini" }}
+[9]["ansible.builtin.file"].state = absent
+[9].loop = {{ q("flattened", php__default_configuration
+                           + php__configuration
+                           + php__group_configuration
+                           + php__host_configuration
+                           + php__dependent_configuration) }}
+
+[9].when = item.state | d() and item.state == 'absent'
+[9].notify[0] = Restart php-fpm
+[9].tags[0] = role::php:config
+[10].name = Synchronize Ansible and PHP SAPI configuration
+[10].environment.LC_ALL = C
+[10]["ansible.builtin.script"] = script/php-synchronize-config.sh {{ php__version }}
+[10].register = php__register_synchronize_config
+[10].changed_when = php__register_synchronize_config.stdout is defined and php__register_synchronize_config.stdout | d()
+[10].notify[0] = Restart php-fpm
+[10].tags[0] = role::php:config
+[11].name = Divert default PHP-FPM configuration and pool
+[11]["debops.debops.dpkg_divert"].path = {{ item }}
+[11].with_items[0] = {{ php__etc_base + "/fpm/php-fpm.conf" }}
+[11].with_items[1] = {{ php__etc_base + "/fpm/pool.d/www.conf" }}
+[11].when = "fpm" in php__server_api_packages
+[11].notify[0] = Restart php-fpm
+[11].tags[0] = role::php:pools
+[11].tags[1] = role::php:config
+[12].name = Generate php-fpm global configuration
+[12]["ansible.builtin.template"].src = etc/php/fpm/php-fpm.conf.j2
+[12]["ansible.builtin.template"].dest = {{ php__etc_base }}/fpm/php-fpm.conf
+[12]["ansible.builtin.template"].owner = root
+[12]["ansible.builtin.template"].group = root
+[12]["ansible.builtin.template"].mode = 0644
+[12].when = "fpm" in php__server_api_packages
+[12].notify[0] = Restart php-fpm
+[12].tags[0] = role::php:pools
+[12].tags[1] = role::php:config
+[13].name = Generate php-fpm pool configuration
+[13]["ansible.builtin.template"].src = etc/php/fpm/pool.d/pool.conf.j2
+[13]["ansible.builtin.template"].dest = {{ php__etc_base }}/fpm/pool.d/{{ item.name }}.conf
+[13]["ansible.builtin.template"].owner = root
+[13]["ansible.builtin.template"].group = root
+[13]["ansible.builtin.template"].mode = 0644
+[13].loop = {{ q("flattened", php__default_pools
+                           + php__pools
+                           + php__group_pools
+                           + php__host_pools
+                           + php__dependent_pools) }}
+
+[13].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent"
+[13].notify[0] = Restart php-fpm
+[13].tags[0] = role::php:pools
+[13].tags[1] = role::php:config
+[14].name = Remove php-fpm pool configuration if requested
+[14]["ansible.builtin.file"].dest = {{ php__etc_base }}/fpm/pool.d/{{ item.name }}.conf
+[14]["ansible.builtin.file"].state = absent
+[14].loop = {{ q("flattened", php__default_pools
+                           + php__pools
+                           + php__group_pools
+                           + php__host_pools
+                           + php__dependent_pools) }}
+
+[14].when = "fpm" in php__server_api_packages and item.state | d() and item.state == "absent"
+[14].notify[0] = Restart php-fpm
+[14].tags[0] = role::php:pools
+[14].tags[1] = role::php:config
+[15].name = Make sure required system groups exist
+[15]["ansible.builtin.group"].name = {{ item.group | d(item.owner) }}
+[15]["ansible.builtin.group"].system = {{ (item.system | d(True)) | bool }}
+[15]["ansible.builtin.group"].state = present
+[15].loop = {{ q("flattened", php__default_pools
+                           + php__pools
+                           + php__group_pools
+                           + php__host_pools
+                           + php__dependent_pools) }}
+
+[15].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent" and item.owner | d() and item.home | d()
+[16].name = Make sure required system accounts exist
+[16]["ansible.builtin.user"].name = {{ item.owner }}
+[16]["ansible.builtin.user"].group = {{ item.group | d(item.owner) }}
+[16]["ansible.builtin.user"].home = {{ item.home }}
+[16]["ansible.builtin.user"].system = {{ (item.system | d(True)) | bool }}
+[16]["ansible.builtin.user"].createhome = {{ item.createhome | d(omit) }}
+[16]["ansible.builtin.user"].state = present
+[16].loop = {{ q("flattened", php__default_pools
+                           + php__pools
+                           + php__group_pools
+                           + php__host_pools
+                           + php__dependent_pools) }}
+
+[16].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent" and item.owner | d() and item.home | d()
+[17].name = Make sure that Ansible local facts directory is present
+[17]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[17]["ansible.builtin.file"].state = directory
+[17]["ansible.builtin.file"].owner = root
+[17]["ansible.builtin.file"].group = root
+[17]["ansible.builtin.file"].mode = 0755
+[18].name = Save PHP-FPM local facts
+[18]["ansible.builtin.template"].src = etc/ansible/facts.d/php.fact.j2
+[18]["ansible.builtin.template"].dest = /etc/ansible/facts.d/php.fact
+[18]["ansible.builtin.template"].owner = root
+[18]["ansible.builtin.template"].group = root
+[18]["ansible.builtin.template"].mode = 0644
+[18].notify[0] = Refresh host facts
+[18].tags[0] = meta::facts
+[19].name = Gather facts if they were modified
+[19]["ansible.builtin.meta"] = flush_handlers

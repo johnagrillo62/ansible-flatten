@@ -1,0 +1,6 @@
+[0].name = Include ansible_distribution vars
+[0].include_vars.file = {{ ansible_distribution }}.yml
+[0].tags = redis
+[1].name = Ensure redis is installed
+[1].tags = redis
+[1].pkgin = name=redis state={{ sensu_redis_pkg_state }}

@@ -1,0 +1,28 @@
+doc[0][0].name = Add monitoring vhost to apache
+doc[0][0].copy = src=etc_apache2_sites-available_00-status.conf dest=/etc/apache2/sites-available/00-status.conf
+doc[0][1].name = Enable the status vhost
+doc[0][1].command = a2ensite 00-status.conf creates=/etc/apache2/sites-enabled/00-status.conf
+doc[0][1].notify = restart apache
+doc[0][2].name = Install monit
+doc[0][2].apt = pkg=monit state=present
+doc[0][2].tags[0] = dependencies
+doc[0][3].name = Copy monit master config file into place
+doc[0][3].copy = src=etc_monit_monitrc dest=/etc/monit/monitrc
+doc[0][3].notify = restart monit
+doc[0][4].name = Determine if ZNC is installed
+doc[0][4].stat = path=/usr/lib/znc/configs/znc.conf
+doc[0][4].register = znc_config_file
+doc[0][5].name = Copy ZNC monit service config files into place
+doc[0][5].copy = src=etc_monit_conf.d_znc dest=/etc/monit/conf.d/znc
+doc[0][5].notify = restart monit
+doc[0][5].when = znc_config_file.stat.exists
+doc[0][6].name = Copy monit service config files into place
+doc[0][6].copy = src=etc_monit_conf.d_{{ item }} dest=/etc/monit/conf.d/{{ item }}
+doc[0][6].with_items[0] = apache2
+doc[0][6].with_items[1] = dovecot
+doc[0][6].with_items[2] = pgsql
+doc[0][6].with_items[3] = postfix
+doc[0][6].with_items[4] = sshd
+doc[0][6].with_items[5] = tomcat
+doc[0][6].notify = restart monit
+doc[1] = 

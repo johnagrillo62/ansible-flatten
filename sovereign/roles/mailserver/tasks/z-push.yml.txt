@@ -1,0 +1,33 @@
+[0].name = Install required packages for z-push
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = php-soap
+[0].with_items[1] = php5
+[0].with_items[2] = php5-cli
+[0].with_items[3] = php5-imap
+[0].tags[0] = dependencies
+[1].name = Download z-push release
+[1].get_url = url=http://download.z-push.org/final/2.1/z-push-{{ zpush_version }}.tar.gz dest=/root/z-push-{{ zpush_version }}.tar.gz
+[2].name = Decompress z-push source
+[2].unarchive = src=/root/z-push-{{ zpush_version }}.tar.gz dest=/root copy=no creates=/root/z-push-{{ zpush_version }}
+[3].name = Create /usr/share/z-push
+[3].file = state=directory path=/usr/share/z-push
+[4].name = Copy z-push source files to /usr/share/z-push
+[4].shell = cp -R z-push-{{ zpush_version }}/* /usr/share/z-push/ chdir=/root
+[4].tags[0] = skip_ansible_lint
+[5].name = Remove downloaded, temporary z-push source files
+[5].shell = rm -rf z-push* chdir=/root
+[5].tags[0] = skip_ansible_lint
+[6].name = Ensure z-push state and log directories are in place
+[6].file = state=directory path={{ item }} owner=www-data group=www-data mode=0755
+[6].with_items[0] = /decrypted/zpush-state
+[6].with_items[1] = /var/log/z-push
+[6].notify = restart apache
+[7].name = Copy z-push's config.php into place
+[7].template = src=usr_share_z-push_config.php.j2 dest=/usr/share/z-push/config.php
+[8].name = Create z-push apache alias and php configuration file
+[8].copy = src=etc_apache2_conf.d_z-push.conf dest=/etc/apache2/conf-available/z-push.conf
+[9].name = Enable z-push Apache alias and PHP configuration file
+[9].command = a2enconf z-push creates=/etc/apache2/conf-enabled/z-push.conf
+[9].notify = restart apache
+[10].name = Configure z-push logrotate
+[10].copy = src=etc_logrotate_z-push dest=/etc/logrotate.d/z-push owner=root group=root mode=0644

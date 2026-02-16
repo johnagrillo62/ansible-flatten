@@ -1,0 +1,11 @@
+~d0.name = Check if reboot is required
+~d1.ansible.builtin.stat = 
+~d2.path = '/var/run/reboot-required'
+~d2.get_checksum = False
+~d1.register = reboot__register_required
+~d0.name = Reboot DebOps hosts if needed or requested
+~d1.ansible.builtin.reboot = 
+~d2.boot_time_command = '{{ reboot__boot_time_command }}'
+~d2.search_paths = '{{ (reboot__default_search_paths + reboot__search_paths) | flatten }}'
+~d2.reboot_timeout = "{{ reboot__timeout }}"
+~d1.when = "reboot__register_required.stat.exists | bool or reboot__force | bool"

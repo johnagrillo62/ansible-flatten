@@ -1,0 +1,5 @@
+~d0.name = Restart snmpd
+~d1.ansible.builtin.service = 
+~d2.name = 'snmpd'
+~d2.enabled = True
+~d2.state = 'restarted'

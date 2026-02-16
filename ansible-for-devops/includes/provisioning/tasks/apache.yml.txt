@@ -1,0 +1,19 @@
+[0].name = Enable Apache rewrite module (required for Drupal).
+[0].apache2_module = name=rewrite state=present
+[0].notify = restart apache
+[1].name = Add Apache virtualhost for Drupal 8.
+[1].template.src = templates/drupal.test.conf.j2
+[1].template.dest = /etc/apache2/sites-available/{{ domain }}.test.conf
+[1].template.owner = root
+[1].template.group = root
+[1].template.mode = 0644
+[1].notify = restart apache
+[2].name = Symlink Drupal virtualhost to sites-enabled.
+[2].file.src = /etc/apache2/sites-available/{{ domain }}.test.conf
+[2].file.dest = /etc/apache2/sites-enabled/{{ domain }}.test.conf
+[2].file.state = link
+[2].notify = restart apache
+[3].name = Remove default virtualhost file.
+[3].file.path = /etc/apache2/sites-enabled/000-default.conf
+[3].file.state = absent
+[3].notify = restart apache

@@ -1,0 +1,23 @@
+atd_enabled = True
+atd_default_allow[0] = {{ (ansible_user
+                          if (ansible_user | d() and
+                              ansible_user != "root")
+                          else lookup("env", "USER")) }}
+
+atd_batch_base = {{ ansible_processor_vcpus }}
+atd_multiplier_min = 80
+atd_multiplier_max = 100
+atd_batch_multiplier = {{ ((atd_multiplier_max | int |
+                            random(atd_multiplier_min | int)) / 100) }} 
+atd_batch_load = {{ (ansible_local.atd.batch_load
+                     if (ansible_local.atd.batch_load | d())
+                     else ((atd_batch_base | float) *
+                           (atd_batch_multiplier | float))) }}
+
+atd_interval_min = 30
+atd_interval_max = 120
+atd_batch_interval = {{ (ansible_local.atd.batch_interval
+                         if (ansible_local.atd.batch_interval | d())
+                         else (atd_interval_max | int |
+                               random(atd_interval_min | int))) }}
+

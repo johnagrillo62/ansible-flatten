@@ -1,0 +1,4 @@
+[0].name = restart ntp
+[0].service = name=ntpd state=restarted
+[1].name = restart iptables
+[1].service = name=iptables state=restarted

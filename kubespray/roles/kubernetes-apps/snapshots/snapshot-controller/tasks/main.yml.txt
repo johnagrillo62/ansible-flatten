@@ -1,0 +1,32 @@
+[0].name = Check if snapshot namespace exists
+[0].register = snapshot_namespace_exists
+[0].kube.kubectl = {{ bin_dir }}/kubectl
+[0].kube.name = {{ snapshot_controller_namespace }}
+[0].kube.resource = namespace
+[0].kube.state = exists
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[0].tags = snapshot-controller
+[1].name = Snapshot Controller | Generate Manifests
+[1].template.src = {{ item.file }}.j2
+[1].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[1].template.mode = 0644
+[1].with_items[0].name = snapshot-ns
+[1].with_items[0].file = snapshot-ns.yml
+[1].with_items[0].apply = not snapshot_namespace_exists
+[1].with_items[1].name = rbac-snapshot-controller
+[1].with_items[1].file = rbac-snapshot-controller.yml
+[1].with_items[2].name = snapshot-controller
+[1].with_items[2].file = snapshot-controller.yml
+[1].register = snapshot_controller_manifests
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].when[1] = item.apply | default(True) | bool
+[1].tags = snapshot-controller
+[2].name = Snapshot Controller | Apply Manifests
+[2].kube.kubectl = {{ bin_dir }}/kubectl
+[2].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[2].kube.state = latest
+[2].with_items[0] = {{ snapshot_controller_manifests.results }}
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[2].when[1] = not item is skipped
+[2].loop_control.label = {{ item.item.file }}
+[2].tags = snapshot-controller

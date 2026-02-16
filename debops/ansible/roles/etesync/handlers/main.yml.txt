@@ -1,0 +1,4 @@
+[0].name = Restart gunicorn for etesync
+[0]["ansible.builtin.service"].name = gunicorn@etesync
+[0]["ansible.builtin.service"].state = restarted
+[0].when = (ansible_local | d() and ansible_local.gunicorn | d() and ansible_local.gunicorn.installed | bool)

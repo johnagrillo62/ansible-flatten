@@ -1,0 +1,4 @@
+~d0.drupal_core_version = "8.9.x"
+~d0.drupal_core_path = "/var/www/drupal-{{ drupal_core_version }}-dev"
+~d0.domain = "drupal"
+~d0.drupal_site_name = "Drupal Test"

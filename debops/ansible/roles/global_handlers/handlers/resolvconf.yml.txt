@@ -1,0 +1,8 @@
+[0].name = Apply static resolvconf configuration
+[0]["ansible.builtin.command"] = /usr/local/lib/resolvconf-static
+[0].register = global_handlers__resolvconf_register_static_config
+[0].changed_when = global_handlers__resolvconf_register_static_config.changed | bool
+[1].name = Refresh /etc/resolv.conf
+[1]["ansible.builtin.command"] = resolvconf -u
+[1].register = global_handlers__resolvconf_register_refresh
+[1].changed_when = global_handlers__resolvconf_register_refresh.changed | bool

@@ -1,0 +1,22 @@
+[0].name = Ensure required packages are installed
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = libpam-google-authenticator
+[0].with_items[1] = libpam0g-dev
+[0].with_items[2] = libqrencode3
+[0].tags[0] = dependencies
+[1].name = Update sshd config to enable challenge responses
+[1].lineinfile = dest=/etc/ssh/sshd_config regexp=^ChallengeResponseAuthentication line="ChallengeResponseAuthentication yes" state=present
+[1].notify = restart ssh
+[2].name = Add Google authenticator to PAM
+[2].lineinfile = dest=/etc/pam.d/sshd line="auth required pam_google_authenticator.so" insertbefore=BOF state=present
+[3].name = Generate a time-based secret code
+[3].command = /usr/bin/google-authenticator -t -f -d --label="{{ main_user_name }}@{{ domain }}" --qr-mode=ANSI -r 3 -R 30 -w 1 --secret=/home/{{ main_user_name }}/.google_authenticator creates=/home/{{ main_user_name }}/.google_authenticator
+[3].become = yes
+[3].become_user = {{ main_user_name }}
+[3].when = ansible_ssh_user != "vagrant"
+[4].name = Retrieve generated keys from server
+[4].fetch = src=/home/{{ main_user_name }}/.google_authenticator dest=/tmp/sovereign-google-auth-files
+[4].when = ansible_ssh_user != "vagrant"
+[5].name = Pause for Google Authenticator instructions
+[5].pause = seconds=5 prompt="Your Google Authentication keys are in /tmp/sovereign-google-auth-files. Press any key to continue..."
+[5].when = ansible_ssh_user != "vagrant"

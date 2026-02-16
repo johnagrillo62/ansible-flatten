@@ -1,0 +1,2 @@
+[0].name = Import Centos boostrap for Rocky Linux
+[0].import_tasks = centos.yml

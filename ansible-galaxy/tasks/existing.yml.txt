@@ -1,0 +1,17 @@
+~d0.name = Manage an existing Galaxy folder
+~d1.block = 
+~d2.name = Check for Galaxy server directory
+~d3.stat = 
+~d4.path = "{{ galaxy_server_dir }}"
+~d3.register = existing_dir_present
+~d2.name = Ensure that existing dir is present
+~d3.assert = 
+~d4.that = 
+~d4.fail_msg = "Specified existing Galaxy dir: {{ galaxy_server_dir }} not found."
+~d2.name = Include virtualenv setup tasks
+~d3.import_tasks = virtualenv.yml
+~d2.name = Remove orphaned .pyc files and compile bytecode
+~d3.import_tasks = compile.yml
+~d1.remote_user = "{{ galaxy_remote_users.privsep | default(__galaxy_remote_user) }}"
+~d1.become = "{{ true if galaxy_become_users.privsep is defined else __galaxy_become }}"
+~d1.become_user = "{{ galaxy_become_users.privsep | default(__galaxy_become_user) }}"

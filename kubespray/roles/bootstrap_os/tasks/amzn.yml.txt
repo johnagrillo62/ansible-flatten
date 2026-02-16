@@ -1,0 +1,13 @@
+[0].name = Enable selinux-ng repo for Amazon Linux for container-selinux
+[0].command = amazon-linux-extras enable selinux-ng
+[1].name = Enable EPEL repo for Amazon Linux
+[1].yum_repository.name = epel
+[1].yum_repository.file = epel
+[1].yum_repository.description = Extra Packages for Enterprise Linux 7 - $basearch
+[1].yum_repository.baseurl = http://download.fedoraproject.org/pub/epel/7/$basearch
+[1].yum_repository.gpgcheck = true
+[1].yum_repository.gpgkey = http://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+[1].yum_repository.skip_if_unavailable = true
+[1].yum_repository.enabled = true
+[1].yum_repository.repo_gpgcheck = false
+[1].when = epel_enabled

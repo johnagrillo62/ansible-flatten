@@ -1,0 +1,14 @@
+collections[0] = debops.debops
+galaxy_info.company = DebOps
+galaxy_info.author = Robin Schneider, Maciej Delmanowski
+galaxy_info.description = Put /etc under version control using etckeeper
+galaxy_info.license = GPL-3.0-only
+galaxy_info.min_ansible_version = 2.1.3
+galaxy_info.platforms[0].name = Debian
+galaxy_info.platforms[0].versions[0] = all
+galaxy_info.platforms[1].name = Ubuntu
+galaxy_info.platforms[1].versions[0] = all
+galaxy_info.galaxy_tags[0] = versioning
+galaxy_info.galaxy_tags[1] = etckeeper
+galaxy_info.galaxy_tags[2] = etc
+galaxy_info.galaxy_tags[3] = system

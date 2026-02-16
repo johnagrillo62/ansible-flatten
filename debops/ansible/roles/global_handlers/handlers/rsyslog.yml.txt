@@ -1,0 +1,10 @@
+[0].name = Check and restart rsyslogd
+[0]["ansible.builtin.command"] = rsyslogd -N 1
+[0].notify[0] = Restart rsyslogd
+[0].register = global_handlers__rsyslog_register_test_config
+[0].changed_when = global_handlers__rsyslog_register_test_config.changed | bool
+[0].when = (ansible_local.rsyslog.installed | d()) | bool
+[1].name = Restart rsyslogd
+[1]["ansible.builtin.service"].name = rsyslog
+[1]["ansible.builtin.service"].state = restarted
+[1].when = (ansible_local.rsyslog.installed | d()) | bool

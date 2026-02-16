@@ -1,0 +1,21 @@
+[0].name = Converge
+[0].hosts = all
+[0].pre_tasks[0].name = All ansible hostname to sensu_masters group
+[0].pre_tasks[0].add_host.name = {{ item }}
+[0].pre_tasks[0].add_host.groups = sensu_masters
+[0].pre_tasks[0].loop = {{ ansible_play_hosts }}
+[0].pre_tasks[0].changed_when = false
+[0].pre_tasks[1].name = Ensure container hostnames are correct
+[0].pre_tasks[1].hostname.name = {{ inventory_hostname }}
+[0].pre_tasks[1].when = inventory_hostname != 'amazonlinux-1'
+[0].pre_tasks[2].block[0].name = Install apt packages for SNI fix
+[0].pre_tasks[2].block[0].package.name[0] = python-pip
+[0].pre_tasks[2].block[0].package.name[1] = python-dev
+[0].pre_tasks[2].block[0].package.name[2] = python-urllib3
+[0].pre_tasks[2].block[0].package.name[3] = python-openssl
+[0].pre_tasks[2].block[0].package.name[4] = python-pyasn1
+[0].pre_tasks[2].block[1].name = Install Python packages for SNI fix
+[0].pre_tasks[2].block[1].pip.name[0] = ndg-httpsclient
+[0].pre_tasks[2].when[0] = ansible_distribution == 'Ubuntu'
+[0].pre_tasks[2].when[1] = ansible_python_version is version_compare('2.7.9', '<')
+[0].roles[0].role = sensu-ansible

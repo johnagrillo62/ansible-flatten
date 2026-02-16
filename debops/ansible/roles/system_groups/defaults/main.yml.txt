@@ -1,0 +1,69 @@
+system_groups__enabled = True
+system_groups__sudo_enabled = {{ True
+                                 if (ansible_local.sudo.installed | d() | bool)
+                                 else False }}
+
+system_groups__admins_sudo_nopasswd = {{ False
+                                         if (system_groups__fact_ansible_connection == "local")
+                                         else True }}
+
+system_groups__prefix = {{ ansible_local.system_groups.local_prefix
+                           if (ansible_local | d() and ansible_local.system_groups | d() and
+                               ansible_local.system_groups.local_prefix is defined)
+                           else ("_"
+                                 if ("debops_service_ldap" in group_names or
+                                     (ansible_local.ldap.posix_enabled | d() | bool))
+                                 else "") }}
+
+system_groups__throttle = 8
+system_groups__default_list[0].name = {{ system_groups__prefix }}admins
+system_groups__default_list[0].sudoers_filename = system_groups-admins
+system_groups__default_list[0].sudoers = # This might be required to allow Ansible pipelining connections
+Defaults: %{{ system_groups__prefix }}admins !requiretty
+
+# This variable is used to configure access by Ansible Controller hosts
+Defaults: %{{ system_groups__prefix }}admins env_check += "SSH_CLIENT"
+
+# Allow execution of any command as any user on the system.
+# This is required for Ansible operation.
+{{ ('%' + system_groups__prefix + 'admins ALL = (ALL:ALL) '
+    + ('NOPASSWD: ' if system_groups__admins_sudo_nopasswd | bool else '')
+    + 'ALL') }}
+
+system_groups__default_list[0].members = {{ ansible_local.core.admin_users | d([]) }}
+system_groups__default_list[0].access[0] = root
+system_groups__default_list[0].access[1] = sshd
+system_groups__default_list[1].name = {{ system_groups__prefix }}wheel
+system_groups__default_list[1].sudoers_filename = system_groups-wheel
+system_groups__default_list[1].sudoers = # This might be required to allow Ansible pipelining connections
+Defaults: %{{ system_groups__prefix }}wheel !requiretty
+
+# This variable is used to configure access by Ansible Controller hosts
+Defaults: %{{ system_groups__prefix }}wheel env_check += "SSH_CLIENT"
+
+# Allow execution of any command as any user on the system.
+# This is required for Ansible operation.
+{{ ('%' + system_groups__prefix + 'wheel ALL = (ALL:ALL) '
+    + ('NOPASSWD: ' if system_groups__admins_sudo_nopasswd | bool else '')
+    + 'ALL') }}
+
+system_groups__default_list[1].members = {{ ansible_local.core.admin_users | d([]) }}
+system_groups__default_list[1].access[0] = root
+system_groups__default_list[1].access[1] = sshd
+system_groups__default_list[1].state = init
+system_groups__default_list[2].name = adm
+system_groups__default_list[2].members = {{ ansible_local.core.admin_users | d([]) }}
+system_groups__default_list[3].name = staff
+system_groups__default_list[3].members = {{ ansible_local.core.admin_users | d([]) }}
+system_groups__default_list[4].name = {{ system_groups__prefix }}sshusers
+system_groups__default_list[4].access[0] = sshd
+system_groups__default_list[5].name = {{ system_groups__prefix }}sftponly
+system_groups__default_list[5].access[0] = sshd
+system_groups__default_list[6].name = {{ system_groups__prefix }}webadmins
+system_groups__default_list[6].access[0] = webserver
+system_groups__combined_list = {{ system_groups__default_list
+                                  + system_groups__dependent_list
+                                  + system_groups__list
+                                  + system_groups__group_list
+                                  + system_groups__host_list }}
+

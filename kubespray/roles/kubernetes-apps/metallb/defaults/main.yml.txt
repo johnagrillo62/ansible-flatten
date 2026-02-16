@@ -1,0 +1,16 @@
+~d0.metallb_enabled = false
+~d0.metallb_log_level = info
+~d0.metallb_namespace = "metallb-system"
+~d0.metallb_port = "7472"
+~d0.metallb_memberlist_port = "7946"
+~d0.metallb_speaker_enabled = "{{ metallb_enabled }}"
+~d0.metallb_speaker_nodeselector = 
+~d1.kubernetes.io/os = "linux"
+~d0.metallb_controller_nodeselector = 
+~d1.kubernetes.io/os = "linux"
+~d0.metallb_speaker_tolerations = 
+~d1.effect = NoSchedule
+~d2.key = node-role.kubernetes.io/control-plane
+~d2.operator = Exists
+~d0.metallb_controller_tolerations = []
+~d0.metallb_loadbalancer_class = ""

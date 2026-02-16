@@ -1,0 +1,45 @@
+~d0.name = Gather OS information
+~d1.setup = 
+~d2.gather_subset = 
+~d0.name = Update package management cache (zypper) - SUSE
+~d1.command = zypper -n --gpg-auto-import-keys ref
+~d1.register = make_cache_output
+~d1.until = make_cache_output is succeeded
+~d1.retries = 4
+~d1.delay = "{{ retry_stagger | random + 3 }}"
+~d1.when = 
+~d1.tags = bootstrap_os
+~d0.name = Remove legacy docker repo file
+~d1.file = 
+~d2.path = "{{ yum_repo_dir }}/docker.repo"
+~d2.state = absent
+~d1.when = 
+~d0.name = Install epel-release on RHEL derivatives
+~d1.package = 
+~d2.name = epel-release
+~d2.state = present
+~d1.when = 
+~d1.tags = 
+~d0.name = Install python3-libdnf5 on Fedora >= 41
+~d1.raw = >
+~d1.become = true
+~d1.retries = "{{ pkg_install_retries }}"
+~d1.when = 
+~d0.name = Manage packages
+~d1.package = 
+~d2.name = "{{ item.packages | dict2items | selectattr('value', 'ansible.builtin.all') | map(attribute='key') }}"
+~d2.state = "{{ item.state }}"
+~d2.update_cache = "{{ true if ansible_pkg_mgr in ['zypper', 'apt', 'dnf'] else omit }}"
+~d2.cache_valid_time = "{{ 86400 if ansible_pkg_mgr == 'apt' else omit }}" # 24h
+~d1.register = pkgs_task_result
+~d1.until = pkgs_task_result is succeeded
+~d1.retries = "{{ pkg_install_retries }}"
+~d1.delay = "{{ retry_stagger | random + 3 }}"
+~d1.when = not (ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"] or is_fedora_coreos)
+~d1.loop = 
+~d2.{ packages = "{{ pkgs_to_remove }}", state: "absent", action_label: "remove" }
+~d2.{ packages = "{{ pkgs }}", state: "present", action_label: "install" }
+~d1.loop_control = 
+~d2.label = "{{ item.action_label }}"
+~d1.tags = 
+~d1.timeout = "{{ pkg_install_timeout }}"

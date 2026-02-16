@@ -1,0 +1,45 @@
+---
+# tasks/main.yml: "Master" playbook for the sensu.sensu role
+
+- name: Include distribution specific variables
+  include_vars:
+    file: "{{ ansible_distribution }}.yml"
+
+- include_tasks: "{{ role_path }}/tasks/{{ ansible_distribution }}/main.yml"
+  tags: setup
+  when: sensu_master
+        or sensu_client
+
+- import_tasks: "redis.yml"
+  tags: redis
+  when: sensu_redis_server
+        and sensu_deploy_redis_server
+
+- import_tasks: "ssl.yml"
+  tags: ssl
+
+- import_tasks: "rabbit.yml"
+  tags: rabbitmq
+  when: sensu_rabbitmq_server
+        and sensu_deploy_rabbitmq_server
+
+- import_tasks: "common.yml"
+  tags: common
+  when: sensu_master
+        or sensu_client
+
+- import_tasks: "server.yml"
+  tags: server
+  when: sensu_master
+
+- import_tasks: "dashboard.yml"
+  tags: dashboard
+  when: sensu_include_dashboard
+
+- import_tasks: "client.yml"
+  tags: client
+  when: sensu_client
+
+- import_tasks: "plugins.yml"
+  tags: plugins
+  when: sensu_include_plugins

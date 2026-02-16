@@ -1,0 +1,30 @@
+mailman__base_packages[0] = mailman3-full
+mailman__base_packages[1] = lynx
+mailman__base_packages[2] = {{ "dbconfig-pgsql"
+        if (mailman__database_type == "postgresql")
+        else [] }}
+
+mailman__base_packages[3] = {{ "dbconfig-mysql"
+        if (mailman__database_type == "mysql")
+        else [] }}
+
+mailman__user = list
+mailman__group = list
+mailman__domain = {{ ansible_domain }}
+mailman__fqdn = lists.{{ mailman__domain }}
+mailman__database_type = {{ ansible_local.mailman.database_class.split(".")[2]
+                            if (ansible_local | d() and ansible_local.mailman is defined)
+                            else ("postgresql"
+                                  if (ansible_local.postgresql is defined)
+                                  else ("mysql"
+                                        if (ansible_local.mariadb is defined)
+                                        else "sqlite")) }}
+
+mailman__superuser_name = {{ ansible_local.core.admin_users[0]
+                             if (ansible_local.core.admin_users | d())
+                             else "admin" }}
+
+mailman__superuser_email = {{ ansible_local.core.admin_private_email[0]
+                              if (ansible_local.core.admin_private_email | d())
+                              else ("postmaster@" + mailman__domain) }}
+

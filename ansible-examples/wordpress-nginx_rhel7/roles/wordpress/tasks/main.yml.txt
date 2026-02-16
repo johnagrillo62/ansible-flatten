@@ -1,0 +1,40 @@
+[0].name = Download WordPress
+[0].get_url = url=http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/srv/wordpress-{{ wp_version }}.tar.gz sha256sum="{{ wp_sha256sum }}"
+[1].name = Extract archive
+[1].command = chdir=/srv/ /bin/tar xvf wordpress-{{ wp_version }}.tar.gz creates=/srv/wordpress
+[2].name = Add group "wordpress"
+[2].group = name=wordpress
+[3].name = Add user "wordpress"
+[3].user = name=wordpress group=wordpress home=/srv/wordpress/
+[4].name = Fetch random salts for WordPress config
+[4].local_action = command curl https://api.wordpress.org/secret-key/1.1/salt/
+[4].register = wp_salt
+[4].become = no
+[5].name = Create WordPress database
+[5].mysql_db = name={{ wp_db_name }} state=present
+[6].name = Create WordPress database user
+[6].mysql_user = name={{ wp_db_user }} password={{ wp_db_password }} priv={{ wp_db_name }}.*:ALL host='localhost' state=present
+[7].name = Copy WordPress config file
+[7].template = src=wp-config.php dest=/srv/wordpress/
+[8].name = Change ownership of WordPress installation
+[8].file = path=/srv/wordpress/ owner=wordpress group=wordpress state=directory recurse=yes
+[9].name = install SEManage
+[9].yum = pkg=policycoreutils-python state=present
+[10].name = set the SELinux policy for the Wordpress directory
+[10].command = semanage fcontext -a -t httpd_sys_content_t "/srv/wordpress(/.*)?"
+[11].name = set the SELinux policy for wp-config.php
+[11].command = semanage fcontext -a -t httpd_sys_script_exec_t "/srv/wordpress/wp-config\.php"
+[12].name = set the SELinux policy for wp-content directory
+[12].command = semanage fcontext -a -t httpd_sys_rw_content_t "/srv/wordpress/wp-content(/.*)?"
+[13].name = set the SELinux policy for the *.php files
+[13].command = semanage fcontext -a -t httpd_sys_script_exec_t "/srv/wordpress/.*\.php"
+[14].name = set the SELinux policy for the Upgrade directory
+[14].command = semanage fcontext -a -t httpd_sys_rw_content_t "/srv/wordpress/wp-content/upgrade(/.*)?"
+[15].name = set the SELinux policy for the Uploads directory
+[15].command = semanage fcontext -a -t httpd_sys_rw_content_t "/srv/wordpress/wp-content/uploads(/.*)?"
+[16].name = set the SELinux policy for the wp-includes php files
+[16].command = semanage fcontext -a -t httpd_sys_script_exec_t "/srv/wordpress/wp-includes/.*\.php"
+[17].name = set the SELinux on all the Files
+[17].command = restorecon -Rv /srv/wordpress
+[18].name = Start php-fpm Service
+[18].service = name=php-fpm state=started enabled=yes

@@ -1,0 +1,49 @@
+backup2l__base_packages[0] = backup2l
+backup2l__backup_dev = 
+backup2l__backup_dir = {{ (ansible_local.fhs.backup | d("/var/backups"))
+                          + "/backup2l" }} 
+backup2l__pre_hook_dir = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
+                            + "/backup/pre-hook.d" }} 
+backup2l__post_hook_dir = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
+                             + "/backup/post-hook.d" }} 
+backup2l__include_file = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
+                            + "/backup/include" }} 
+backup2l__default_include[0] = /etc
+backup2l__default_include[1] = /home
+backup2l__default_include[2] = /opt
+backup2l__default_include[3] = /root
+backup2l__default_include[4] = /srv
+backup2l__default_include[5] = /usr/local
+backup2l__default_include[6] = /var/backups
+backup2l__default_include[7] = /var/local
+backup2l__default_include[8] = /var/mail
+backup2l__default_include[9] = /var/spool/cron
+backup2l__srclist_from_file = True
+backup2l__srclist = {{ (backup2l__default_include
+                        + backup2l__include
+                        + backup2l__group_include
+                        + backup2l__host_include)
+                       | join(" ") }}
+
+backup2l__default_exclude[0] = -wholename "{{ backup2l__backup_dir }}" -prune
+backup2l__default_exclude[1] = -path "*.ansible/tmp*"
+backup2l__default_exclude[2] = -path "*.cache*"
+backup2l__default_exclude[3] = -path "*.nobackup*"
+backup2l__default_exclude[4] = -name "*.o"
+backup2l__default_exclude[5] = -name "*.pyc"
+backup2l__skipcond = {{ (backup2l__default_exclude
+                         + backup2l__exclude
+                         + backup2l__group_exclude
+                         + backup2l__host_exclude)
+                        | join(" -o ") }}
+
+backup2l__volname = all
+backup2l__max_level = 3
+backup2l__max_per_level = 8
+backup2l__max_full = 2
+backup2l__generations = 1
+backup2l__create_check_file = True
+backup2l__autorun = False
+backup2l__size_units = 
+backup2l__timezone = UTC
+backup2l__create_driver = DRIVER_TAR_GZ_RSYNCABLE

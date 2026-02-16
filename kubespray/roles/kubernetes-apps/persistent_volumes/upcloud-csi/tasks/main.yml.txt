@@ -1,0 +1,14 @@
+[0].name = Kubernetes Persistent Volumes | Copy UpCloud CSI Storage Class template
+[0].template.src = upcloud-csi-storage-class.yml.j2
+[0].template.dest = {{ kube_config_dir }}/upcloud-csi-storage-class.yml
+[0].template.mode = 0644
+[0].register = manifests
+[0].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = Kubernetes Persistent Volumes | Add UpCloud CSI Storage Class
+[1].kube.name = upcloud-csi
+[1].kube.kubectl = {{ bin_dir }}/kubectl
+[1].kube.resource = StorageClass
+[1].kube.filename = {{ kube_config_dir }}/upcloud-csi-storage-class.yml
+[1].kube.state = latest
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].when[1] = manifests.changed

@@ -1,0 +1,20 @@
+[0].hosts = all
+[0].remote_user = root
+[0].tasks[0].name = install packages
+[0].tasks[0].yum = name={{ item }} state=installed
+[0].tasks[0].with_items[0] = cobbler
+[0].tasks[0].with_items[1] = httpd
+[0].tasks[1].name = configure users
+[0].tasks[1].user = name={{ item }} state=present groups=wheel
+[0].tasks[1].with_items[0] = testuser1
+[0].tasks[1].with_items[1] = testuser2
+[0].tasks[2].name = remove users
+[0].tasks[2].user = name={{ item }} state=absent
+[0].tasks[2].with_items[0] = testuser1
+[0].tasks[2].with_items[1] = testuser2
+[0].tasks[3].name = copy templates
+[0].tasks[3].template = src={{ item.src }} dest={{ item.dest }}
+[0].tasks[3].with_items[0].src = templates/testsource1
+[0].tasks[3].with_items[0].dest = /example/dest1/test.conf
+[0].tasks[3].with_items[1].src = templates/testsource2
+[0].tasks[3].with_items[1].dest = /example/dest2/test.conf

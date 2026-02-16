@@ -1,0 +1,90 @@
+[0].name = Control plane | reload systemd
+[0].systemd_service.daemon_reload = true
+[0].listen = Control plane | restart kubelet
+[1].name = Control plane | reload kubelet
+[1].service.name = kubelet
+[1].service.state = restarted
+[1].listen = Control plane | restart kubelet
+[2].name = Control plane | Remove apiserver container docker
+[2].shell = set -o pipefail && docker ps -af name=k8s_kube-apiserver* -q | xargs --no-run-if-empty docker rm -f
+[2].args.executable = /bin/bash
+[2].register = remove_apiserver_container
+[2].retries = 10
+[2].until = remove_apiserver_container.rc == 0
+[2].delay = 1
+[2].when = container_manager == "docker"
+[2].listen = Control plane | Restart apiserver
+[3].name = Control plane | Remove apiserver container containerd/crio
+[3].shell = set -o pipefail && {{ bin_dir }}/crictl pods --name 'kube-apiserver*' -q | xargs -I% --no-run-if-empty bash -c '{{ bin_dir }}/crictl stopp % && {{ bin_dir }}/crictl rmp %'
+[3].args.executable = /bin/bash
+[3].register = remove_apiserver_container
+[3].retries = 10
+[3].until = remove_apiserver_container.rc == 0
+[3].delay = 1
+[3].when = container_manager in ['containerd', 'crio']
+[3].listen = Control plane | Restart apiserver
+[4].name = Control plane | Remove scheduler container docker
+[4].shell = set -o pipefail && {{ docker_bin_dir }}/docker ps -af name=k8s_kube-scheduler* -q | xargs --no-run-if-empty {{ docker_bin_dir }}/docker rm -f
+[4].args.executable = /bin/bash
+[4].register = remove_scheduler_container
+[4].retries = 10
+[4].until = remove_scheduler_container.rc == 0
+[4].delay = 1
+[4].when = container_manager == "docker"
+[4].listen = Control plane | Restart kube-scheduler
+[5].name = Control plane | Remove scheduler container containerd/crio
+[5].shell = set -o pipefail && {{ bin_dir }}/crictl pods --name 'kube-scheduler*' -q | xargs -I% --no-run-if-empty bash -c '{{ bin_dir }}/crictl stopp % && {{ bin_dir }}/crictl rmp %'
+[5].args.executable = /bin/bash
+[5].register = remove_scheduler_container
+[5].retries = 10
+[5].until = remove_scheduler_container.rc == 0
+[5].delay = 1
+[5].when = container_manager in ['containerd', 'crio']
+[5].listen = Control plane | Restart kube-scheduler
+[6].name = Control plane | Remove controller manager container docker
+[6].shell = set -o pipefail && {{ docker_bin_dir }}/docker ps -af name=k8s_kube-controller-manager* -q | xargs --no-run-if-empty {{ docker_bin_dir }}/docker rm -f
+[6].args.executable = /bin/bash
+[6].register = remove_cm_container
+[6].retries = 10
+[6].until = remove_cm_container.rc == 0
+[6].delay = 1
+[6].when = container_manager == "docker"
+[6].listen = Control plane | Restart kube-controller-manager
+[7].name = Control plane | Remove controller manager container containerd/crio
+[7].shell = set -o pipefail && {{ bin_dir }}/crictl pods --name 'kube-controller-manager*' -q | xargs -I% --no-run-if-empty bash -c '{{ bin_dir }}/crictl stopp % && {{ bin_dir }}/crictl rmp %'
+[7].args.executable = /bin/bash
+[7].register = remove_cm_container
+[7].retries = 10
+[7].until = remove_cm_container.rc == 0
+[7].delay = 1
+[7].when = container_manager in ['containerd', 'crio']
+[7].listen = Control plane | Restart kube-controller-manager
+[8].name = Control plane | wait for kube-scheduler
+[8].vars.endpoint = {{ kube_scheduler_bind_address if kube_scheduler_bind_address != '::' else 'localhost' }}
+[8].uri.url = https://{{ endpoint }}:10259/healthz
+[8].uri.validate_certs = false
+[8].register = scheduler_result
+[8].until = scheduler_result.status == 200
+[8].retries = {{ control_plane_health_retries }}
+[8].delay = 1
+[8].listen[0] = Control plane | restart kubelet
+[8].listen[1] = Control plane | Restart kube-scheduler
+[9].name = Control plane | wait for kube-controller-manager
+[9].vars.endpoint = {{ kube_controller_manager_bind_address if kube_controller_manager_bind_address != '::' else 'localhost' }}
+[9].uri.url = https://{{ endpoint }}:10257/healthz
+[9].uri.validate_certs = false
+[9].register = controller_manager_result
+[9].until = controller_manager_result.status == 200
+[9].retries = {{ control_plane_health_retries }}
+[9].delay = 1
+[9].listen[0] = Control plane | restart kubelet
+[9].listen[1] = Control plane | Restart kube-controller-manager
+[10].name = Control plane | wait for the apiserver to be running
+[10].uri.url = {{ kube_apiserver_endpoint }}/healthz
+[10].uri.validate_certs = false
+[10].register = result
+[10].until = result.status == 200
+[10].retries = {{ control_plane_health_retries }}
+[10].delay = 1
+[10].listen[0] = Control plane | restart kubelet
+[10].listen[1] = Control plane | Restart apiserver

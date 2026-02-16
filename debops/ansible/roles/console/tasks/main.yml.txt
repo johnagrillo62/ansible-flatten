@@ -1,0 +1,34 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret
+[1].name = Install requested packages
+[1]["ansible.builtin.apt"].name = {{ (console_base_packages + console_conditional_packages) | flatten }}
+[1]["ansible.builtin.apt"].state = present
+[1]["ansible.builtin.apt"].install_recommends = False
+[1].register = console__register_packages
+[1].until = console__register_packages is succeeded
+[1].when = item is defined and item
+[1].tags[0] = meta::provision
+[2].name = Check if /etc/inittab exists
+[2]["ansible.builtin.stat"].path = /etc/inittab
+[2].register = console_register_inittab
+[3].name = Disable serial console in /etc/inittab
+[3]["ansible.builtin.lineinfile"].dest = /etc/inittab
+[3]["ansible.builtin.lineinfile"].regexp = ^{{ console_serial_inittab }}
+[3]["ansible.builtin.lineinfile"].state = absent
+[3].when = ((console_serial is undefined or (console_serial is defined and not console_serial)) and ((console_register_inittab is defined and console_register_inittab) and console_register_inittab.stat.exists))
+[3].notify[0] = Reload sysvinit
+[4].name = Enable serial console in /etc/inittab
+[4]["ansible.builtin.lineinfile"].dest = /etc/inittab
+[4]["ansible.builtin.lineinfile"].regexp = ^{{ console_serial_inittab }}
+[4]["ansible.builtin.lineinfile"].state = present
+[4]["ansible.builtin.lineinfile"].line = {{ console_serial_inittab }}
+[4]["ansible.builtin.lineinfile"].mode = 0644
+[4].when = ((console_serial is defined and console_serial) and ((console_register_inittab is defined and console_register_inittab) and console_register_inittab.stat.exists))
+[4].notify[0] = Reload sysvinit
+[5].name = Configure fsck behaviour on boot
+[5]["ansible.builtin.lineinfile"].dest = /etc/default/rcS
+[5]["ansible.builtin.lineinfile"].regexp = FSCKFIX=
+[5]["ansible.builtin.lineinfile"].state = present
+[5]["ansible.builtin.lineinfile"].line = FSCKFIX={{ console_fsckfix }}
+[5]["ansible.builtin.lineinfile"].mode = 0644
+[5].when = ansible_distribution_release in console_fsckfix_releases

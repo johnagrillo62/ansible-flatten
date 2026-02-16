@@ -1,0 +1,5 @@
+[0].name = Run powershell script
+[0].hosts = all
+[0].gather_facts = false
+[0].tasks[0].name = Run powershell script
+[0].tasks[0].script = files/helloworld.ps1

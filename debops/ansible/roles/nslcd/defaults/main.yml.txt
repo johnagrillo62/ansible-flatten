@@ -1,0 +1,116 @@
+nslcd__base_packages[0][0] = libpam-ldapd
+nslcd__base_packages[0][1] = libnss-ldapd
+nslcd__base_packages[0][2] = nslcd
+nslcd__base_packages[0][3] = openssl
+nslcd__base_packages[0][4] = ca-certificates
+nslcd__base_packages[1] = {{ "nslcd-utils"
+        if (ansible_local | d() and ansible_local.python | d() and
+            (ansible_local.python.installed2 | d()) | bool)
+        else [] }}
+
+nslcd__user = nslcd
+nslcd__group = nslcd
+nslcd__mkhomedir_umask = {{ ansible_local.core.homedir_umask | d("0027") }}
+nslcd__ldap_enabled = {{ ansible_local.ldap.enabled
+                         if (ansible_local | d() and ansible_local.ldap | d() and
+                             ansible_local.ldap.enabled is defined)
+                         else False }}
+
+nslcd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+nslcd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+nslcd__ldap_self_rdn = {{ "uid=" + nslcd__user }}
+nslcd__ldap_self_object_classes[0] = account
+nslcd__ldap_self_object_classes[1] = simpleSecurityObject
+nslcd__ldap_self_attributes.uid = {{ nslcd__ldap_self_rdn.split("=")[1] }}
+nslcd__ldap_self_attributes.userPassword = {{ nslcd__ldap_bindpw }}
+nslcd__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+nslcd__ldap_self_attributes.description = Account used by the "nslcd" service to access the LDAP directory
+nslcd__ldap_binddn = {{ ([nslcd__ldap_self_rdn] + nslcd__ldap_device_dn) | join(",") }}
+nslcd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                + nslcd__ldap_binddn | to_uuid + ".password length=32"))
+                        if nslcd__ldap_enabled | bool
+                        else "" }}
+
+nslcd__ldap_posix_urns = {{ (ansible_local.ldap.urn_patterns
+                             if (ansible_local.ldap.urn_patterns | d())
+                             else [])
+                            | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
+                            | list }}
+
+nslcd__ldap_host_filter = (| (host=posix:all) (host=posix:{{ ansible_fqdn }}) (host=posix:\2a.{{ ansible_domain }}) {{ nslcd__ldap_posix_urns | join(" ") }} )
+nslcd__idle_timelimit = 600
+nslcd__default_configuration[0].name = uid
+nslcd__default_configuration[0].comment = The user and group nslcd should run as.
+nslcd__default_configuration[0].value = {{ nslcd__user }}
+nslcd__default_configuration[1].name = gid
+nslcd__default_configuration[1].value = {{ nslcd__group }}
+nslcd__default_configuration[2].name = uri
+nslcd__default_configuration[2].comment = The location at which the LDAP server(s) should be reachable.
+nslcd__default_configuration[2].value = {{ ansible_local.ldap.uri | d("") }}
+nslcd__default_configuration[3].name = idle_timelimit
+nslcd__default_configuration[3].comment = The idle timelimit for connections with the LDAP server.
+nslcd__default_configuration[3].value = {{ nslcd__idle_timelimit }}
+nslcd__default_configuration[4].name = base
+nslcd__default_configuration[4].comment = The search base that will be used for all queries.
+nslcd__default_configuration[4].value = {{ nslcd__ldap_base_dn | join(",") }}
+nslcd__default_configuration[5].name = ldap_version
+nslcd__default_configuration[5].comment = The LDAP protocol version to use.
+nslcd__default_configuration[5].value = 3
+nslcd__default_configuration[5].state = comment
+nslcd__default_configuration[6].name = binddn
+nslcd__default_configuration[6].comment = The DN to bind with for normal lookups.
+nslcd__default_configuration[6].value = {{ nslcd__ldap_binddn }}
+nslcd__default_configuration[7].name = bindpw
+nslcd__default_configuration[7].value = {{ nslcd__ldap_bindpw }}
+nslcd__default_configuration[8].name = rootpwmoddn
+nslcd__default_configuration[8].comment = The DN used for password modifications by root.
+nslcd__default_configuration[8].value = cn=admin,dc=example,dc=com
+nslcd__default_configuration[8].state = comment
+nslcd__default_configuration[9].name = ssl
+nslcd__default_configuration[9].comment = SSL options
+nslcd__default_configuration[9].value = {{ "start_tls"
+               if (ansible_local | d() and ansible_local.ldap | d() and
+                   (ansible_local.ldap.start_tls | d()) | bool)
+               else "on" }}
+
+nslcd__default_configuration[10].name = tls_reqcert
+nslcd__default_configuration[10].value = demand
+nslcd__default_configuration[11].name = tls_cacertfile
+nslcd__default_configuration[11].value = /etc/ssl/certs/ca-certificates.crt
+nslcd__default_configuration[12].name = scope
+nslcd__default_configuration[12].comment = The search scope.
+nslcd__default_configuration[12].value = sub
+nslcd__default_configuration[12].state = comment
+nslcd__default_configuration[13].name = nss_min_uid
+nslcd__default_configuration[13].comment = First valid UID/GID number expected to be in the LDAP directory.
+UIDs/GIDs lower than this value will be ignored.
+
+nslcd__default_configuration[13].value = {{ ansible_local.ldap.uid_gid_min | d("10000") }}
+nslcd__default_configuration[14].name = map_group_id
+nslcd__default_configuration[14].comment = Use the 'gid' attribute instead of 'cn' as the POSIX group name.
+
+nslcd__default_configuration[14].option = map
+nslcd__default_configuration[14].map = group
+nslcd__default_configuration[14].value = cn gid
+nslcd__default_configuration[15].name = filter_passwd_group
+nslcd__default_configuration[15].raw = filter passwd (& (objectClass=posixAccount) {{ nslcd__ldap_host_filter }} )
+filter group  (& (objectClass=posixGroupId) {{ nslcd__ldap_host_filter }} )
+filter shadow (& (objectClass=shadowAccount) {{ nslcd__ldap_host_filter }} )
+
+nslcd__default_configuration[15].comment = Limit which UNIX accounts and groups are present on a host
+nslcd__combined_configuration = {{ nslcd__default_configuration
+                                   + nslcd__configuration
+                                   + nslcd__group_configuration
+                                   + nslcd__host_configuration }}
+
+nslcd__ldap__dependent_tasks[0].name = Create nslcd account for {{ nslcd__ldap_device_dn | join(",") }}
+nslcd__ldap__dependent_tasks[0].dn = {{ nslcd__ldap_binddn }}
+nslcd__ldap__dependent_tasks[0].objectClass = {{ nslcd__ldap_self_object_classes }}
+nslcd__ldap__dependent_tasks[0].attributes = {{ nslcd__ldap_self_attributes }}
+nslcd__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+nslcd__ldap__dependent_tasks[0].state = {{ "present"
+               if ((ansible_local.ldap.posix_enabled | d()) | bool and
+                   nslcd__ldap_device_dn | d())
+               else "ignore" }}
+
+nslcd__nsswitch__dependent_services[0] = ldap

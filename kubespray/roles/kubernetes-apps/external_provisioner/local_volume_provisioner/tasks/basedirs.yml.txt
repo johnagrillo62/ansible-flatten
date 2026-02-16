@@ -1,0 +1,8 @@
+~d0.name = "Local Volume Provisioner | Ensure base dir {{ delegate_host_base_dir.1 }} is created on {{ delegate_host_base_dir.0 }}"
+~d1.file = 
+~d2.path = "{{ local_volume_provisioner_storage_classes[delegate_host_base_dir.1].host_dir }}"
+~d2.state = directory
+~d2.owner = root
+~d2.group = root
+~d2.mode = "{{ local_volume_provisioner_directory_mode }}"
+~d1.delegate_to = "{{ delegate_host_base_dir.0 }}"

@@ -1,0 +1,10 @@
+~d0.hosts = all
+~d1.tasks = 
+~d2.shell = echo "nested test a={{ item[0] }} b={{ item[1] }} c={{ item[2] }}"
+~d3.with_nested = 
+~d0.hosts = all
+~d1.vars = 
+~d2.listvar1 = 
+~d1.tasks = 
+~d2.shell = echo "nested test a={{ item[0] }} b={{ item[1] }}"
+~d3.with_nested = 

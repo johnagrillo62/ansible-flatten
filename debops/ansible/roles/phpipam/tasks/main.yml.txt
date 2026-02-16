@@ -1,0 +1,8 @@
+[0].name = Import DebOps secret role
+[0]["ansible.builtin.import_role"].name = secret
+[1].name = Configure phpIPAM
+[1]["ansible.builtin.include_tasks"] = phpipam.yml
+[1].when = phpipam__mode is defined and 'webui' in phpipam__mode
+[2].name = Configure phpIPAM scripts
+[2]["ansible.builtin.include_tasks"] = phpipam-scripts.yml
+[2].when = phpipam__mode is defined and 'scripts' in phpipam__mode

@@ -1,0 +1,10 @@
+~d0.name = Configure Filebeat service
+~d1.import_playbook = '../service/filebeat.yml'
+~d0.name = Configure Metricbeat service
+~d1.import_playbook = '../service/metricbeat.yml'
+~d0.name = Configure GitLab Runner service
+~d1.import_playbook = '../service/gitlab_runner.yml'
+~d0.name = Configure Telegraf service
+~d1.import_playbook = '../service/telegraf.yml'
+~d0.name = Configure Zabbix Agent
+~d1.import_playbook = '../service/zabbix_agent.yml'

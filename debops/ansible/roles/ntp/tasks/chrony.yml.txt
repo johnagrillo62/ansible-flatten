@@ -1,0 +1,8 @@
+~d0.name = Configure chrony
+~d1.ansible.builtin.template = 
+~d2.src = 'etc/chrony/chrony.conf.j2'
+~d2.dest = '/etc/chrony/chrony.conf'
+~d2.owner = 'root'
+~d2.group = 'root'
+~d2.mode = '0644'
+~d1.notify = [ 'Restart chrony' ]

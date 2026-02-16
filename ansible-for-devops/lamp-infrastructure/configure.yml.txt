@@ -1,0 +1,4 @@
+[0].import_playbook = playbooks/varnish/main.yml
+[1].import_playbook = playbooks/www/main.yml
+[2].import_playbook = playbooks/db/main.yml
+[3].import_playbook = playbooks/memcached/main.yml

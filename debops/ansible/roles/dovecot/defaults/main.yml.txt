@@ -1,0 +1,588 @@
+dovecot__features[0] = imap
+dovecot__features[1] = imaps
+dovecot__features[2] = lmtp
+dovecot__features[3] = sieve
+dovecot__features[4] = quota
+dovecot__auth_mechanisms[0] = plain
+dovecot__auth_mechanisms[1] = login
+dovecot__version = {{ ansible_local.dovecot.version | d("0.0.0") }}
+dovecot__user_accounts = {{ ["deny", "ldap"]
+                            if dovecot__ldap_enabled | bool
+                            else ["deny", "system"] }}
+
+dovecot__deny_users[0] = root
+dovecot__mail_location = maildir:~/Maildir
+dovecot__auth_default_realm = {{ ansible_domain }}
+dovecot__vmail_enabled = {{ True if (dovecot__user_accounts |
+                                     intersect(["mysql", "pgsql", "sqlite",
+                                                "ldap", "passwdfile"]))
+                            else False }}
+
+dovecot__vmail_posix_user = {{ ansible_local.postldap.vmail_posix_user
+                               | d("vmail") }} 
+dovecot__vmail_posix_group = {{ ansible_local.postldap.vmail_posix_group
+                                | d("vmail") }} 
+dovecot__vmail_base = /var/vmail
+dovecot__vmail_home = {{ dovecot__vmail_base ~ "/%d/%n" }}
+dovecot__dsync_port = 12345
+dovecot__dsync_host = 
+dovecot__dsync_replica = {{ ("tcps" if dovecot__pki | d(True) else "tcp") ~ ":" ~
+                            dovecot__dsync_host ~ ":" ~
+                            dovecot__dsync_port }}
+
+dovecot__dsync_password_path = {{ "dovecot/credentials/dsync.password" }}
+dovecot__dsync_password = {{ lookup("password", secret + "/"
+                                    + dovecot__dsync_password_path
+                                    + " length=32") }}
+
+dovecot__sql_connect = 
+dovecot__sql_default_pass_scheme = SSHA512
+dovecot__sql_password_query = SELECT userid AS username, domain, password FROM users WHERE userid = '%n' AND domain = '%d'
+dovecot__sql_user_query = SELECT home, uid, gid FROM users WHERE userid = '%n' AND domain = '%d'
+dovecot__sql_iterate_query = SELECT userid AS username, domain FROM users
+dovecot__passwdfile_scheme = sha512-crypt
+dovecot__passwdfile_path = /etc/dovecot/private/
+dovecot__passwdfile_name = passwd
+dovecot__checkpassword_passdb_command = /usr/bin/checkpassword
+dovecot__checkpassword_userdb_command = /usr/bin/checkpassword
+dovecot__pki = {{ ansible_local.pki.enabled | d() | bool }}
+dovecot__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+dovecot__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+dovecot__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
+dovecot__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
+dovecot__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+dovecot__tls_ca_cert_dir = /etc/ssl/certs/
+dovecot__ssl_required = True
+dovecot__ssl_min_protocol = {{ "TLSv1.2" }}
+dovecot__ssl_dh_parameters_length = 4096
+dovecot__ssl_cipher_list = {{ dovecot__ssl_cipher_list_default }}
+dovecot__ssl_cipher_list_default = ALL:!kRSA:!SRP:!kDHd:!DSS:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!RC4:!ADH:!LOW@STRENGTH
+dovecot__ssl_cipher_list_better_crypto = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA256:EECDH:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!IDEA:!ECDSA:kEDH:CAMELLIA128-SHA:AES128-SHA
+dovecot__ssl_cipher_list_ncsc_nl = ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256
+dovecot__pki_hook_name = dovecot
+dovecot__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
+dovecot__pki_hook_action = reload
+dovecot__dhparam = {{ ansible_local.dhparam.enabled
+                      if (ansible_local | d() and ansible_local.dhparam | d() and
+                          ansible_local.dhparam.enabled is defined)
+                      else False }}
+
+dovecot__dhparam_set = default
+dovecot__ssl_dh_file = {{ ansible_local.dhparam[dovecot__dhparam_set]
+                          if (ansible_local | d() and ansible_local.dhparam | d() and
+                            ansible_local.dhparam[dovecot__dhparam_set] | d())
+                          else "" }}
+
+dovecot__default_configuration[0].section = main
+dovecot__default_configuration[0].title = Main Configuration
+dovecot__default_configuration[0].options[0].name = protocols
+dovecot__default_configuration[0].options[0].comment = Currently active protocols
+dovecot__default_configuration[0].options[0].value = {{ dovecot__features |
+             intersect(['imap', 'imaps', 'pop3',
+                        'pop3s', 'sieve', 'lmtp']) |
+             map("regex_replace", "^(imap|pop3)s$", "\1") |
+             list | unique | join(' ') }}
+
+dovecot__default_configuration[1].section = authentication
+dovecot__default_configuration[1].title = Client Configuration
+dovecot__default_configuration[1].options[0].name = auth_mechanisms
+dovecot__default_configuration[1].options[0].value = {{ dovecot__auth_mechanisms | join(" ") }}
+dovecot__default_configuration[1].options[1].name = disable_plaintext_auth
+dovecot__default_configuration[1].options[1].value = yes
+dovecot__default_configuration[1].options[2].name = auth_default_realm
+dovecot__default_configuration[1].options[2].value = {{ dovecot__auth_default_realm }}
+dovecot__default_configuration[1].options[3].name = mail_uid
+dovecot__default_configuration[1].options[3].value = {{ dovecot__vmail_posix_user }}
+dovecot__default_configuration[1].options[3].state = {{ "present" if dovecot__vmail_enabled | d(False) else "absent" }}
+dovecot__default_configuration[1].options[4].name = mail_gid
+dovecot__default_configuration[1].options[4].value = {{ dovecot__vmail_posix_group }}
+dovecot__default_configuration[1].options[4].state = {{ "present" if dovecot__vmail_enabled | d(False) else "absent" }}
+dovecot__default_configuration[1].options[5].name = mail_privileged_group
+dovecot__default_configuration[1].options[5].value = {{ dovecot__vmail_posix_user }}
+dovecot__default_configuration[1].options[5].state = {{ "present" if dovecot__vmail_enabled | d(False) else "absent" }}
+dovecot__default_configuration[1].options[6].name = passdb_deny
+dovecot__default_configuration[1].options[6].option = passdb
+dovecot__default_configuration[1].options[6].state = {{ "present" if "deny" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[6].options[0].name = driver
+dovecot__default_configuration[1].options[6].options[0].value = passwd-file
+dovecot__default_configuration[1].options[6].options[1].name = deny
+dovecot__default_configuration[1].options[6].options[1].value = yes
+dovecot__default_configuration[1].options[6].options[2].name = args
+dovecot__default_configuration[1].options[6].options[2].value = /etc/dovecot/dovecot.deny
+dovecot__default_configuration[1].options[7].name = passdb_system
+dovecot__default_configuration[1].options[7].option = passdb
+dovecot__default_configuration[1].options[7].state = {{ "present" if "system" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[7].options[0].name = driver
+dovecot__default_configuration[1].options[7].options[0].value = pam
+dovecot__default_configuration[1].options[7].options[1].name = args
+dovecot__default_configuration[1].options[7].options[1].value = session=yes dovecot
+dovecot__default_configuration[1].options[8].name = userdb_system
+dovecot__default_configuration[1].options[8].option = userdb
+dovecot__default_configuration[1].options[8].state = {{ "present" if "system" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[8].options[0].name = driver
+dovecot__default_configuration[1].options[8].options[0].value = passwd
+dovecot__default_configuration[1].options[8].options[1].name = args
+dovecot__default_configuration[1].options[8].options[1].value = blocking=no
+dovecot__default_configuration[1].options[9].name = passdb_sql
+dovecot__default_configuration[1].options[9].option = passdb
+dovecot__default_configuration[1].options[9].state = {{ "present" if (dovecot__user_accounts | d([]) |
+                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }} 
+dovecot__default_configuration[1].options[9].options[0].name = driver
+dovecot__default_configuration[1].options[9].options[0].value = sql
+dovecot__default_configuration[1].options[9].options[1].name = args
+dovecot__default_configuration[1].options[9].options[1].value = /etc/dovecot/dovecot-sql.conf.ext
+dovecot__default_configuration[1].options[10].name = userdb_sql
+dovecot__default_configuration[1].options[10].option = userdb
+dovecot__default_configuration[1].options[10].state = {{ "present" if (dovecot__user_accounts | d([]) |
+                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }} 
+dovecot__default_configuration[1].options[10].options[0].name = driver
+dovecot__default_configuration[1].options[10].options[0].value = sql
+dovecot__default_configuration[1].options[10].options[1].name = args
+dovecot__default_configuration[1].options[10].options[1].value = /etc/dovecot/dovecot-sql.conf.ext
+dovecot__default_configuration[1].options[11].name = passdb_ldap
+dovecot__default_configuration[1].options[11].option = passdb
+dovecot__default_configuration[1].options[11].state = {{ "present" if "ldap" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[11].options[0].name = driver
+dovecot__default_configuration[1].options[11].options[0].value = ldap
+dovecot__default_configuration[1].options[11].options[1].name = args
+dovecot__default_configuration[1].options[11].options[1].value = /etc/dovecot/dovecot-ldap-passdb.conf
+dovecot__default_configuration[1].options[12].name = userdb_ldap
+dovecot__default_configuration[1].options[12].option = userdb
+dovecot__default_configuration[1].options[12].state = {{ "present" if "ldap" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[12].options[0].name = driver
+dovecot__default_configuration[1].options[12].options[0].value = ldap
+dovecot__default_configuration[1].options[12].options[1].name = args
+dovecot__default_configuration[1].options[12].options[1].value = /etc/dovecot/dovecot-ldap-userdb.conf
+dovecot__default_configuration[1].options[13].name = passdb_passwd
+dovecot__default_configuration[1].options[13].option = passdb
+dovecot__default_configuration[1].options[13].state = {{ "present" if "passwdfile" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[13].options[0].name = driver
+dovecot__default_configuration[1].options[13].options[0].value = passwd-file
+dovecot__default_configuration[1].options[13].options[1].name = args
+dovecot__default_configuration[1].options[13].options[1].value = scheme={{ dovecot__passwdfile_scheme }} {{ dovecot__passwdfile_path }}/{{ dovecot__passwdfile_name }}
+dovecot__default_configuration[1].options[14].name = userdb_passwd
+dovecot__default_configuration[1].options[14].option = userdb
+dovecot__default_configuration[1].options[14].state = {{ "present" if "passwdfile" in dovecot__user_accounts else "absent" }}
+dovecot__default_configuration[1].options[14].options[0].name = driver
+dovecot__default_configuration[1].options[14].options[0].value = static
+dovecot__default_configuration[1].options[14].options[1].name = args
+dovecot__default_configuration[1].options[14].options[1].value = uid={{ dovecot__vmail_posix_user }} gid={{ dovecot__vmail_posix_group }} home={{ dovecot__vmail_home }}
+dovecot__default_configuration[1].options[14].options[2].name = default_fields
+dovecot__default_configuration[1].options[14].options[2].value = quota_rule=*:storage=1G
+dovecot__default_configuration[1].options[14].options[2].comment = Default fields that can be overridden by passwd-file
+dovecot__default_configuration[1].options[14].options[2].state = comment
+dovecot__default_configuration[1].options[14].options[3].name = override_fields
+dovecot__default_configuration[1].options[14].options[3].value = home=/home/virtual/%u
+dovecot__default_configuration[1].options[14].options[3].comment = Override fields from passwd-file
+dovecot__default_configuration[1].options[14].options[3].state = comment
+dovecot__default_configuration[1].options[15].name = passdb_checkpassword
+dovecot__default_configuration[1].options[15].option = passdb
+dovecot__default_configuration[1].options[15].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
+                     dovecot__checkpassword_passdb_command | d()) else "absent" }} 
+dovecot__default_configuration[1].options[15].options[0].name = driver
+dovecot__default_configuration[1].options[15].options[0].value = checkpassword
+dovecot__default_configuration[1].options[15].options[1].name = args
+dovecot__default_configuration[1].options[15].options[1].value = {{ dovecot__checkpassword_passdb_command }}
+dovecot__default_configuration[1].options[16].name = userdb_checkpassword_pre
+dovecot__default_configuration[1].options[16].option = userdb
+dovecot__default_configuration[1].options[16].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
+                     dovecot__checkpassword_userdb_command | d()) else "absent" }} 
+dovecot__default_configuration[1].options[16].options[0].name = driver
+dovecot__default_configuration[1].options[16].options[0].value = prefetch
+dovecot__default_configuration[1].options[17].name = userdb_checkpassword_main
+dovecot__default_configuration[1].options[17].option = userdb
+dovecot__default_configuration[1].options[17].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
+                     dovecot__checkpassword_userdb_command | d()) else "absent" }} 
+dovecot__default_configuration[1].options[17].options[0].name = driver
+dovecot__default_configuration[1].options[17].options[0].value = checkpassword
+dovecot__default_configuration[1].options[17].options[1].name = args
+dovecot__default_configuration[1].options[17].options[1].value = {{ dovecot__checkpassword_userdb_command }}
+dovecot__default_configuration[2].section = tls
+dovecot__default_configuration[2].title = TLS Configuration
+dovecot__default_configuration[2].state = {{ "present" if dovecot__pki is defined and dovecot__pki else "absent" }}
+dovecot__default_configuration[2].options[0].name = ssl
+dovecot__default_configuration[2].options[0].value = {{ "required" if dovecot__ssl_required else "yes" }}
+dovecot__default_configuration[2].options[1].name = ssl_prefer_server_ciphers
+dovecot__default_configuration[2].options[1].value = yes
+dovecot__default_configuration[2].options[1].comment = Prefer the server's order of ciphers over the client's. (dovecot >= 2.2.6)
+dovecot__default_configuration[2].options[2].name = ssl_cert
+dovecot__default_configuration[2].options[2].value = <{{ dovecot__pki_path ~ "/" ~ dovecot__pki_realm ~ "/" ~ dovecot__pki_crt }}
+dovecot__default_configuration[2].options[3].name = ssl_key
+dovecot__default_configuration[2].options[3].value = <{{ dovecot__pki_path ~ "/" ~ dovecot__pki_realm ~ "/" ~ dovecot__pki_key }}
+dovecot__default_configuration[2].options[4].name = ssl_protocols
+dovecot__default_configuration[2].options[4].value = {{ dovecot__ssl_min_protocol }}
+dovecot__default_configuration[2].options[4].state = {{ "present" if dovecot__version is version("2.3.0", "<") else "absent" }}
+dovecot__default_configuration[2].options[5].name = ssl_dh_parameters_length
+dovecot__default_configuration[2].options[5].value = {{ dovecot__ssl_dh_parameters_length }}
+dovecot__default_configuration[2].options[5].state = {{ "present" if dovecot__version is version("2.3.0", "<") else "absent" }}
+dovecot__default_configuration[2].options[5].comment = Diffie-Hellman parameters length (default 1024, dovecot >= 2.2.7, optional in dovecot >= 2.3.3)
+dovecot__default_configuration[2].options[6].name = ssl_min_protocol
+dovecot__default_configuration[2].options[6].value = {{ dovecot__ssl_min_protocol }}
+dovecot__default_configuration[2].options[6].state = {{ "present" if dovecot__version is version("2.3.0", ">=") else "absent" }}
+dovecot__default_configuration[2].options[7].name = ssl_dh
+dovecot__default_configuration[2].options[7].value = {{ "" if (dovecot__ssl_dh_file == "") else ("<" + dovecot__ssl_dh_file) }}
+dovecot__default_configuration[2].options[7].state = {{ "present" if dovecot__version is version("2.3.0", ">=") else "absent" }}
+dovecot__default_configuration[2].options[8].name = ssl_cipher_list
+dovecot__default_configuration[2].options[8].value = {{ dovecot__ssl_cipher_list }}
+dovecot__default_configuration[2].options[9].name = ssl_client_ca_dir
+dovecot__default_configuration[2].options[9].value = /etc/ssl/certs
+dovecot__default_configuration[2].options[9].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[3].section = no_tls
+dovecot__default_configuration[3].title = TLS Non-Configuration
+dovecot__default_configuration[3].state = {{ "absent" if dovecot__pki is defined and dovecot__pki else "present" }}
+dovecot__default_configuration[3].options[0].name = ssl
+dovecot__default_configuration[3].options[0].value = no
+dovecot__default_configuration[4].section = services
+dovecot__default_configuration[4].title = Dovecot services
+dovecot__default_configuration[4].options[0].name = service imap-login
+dovecot__default_configuration[4].options[0].state = {{ "present" if ("imap" in dovecot__features or "imaps" in dovecot__features) else "absent" }}
+dovecot__default_configuration[4].options[0].options[0].name = inet_listener imap
+dovecot__default_configuration[4].options[0].options[0].options[0].name = address
+dovecot__default_configuration[4].options[0].options[0].options[0].value = 127.0.0.1, [::1]
+dovecot__default_configuration[4].options[0].options[0].options[0].comment = Only localhost if no PKI is configured
+dovecot__default_configuration[4].options[0].options[0].options[0].state = {{ "present" if not dovecot__pki | d(True) else "comment" }}
+dovecot__default_configuration[4].options[0].options[0].options[1].name = port
+dovecot__default_configuration[4].options[0].options[0].options[1].value = {{ 143 if "imap" in dovecot__features else 0 }}
+dovecot__default_configuration[4].options[0].options[1].name = inet_listener imaps
+dovecot__default_configuration[4].options[0].options[1].options[0].name = port
+dovecot__default_configuration[4].options[0].options[1].options[0].value = {{ 993 if ("imaps" in dovecot__features and dovecot__pki | d(True)) else 0 }}
+dovecot__default_configuration[4].options[0].options[1].options[0].comment = Disabled if no PKI is configured
+dovecot__default_configuration[4].options[1].name = service pop3-login
+dovecot__default_configuration[4].options[1].state = {{ "present" if ("pop3" in dovecot__features or "pop3s" in dovecot__features) else "absent" }}
+dovecot__default_configuration[4].options[1].options[0].name = inet_listener pop3
+dovecot__default_configuration[4].options[1].options[0].options[0].name = address
+dovecot__default_configuration[4].options[1].options[0].options[0].value = 127.0.0.1, [::1]
+dovecot__default_configuration[4].options[1].options[0].options[0].comment = Only localhost if no PKI is configured
+dovecot__default_configuration[4].options[1].options[0].options[0].state = {{ "present" if not dovecot__pki | d(True) else "comment" }}
+dovecot__default_configuration[4].options[1].options[0].options[1].name = port
+dovecot__default_configuration[4].options[1].options[0].options[1].value = {{ 110 if "pop3" in dovecot__features else 0 }}
+dovecot__default_configuration[4].options[1].options[1].name = inet_listener pop3s
+dovecot__default_configuration[4].options[1].options[1].options[0].name = port
+dovecot__default_configuration[4].options[1].options[1].options[0].value = {{ 995 if ("pop3s" in dovecot__features and dovecot__pki | d(True)) else 0 }}
+dovecot__default_configuration[4].options[1].options[1].options[0].comment = Disabled if no PKI is configured
+dovecot__default_configuration[4].options[2].name = service lmtp
+dovecot__default_configuration[4].options[2].state = {{ "present" if "lmtp" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[2].options[0].name = user
+dovecot__default_configuration[4].options[2].options[0].value = {{ dovecot__vmail_posix_user }}
+dovecot__default_configuration[4].options[2].options[0].state = {{ "present" if dovecot__vmail_enabled | d(False) else "absent" }}
+dovecot__default_configuration[4].options[2].options[1].name = unix_listener /var/spool/postfix/private/dovecot-lmtp
+dovecot__default_configuration[4].options[2].options[1].options[0].name = mode
+dovecot__default_configuration[4].options[2].options[1].options[0].value = 0660
+dovecot__default_configuration[4].options[2].options[1].options[1].name = group
+dovecot__default_configuration[4].options[2].options[1].options[1].value = postfix
+dovecot__default_configuration[4].options[2].options[1].options[2].name = user
+dovecot__default_configuration[4].options[2].options[1].options[2].value = postfix
+dovecot__default_configuration[4].options[3].name = service managesieve-login
+dovecot__default_configuration[4].options[3].state = {{ "present" if "sieve" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[3].options[0].name = inet_listener sieve
+dovecot__default_configuration[4].options[3].options[0].options[0].name = port
+dovecot__default_configuration[4].options[3].options[0].options[0].value = 4190
+dovecot__default_configuration[4].options[4].name = service replicator
+dovecot__default_configuration[4].options[4].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[4].options[0].name = process_min_avail
+dovecot__default_configuration[4].options[4].options[0].value = 1
+dovecot__default_configuration[4].options[4].options[1].name = unix_listener replicator-doveadm
+dovecot__default_configuration[4].options[4].options[1].options[0].name = mode
+dovecot__default_configuration[4].options[4].options[1].options[0].value = 0600
+dovecot__default_configuration[4].options[4].options[1].options[1].name = user
+dovecot__default_configuration[4].options[4].options[1].options[1].value = vmail
+dovecot__default_configuration[4].options[5].name = service aggregator
+dovecot__default_configuration[4].options[5].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[5].options[0].name = fifo_listener replication-notify-fifo
+dovecot__default_configuration[4].options[5].options[0].options[0].name = user
+dovecot__default_configuration[4].options[5].options[0].options[0].value = vmail
+dovecot__default_configuration[4].options[5].options[1].name = unix_listener replication-notify
+dovecot__default_configuration[4].options[5].options[1].options[0].name = user
+dovecot__default_configuration[4].options[5].options[1].options[0].value = vmail
+dovecot__default_configuration[4].options[6].name = service doveadm
+dovecot__default_configuration[4].options[6].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[6].options[0].name = inet_listener doveadm
+dovecot__default_configuration[4].options[6].options[0].options[0].name = port
+dovecot__default_configuration[4].options[6].options[0].options[0].value = {{ dovecot__dsync_port }}
+dovecot__default_configuration[4].options[6].options[0].options[1].name = ssl
+dovecot__default_configuration[4].options[6].options[0].options[1].value = yes
+dovecot__default_configuration[4].options[6].options[0].options[1].state = {{ "present" if (dovecot__pki | d(True)) else "absent" }}
+dovecot__default_configuration[4].options[7].name = replication_max_conns
+dovecot__default_configuration[4].options[7].value = 10
+dovecot__default_configuration[4].options[7].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[8].name = doveadm_port
+dovecot__default_configuration[4].options[8].value = {{ dovecot__dsync_port }}
+dovecot__default_configuration[4].options[8].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[9].name = doveadm_password
+dovecot__default_configuration[4].options[9].value = {{ dovecot__dsync_password }}
+dovecot__default_configuration[4].options[9].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__default_configuration[4].options[10].name = service auth
+dovecot__default_configuration[4].options[10].options[0].name = unix_listener /var/spool/postfix/private/auth
+dovecot__default_configuration[4].options[10].options[0].options[0].name = mode
+dovecot__default_configuration[4].options[10].options[0].options[0].value = 0660
+dovecot__default_configuration[4].options[10].options[0].options[1].name = group
+dovecot__default_configuration[4].options[10].options[0].options[1].value = postfix
+dovecot__default_configuration[4].options[10].options[0].options[2].name = user
+dovecot__default_configuration[4].options[10].options[0].options[2].value = postfix
+dovecot__default_configuration[4].options[10].options[1].name = unix_listener auth-userdb
+dovecot__default_configuration[4].options[10].options[1].state = {{ "present" if (dovecot__vmail_enabled | d(False) and
+                         "lmtp" in dovecot__features) else "absent" }} 
+dovecot__default_configuration[4].options[10].options[1].options[0].name = mode
+dovecot__default_configuration[4].options[10].options[1].options[0].value = 0660
+dovecot__default_configuration[4].options[10].options[1].options[1].name = group
+dovecot__default_configuration[4].options[10].options[1].options[1].value = {{ dovecot__vmail_posix_group }}
+dovecot__default_configuration[4].options[10].options[1].options[2].name = user
+dovecot__default_configuration[4].options[10].options[1].options[2].value = {{ dovecot__vmail_posix_user }}
+dovecot__default_configuration[5].section = protocols
+dovecot__default_configuration[5].title = Protocol settings
+dovecot__default_configuration[5].options[0].name = protocol imap
+dovecot__default_configuration[5].options[0].state = {{ "present" if ("imap" in dovecot__features or "imaps" in dovecot__features) else "absent" }}
+dovecot__default_configuration[5].options[0].options[0].name = mail_plugins
+dovecot__default_configuration[5].options[0].options[0].value = {{ dovecot__mail_plugins_imap | flatten | join(" ") }}
+dovecot__default_configuration[5].options[0].options[1].name = mail_max_userip_connections
+dovecot__default_configuration[5].options[0].options[1].value = 20
+dovecot__default_configuration[5].options[0].options[1].state = comment
+dovecot__default_configuration[5].options[0].options[2].name = imap_idle_notify_interval
+dovecot__default_configuration[5].options[0].options[2].value = 29 mins
+dovecot__default_configuration[5].options[0].options[2].state = comment
+dovecot__default_configuration[5].options[1].name = protocol pop3
+dovecot__default_configuration[5].options[1].state = {{ "present" if ("pop3" in dovecot__features or "pop3s" in dovecot__features) else "absent" }}
+dovecot__default_configuration[5].options[1].options[0].name = mail_plugins
+dovecot__default_configuration[5].options[1].options[0].value = {{ dovecot__mail_plugins_pop3 | flatten | join(" ") }}
+dovecot__default_configuration[5].options[1].options[1].name = mail_max_userip_connections
+dovecot__default_configuration[5].options[1].options[1].value = 10
+dovecot__default_configuration[5].options[1].options[1].state = comment
+dovecot__default_configuration[5].options[2].name = protocol lda
+dovecot__default_configuration[5].options[2].state = {{ "present" if "lmtp" not in dovecot__features else "absent" }}
+dovecot__default_configuration[5].options[2].options[0].name = mail_plugins
+dovecot__default_configuration[5].options[2].options[0].value = {{ dovecot__mail_plugins_lda | flatten | join(" ") }}
+dovecot__default_configuration[5].options[2].options[1].name = postmaster_address
+dovecot__default_configuration[5].options[2].options[1].value = postmaster@{{ ansible_domain }}
+dovecot__default_configuration[5].options[3].name = protocol lmtp
+dovecot__default_configuration[5].options[3].state = {{ "present" if "lmtp" in dovecot__features else "absent" }}
+dovecot__default_configuration[5].options[3].options[0].name = mail_plugins
+dovecot__default_configuration[5].options[3].options[0].value = {{ dovecot__mail_plugins_lmtp | flatten | join(" ") }}
+dovecot__default_configuration[5].options[3].options[1].name = postmaster_address
+dovecot__default_configuration[5].options[3].options[1].value = postmaster@{{ ansible_domain }}
+dovecot__default_configuration[6].section = mailbox_locations
+dovecot__default_configuration[6].title = Mailbox Locations
+dovecot__default_configuration[6].options[0].name = mail_home
+dovecot__default_configuration[6].options[0].value = {{ dovecot__vmail_home }}
+dovecot__default_configuration[6].options[0].state = {{ "present" if dovecot__vmail_enabled else "absent" }}
+dovecot__default_configuration[6].options[1].name = mail_location
+dovecot__default_configuration[6].options[1].value = {{ dovecot__mail_location }}
+dovecot__default_configuration[6].options[1].state = {{ "present" if dovecot__mail_location | d() else "comment" }}
+dovecot__default_configuration[7].section = mailbox_namespaces
+dovecot__default_configuration[7].title = Mailbox Namespaces
+dovecot__default_configuration[7].options[0].name = namespace inbox
+dovecot__default_configuration[7].options[0].options[0].name = inbox
+dovecot__default_configuration[7].options[0].options[0].value = yes
+dovecot__default_configuration[7].options[0].options[0].comment = There can be only one INBOX, and this setting defines which namespace has it.
+dovecot__default_configuration[7].options[0].options[1].name = mailbox Drafts
+dovecot__default_configuration[7].options[0].options[1].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[1].options[0].value = \Drafts
+dovecot__default_configuration[7].options[0].options[2].name = mailbox Junk
+dovecot__default_configuration[7].options[0].options[2].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[2].options[0].value = \Junk
+dovecot__default_configuration[7].options[0].options[3].name = mailbox Trash
+dovecot__default_configuration[7].options[0].options[3].comment = If you change the name of this mailbox and use LDAP,
+dovecot__ldap_trash_field also needs to be updated.
+
+dovecot__default_configuration[7].options[0].options[3].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[3].options[0].value = \Trash
+dovecot__default_configuration[7].options[0].options[4].name = mailbox Sent
+dovecot__default_configuration[7].options[0].options[4].comment = For \Sent mailboxes there are two widely used names. We'll mark both of
+them as \Sent. User typically deletes one of them if duplicates are created.
+
+dovecot__default_configuration[7].options[0].options[4].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[4].options[0].value = \Sent
+dovecot__default_configuration[7].options[0].options[5].name = mailbox "Sent Messages"
+dovecot__default_configuration[7].options[0].options[5].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[5].options[0].value = \Sent
+dovecot__default_configuration[7].options[0].options[6].name = mailbox virtual/All
+dovecot__default_configuration[7].options[0].options[6].comment = If you have a virtual "All Messages" mailbox:
+dovecot__default_configuration[7].options[0].options[6].state = comment
+dovecot__default_configuration[7].options[0].options[6].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[6].options[0].value = \All
+dovecot__default_configuration[7].options[0].options[6].options[1].name = comment
+dovecot__default_configuration[7].options[0].options[6].options[1].value = All my messages
+dovecot__default_configuration[7].options[0].options[7].name = mailbox virtual/Flagged
+dovecot__default_configuration[7].options[0].options[7].comment = If you have a virtual "Flagged" mailbox:
+dovecot__default_configuration[7].options[0].options[7].state = comment
+dovecot__default_configuration[7].options[0].options[7].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[7].options[0].value = \Flagged
+dovecot__default_configuration[7].options[0].options[7].options[1].name = comment
+dovecot__default_configuration[7].options[0].options[7].options[1].value = All my flagged messages
+dovecot__default_configuration[7].options[0].options[8].name = mailbox virtual/Important
+dovecot__default_configuration[7].options[0].options[8].comment = If you have a virtual "Important" mailbox:
+dovecot__default_configuration[7].options[0].options[8].state = comment
+dovecot__default_configuration[7].options[0].options[8].options[0].name = special_use
+dovecot__default_configuration[7].options[0].options[8].options[0].value = \Important
+dovecot__default_configuration[7].options[0].options[8].options[1].name = comment
+dovecot__default_configuration[7].options[0].options[8].options[1].value = All my important messages
+dovecot__default_configuration[8].section = plugins
+dovecot__default_configuration[8].title = Mail Plugins
+dovecot__default_configuration[8].options[0].name = plugin
+dovecot__default_configuration[8].options[0].options[0].name = sieve
+dovecot__default_configuration[8].options[0].options[0].value = {{ dovecot__sieve_dir }}
+dovecot__default_configuration[8].options[0].options[0].state = {{ "present" if "sieve" in dovecot__features else "absent" }}
+dovecot__default_configuration[8].options[0].options[1].name = quota
+dovecot__default_configuration[8].options[0].options[1].value = maildir:User quota
+dovecot__default_configuration[8].options[0].options[1].state = {{ "present" if "quota" in dovecot__features else "absent" }}
+dovecot__default_configuration[8].options[0].options[2].name = mail_replica
+dovecot__default_configuration[8].options[0].options[2].value = {{ dovecot__dsync_replica }}
+dovecot__default_configuration[8].options[0].options[2].state = {{ "present" if "dsync" in dovecot__features else "absent" }}
+dovecot__combined_configuration = {{ dovecot__default_configuration
+                                      + dovecot__configuration
+                                      + dovecot__group_configuration
+                                      + dovecot__host_configuration }}
+
+dovecot__mail_plugins[0] = $mail_plugins
+dovecot__mail_plugins[1] = {{ "notify" if "dsync" in dovecot__features else [] }}
+dovecot__mail_plugins[2] = {{ "replication" if "dsync" in dovecot__features else [] }}
+dovecot__mail_plugins[3] = {{ "quota" if "quota" in dovecot__features else [] }}
+dovecot__mail_plugins_imap[0] = {{ dovecot__mail_plugins }}
+dovecot__mail_plugins_imap[1] = {{ "imap_sieve" if "sieve" in dovecot__features else [] }}
+dovecot__mail_plugins_imap[2] = {{ "imap_quota" if "quota" in dovecot__features else [] }}
+dovecot__mail_plugins_pop3[0] = {{ dovecot__mail_plugins }}
+dovecot__mail_plugins_lda[0] = {{ dovecot__mail_plugins }}
+dovecot__mail_plugins_lda[1] = {{ "sieve" if "sieve" in dovecot__features else [] }}
+dovecot__mail_plugins_lmtp[0] = {{ dovecot__mail_plugins }}
+dovecot__mail_plugins_lmtp[1] = {{ "sieve" if "sieve" in dovecot__features else [] }}
+dovecot__sieve_dir = file:~/sieve;active=~/.dovecot.sieve
+dovecot__accept_any = True
+dovecot__allow_doveadm[0] = {{ dovecot__dsync_host }}
+dovecot__ldap_enabled = {{ True
+                           if (ansible_local | d() and ansible_local.ldap | d() and
+                              (ansible_local.ldap.enabled | d()) | bool)
+                           else False }}
+
+dovecot__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+dovecot__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+dovecot__ldap_self_rdn = uid=dovecot
+dovecot__ldap_self_object_classes[0] = account
+dovecot__ldap_self_object_classes[1] = simpleSecurityObject
+dovecot__ldap_self_attributes.uid = {{ dovecot__ldap_self_rdn.split("=")[1] }}
+dovecot__ldap_self_attributes.userPassword = {{ dovecot__ldap_bindpw }}
+dovecot__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+dovecot__ldap_self_attributes.description = Account used by the "Dovecot" service to access the LDAP directory
+dovecot__ldap_binddn = {{ ([dovecot__ldap_self_rdn]
+                           + dovecot__ldap_device_dn) | join(",") }} 
+dovecot__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                           + dovecot__ldap_binddn | to_uuid + ".password length=32 "
+                           + "chars=ascii_letters,digits,!@_$%^&*"))
+                          if dovecot__ldap_enabled | bool
+                          else "" }}
+
+dovecot__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
+dovecot__ldap_people_dn = {{ [dovecot__ldap_people_rdn]
+                             + dovecot__ldap_base_dn }} 
+dovecot__ldap_uri = {{ ansible_local.ldap.uri | d([""]) }}
+dovecot__ldap_start_tls = {{ ansible_local.ldap.start_tls | d(True) | bool }}
+dovecot__ldap_user_filter = (& (objectClass=mailRecipient) (| (uid=%n) (mail=%u) ) (| (authorizedService=all) (authorizedService=mail:access) ) )
+dovecot__ldap_user_list_filter = (& (objectClass=mailRecipient) (| (authorizedService=all) (authorizedService=mail:access) ) )
+dovecot__ldap_user_list_filter_attribute = mail
+dovecot__ldap_quota_attribute = mailQuota
+dovecot__ldap_quota_default = 10 GB
+dovecot__ldap_trash_field = namespace/inbox/mailbox/Trash/autoexpunge
+dovecot__postfix_lmtp_transport = lmtp:unix:private/dovecot-lmtp
+dovecot__ldap__dependent_tasks[0].name = Create Postfix account for {{ dovecot__ldap_device_dn | join(",") }}
+dovecot__ldap__dependent_tasks[0].dn = {{ dovecot__ldap_binddn }}
+dovecot__ldap__dependent_tasks[0].objectClass = {{ dovecot__ldap_self_object_classes }}
+dovecot__ldap__dependent_tasks[0].attributes = {{ dovecot__ldap_self_attributes }}
+dovecot__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+dovecot__ldap__dependent_tasks[0].state = {{ "present"
+                if (dovecot__ldap_enabled | bool and
+                    dovecot__ldap_device_dn | d())
+                else "ignore" }}
+
+dovecot__postfix__dependent_maincf[0].name = lmtp_tls_security_level
+dovecot__postfix__dependent_maincf[0].comment = Security level overridden via local Dovecot installation
+
+dovecot__postfix__dependent_maincf[0].value = {{ "none"
+               if dovecot__postfix_lmtp_transport.startswith("lmtp:unix:")
+               else "may" }}
+
+dovecot__postfix__dependent_maincf[0].state = {{ "present" if "lmtp" in dovecot__features else "ignore" }}
+dovecot__postfix__dependent_maincf[1].name = lmtp_tls_note_starttls_offer
+dovecot__postfix__dependent_maincf[1].value = {{ False
+               if dovecot__postfix_lmtp_transport.startswith("lmtp:unix:")
+               else True }}
+
+dovecot__postfix__dependent_maincf[1].state = {{ "present" if "lmtp" in dovecot__features else "ignore" }}
+dovecot__postfix__dependent_maincf[2].name = virtual_transport
+dovecot__postfix__dependent_maincf[2].value = {{ dovecot__postfix_lmtp_transport }}
+dovecot__postfix__dependent_maincf[2].state = {{ "present"
+               if ("lmtp" in dovecot__features and
+                   dovecot__ldap_enabled | bool)
+               else "ignore" }}
+
+dovecot__postfix__dependent_maincf[3].name = mailbox_transport
+dovecot__postfix__dependent_maincf[3].value = {{ dovecot__postfix_lmtp_transport }}
+dovecot__postfix__dependent_maincf[3].state = {{ "present"
+               if ("lmtp" in dovecot__features and
+                   not dovecot__ldap_enabled | bool)
+               else "ignore" }}
+
+dovecot__etc_services__dependent_list[0].name = doveadm
+dovecot__etc_services__dependent_list[0].port = {{ dovecot__dsync_port }}
+dovecot__etc_services__dependent_list[0].protocols[0] = tcp
+dovecot__etc_services__dependent_list[0].comment = Added by debops.dovecot Ansible role.
+dovecot__ferm__dependent_rules[0].name = dovecot_imap
+dovecot__ferm__dependent_rules[0].type = accept
+dovecot__ferm__dependent_rules[0].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[0].dport[0] = imap2
+dovecot__ferm__dependent_rules[0].saddr = {{ dovecot__allow_imap }}
+dovecot__ferm__dependent_rules[0].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if ("imap" in dovecot__features | d([]))
+                    else "absent" }}
+
+dovecot__ferm__dependent_rules[1].name = dovecot_imaps
+dovecot__ferm__dependent_rules[1].type = accept
+dovecot__ferm__dependent_rules[1].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[1].dport[0] = imaps
+dovecot__ferm__dependent_rules[1].saddr = {{ dovecot__allow_imaps }}
+dovecot__ferm__dependent_rules[1].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if ("imaps" in dovecot__features | d([])
+                         and dovecot__pki | d(True))
+                    else "absent" }}
+
+dovecot__ferm__dependent_rules[2].name = dovecot_pop3
+dovecot__ferm__dependent_rules[2].type = accept
+dovecot__ferm__dependent_rules[2].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[2].dport[0] = pop3
+dovecot__ferm__dependent_rules[2].saddr = {{ dovecot__allow_pop3 }}
+dovecot__ferm__dependent_rules[2].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[2].rule_state = {{ "present"
+                    if ("pop3" in dovecot__features | d([]))
+                    else "absent" }}
+
+dovecot__ferm__dependent_rules[3].name = dovecot_pop3s
+dovecot__ferm__dependent_rules[3].type = accept
+dovecot__ferm__dependent_rules[3].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[3].dport[0] = pop3s
+dovecot__ferm__dependent_rules[3].saddr = {{ dovecot__allow_pop3s }}
+dovecot__ferm__dependent_rules[3].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[3].rule_state = {{ "present"
+                    if ("pop3s" in dovecot__features | d([])
+                         and dovecot__pki | d(True))
+                    else "absent" }}
+
+dovecot__ferm__dependent_rules[4].name = dovecot_doveadm
+dovecot__ferm__dependent_rules[4].type = accept
+dovecot__ferm__dependent_rules[4].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[4].dport[0] = doveadm
+dovecot__ferm__dependent_rules[4].saddr = {{ dovecot__allow_doveadm }}
+dovecot__ferm__dependent_rules[4].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[4].rule_state = {{ "present"
+                    if ("dsync" in dovecot__features | d([]))
+                    else "absent" }}
+
+dovecot__ferm__dependent_rules[5].name = dovecot_sieve
+dovecot__ferm__dependent_rules[5].type = accept
+dovecot__ferm__dependent_rules[5].by_role = debops.dovecot
+dovecot__ferm__dependent_rules[5].dport[0] = sieve
+dovecot__ferm__dependent_rules[5].saddr = {{ dovecot__allow_sieve }}
+dovecot__ferm__dependent_rules[5].accept_any = {{ dovecot__accept_any }}
+dovecot__ferm__dependent_rules[5].rule_state = {{ "present"
+                    if ("sieve" in dovecot__features | d([])
+                         and dovecot__pki | d(True))
+                    else "absent" }}
+

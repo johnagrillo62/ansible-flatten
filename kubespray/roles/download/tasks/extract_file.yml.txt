@@ -1,0 +1,8 @@
+[0].name = Extract_file | Unpacking archive
+[0].unarchive.src = {{ download.dest }}
+[0].unarchive.dest = {{ download.dest | dirname }}
+[0].unarchive.owner = {{ download.owner | default(omit) }}
+[0].unarchive.mode = {{ download.mode | default(omit) }}
+[0].unarchive.remote_src = true
+[0].unarchive.extra_opts = {{ download.unarchive_extra_opts | default(omit) }}
+[0].when[0] = download.unarchive | default(false)

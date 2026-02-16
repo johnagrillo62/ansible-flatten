@@ -1,0 +1,15 @@
+~d0.networkd__host_units = 
+~d1.name = '30-bond1.network'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = '30-bond1.netdev'
+~d2.raw = |
+~d2.state = 'present'
+~d1.name = '30-bond1-dev1.network'
+~d2.raw = |
+~d3.MACAddress=52 = 54:00:e9:64:41
+~d2.state = 'present'
+~d1.name = '30-bond1-dev2.network'
+~d2.raw = |
+~d3.MACAddress=52 = 54:00:e9:64:42
+~d2.state = 'present'

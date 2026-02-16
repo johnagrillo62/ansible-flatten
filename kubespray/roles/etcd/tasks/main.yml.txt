@@ -1,0 +1,68 @@
+[0].name = Check etcd certs
+[0].include_tasks = check_certs.yml
+[0].when = cert_management == "script"
+[0].tags[0] = etcd-secrets
+[0].tags[1] = facts
+[1].name = Generate etcd certs
+[1].include_tasks = gen_certs_script.yml
+[1].when[0] = cert_management == "script"
+[1].tags[0] = etcd-secrets
+[2].name = Trust etcd CA
+[2].include_tasks = upd_ca_trust.yml
+[2].when[0] = ('etcd' in group_names) or ('kube_control_plane' in group_names)
+[2].tags[0] = etcd-secrets
+[3].name = Trust etcd CA on nodes if needed
+[3].include_tasks = upd_ca_trust.yml
+[3].when[0] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[3].when[1] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[3].when[2] = ('k8s_cluster' in group_names)
+[3].tags[0] = etcd-secrets
+[4].name = Gen_certs | Get etcd certificate serials
+[4].command = openssl x509 -in {{ etcd_cert_dir }}/node-{{ inventory_hostname }}.pem -noout -serial
+[4].register = etcd_client_cert_serial_result
+[4].changed_when = false
+[4].check_mode = false
+[4].when[0] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[4].when[1] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[4].when[2] = ('k8s_cluster' in group_names)
+[4].tags[0] = control-plane
+[4].tags[1] = network
+[5].name = Set etcd_client_cert_serial
+[5].set_fact.etcd_client_cert_serial = {{ etcd_client_cert_serial_result.stdout.split('=')[1] }}
+[5].when[0] = kube_network_plugin in ["calico", "flannel", "cilium"] or cilium_deploy_additionally
+[5].when[1] = kube_network_plugin != "calico" or calico_datastore == "etcd"
+[5].when[2] = ('k8s_cluster' in group_names)
+[5].tags[0] = control-plane
+[5].tags[1] = network
+[6].name = Install etcd
+[6].include_tasks = install_{{ etcd_deployment_type }}.yml
+[6].when = ('etcd' in group_names)
+[6].tags[0] = upgrade
+[7].name = Install etcdctl and etcdutl binary
+[7].import_role.name = etcdctl_etcdutl
+[7].tags[0] = etcdctl
+[7].tags[1] = etcdutl
+[7].tags[2] = upgrade
+[7].when[0] = ('etcd' in group_names)
+[7].when[1] = etcd_cluster_setup
+[8].name = Configure etcd
+[8].include_tasks = configure.yml
+[8].when = ('etcd' in group_names)
+[9].name = Refresh etcd config
+[9].include_tasks = refresh_config.yml
+[9].when = ('etcd' in group_names)
+[10].name = Restart etcd if certs changed
+[10].command = /bin/true
+[10].notify = Restart etcd
+[10].when[0] = ('etcd' in group_names)
+[10].when[1] = etcd_cluster_setup
+[10].when[2] = etcd_secret_changed | default(false)
+[11].name = Restart etcd-events if certs changed
+[11].command = /bin/true
+[11].notify = Restart etcd
+[11].when[0] = ('etcd' in group_names)
+[11].when[1] = etcd_events_cluster_setup
+[11].when[2] = etcd_secret_changed | default(false)
+[12].name = Refresh etcd config again for idempotency
+[12].include_tasks = refresh_config.yml
+[12].when = ('etcd' in group_names)

@@ -1,0 +1,6 @@
+[0].hosts = all
+[0].vars.firewall_enable_ipv6 = false
+[0].tasks[0].name = Update the apt cache so we can install ufw.
+[0].tasks[0].apt = update_cache=yes cache_valid_time=600
+[1].import_playbook = ../jenkins/provision.yml
+[1].vars.firewall_enable_ipv6 = false

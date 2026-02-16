@@ -1,0 +1,4 @@
+~d0.name = Manage ownCloud/Nextcloud with Apache frontend
+~d1.import_playbook = 'owncloud-apache.yml'
+~d0.name = Manage ownCloud/Nextcloud with nginx frontend
+~d1.import_playbook = 'owncloud-nginx.yml'

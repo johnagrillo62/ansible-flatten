@@ -1,0 +1,28 @@
+[0].name = create data directory for mongodb
+[0].file = path={{ mongodb_datadir_prefix }}/mongo-{{ inventory_hostname }} state=directory owner=mongod group=mongod
+[0].delegate_to = {{ item }}
+[0].with_items = groups.replication_servers
+[1].name = create log directory for mongodb
+[1].file = path=/var/log/mongo state=directory owner=mongod group=mongod
+[2].name = create run directory for mongodb
+[2].file = path=/var/run/mongo state=directory owner=mongod group=mongod
+[3].name = Create the mongodb startup file
+[3].template = src=mongod.j2 dest=/etc/init.d/mongod-{{ inventory_hostname }} mode=0655
+[3].delegate_to = {{ item }}
+[3].with_items = groups.replication_servers
+[4].name = Create the mongodb configuration file
+[4].template = src=mongod.conf.j2 dest=/etc/mongod-{{ inventory_hostname }}.conf
+[4].delegate_to = {{ item }}
+[4].with_items = groups.replication_servers
+[5].name = Copy the keyfile for authentication
+[5].copy = src=secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+[6].name = Start the mongodb service
+[6].command = creates=/var/lock/subsys/mongod-{{ inventory_hostname }} /etc/init.d/mongod-{{ inventory_hostname }} start
+[6].delegate_to = {{ item }}
+[6].with_items = groups.replication_servers
+[7].name = Create the file to initialize the mongod replica set
+[7].template = src=repset_init.j2 dest=/tmp/repset_init.js
+[8].name = Pause for a while
+[8].pause = seconds=20
+[9].name = Initialize the replication set
+[9].shell = /usr/bin/mongo --port "{{ mongod_port }}" /tmp/repset_init.js

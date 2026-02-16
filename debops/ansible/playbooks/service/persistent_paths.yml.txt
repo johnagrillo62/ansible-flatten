@@ -1,0 +1,8 @@
+~d0.name = Ensure paths are stored on persistent storage
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_persistent_paths' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = persistent_paths
+~d3.tags = [ 'role::persistent_paths', 'skip::persistent_paths' ]

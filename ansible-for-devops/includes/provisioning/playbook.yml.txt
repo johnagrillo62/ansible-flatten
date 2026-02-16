@@ -1,0 +1,13 @@
+[0].hosts = all
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].pre_tasks[0].name = Update apt cache if needed.
+[0].pre_tasks[0].apt = update_cache=yes cache_valid_time=3600
+[0].handlers[0].import_tasks = handlers/handlers.yml
+[0].tasks[0].import_tasks = tasks/common.yml
+[0].tasks[1].import_tasks = tasks/apache.yml
+[0].tasks[2].import_tasks = tasks/php.yml
+[0].tasks[3].import_tasks = tasks/mysql.yml
+[0].tasks[4].import_tasks = tasks/composer.yml
+[0].tasks[5].import_tasks = tasks/drush.yml
+[0].tasks[6].import_tasks = tasks/drupal.yml

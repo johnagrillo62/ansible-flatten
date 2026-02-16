@@ -1,0 +1,2 @@
+~d0.name = Manage Foodsoft with nginx frontend
+~d1.import_playbook = 'foodsoft-nginx.yml'

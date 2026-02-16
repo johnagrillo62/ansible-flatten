@@ -1,0 +1,7 @@
+~d0.cloud_image = fedora-40
+~d0.network_plugin = flannel
+~d0.container_manager = crio
+~d0.cluster_layout = 
+~d1.node_groups = ['kube_control_plane', 'etcd']
+~d1.node_groups = ['kube_node']
+~d1.node_groups = ['kube_node', 'for_scale']

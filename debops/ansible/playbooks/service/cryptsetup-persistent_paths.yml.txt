@@ -1,0 +1,11 @@
+~d0.name = Setup and manage encrypted filesystems and ensure persistence
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_cryptsetup_persistent_paths' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = cryptsetup
+~d3.tags = [ 'role::cryptsetup', 'skip::cryptsetup' ]
+~d2.role = persistent_paths
+~d3.tags = [ 'role::persistent_paths', 'skip::persistent_paths' ]
+~d3.persistent_paths__dependent_paths = '{{ cryptsetup__persistent_paths__dependent_paths }}'

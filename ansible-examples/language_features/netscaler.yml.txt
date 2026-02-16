@@ -1,0 +1,13 @@
+[0].hosts = web-pool
+[0].serial = 3
+[0].vars.nsc_host = nsc.example.com
+[0].vars.nsc_user = admin
+[0].vars.nsc_pass = nimda
+[0].vars.type = service
+[0].vars.name = {{facter_fqdn}}:8080
+[0].tasks[0].name = disable service in the lb
+[0].tasks[0].netscaler = nsc_host={{nsc_host}} user={{nsc_user}} password={{nsc_pass}} name={{name}} type={{type}} action=disable
+[0].tasks[1].name = deploy new code
+[0].tasks[1].shell = yum upgrade -y
+[0].tasks[2].name = enable in the lb
+[0].tasks[2].netscaler = nsc_host={{nsc_host}} user={{nsc_user}} password={{nsc_pass}} name={{name}} type={{type}} action=enable

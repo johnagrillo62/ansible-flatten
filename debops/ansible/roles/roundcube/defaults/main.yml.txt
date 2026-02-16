@@ -1,0 +1,3242 @@
+roundcube__required_php_packages[0] = iconv
+roundcube__required_php_packages[1] = openssl
+roundcube__required_php_packages[2] = session
+roundcube__required_php_packages[3] = sockets
+roundcube__required_php_packages[4] = xml
+roundcube__required_php_packages[5] = mbstring
+roundcube__required_php_packages[6] = json
+roundcube__required_php_packages[7] = intl
+roundcube__optional_php_packages[0] = {{ "ldap" if roundcube__ldap_enabled | bool else [] }}
+roundcube__optional_php_packages[1] = {{ "memcached" if roundcube__memcached_enabled | bool else [] }}
+roundcube__optional_php_packages[2] = {{ "redis" if roundcube__redis_enabled | bool else [] }}
+roundcube__optional_php_packages[3] = fileinfo
+roundcube__optional_php_packages[4] = enchant
+roundcube__optional_php_packages[5] = zip
+roundcube__base_php_packages[0] = {{ roundcube__required_php_packages }}
+roundcube__base_php_packages[1] = {{ roundcube__apt_php_packages }}
+roundcube__base_php_packages[2] = {{ roundcube__optional_php_packages }}
+roundcube__base_php_packages[3] = {{ ["mysql"] if (roundcube__database_map[roundcube__database].dbtype == "mysql") else [] }}
+roundcube__base_php_packages[4] = {{ ["pgsql"] if (roundcube__database_map[roundcube__database].dbtype == "postgresql") else [] }}
+roundcube__base_php_packages[5] = {{ ["sqlite3"] if (roundcube__database_map[roundcube__database].dbtype == "sqlite") else [] }}
+roundcube__apt_php_packages = {{ ["mail-mime", "net-smtp", "pear"]
+                                 if ansible_distribution_release in ["stretch", "buster", "sid", "xenial", "yakkety", "zesty", "artful"]
+                                 else [] }}
+
+roundcube__base_packages[0] = curl
+roundcube__base_packages[1] = file
+roundcube__base_packages[2] = unzip
+roundcube__base_packages[3] = aspell
+roundcube__base_packages[4] = aspell-en
+roundcube__user = roundcube
+roundcube__group = roundcube
+roundcube__home = {{ (ansible_local.fhs.home | d("/var/local"))
+                     + "/" + roundcube__user }} 
+roundcube__comment = Roundcube Webmail
+roundcube__shell = /usr/sbin/nologin
+roundcube__git_gpg_key = 4295 5C9D 6F2A CA9D 3E96  D55F 3E54 28D0 262C 54F8
+roundcube__git_repo = https://github.com/roundcube/roundcubemail.git
+roundcube__git_dir = {{ roundcube__src + "/"
+                        + roundcube__git_repo.split("@"
+                                                    if ("@" in roundcube__git_repo)
+                                                    else "://")[1] }}
+
+roundcube__git_version = 1.6.0
+roundcube__git_dest = {{ roundcube__www + "/sites/" + roundcube__user + "/public" }}
+roundcube__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                    + "/" + roundcube__user }} 
+roundcube__www = {{ ansible_local.nginx.www
+                    if (ansible_local | d() and ansible_local.nginx | d())
+                    else "/srv/www" }}
+
+roundcube__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
+roundcube__database = sqlite-default
+roundcube__database_user = roundcube
+roundcube__database_password_path = {{ secret + "/credentials/" + inventory_hostname
+                                       + "/roundcube/" + roundcube__database
+                                       + "/" + roundcube__database_user + "/password" }}
+
+roundcube__database_password = {{ lookup("password", roundcube__database_password_path + " length=30") }}
+roundcube__database_name = {{ roundcube__database_user
+                              if roundcube__database == "postgresql-default"
+                              else "roundcubemail" }}
+
+roundcube__database_map.sqlite-default.dbtype = sqlite
+roundcube__database_map.sqlite-default.dbname = db/roundcube.db
+roundcube__database_map.mysql-default.dbtype = mysql
+roundcube__database_map.mysql-default.dbname = {{ roundcube__database_name }}
+roundcube__database_map.mysql-default.dbuser = {{ roundcube__database_user }}
+roundcube__database_map.mysql-default.dbpass = {{ roundcube__database_password }}
+roundcube__database_map.mysql-default.dbhost = localhost
+roundcube__database_map.mysql-default.dbtableprefix = 
+roundcube__database_map.postgresql-default.dbtype = postgresql
+roundcube__database_map.postgresql-default.dbname = {{ roundcube__database_name }}
+roundcube__database_map.postgresql-default.dbuser = {{ roundcube__database_user }}
+roundcube__database_map.postgresql-default.dbpass = {{ roundcube__database_password }}
+roundcube__database_map.postgresql-default.dbhost = localhost
+roundcube__database_map.postgresql-default.dbtableprefix = 
+roundcube__database_schema_map.mysql = {{ roundcube__git_dest + "/SQL/mysql.initial.sql" }}
+roundcube__database_schema_map.postgresql = {{ roundcube__git_dest + "/SQL/postgres.initial.sql" }}
+roundcube__database_schema = {{ roundcube__database_schema_map[roundcube__database_map[roundcube__database].dbtype]
+                                if roundcube__database_schema_map[roundcube__database_map[roundcube__database].dbtype] | d()
+                                else "" }}
+
+roundcube__memcached_enabled = {{ True
+                                  if (ansible_local | d() and ansible_local.memcached | d() and
+                                      (ansible_local.memcached.installed | d()) | bool)
+                                  else False }}
+
+roundcube__memcached_hosts[0] = localhost:11211
+roundcube__redis_enabled = {{ True
+                              if (ansible_local | d() and ansible_local.redis_server | d() and
+                                  (ansible_local.redis_server.installed | d()) | bool)
+                              else False }}
+
+roundcube__redis_server = localhost
+roundcube__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
+roundcube__redis_database = 1
+roundcube__redis_password = {{ ansible_local.redis_server.password | d("") }}
+roundcube__redis_hosts[0] = {{ ([roundcube__redis_server,
+                                roundcube__redis_port,
+                                roundcube__redis_database,
+                                roundcube__redis_password])
+                              | join(":") }}
+
+roundcube__session_storage = {{ "redis"
+                                if roundcube__redis_enabled | bool
+                                else ("memcached"
+                                      if roundcube__memcached_enabled | bool
+                                      else "") }}
+
+roundcube__ldap_enabled = {{ ansible_local.ldap.enabled
+                             if (ansible_local | d() and ansible_local.ldap | d() and
+                                 ansible_local.ldap.enabled is defined)
+                             else False }}
+
+roundcube__ldap_password_enabled = {{ roundcube__ldap_enabled }}
+roundcube__ldap_addressbook_name = LDAP Address Book
+roundcube__ldap_hosts = {{ ansible_local.ldap.hosts | d([]) }}
+roundcube__ldap_port = {{ ansible_local.ldap.port | d("389") }}
+roundcube__ldap_use_tls = {{ ansible_local.ldap.start_tls | d(True) }}
+roundcube__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+roundcube__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+roundcube__ldap_self_rdn = {{ "uid=" + roundcube__user }}
+roundcube__ldap_self_object_classes[0] = account
+roundcube__ldap_self_object_classes[1] = simpleSecurityObject
+roundcube__ldap_self_attributes.uid = {{ roundcube__ldap_self_rdn.split("=")[1] }}
+roundcube__ldap_self_attributes.userPassword = {{ roundcube__ldap_bindpw }}
+roundcube__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+roundcube__ldap_self_attributes.description = Account used by the "Roundcube" application to access the LDAP directory
+roundcube__ldap_binddn = {{ ([roundcube__ldap_self_rdn] + roundcube__ldap_device_dn) | join(",") }}
+roundcube__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                    + roundcube__ldap_binddn | to_uuid + ".password length=32"))
+                            if roundcube__ldap_enabled | bool
+                            else "" }}
+
+roundcube__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d([]) }}
+roundcube__ldap_people_dn = {{ [roundcube__ldap_people_rdn]
+                               + roundcube__ldap_base_dn }} 
+roundcube__ldap_groups_rdn = {{ ansible_local.ldap.groups_rdn | d([]) }}
+roundcube__ldap_groups_dn = {{ [roundcube__ldap_groups_rdn]
+                               + roundcube__ldap_base_dn }} 
+roundcube__ldap_hidden = True
+roundcube__ldap_field_map.name = cn
+roundcube__ldap_field_map.firstname = givenName
+roundcube__ldap_field_map.surname = sn
+roundcube__ldap_field_map.jobtitle = title
+roundcube__ldap_field_map.email = mail:*
+roundcube__ldap_field_map.phone:home = homePhone
+roundcube__ldap_field_map.phone:work = telephoneNumber
+roundcube__ldap_field_map.phone:mobile = mobile
+roundcube__ldap_field_map.phone:pager = pager
+roundcube__ldap_field_map.phone:workfax = facsimileTelephoneNumber
+roundcube__ldap_field_map.street = street
+roundcube__ldap_field_map.zipcode = postalCode
+roundcube__ldap_field_map.region = st
+roundcube__ldap_field_map.locality = l
+roundcube__ldap_field_map.notes = description:*
+roundcube__ldap_field_map.photo = jpegPhoto
+roundcube__fqdn = webmail.{{ roundcube__domain }}
+roundcube__domain = {{ ansible_domain }}
+roundcube__imap_srv_rr = {{ q("debops.debops.dig_srv", "_imaps._tcp." + roundcube__domain,
+                              ansible_fqdn
+                              if (ansible_local | d() and ansible_local.dovecot | d() and
+                                  (ansible_local.dovecot.installed | d()) | bool)
+                              else "imap." + roundcube__domain, 993) }}
+
+roundcube__imap_fqdn = {{ roundcube__imap_srv_rr[0]["target"] }}
+roundcube__imap_port = {{ roundcube__imap_srv_rr[0]["port"] }}
+roundcube__imap_server = {{ ("ssl://"
+                             if (roundcube__imap_port == "993")
+                             else ("tls://"
+                                   if (roundcube__imap_port == "143")
+                                   else "tls://"))
+                             + roundcube__imap_fqdn
+                             + ":" + roundcube__imap_port }}
+
+roundcube__smtp_srv_rr = {{ q("debops.debops.dig_srv", "_submissions._tcp." + roundcube__domain,
+                              ansible_fqdn
+                              if (ansible_local | d() and ansible_local.postfix | d() and
+                                  (ansible_local.postfix.installed | d()) | bool)
+                              else ("smtp." + roundcube__domain), 465) }}
+
+roundcube__smtp_fqdn = {{ roundcube__smtp_srv_rr[0]["target"] }}
+roundcube__smtp_port = {{ roundcube__smtp_srv_rr[0]["port"] }}
+roundcube__smtp_server = {{ ("ssl://"
+                             if (roundcube__smtp_port == "465")
+                             else ("tls://"
+                                   if (roundcube__smtp_port == "587")
+                                   else "tls://"))
+                             + roundcube__smtp_fqdn
+                             + ":" + roundcube__smtp_port }}
+
+roundcube__smtp_user = %u
+roundcube__smtp_pass = %p
+roundcube__sieve_srv_rr = {{ q("debops.debops.dig_srv", "_sieve._tcp." + roundcube__domain,
+                               ansible_fqdn
+                               if (ansible_local | d() and ansible_local.dovecot | d() and
+                                   (ansible_local.dovecot.installed | d()) | bool)
+                               else ("sieve." + roundcube__domain), 4190) }}
+
+roundcube__sieve_fqdn = {{ roundcube__sieve_srv_rr[0]["target"] }}
+roundcube__sieve_port = {{ roundcube__sieve_srv_rr[0]["port"] }}
+roundcube__sieve_server = {{ "tls://" + roundcube__sieve_fqdn }}
+roundcube__product_name = {{ ansible_local.machine.organization | d("Roundcube") + " Webmail" }}
+roundcube__des_key = {{ lookup("password", secret + "/credentials/" + inventory_hostname + "/roundcube/des_key chars=hexdigits length=24") }}
+roundcube__username_domain = %d
+roundcube__log_driver = syslog
+roundcube__original_configuration[0].name = init_config
+roundcube__original_configuration[0].raw = $config = array();
+
+roundcube__original_configuration[0].section = init
+roundcube__original_configuration[1].name = db_dsnw
+roundcube__original_configuration[1].comment = Database connection string (DSN) for read+write operations
+Format (compatible with PEAR MDB2): db_provider://user:password@host/database
+Currently supported db_providers: mysql, pgsql, sqlite, mssql, sqlsrv, oracle
+For examples see https://pear.php.net/manual/en/package.database.mdb2.intro-dsn.php
+Note: for SQLite use absolute path (Linux): 'sqlite:////full/path/to/sqlite.db?mode=0646'
+      or (Windows): 'sqlite:///C:/full/path/to/sqlite.db'
+Note: Various drivers support various additional arguments for connection,
+      for Mysql: key, cipher, cert, capath, ca, verify_server_cert,
+      for Postgres: application_name, sslmode, sslcert, sslkey,
+      sslrootcert, sslcrl, sslcompression, service.
+      e.g. 'mysql://roundcube:@localhost/roundcubemail?verify_server_cert=false'
+
+roundcube__original_configuration[1].value = mysql://roundcube:pass@localhost/roundcubemail
+roundcube__original_configuration[1].section = sql
+roundcube__original_configuration[2].name = db_dsnr
+roundcube__original_configuration[2].comment = Database DSN for read-only operations (if empty write database will be used)
+useful for database replication
+
+roundcube__original_configuration[2].value = 
+roundcube__original_configuration[2].section = sql
+roundcube__original_configuration[2].state = init
+roundcube__original_configuration[3].name = db_dsnw_noread
+roundcube__original_configuration[3].comment = Disable the use of already established dsnw connections for subsequent reads
+roundcube__original_configuration[3].value = False
+roundcube__original_configuration[3].section = sql
+roundcube__original_configuration[3].state = init
+roundcube__original_configuration[4].name = db_persistent
+roundcube__original_configuration[4].comment = use persistent db-connections
+beware this will not "always" work as expected
+see: http://www.php.net/manual/en/features.persistent-connections.php
+
+roundcube__original_configuration[4].value = False
+roundcube__original_configuration[4].section = sql
+roundcube__original_configuration[4].state = init
+roundcube__original_configuration[5].name = db_prefix
+roundcube__original_configuration[5].comment = You can define specific table (and sequence) names prefix
+roundcube__original_configuration[5].value = 
+roundcube__original_configuration[5].section = sql
+roundcube__original_configuration[5].state = init
+roundcube__original_configuration[6].name = db_table_dsn
+roundcube__original_configuration[6].comment = Mapping of table names and connections to use for ALL operations.
+This can be used in a setup with replicated databases and a DB master
+where read/write access to cache tables should not go to master.
+
+roundcube__original_configuration[6].array[0].cache = r
+roundcube__original_configuration[6].array[0].cache_index = r
+roundcube__original_configuration[6].array[0].cache_thread = r
+roundcube__original_configuration[6].array[0].cache_messages = r
+roundcube__original_configuration[6].section = sql
+roundcube__original_configuration[6].state = init
+roundcube__original_configuration[7].name = db_max_allowed_packet
+roundcube__original_configuration[7].comment = It is possible to specify database variable values e.g. some limits here.
+Use them if your server is not MySQL or for better performance.
+For example Roundcube uses max_allowed_packet value (in bytes)
+which limits query size for database cache operations.
+
+roundcube__original_configuration[7].value = null
+roundcube__original_configuration[7].section = sql
+roundcube__original_configuration[7].state = init
+roundcube__original_configuration[8].name = log_driver
+roundcube__original_configuration[8].comment = Log driver: 'syslog', 'stdout' or 'file'.
+
+roundcube__original_configuration[8].value = file
+roundcube__original_configuration[8].section = logging
+roundcube__original_configuration[8].state = init
+roundcube__original_configuration[9].name = log_date_format
+roundcube__original_configuration[9].comment = Date format for log entries
+(read https://php.net/manual/en/function.date.php for all format characters)
+
+roundcube__original_configuration[9].value = d-M-Y H:i:s O
+roundcube__original_configuration[9].section = logging
+roundcube__original_configuration[9].state = init
+roundcube__original_configuration[10].name = log_session_id
+roundcube__original_configuration[10].comment = Length of the session ID to prepend each log line with
+set to 0 to avoid session IDs being logged.
+
+roundcube__original_configuration[10].value = 8
+roundcube__original_configuration[10].section = logging
+roundcube__original_configuration[10].state = init
+roundcube__original_configuration[11].name = log_file_ext
+roundcube__original_configuration[11].comment = Default extension used for log file name
+roundcube__original_configuration[11].value = .log
+roundcube__original_configuration[11].section = logging
+roundcube__original_configuration[11].state = init
+roundcube__original_configuration[12].name = syslog_id
+roundcube__original_configuration[12].comment = Syslog ident string to use, if using the "syslog" log driver.
+roundcube__original_configuration[12].value = roundcube
+roundcube__original_configuration[12].section = logging
+roundcube__original_configuration[12].state = init
+roundcube__original_configuration[13].name = syslog_facility
+roundcube__original_configuration[13].comment = Syslog facility to use, if using the 'syslog' log driver.
+For possible values see installer or https://php.net/manual/en/function.openlog.php
+
+roundcube__original_configuration[13].value = LOG_USER
+roundcube__original_configuration[13].quotes = False
+roundcube__original_configuration[13].section = logging
+roundcube__original_configuration[13].state = init
+roundcube__original_configuration[14].name = per_user_logging
+roundcube__original_configuration[14].comment = Activate this option if logs should be written to per-user directories.
+Data will only be logged if a directory <log_dir>/<username>/ exists and is writable.
+
+roundcube__original_configuration[14].value = False
+roundcube__original_configuration[14].section = logging
+roundcube__original_configuration[14].state = init
+roundcube__original_configuration[15].name = smtp_log
+roundcube__original_configuration[15].comment = Log sent messages to <log_dir>/sendmail.log or to syslog
+roundcube__original_configuration[15].value = True
+roundcube__original_configuration[15].section = logging
+roundcube__original_configuration[15].state = init
+roundcube__original_configuration[16].name = log_logins
+roundcube__original_configuration[16].comment = Log successful/failed logins to <log_dir>/userlogins.log or to syslog
+roundcube__original_configuration[16].value = False
+roundcube__original_configuration[16].section = logging
+roundcube__original_configuration[16].state = init
+roundcube__original_configuration[17].name = session_debug
+roundcube__original_configuration[17].comment = Log session debug information/authentication errors to <log_dir>/session.log or to syslog
+
+roundcube__original_configuration[17].value = False
+roundcube__original_configuration[17].section = logging
+roundcube__original_configuration[17].state = init
+roundcube__original_configuration[18].name = sql_debug
+roundcube__original_configuration[18].comment = Log SQL queries to <log_dir>/sql.log or to syslog
+roundcube__original_configuration[18].value = False
+roundcube__original_configuration[18].section = logging
+roundcube__original_configuration[18].state = init
+roundcube__original_configuration[19].name = imap_debug
+roundcube__original_configuration[19].comment = Log IMAP conversation to <log_dir>/imap.log or to syslog
+roundcube__original_configuration[19].value = False
+roundcube__original_configuration[19].section = logging
+roundcube__original_configuration[19].state = init
+roundcube__original_configuration[20].name = ldap_debug
+roundcube__original_configuration[20].comment = Log LDAP conversation to <log_dir>/ldap.log or to syslog
+roundcube__original_configuration[20].value = False
+roundcube__original_configuration[20].section = logging
+roundcube__original_configuration[20].state = init
+roundcube__original_configuration[21].name = smtp_debug
+roundcube__original_configuration[21].comment = Log SMTP conversation to <log_dir>/smtp.log or to syslog
+roundcube__original_configuration[21].value = False
+roundcube__original_configuration[21].section = logging
+roundcube__original_configuration[21].state = init
+roundcube__original_configuration[22].name = memcache_debug
+roundcube__original_configuration[22].comment = Log Memcache conversation to <log_dir>/memcache.log or to syslog
+roundcube__original_configuration[22].value = False
+roundcube__original_configuration[22].section = logging
+roundcube__original_configuration[22].state = init
+roundcube__original_configuration[23].name = apc_debug
+roundcube__original_configuration[23].comment = Log APC conversation to <log_dir>/apc.log or to syslog
+roundcube__original_configuration[23].value = False
+roundcube__original_configuration[23].section = logging
+roundcube__original_configuration[23].state = init
+roundcube__original_configuration[24].name = redis_debug
+roundcube__original_configuration[24].comment = Log Redis conversation to <log_dir>/redis.log or to syslog
+roundcube__original_configuration[24].value = False
+roundcube__original_configuration[24].section = logging
+roundcube__original_configuration[24].state = init
+roundcube__original_configuration[25].name = imap_host
+roundcube__original_configuration[25].comment = IMAP host chosen to perform the log-in.
+See defaults.inc.php for the option description.
+
+roundcube__original_configuration[25].value = localhost:143
+roundcube__original_configuration[25].section = imap
+roundcube__original_configuration[26].name = imap_auth_type
+roundcube__original_configuration[26].comment = IMAP authentication method (DIGEST-MD5, CRAM-MD5, LOGIN, PLAIN or null).
+Use 'IMAP' to authenticate with IMAP LOGIN command.
+By default the most secure method (from supported) will be selected.
+
+roundcube__original_configuration[26].value = null
+roundcube__original_configuration[26].section = imap
+roundcube__original_configuration[26].state = init
+roundcube__original_configuration[27].name = imap_conn_options
+roundcube__original_configuration[27].comment = IMAP socket context options
+See https://php.net/manual/en/context.ssl.php
+The example below enables server certificate validation
+Note: These can be also specified as an array of options indexed by hostname
+
+roundcube__original_configuration[27].array[0].ssl[0].verify_peer = True
+roundcube__original_configuration[27].array[0].ssl[0].verify_depth = 3
+roundcube__original_configuration[27].array[0].ssl[0].cafile = /etc/ssl/certs/ca-certificates.crt
+roundcube__original_configuration[27].section = imap
+roundcube__original_configuration[27].state = init
+roundcube__original_configuration[28].name = imap_timeout
+roundcube__original_configuration[28].comment = IMAP connection timeout, in seconds. Default: 0 (use default_socket_timeout)
+roundcube__original_configuration[28].value = 0
+roundcube__original_configuration[28].section = imap
+roundcube__original_configuration[28].state = init
+roundcube__original_configuration[29].name = imap_auth_cid
+roundcube__original_configuration[29].comment = Optional IMAP authentication identifier to be used as authorization proxy
+roundcube__original_configuration[29].value = null
+roundcube__original_configuration[29].section = imap
+roundcube__original_configuration[29].state = init
+roundcube__original_configuration[30].name = imap_auth_pw
+roundcube__original_configuration[30].comment = Optional IMAP authentication password to be used for imap_auth_cid
+roundcube__original_configuration[30].value = null
+roundcube__original_configuration[30].section = imap
+roundcube__original_configuration[30].state = init
+roundcube__original_configuration[31].name = imap_delimiter
+roundcube__original_configuration[31].comment = If you know your imap's folder delimiter, you can specify it here.
+Otherwise it will be determined automatically
+
+roundcube__original_configuration[31].value = null
+roundcube__original_configuration[31].section = imap
+roundcube__original_configuration[31].state = init
+roundcube__original_configuration[32].name = imap_vendor
+roundcube__original_configuration[32].comment = If you know your imap's folder vendor, you can specify it here.
+Otherwise it will be determined automatically. Use lower-case
+identifiers, e.g. 'dovecot', 'cyrus', 'gimap', 'hmail', 'uw-imap'.
+
+roundcube__original_configuration[32].value = null
+roundcube__original_configuration[32].section = imap
+roundcube__original_configuration[32].state = init
+roundcube__original_configuration[33].name = imap_ns_personal
+roundcube__original_configuration[33].comment = If IMAP server doesn't support NAMESPACE extension, but you're
+using shared folders or personal root folder is non-empty, you'll need to
+set these options. All can be strings or arrays of strings.
+Note: Folders need to be ended with directory separator, e.g. "INBOX."
+      (special directory "~" is an exception to this rule)
+Note: These can be used also to overwrite server's namespaces
+Note: Set these to FALSE to disable access to specified namespace
+
+roundcube__original_configuration[33].value = null
+roundcube__original_configuration[33].section = imap
+roundcube__original_configuration[33].state = init
+roundcube__original_configuration[34].name = imap_ns_other
+roundcube__original_configuration[34].value = null
+roundcube__original_configuration[34].section = imap
+roundcube__original_configuration[34].state = init
+roundcube__original_configuration[35].name = imap_ns_shared
+roundcube__original_configuration[35].value = null
+roundcube__original_configuration[35].section = imap
+roundcube__original_configuration[35].state = init
+roundcube__original_configuration[36].name = imap_force_caps
+roundcube__original_configuration[36].comment = By default IMAP capabilities are read after connection to IMAP server
+In some cases, e.g. when using IMAP proxy, there's a need to refresh the list
+after login. Set to True if you've got this case.
+
+roundcube__original_configuration[36].value = False
+roundcube__original_configuration[36].section = imap
+roundcube__original_configuration[36].state = init
+roundcube__original_configuration[37].name = imap_force_lsub
+roundcube__original_configuration[37].comment = By default list of subscribed folders is determined using LIST-EXTENDED
+extension if available. Some servers (dovecot 1.x) returns wrong results
+for shared namespaces in this case. https://github.com/roundcube/roundcubemail/issues/2474
+Enable this option to force LSUB command usage instead.
+Deprecated: Use imap_disabled_caps = array('LIST-EXTENDED')
+
+roundcube__original_configuration[37].value = False
+roundcube__original_configuration[37].section = imap
+roundcube__original_configuration[37].state = init
+roundcube__original_configuration[38].name = imap_force_ns
+roundcube__original_configuration[38].comment = Some server configurations (e.g. Courier) doesn't list folders in all namespaces
+Enable this option to force listing of folders in all namespaces
+
+roundcube__original_configuration[38].value = False
+roundcube__original_configuration[38].section = imap
+roundcube__original_configuration[38].state = init
+roundcube__original_configuration[39].name = imap_skip_hidden_folders
+roundcube__original_configuration[39].comment = Some servers return hidden folders (name starting with a dot)
+from user home directory. IMAP RFC does not forbid that.
+Enable this option to hide them and disable possibility to create such.
+
+roundcube__original_configuration[39].value = False
+roundcube__original_configuration[39].section = imap
+roundcube__original_configuration[39].state = init
+roundcube__original_configuration[40].name = imap_dual_use_folders
+roundcube__original_configuration[40].comment = Some servers do not support folders with both folders and messages inside
+If your server supports that use true, if it does not, use false.
+By default it will be determined automatically (once per user session).
+
+roundcube__original_configuration[40].value = null
+roundcube__original_configuration[40].section = imap
+roundcube__original_configuration[40].state = init
+roundcube__original_configuration[41].name = imap_disabled_caps
+roundcube__original_configuration[41].comment = List of disabled imap extensions.
+Use if your IMAP server has broken implementation of some feature
+and you can't remove it from CAPABILITY string on server-side.
+For example UW-IMAP server has broken ESEARCH.
+Note: Because the list is cached, re-login is required after change.
+
+roundcube__original_configuration[41].section = imap
+roundcube__original_configuration[41].state = init
+roundcube__original_configuration[42].name = imap_log_session
+roundcube__original_configuration[42].comment = Log IMAP session identifiers after each IMAP login.
+This is used to relate IMAP session with Roundcube user sessions
+
+roundcube__original_configuration[42].value = False
+roundcube__original_configuration[42].section = imap
+roundcube__original_configuration[42].state = init
+roundcube__original_configuration[43].name = imap_cache
+roundcube__original_configuration[43].comment = Type of IMAP indexes cache. Supported values: 'db', 'apc' and 'memcache' or 'memcached'.
+
+roundcube__original_configuration[43].value = null
+roundcube__original_configuration[43].section = imap
+roundcube__original_configuration[43].state = init
+roundcube__original_configuration[44].name = messages_cache
+roundcube__original_configuration[44].comment = Enables messages cache. Only 'db' cache is supported.
+This requires an IMAP server that supports QRESYNC and CONDSTORE
+extensions (RFC7162). See synchronize() in program/lib/Roundcube/rcube_imap_cache.php
+for further info, or if you experience syncing problems.
+
+roundcube__original_configuration[44].value = False
+roundcube__original_configuration[44].section = imap
+roundcube__original_configuration[44].state = init
+roundcube__original_configuration[45].name = imap_cache_ttl
+roundcube__original_configuration[45].comment = Lifetime of IMAP indexes cache. Possible units: s, m, h, d, w
+roundcube__original_configuration[45].value = 10d
+roundcube__original_configuration[45].section = imap
+roundcube__original_configuration[45].state = init
+roundcube__original_configuration[46].name = messages_cache_ttl
+roundcube__original_configuration[46].comment = Lifetime of messages cache. Possible units: s, m, h, d, w
+roundcube__original_configuration[46].value = 10d
+roundcube__original_configuration[46].section = imap
+roundcube__original_configuration[46].state = init
+roundcube__original_configuration[47].name = messages_cache_threshold
+roundcube__original_configuration[47].comment = Maximum cached message size in kilobytes.
+Note: On MySQL this should be less than (max_allowed_packet - 30%)
+
+roundcube__original_configuration[47].value = 50
+roundcube__original_configuration[47].section = imap
+roundcube__original_configuration[47].state = init
+roundcube__original_configuration[48].name = smtp_host
+roundcube__original_configuration[48].comment = SMTP server host (for sending mails).
+See defaults.inc.php for the option description.
+
+roundcube__original_configuration[48].value = localhost:587
+roundcube__original_configuration[48].section = smtp
+roundcube__original_configuration[49].name = smtp_user
+roundcube__original_configuration[49].comment = SMTP username (if required) if you use %u as the username Roundcube
+will use the current username for login
+
+roundcube__original_configuration[49].value = %u
+roundcube__original_configuration[49].section = smtp
+roundcube__original_configuration[50].name = smtp_pass
+roundcube__original_configuration[50].comment = SMTP password (if required) if you use %p as the password Roundcube
+will use the current user's password for login
+
+roundcube__original_configuration[50].value = %p
+roundcube__original_configuration[50].section = smtp
+roundcube__original_configuration[51].name = smtp_auth_type
+roundcube__original_configuration[51].comment = SMTP AUTH type (DIGEST-MD5, CRAM-MD5, LOGIN, PLAIN or empty to use
+best server supported one)
+
+roundcube__original_configuration[51].value = null
+roundcube__original_configuration[51].section = smtp
+roundcube__original_configuration[51].state = init
+roundcube__original_configuration[52].name = smtp_auth_cid
+roundcube__original_configuration[52].comment = Optional SMTP authentication identifier to be used as authorization proxy
+
+roundcube__original_configuration[52].value = null
+roundcube__original_configuration[52].section = smtp
+roundcube__original_configuration[52].state = init
+roundcube__original_configuration[53].name = smtp_auth_pw
+roundcube__original_configuration[53].comment = Optional SMTP authentication password to be used for smtp_auth_cid
+
+roundcube__original_configuration[53].value = null
+roundcube__original_configuration[53].section = smtp
+roundcube__original_configuration[53].state = init
+roundcube__original_configuration[54].name = smtp_helo_host
+roundcube__original_configuration[54].comment = SMTP HELO host
+Hostname to give to the remote server for SMTP 'HELO' or 'EHLO' messages
+Leave this blank and you will get the server variable 'server_name' or
+localhost if that isn't defined.
+
+roundcube__original_configuration[54].value = 
+roundcube__original_configuration[54].section = smtp
+roundcube__original_configuration[54].state = init
+roundcube__original_configuration[55].name = smtp_timeout
+roundcube__original_configuration[55].comment = SMTP connection timeout, in seconds. Default: 0 (use default_socket_timeout)
+Note: There's a known issue where using ssl connection with
+timeout > 0 causes connection errors (https://bugs.php.net/bug.php?id=54511)
+
+roundcube__original_configuration[55].value = 0
+roundcube__original_configuration[55].section = smtp
+roundcube__original_configuration[55].state = init
+roundcube__original_configuration[56].name = smtp_conn_options
+roundcube__original_configuration[56].comment = SMTP socket context options
+See https://php.net/manual/en/context.ssl.php
+The example below enables server certificate validation, and
+requires 'smtp_timeout' to be non zero.
+Note: These can be also specified as an array of options indexed by hostname
+
+roundcube__original_configuration[56].array[0].ssl[0].verify_peer = True
+roundcube__original_configuration[56].array[0].ssl[0].verify_depth = 3
+roundcube__original_configuration[56].array[0].ssl[0].cafile = /etc/ssl/certs/ca-certificates.crt
+roundcube__original_configuration[56].section = smtp
+roundcube__original_configuration[56].state = init
+roundcube__original_configuration[57].name = ldap_cache
+roundcube__original_configuration[57].comment = Type of LDAP cache. Supported values: 'db', 'apc' and 'memcache' or 'memcached'.
+
+roundcube__original_configuration[57].value = db
+roundcube__original_configuration[57].section = ldap
+roundcube__original_configuration[57].state = init
+roundcube__original_configuration[58].name = ldap_cache_ttl
+roundcube__original_configuration[58].comment = Lifetime of LDAP cache. Posibble units: s, m, h, d, w
+roundcube__original_configuration[58].value = 10m
+roundcube__original_configuration[58].section = ldap
+roundcube__original_configuration[58].state = init
+roundcube__original_configuration[59].name = memcache_hosts
+roundcube__original_configuration[59].comment = Use these hosts for accessing memcached
+Define any number of hosts in the form of hostname:port or unix:///path/to/socket.file
+Example: array('localhost:11211', '192.168.1.12:11211', 'unix:///var/tmp/memcached.sock');
+
+roundcube__original_configuration[59].value = null
+roundcube__original_configuration[59].section = cache
+roundcube__original_configuration[59].state = init
+roundcube__original_configuration[60].name = memcache_pconnect
+roundcube__original_configuration[60].comment = Controls the use of a persistent connections to memcache servers
+See https://php.net/manual/en/memcache.addserver.php
+
+roundcube__original_configuration[60].value = True
+roundcube__original_configuration[60].section = cache
+roundcube__original_configuration[60].state = init
+roundcube__original_configuration[61].name = memcache_timeout
+roundcube__original_configuration[61].comment = Value in seconds which will be used for connecting to the daemon
+See https://php.net/manual/en/memcache.addserver.php
+
+roundcube__original_configuration[61].value = 1
+roundcube__original_configuration[61].section = cache
+roundcube__original_configuration[61].state = init
+roundcube__original_configuration[62].name = memcache_retry_interval
+roundcube__original_configuration[62].comment = Controls how often a failed server will be retried (value in seconds).
+Setting this parameter to -1 disables automatic retry.
+See https://php.net/manual/en/memcache.addserver.php
+
+roundcube__original_configuration[62].value = 15
+roundcube__original_configuration[62].section = cache
+roundcube__original_configuration[62].state = init
+roundcube__original_configuration[63].name = redis_hosts
+roundcube__original_configuration[63].comment = Use these hosts for accessing Redis.
+Currently only one host is supported. Cluster support may come in a future release.
+You can pass 4 fields, host, port (optional), database (optional) and password (optional).
+Unset fields will be set to the default values host=127.0.0.1, port=6379.
+Examples:
+    array('localhost:6379');
+    array('192.168.1.1:6379:1:secret');
+    array('unix:///var/run/redis/redis-server.sock:1:secret');
+
+roundcube__original_configuration[63].value = null
+roundcube__original_configuration[63].section = cache
+roundcube__original_configuration[63].state = init
+roundcube__original_configuration[64].name = memcache_max_allowed_packet
+roundcube__original_configuration[64].comment = Maximum size of an object in memcache (in bytes). Default: 2MB
+roundcube__original_configuration[64].value = 2M
+roundcube__original_configuration[64].section = cache
+roundcube__original_configuration[64].state = init
+roundcube__original_configuration[65].name = apc_mac_allowed_packet
+roundcube__original_configuration[65].comment = Maximum size of an object in APC cache (in bytes). Default: 2MB
+roundcube__original_configuration[65].value = 2M
+roundcube__original_configuration[65].section = cache
+roundcube__original_configuration[65].state = init
+roundcube__original_configuration[66].name = redis_max_allowed_packet
+roundcube__original_configuration[66].comment = Maximum size of an object in Redis cache (in bytes). Default: 2MB
+roundcube__original_configuration[66].value = 2M
+roundcube__original_configuration[66].section = cache
+roundcube__original_configuration[66].state = init
+roundcube__original_configuration[67].name = enable_installer
+roundcube__original_configuration[67].comment = THIS OPTION WILL ALLOW THE INSTALLER TO RUN AND CAN EXPOSE SENSITIVE CONFIG DATA.
+ONLY ENABLE IT IF YOU'RE REALLY SURE WHAT YOU'RE DOING!
+
+roundcube__original_configuration[67].value = False
+roundcube__original_configuration[67].section = system
+roundcube__original_configuration[67].state = init
+roundcube__original_configuration[68].name = dont_override
+roundcube__original_configuration[68].comment = Don't allow these settings to be overridden by the user
+roundcube__original_configuration[68].section = system
+roundcube__original_configuration[68].state = init
+roundcube__original_configuration[69].name = disabled_actions
+roundcube__original_configuration[69].comment = List of disabled UI elements/actions
+roundcube__original_configuration[69].section = system
+roundcube__original_configuration[69].state = init
+roundcube__original_configuration[70].name = advanced_prefs
+roundcube__original_configuration[70].comment = Define which settings should be listed under the 'advanced' block
+which is hidden by default
+
+roundcube__original_configuration[70].section = system
+roundcube__original_configuration[70].state = init
+roundcube__original_configuration[71].name = support_url
+roundcube__original_configuration[71].comment = Provide an URL where a user can get support for this Roundcube installation
+PLEASE DO NOT LINK TO THE ROUNDCUBE.NET WEBSITE HERE!
+
+roundcube__original_configuration[71].value = 
+roundcube__original_configuration[71].section = system
+roundcube__original_configuration[72].name = skin_logo
+roundcube__original_configuration[72].comment = Logo image replacement. Specifies location of the image as:
+- URL relative to the document root of this Roundcube installation
+- full URL with http:// or https:// prefix
+- URL relative to the current skin folder (when starts with a '/')
+
+An array can be used to specify different logos for specific template files
+The array key specifies the place(s) the logo should be applied to and
+is made up of (up to) 3 parts:
+- skin name prefix (always with colon, can be replaced with *)
+- template name (or * for all templates)
+- logo type - it is used for logos used on multiple templates
+  the available types include '[favicon]' for favicon, '[print]' for logo on all print
+  templates (e.g. messageprint, contactprint) and '[small]' for small screen logo in supported skins
+
+Example config for skin_logo
+
+array(
+  // show the image /images/logo_login_small.png for the Login screen in the Elastic skin on small screens
+  "elastic:login[small]" => "/images/logo_login_small.png",
+  // show the image /images/logo_login.png for the Login screen in the Elastic skin
+  "elastic:login" => "/images/logo_login.png",
+  // show the image /images/logo_small.png in the Elastic skin
+  "elastic:*[small]" => "/images/logo_small.png",
+  // show the image /images/larry.png in the Larry skin
+  "larry:*" => "/images/larry.png",
+  // show the image /images/logo_login.png on the login template in all skins
+  "login" => "/images/logo_login.png",
+  // show the image /images/logo_print.png for all print type logos in all skins
+  "[print]" => "/images/logo_print.png",
+);
+
+roundcube__original_configuration[72].value = null
+roundcube__original_configuration[72].section = system
+roundcube__original_configuration[72].state = init
+roundcube__original_configuration[73].name = auto_create_user
+roundcube__original_configuration[73].comment = Automatically create a new Roundcube user when log-in the first time.
+A new user will be created once the IMAP login succeeds.
+Set to false if only registered users can use this service
+
+roundcube__original_configuration[73].value = True
+roundcube__original_configuration[73].section = system
+roundcube__original_configuration[73].state = init
+roundcube__original_configuration[74].name = user_aliases
+roundcube__original_configuration[74].comment = Enables possibility to log in using email address from user identities
+roundcube__original_configuration[74].value = False
+roundcube__original_configuration[74].section = system
+roundcube__original_configuration[74].state = init
+roundcube__original_configuration[75].name = log_dir
+roundcube__original_configuration[75].comment = use this folder to store log files
+must be writeable for the user who runs PHP process (Apache user if mod_php is being used)
+This is used by the 'file' log driver.
+
+roundcube__original_configuration[75].value = RCUBE_INSTALL_PATH . 'logs/'
+roundcube__original_configuration[75].quotes = False
+roundcube__original_configuration[75].section = system
+roundcube__original_configuration[75].state = init
+roundcube__original_configuration[76].name = temp_dir
+roundcube__original_configuration[76].comment = Use this folder to store temp files
+Must be writeable for the user who runs PHP process (Apache user if mod_php is being used)
+
+roundcube__original_configuration[76].value = RCUBE_INSTALL_PATH . 'temp/'
+roundcube__original_configuration[76].quotes = False
+roundcube__original_configuration[76].section = system
+roundcube__original_configuration[76].state = init
+roundcube__original_configuration[77].name = temp_dir_ttl
+roundcube__original_configuration[77].comment = Expire files in temp_dir after 48 hours
+Possible units: s, m, h, d, w
+
+roundcube__original_configuration[77].value = 48h
+roundcube__original_configuration[77].section = system
+roundcube__original_configuration[77].state = init
+roundcube__original_configuration[78].name = force_https
+roundcube__original_configuration[78].comment = Enforce connections over https
+With this option enabled, all non-secure connections will be redirected.
+It can be also a port number, hostname or hostname:port if they are
+different than default HTTP_HOST:443
+
+roundcube__original_configuration[78].value = False
+roundcube__original_configuration[78].section = system
+roundcube__original_configuration[78].state = init
+roundcube__original_configuration[79].name = use_https
+roundcube__original_configuration[79].comment = Tell PHP that it should work as under secure connection
+even if it doesn't recognize it as secure ($_SERVER['HTTPS'] is not set)
+e.g. when you're running Roundcube behind a https proxy
+This option is mutually exclusive to 'force_https' and only either one of
+them should be set to true.
+
+roundcube__original_configuration[79].value = False
+roundcube__original_configuration[79].section = system
+roundcube__original_configuration[79].state = init
+roundcube__original_configuration[80].name = login_autocomplete
+roundcube__original_configuration[80].comment = Allow browser-autocompletion on login form.
+0 - disabled, 1 - username and host only, 2 - username, host, password
+
+roundcube__original_configuration[80].value = 0
+roundcube__original_configuration[80].section = system
+roundcube__original_configuration[80].state = init
+roundcube__original_configuration[81].name = login_lc
+roundcube__original_configuration[81].comment = Forces conversion of logins to lower case.
+0 - disabled, 1 - only domain part, 2 - domain and local part.
+If users authentication is case-insensitive this must be enabled.
+Note: After enabling it all user records need to be updated, e.g. with query:
+      UPDATE users SET username = LOWER(username);
+
+roundcube__original_configuration[81].value = 2
+roundcube__original_configuration[81].section = system
+roundcube__original_configuration[81].state = init
+roundcube__original_configuration[82].name = login_username_maxlen
+roundcube__original_configuration[82].comment = Maximum length (in bytes) of logon username and password.
+roundcube__original_configuration[82].value = 1024
+roundcube__original_configuration[82].section = system
+roundcube__original_configuration[82].state = init
+roundcube__original_configuration[83].name = login_password_maxlen
+roundcube__original_configuration[83].value = 1024
+roundcube__original_configuration[83].section = system
+roundcube__original_configuration[83].state = init
+roundcube__original_configuration[84].name = login_username_filter
+roundcube__original_configuration[84].comment = Logon username filter. Regular expression for use with preg_match().
+Example: '/^[a-z0-9_@.-]+$/'
+
+roundcube__original_configuration[84].value = null
+roundcube__original_configuration[84].section = system
+roundcube__original_configuration[84].state = init
+roundcube__original_configuration[85].name = login_rate_limit
+roundcube__original_configuration[85].comment = Brute-force attacks prevention.
+The value specifies maximum number of failed logon attempts per minute.
+
+roundcube__original_configuration[85].value = 3
+roundcube__original_configuration[85].section = system
+roundcube__original_configuration[85].state = init
+roundcube__original_configuration[86].name = skin_include_php
+roundcube__original_configuration[86].comment = Includes should be interpreted as PHP files
+roundcube__original_configuration[86].value = False
+roundcube__original_configuration[86].section = system
+roundcube__original_configuration[86].state = init
+roundcube__original_configuration[87].name = display_product_info
+roundcube__original_configuration[87].comment = Display product name and software version on login screen
+0 - hide product name and version number,
+1 - show product name only,
+2 - show product name and version number
+
+roundcube__original_configuration[87].value = 1
+roundcube__original_configuration[87].section = system
+roundcube__original_configuration[87].state = init
+roundcube__original_configuration[88].name = session_lifetime
+roundcube__original_configuration[88].comment = Session lifetime in minutes
+roundcube__original_configuration[88].value = 10
+roundcube__original_configuration[88].section = system
+roundcube__original_configuration[88].state = init
+roundcube__original_configuration[89].name = session_domain
+roundcube__original_configuration[89].comment = Session domain: .example.org
+roundcube__original_configuration[89].value = 
+roundcube__original_configuration[89].section = system
+roundcube__original_configuration[89].state = init
+roundcube__original_configuration[90].name = session_name
+roundcube__original_configuration[90].comment = Session name. Default: 'roundcube_sessid'
+
+roundcube__original_configuration[90].value = null
+roundcube__original_configuration[90].section = system
+roundcube__original_configuration[90].state = init
+roundcube__original_configuration[91].name = session_auth_name
+roundcube__original_configuration[91].comment = Session authentication cookie name. Default: 'roundcube_sessauth'
+
+roundcube__original_configuration[91].value = null
+roundcube__original_configuration[91].section = system
+roundcube__original_configuration[91].state = init
+roundcube__original_configuration[92].name = session_path
+roundcube__original_configuration[92].comment = Session path. Defaults to PHP session.cookie_path setting.
+
+roundcube__original_configuration[92].value = null
+roundcube__original_configuration[92].section = system
+roundcube__original_configuration[92].state = init
+roundcube__original_configuration[93].name = session_storage
+roundcube__original_configuration[93].comment = Backend to use for session storage. Can either be 'db' (default), 'redis', 'memcache', or 'php'
+
+If set to 'memcache' or 'memcached', a list of servers need to be specified in 'memcache_hosts'
+Make sure the Memcache extension (https://pecl.php.net/package/memcache) version >= 2.0.0
+or the Memcached extension (https://pecl.php.net/package/memcached) version >= 2.0.0 is installed.
+
+If set to 'redis', a server needs to be specified in 'redis_hosts'
+Make sure the Redis extension (https://pecl.php.net/package/redis) version >= 2.0.0 is installed.
+
+Setting this value to 'php' will use the default session save handler configured in PHP
+
+roundcube__original_configuration[93].value = db
+roundcube__original_configuration[93].section = system
+roundcube__original_configuration[93].state = init
+roundcube__original_configuration[94].name = proxy_whitelist
+roundcube__original_configuration[94].comment = List of trusted proxies
+X_FORWARDED_* and X_REAL_IP headers are only accepted from these IPs
+
+roundcube__original_configuration[94].section = system
+roundcube__original_configuration[94].state = init
+roundcube__original_configuration[95].name = trusted_host_pattern
+roundcube__original_configuration[95].comment = List of trusted host names
+Attackers can modify Host header of the HTTP request causing $_SERVER['SERVER_NAME']
+or $_SERVER['HTTP_HOST'] variables pointing to a different host, that could be used
+to collect user names and passwords. Some server configurations prevent that, but not all.
+An empty list accepts any host name. The list can contain host names
+or PCRE patterns (without // delimiters, that will be added automatically).
+
+roundcube__original_configuration[95].section = system
+roundcube__original_configuration[95].state = init
+roundcube__original_configuration[96].name = ip_check
+roundcube__original_configuration[96].comment = Check client IP in session authorization
+roundcube__original_configuration[96].value = False
+roundcube__original_configuration[96].section = system
+roundcube__original_configuration[96].state = init
+roundcube__original_configuration[97].name = x_frame_options
+roundcube__original_configuration[97].comment = X-Frame-Options HTTP header value sent to prevent from Clickjacking.
+Possible values: sameorigin|deny|allow-from <uri>.
+Set to false in order to disable sending the header.
+
+roundcube__original_configuration[97].value = sameorigin
+roundcube__original_configuration[97].section = system
+roundcube__original_configuration[97].state = init
+roundcube__original_configuration[98].name = des_key
+roundcube__original_configuration[98].comment = this key is used to encrypt the users imap password which is stored
+in the session record (and the client cookie if remember password is enabled).
+please provide a string of exactly 24 chars.
+YOUR KEY MUST BE DIFFERENT THAN THE SAMPLE VALUE FOR SECURITY REASONS
+
+roundcube__original_configuration[98].value = rcmail-!24ByteDESkey*Str
+roundcube__original_configuration[98].section = system
+roundcube__original_configuration[99].name = cipher_method
+roundcube__original_configuration[99].comment = Encryption algorithm. You can use any method supported by OpenSSL.
+Default is set for backward compatibility to DES-EDE3-CBC,
+but you can choose e.g. AES-256-CBC which we consider a better choice.
+
+roundcube__original_configuration[99].value = DES-EDE3-CBC
+roundcube__original_configuration[99].section = system
+roundcube__original_configuration[99].state = init
+roundcube__original_configuration[100].name = username_domain
+roundcube__original_configuration[100].comment = Automatically add this domain to user names for login
+Only for IMAP servers that require full e-mail addresses for login
+Specify an array with 'host' => 'domain' values to support multiple hosts
+Supported replacement variables:
+%h - user's IMAP hostname
+%n - hostname ($_SERVER['SERVER_NAME'])
+%t - hostname without the first part
+%d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+%z - IMAP domain (IMAP hostname without the first part)
+For example %n = mail.domain.tld, %t = domain.tld
+
+roundcube__original_configuration[100].value = 
+roundcube__original_configuration[100].section = system
+roundcube__original_configuration[100].state = init
+roundcube__original_configuration[101].name = username_domain_forced
+roundcube__original_configuration[101].comment = Force domain configured in username_domain to be used for login.
+Any domain in username will be replaced by username_domain.
+
+roundcube__original_configuration[101].value = False
+roundcube__original_configuration[101].section = system
+roundcube__original_configuration[101].state = init
+roundcube__original_configuration[102].name = mail_domain
+roundcube__original_configuration[102].comment = This domain will be used to form e-mail addresses of new users
+Specify an array with 'host' => 'domain' values to support multiple hosts
+Supported replacement variables:
+%h - user's IMAP hostname
+%n - http hostname ($_SERVER['SERVER_NAME'])
+%d - domain (http hostname without the first part)
+%z - IMAP domain (IMAP hostname without the first part)
+For example %n = mail.domain.tld, %t = domain.tld
+
+roundcube__original_configuration[102].value = 
+roundcube__original_configuration[102].section = system
+roundcube__original_configuration[102].state = init
+roundcube__original_configuration[103].name = password_charset
+roundcube__original_configuration[103].comment = Password character set, to change the password for user
+authentication or for password change operations
+
+roundcube__original_configuration[103].value = UTF-8
+roundcube__original_configuration[103].section = system
+roundcube__original_configuration[103].state = init
+roundcube__original_configuration[104].name = sendmail_delay
+roundcube__original_configuration[104].comment = How many seconds must pass between emails sent by a user
+roundcube__original_configuration[104].value = 0
+roundcube__original_configuration[104].section = system
+roundcube__original_configuration[104].state = init
+roundcube__original_configuration[105].name = max_message_size
+roundcube__original_configuration[105].comment = Message size limit. Note that SMTP server(s) may use a different value.
+This limit is verified when user attaches files to a composed message.
+Size in bytes (possible unit suffix: K, M, G)
+
+roundcube__original_configuration[105].value = 100M
+roundcube__original_configuration[105].section = system
+roundcube__original_configuration[105].state = init
+roundcube__original_configuration[106].name = max_recipients
+roundcube__original_configuration[106].comment = Maximum number of recipients per message (including To, Cc, Bcc).
+Default: 0 (no limit)
+
+roundcube__original_configuration[106].value = 0
+roundcube__original_configuration[106].section = system
+roundcube__original_configuration[106].state = init
+roundcube__original_configuration[107].name = max_disclosed_recipients
+roundcube__original_configuration[107].comment = Maximum number of recipients per message excluding Bcc header.
+This is a soft limit, which means we only display a warning to the user.
+Default: 5
+
+roundcube__original_configuration[107].value = 5
+roundcube__original_configuration[107].section = system
+roundcube__original_configuration[107].state = init
+roundcube__original_configuration[108].name = max_group_members
+roundcube__original_configuration[108].comment = Maximum allowed number of members of an address group. Default: 0 (no limit)
+If 'max_recipients' is set this value should be less or equal
+
+roundcube__original_configuration[108].value = 0
+roundcube__original_configuration[108].section = system
+roundcube__original_configuration[108].state = init
+roundcube__original_configuration[109].name = product_name
+roundcube__original_configuration[109].comment = Name your service. This is displayed on the login screen and in the window title
+
+roundcube__original_configuration[109].value = Roundcube Webmail
+roundcube__original_configuration[109].section = system
+roundcube__original_configuration[110].name = useragent
+roundcube__original_configuration[110].comment = Add this user-agent to message headers when sending
+roundcube__original_configuration[110].value = 'Roundcube Webmail/'.RCUBE_VERSION
+roundcube__original_configuration[110].quotes = False
+roundcube__original_configuration[110].section = system
+roundcube__original_configuration[110].state = init
+roundcube__original_configuration[111].name = include_host_config
+roundcube__original_configuration[111].comment = Try to load host-specific configuration
+See https://github.com/roundcube/roundcubemail/wiki/Configuration:-Multi-Domain-Setup
+for more details
+
+roundcube__original_configuration[111].value = False
+roundcube__original_configuration[111].section = system
+roundcube__original_configuration[111].state = init
+roundcube__original_configuration[112].name = generic_message_footer
+roundcube__original_configuration[112].comment = Path to a text file which will be added to each sent message
+Paths are relative to the Roundcube root folder
+
+roundcube__original_configuration[112].value = 
+roundcube__original_configuration[112].section = system
+roundcube__original_configuration[112].state = init
+roundcube__original_configuration[113].name = generic_message_footer_html
+roundcube__original_configuration[113].comment = Path to a text file which will be added to each sent HTML message
+Paths are relative to the Roundcube root folder
+
+roundcube__original_configuration[113].value = 
+roundcube__original_configuration[113].section = system
+roundcube__original_configuration[113].state = init
+roundcube__original_configuration[114].name = http_received_header
+roundcube__original_configuration[114].comment = Add a received header to outgoing mails containing the creators IP and hostname
+
+roundcube__original_configuration[114].value = False
+roundcube__original_configuration[114].section = system
+roundcube__original_configuration[114].state = init
+roundcube__original_configuration[115].name = http_received_header_encrypt
+roundcube__original_configuration[115].comment = Whether or not to encrypt the IP address and the host name
+these could, in some circles, be considered as sensitive information;
+however, for the administrator, these could be invaluable help
+when tracking down issues.
+
+roundcube__original_configuration[115].value = False
+roundcube__original_configuration[115].section = system
+roundcube__original_configuration[115].state = init
+roundcube__original_configuration[116].name = line_length
+roundcube__original_configuration[116].comment = Number of chars allowed for line when wrapping text.
+Text wrapping is done when composing/sending messages
+
+roundcube__original_configuration[116].value = 72
+roundcube__original_configuration[116].section = system
+roundcube__original_configuration[116].state = init
+roundcube__original_configuration[117].name = send_format_flowed
+roundcube__original_configuration[117].comment = Send plaintext messages as format=flowed
+roundcube__original_configuration[117].value = True
+roundcube__original_configuration[117].section = system
+roundcube__original_configuration[117].state = init
+roundcube__original_configuration[118].name = mdn_use_from
+roundcube__original_configuration[118].comment = According to RFC2298, return receipt envelope sender address must be
+empty. If this option is true, Roundcube will use user's identity as
+envelope sender for MDN responses.
+
+roundcube__original_configuration[118].value = False
+roundcube__original_configuration[118].section = system
+roundcube__original_configuration[118].state = init
+roundcube__original_configuration[119].name = identities_level
+roundcube__original_configuration[119].comment = Set identities access level:
+0 - many identities with possibility to edit all params
+1 - many identities with possibility to edit all params but not email address
+2 - one identity with possibility to edit all params
+3 - one identity with possibility to edit all params but not email address
+4 - one identity with possibility to edit only signature
+
+roundcube__original_configuration[119].value = 0
+roundcube__original_configuration[119].section = system
+roundcube__original_configuration[119].state = init
+roundcube__original_configuration[120].name = identity_image_size
+roundcube__original_configuration[120].comment = Maximum size of uploaded image in kilobytes
+Images (in html signatures) are stored in database as data URIs
+
+roundcube__original_configuration[120].value = 64
+roundcube__original_configuration[120].section = system
+roundcube__original_configuration[120].state = init
+roundcube__original_configuration[121].name = client_mimetypes
+roundcube__original_configuration[121].comment = Mimetypes supported by the browser.
+Attachments of these types will open in a preview window
+Either a comma-separated list or an array: 'text/plain,text/html,text/xml,image/jpeg,image/gif,image/png,application/pdf'
+
+roundcube__original_configuration[121].value = null
+roundcube__original_configuration[121].section = system
+roundcube__original_configuration[121].state = init
+roundcube__original_configuration[122].name = mime_magic
+roundcube__original_configuration[122].comment = Path to a local mime magic database file for PHPs finfo extension.
+Set to null if the default path should be used.
+
+roundcube__original_configuration[122].value = null
+roundcube__original_configuration[122].section = system
+roundcube__original_configuration[122].state = init
+roundcube__original_configuration[123].name = mime_types
+roundcube__original_configuration[123].comment = Absolute path to a local mime.types mapping table file.
+This is used to derive mime-types from the filename extension or vice versa.
+Such a file is usually part of the apache webserver. If you don't find a file named mime.types on your system,
+download it from https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+
+roundcube__original_configuration[123].value = null
+roundcube__original_configuration[123].section = system
+roundcube__original_configuration[123].state = init
+roundcube__original_configuration[124].name = im_identify_path
+roundcube__original_configuration[124].comment = Path to imagemagick identify binary (if not set we'll use Imagick or GD extensions)
+
+roundcube__original_configuration[124].value = null
+roundcube__original_configuration[124].section = system
+roundcube__original_configuration[124].state = init
+roundcube__original_configuration[125].name = im_convert_path
+roundcube__original_configuration[125].comment = Path to imagemagick convert binary (if not set we'll use Imagick or GD extensions)
+
+roundcube__original_configuration[125].value = null
+roundcube__original_configuration[125].section = system
+roundcube__original_configuration[125].state = init
+roundcube__original_configuration[126].name = image_thumbnail_size
+roundcube__original_configuration[126].comment = Size of thumbnails from image attachments displayed below the message content.
+Note: whether images are displayed at all depends on the 'inline_images' option.
+Set to 0 to display images in full size.
+
+roundcube__original_configuration[126].value = 240
+roundcube__original_configuration[126].section = system
+roundcube__original_configuration[126].state = init
+roundcube__original_configuration[127].name = contact_photo_size
+roundcube__original_configuration[127].comment = Maximum size of uploaded contact photos in pixel
+roundcube__original_configuration[127].value = 160
+roundcube__original_configuration[127].section = system
+roundcube__original_configuration[127].state = init
+roundcube__original_configuration[128].name = email_dns_check
+roundcube__original_configuration[128].comment = Enable DNS checking for e-mail address validation
+roundcube__original_configuration[128].value = False
+roundcube__original_configuration[128].section = system
+roundcube__original_configuration[128].state = init
+roundcube__original_configuration[129].name = no_save_sent_messages
+roundcube__original_configuration[129].comment = Disables saving sent messages in Sent folder (like gmail) (Default: false)
+Note: useful when SMTP server stores sent mail in user mailbox
+
+roundcube__original_configuration[129].value = False
+roundcube__original_configuration[129].section = system
+roundcube__original_configuration[129].state = init
+roundcube__original_configuration[130].name = use_secure_urls
+roundcube__original_configuration[130].comment = Improve system security by using special URL with security token.
+This can be set to a number defining token length. Default: 16.
+Warning: This requires http server configuration. Sample:
+   RewriteRule ^/roundcubemail/[a-zA-Z0-9]{16}/(.*) /roundcubemail/$1 [PT]
+   Alias /roundcubemail /var/www/roundcubemail/
+Note: Use assets_path to not prevent the browser from caching assets
+
+roundcube__original_configuration[130].value = False
+roundcube__original_configuration[130].section = system
+roundcube__original_configuration[130].state = init
+roundcube__original_configuration[131].name = assets_path
+roundcube__original_configuration[131].comment = Allows to define separate server/path for image/js/css files
+Warning: If the domain is different cross-domain access to some
+resources need to be allowed
+Sample:
+   <FilesMatch ".(eot|ttf|woff)">
+   Header set Access-Control-Allow-Origin "*"
+   </FilesMatch>
+
+roundcube__original_configuration[131].value = 
+roundcube__original_configuration[131].section = system
+roundcube__original_configuration[131].state = init
+roundcube__original_configuration[132].name = assets_dir
+roundcube__original_configuration[132].comment = While assets_path is for the browser, assets_dir informs
+PHP code about the location of asset files in filesystem
+
+roundcube__original_configuration[132].value = 
+roundcube__original_configuration[132].section = system
+roundcube__original_configuration[132].state = init
+roundcube__original_configuration[133].name = plugins
+roundcube__original_configuration[133].comment = List of active plugins (in plugins/ directory)
+roundcube__original_configuration[133].value[0] = archive
+roundcube__original_configuration[133].value[1] = zipdownload
+roundcube__original_configuration[133].section = plugins
+roundcube__original_configuration[134].name = message_sort_col
+roundcube__original_configuration[134].comment = Default messages sort column. Use empty value for default server's sorting,
+or 'arrival', 'date', 'subject', 'from', 'to', 'fromto', 'size', 'cc'
+
+roundcube__original_configuration[134].value = 
+roundcube__original_configuration[134].section = ui
+roundcube__original_configuration[134].state = init
+roundcube__original_configuration[135].name = message_sort_order
+roundcube__original_configuration[135].comment = Default messages sort order
+roundcube__original_configuration[135].value = DESC
+roundcube__original_configuration[135].section = ui
+roundcube__original_configuration[135].state = init
+roundcube__original_configuration[136].name = list_cols
+roundcube__original_configuration[136].comment = These cols are shown in the message list. Available cols are:
+subject, from, to, fromto, cc, replyto, date, size, status, flag, attachment, priority
+
+roundcube__original_configuration[136].value[0] = subject
+roundcube__original_configuration[136].value[1] = status
+roundcube__original_configuration[136].value[2] = fromto
+roundcube__original_configuration[136].value[3] = date
+roundcube__original_configuration[136].value[4] = size
+roundcube__original_configuration[136].value[5] = flag
+roundcube__original_configuration[136].value[6] = attachment
+roundcube__original_configuration[136].section = ui
+roundcube__original_configuration[136].state = init
+roundcube__original_configuration[137].name = language
+roundcube__original_configuration[137].comment = The default locale setting (leave empty for auto-detection)
+RFC1766 formatted language name like en_US, de_DE, de_CH, fr_FR, pt_BR
+
+roundcube__original_configuration[137].value = null
+roundcube__original_configuration[137].section = ui
+roundcube__original_configuration[137].state = init
+roundcube__original_configuration[138].name = date_format
+roundcube__original_configuration[138].comment = Use this format for date display (date or strftime format)
+roundcube__original_configuration[138].value = Y-m-d
+roundcube__original_configuration[138].section = ui
+roundcube__original_configuration[138].state = init
+roundcube__original_configuration[139].name = date_formats
+roundcube__original_configuration[139].comment = Give this choice of date formats to the user to select from
+Note: do not use ambiguous formats like m/d/Y
+
+roundcube__original_configuration[139].value[0] = Y-m-d
+roundcube__original_configuration[139].value[1] = Y/m/d
+roundcube__original_configuration[139].value[2] = Y.m.d
+roundcube__original_configuration[139].value[3] = d-m-Y
+roundcube__original_configuration[139].value[4] = d/m/Y
+roundcube__original_configuration[139].value[5] = d.m.Y
+roundcube__original_configuration[139].value[6] = j.n.Y
+roundcube__original_configuration[139].section = ui
+roundcube__original_configuration[139].state = init
+roundcube__original_configuration[140].name = time_format
+roundcube__original_configuration[140].comment = Use this format for time display (date or strftime format)
+roundcube__original_configuration[140].value = H:i
+roundcube__original_configuration[140].section = ui
+roundcube__original_configuration[140].state = init
+roundcube__original_configuration[141].name = time_formats
+roundcube__original_configuration[141].comment = Give this choice of time formats to the user to select from
+roundcube__original_configuration[141].value[0] = G:i
+roundcube__original_configuration[141].value[1] = H:i
+roundcube__original_configuration[141].value[2] = g:i a
+roundcube__original_configuration[141].value[3] = h:i A
+roundcube__original_configuration[141].section = ui
+roundcube__original_configuration[141].state = init
+roundcube__original_configuration[142].name = date_short
+roundcube__original_configuration[142].comment = Use this format for short date display (derived from date_format and
+time_format)
+
+roundcube__original_configuration[142].value = D H:i
+roundcube__original_configuration[142].section = ui
+roundcube__original_configuration[142].state = init
+roundcube__original_configuration[143].name = date_long
+roundcube__original_configuration[143].comment = Use this format for detailed date/time formatting (derived from
+date_format and time_format)
+
+roundcube__original_configuration[143].value = Y-m-d H:i
+roundcube__original_configuration[143].section = ui
+roundcube__original_configuration[143].state = init
+roundcube__original_configuration[144].name = drafts_mbox
+roundcube__original_configuration[144].comment = Store draft message is this mailbox
+Leave blank if draft messages should not be stored
+NOTE: Use folder names with namespace prefix (INBOX. on Courier-IMAP)
+
+roundcube__original_configuration[144].value = Drafts
+roundcube__original_configuration[144].section = ui
+roundcube__original_configuration[144].state = init
+roundcube__original_configuration[145].name = junk_mbox
+roundcube__original_configuration[145].comment = Store spam messages in this mailbox
+NOTE: Use folder names with namespace prefix (INBOX. on Courier-IMAP)
+
+roundcube__original_configuration[145].value = Junk
+roundcube__original_configuration[145].section = ui
+roundcube__original_configuration[145].state = init
+roundcube__original_configuration[146].name = sent_mbox
+roundcube__original_configuration[146].comment = Store sent message is this mailbox
+Leave blank if sent messages should not be stored
+NOTE: Use folder names with namespace prefix (INBOX. on Courier-IMAP)
+
+roundcube__original_configuration[146].value = Sent
+roundcube__original_configuration[146].section = ui
+roundcube__original_configuration[146].state = init
+roundcube__original_configuration[147].name = trash_mbox
+roundcube__original_configuration[147].comment = Move messages to this folder when deleting them
+Leave blank if they should be deleted directly
+NOTE: Use folder names with namespace prefix (INBOX. on Courier-IMAP)
+
+roundcube__original_configuration[147].value = Trash
+roundcube__original_configuration[147].section = ui
+roundcube__original_configuration[147].state = init
+roundcube__original_configuration[148].name = create_default_folders
+roundcube__original_configuration[148].comment = Automatically create the above listed default folders on user login
+
+roundcube__original_configuration[148].value = False
+roundcube__original_configuration[148].section = ui
+roundcube__original_configuration[148].state = init
+roundcube__original_configuration[149].name = protect_default_folders
+roundcube__original_configuration[149].comment = Protect the default folders from renames, deletes, and subscription changes
+
+roundcube__original_configuration[149].value = True
+roundcube__original_configuration[149].section = ui
+roundcube__original_configuration[149].state = init
+roundcube__original_configuration[150].name = show_real_foldernames
+roundcube__original_configuration[150].comment = Disable localization of the default folder names listed above
+
+roundcube__original_configuration[150].value = False
+roundcube__original_configuration[150].section = ui
+roundcube__original_configuration[150].state = init
+roundcube__original_configuration[151].name = quota_zero_as_unlimited
+roundcube__original_configuration[151].comment = If in your system 0 quota means no limit set this option to true
+
+roundcube__original_configuration[151].value = False
+roundcube__original_configuration[151].section = ui
+roundcube__original_configuration[151].state = init
+roundcube__original_configuration[152].name = enable_spellcheck
+roundcube__original_configuration[152].comment = Make use of the built-in spell checker. It is based on GoogieSpell.
+
+roundcube__original_configuration[152].value = True
+roundcube__original_configuration[152].section = ui
+roundcube__original_configuration[152].state = init
+roundcube__original_configuration[153].name = spellcheck_engine
+roundcube__original_configuration[153].comment = Set the spell checking engine. Possible values:
+- 'googie'  - the default (also used for connecting to Nox Spell Server, see 'spellcheck_uri' setting)
+- 'pspell'  - requires the PHP Pspell module and aspell installed
+- 'enchant' - requires the PHP Enchant module
+- 'atd'     - install your own After the Deadline server or check with
+              the people at http://www.afterthedeadline.com before using their API
+Since Google shut down their public spell checking service, the default settings
+connect to https://spell.roundcube.net/ which is a hosted service provided by Roundcube.
+You can connect to any other googie-compliant service by setting 'spellcheck_uri' accordingly.
+
+roundcube__original_configuration[153].value = googie
+roundcube__original_configuration[153].section = ui
+roundcube__original_configuration[153].state = init
+roundcube__original_configuration[154].name = spellcheck_uri
+roundcube__original_configuration[154].comment = For locally installed Nox Spell Server or After the Deadline services,
+please specify the URI to call it.
+Get Nox Spell Server from http://orangoo.com/labs/?page_id=72 or
+the After the Deadline package from http://www.afterthedeadline.com.
+Leave empty to use the public API of service.afterthedeadline.com
+
+roundcube__original_configuration[154].value = 
+roundcube__original_configuration[154].section = ui
+roundcube__original_configuration[154].state = init
+roundcube__original_configuration[155].name = spellcheck_languages
+roundcube__original_configuration[155].comment = These languages can be selected for spell checking.
+Configure as a PHP style hash array: array('en'=>'English', 'de'=>'Deutsch');
+Leave empty for default set of available language.
+
+roundcube__original_configuration[155].value = null
+roundcube__original_configuration[155].section = ui
+roundcube__original_configuration[155].state = init
+roundcube__original_configuration[156].name = spellcheck_ignore_caps
+roundcube__original_configuration[156].comment = Makes that words with all letters capitalized will be ignored (e.g. GOOGLE)
+
+roundcube__original_configuration[156].value = False
+roundcube__original_configuration[156].section = ui
+roundcube__original_configuration[156].state = init
+roundcube__original_configuration[157].name = spellcheck_ignore_nums
+roundcube__original_configuration[157].comment = Makes that words with numbers will be ignored (e.g. g00gle)
+
+roundcube__original_configuration[157].value = False
+roundcube__original_configuration[157].section = ui
+roundcube__original_configuration[157].state = init
+roundcube__original_configuration[158].name = spellcheck_ignore_syms
+roundcube__original_configuration[158].comment = Makes that words with symbols will be ignored (e.g. g@@gle)
+
+roundcube__original_configuration[158].value = False
+roundcube__original_configuration[158].section = ui
+roundcube__original_configuration[158].state = init
+roundcube__original_configuration[159].name = sig_max_lines
+roundcube__original_configuration[159].comment = Number of lines at the end of a message considered to contain the signature.
+Increase this value if signatures are not properly detected and colored
+
+roundcube__original_configuration[159].value = 15
+roundcube__original_configuration[159].section = ui
+roundcube__original_configuration[159].state = init
+roundcube__original_configuration[160].name = max_pagesize
+roundcube__original_configuration[160].comment = Don't let users set pagesize to more than this value if set
+
+roundcube__original_configuration[160].value = 200
+roundcube__original_configuration[160].section = ui
+roundcube__original_configuration[160].state = init
+roundcube__original_configuration[161].name = min_refresh_interval
+roundcube__original_configuration[161].comment = Minimal value of user's 'refresh_interval' setting (in seconds)
+
+roundcube__original_configuration[161].value = 60
+roundcube__original_configuration[161].section = ui
+roundcube__original_configuration[161].state = init
+roundcube__original_configuration[162].name = undo_timeout
+roundcube__original_configuration[162].comment = Specifies for how many seconds the Undo button will be available
+after object delete action. Currently used with supporting address book sources.
+Setting it to 0, disables the feature.
+
+roundcube__original_configuration[162].value = 0
+roundcube__original_configuration[162].section = ui
+roundcube__original_configuration[162].state = init
+roundcube__original_configuration[163].name = compose_responses_static
+roundcube__original_configuration[163].comment = A static list of canned responses which are immutable for the user
+
+roundcube__original_configuration[163].array[0][0].name = Canned Response 1
+roundcube__original_configuration[163].array[0][1].text = Static Response One
+roundcube__original_configuration[163].array[1][0].name = Canned Response 2
+roundcube__original_configuration[163].array[1][1].text = Static Response Two
+roundcube__original_configuration[163].section = ui
+roundcube__original_configuration[163].state = init
+roundcube__original_configuration[164].name = keyservers
+roundcube__original_configuration[164].comment = List of HKP key servers for PGP public key lookups in Enigma/Mailvelope
+Default: array("keys.fedoraproject.org", "keybase.io")
+
+roundcube__original_configuration[164].section = ui
+roundcube__original_configuration[164].state = init
+roundcube__original_configuration[165].name = address_book_type
+roundcube__original_configuration[165].comment = This indicates which type of address book to use. Possible choices:
+'sql' - built-in sql addressbook enabled (default),
+''    - built-in sql addressbook disabled.
+        Still LDAP or plugin-added addressbooks will be available.
+        BC Note: The value can actually be anything except 'sql', it does not matter.
+
+roundcube__original_configuration[165].value = sql
+roundcube__original_configuration[165].section = addressbook
+roundcube__original_configuration[165].state = init
+roundcube__original_configuration[166].name = ldap_public
+roundcube__original_configuration[166].comment = In order to enable public ldap search, configure an array like the Verisign
+example further below. if you would like to test, simply uncomment the example.
+Array key must contain only safe characters, ie. a-zA-Z0-9_
+
+roundcube__original_configuration[166].section = addressbook
+roundcube__original_configuration[166].state = init
+roundcube__original_configuration[167].name = ldap_public_verisign
+roundcube__original_configuration[167].option[0] = ldap_public
+roundcube__original_configuration[167].option[1] = Verisign
+roundcube__original_configuration[167].comment = If you are going to use LDAP for individual address books, you will need to
+set 'user_specific' to true and use the variables to generate the appropriate DNs to access it.
+
+The recommended directory structure for LDAP is to store all the address book entries
+under the users main entry, e.g.:
+
+ o=root
+  ou=people
+   uid=user@domain
+ mail=contact@contactdomain
+
+So the base_dn would be uid=%fu,ou=people,o=root
+The bind_dn would be the same as based_dn or some super user login.
+
+roundcube__original_configuration[167].array[0].name = Verisign.com
+roundcube__original_configuration[167].array[0].hosts[0] = directory.verisign.com
+roundcube__original_configuration[167].array[0].port = 389
+roundcube__original_configuration[167].array[0].use_tls = False
+roundcube__original_configuration[167].array[0].ldap_version = 3
+roundcube__original_configuration[167].array[0].network_timeout = 10
+roundcube__original_configuration[167].array[0].user_specific = False
+roundcube__original_configuration[167].array[0].base_dn = 
+roundcube__original_configuration[167].array[0].bind_dn = 
+roundcube__original_configuration[167].array[0].bind_pass = 
+roundcube__original_configuration[167].array[0].search_base_dn = 
+roundcube__original_configuration[167].array[0].search_filter = 
+roundcube__original_configuration[167].array[0].search_bind_dn = 
+roundcube__original_configuration[167].array[0].search_bind_pw = 
+roundcube__original_configuration[167].array[0].domain_base_dn = 
+roundcube__original_configuration[167].array[0].domain_filter = 
+roundcube__original_configuration[167].array[0].search_dn_default = 
+roundcube__original_configuration[167].array[0].auth_cid = 
+roundcube__original_configuration[167].array[0].auth_method = 
+roundcube__original_configuration[167].array[0].hidden = False
+roundcube__original_configuration[167].array[0].searchonly = False
+roundcube__original_configuration[167].array[0].writable = False
+roundcube__original_configuration[167].array[0].LDAP_Object_Classes[0] = top
+roundcube__original_configuration[167].array[0].LDAP_Object_Classes[1] = inetOrgPerson
+roundcube__original_configuration[167].array[0].LDAP_rdn = cn
+roundcube__original_configuration[167].array[0].required_fields[0] = cn
+roundcube__original_configuration[167].array[0].required_fields[1] = sn
+roundcube__original_configuration[167].array[0].required_fields[2] = mail
+roundcube__original_configuration[167].array[0].search_fields[0] = mail
+roundcube__original_configuration[167].array[0].search_fields[1] = cn
+roundcube__original_configuration[167].array[0].fieldmap[0].name = cn
+roundcube__original_configuration[167].array[0].fieldmap[0].surname = sn
+roundcube__original_configuration[167].array[0].fieldmap[0].firstname = givenName
+roundcube__original_configuration[167].array[0].fieldmap[0].jobtitle = title
+roundcube__original_configuration[167].array[0].fieldmap[0].email = mail:*
+roundcube__original_configuration[167].array[0].fieldmap[0].phone:home = homePhone
+roundcube__original_configuration[167].array[0].fieldmap[0].phone:work = telephoneNumber
+roundcube__original_configuration[167].array[0].fieldmap[0].phone:mobile = mobile
+roundcube__original_configuration[167].array[0].fieldmap[0].phone:pager = pager
+roundcube__original_configuration[167].array[0].fieldmap[0].phone:workfax = facsimileTelephoneNumber
+roundcube__original_configuration[167].array[0].fieldmap[0].street = street
+roundcube__original_configuration[167].array[0].fieldmap[0].zipcode = postalCode
+roundcube__original_configuration[167].array[0].fieldmap[0].region = st
+roundcube__original_configuration[167].array[0].fieldmap[0].locality = l
+roundcube__original_configuration[167].array[0].fieldmap[0].country = c
+roundcube__original_configuration[167].array[0].fieldmap[0].organization = o
+roundcube__original_configuration[167].array[0].fieldmap[0].department = ou
+roundcube__original_configuration[167].array[0].fieldmap[0].notes = description
+roundcube__original_configuration[167].array[0].fieldmap[0].photo = jpegPhoto
+roundcube__original_configuration[167].array[0].autovalues[0].uid = md5(microtime())
+roundcube__original_configuration[167].array[0].autovalues[0].mail = {givenname}.{sn}@mydomain.com
+roundcube__original_configuration[167].array[0].sort = cn
+roundcube__original_configuration[167].array[0].scope = sub
+roundcube__original_configuration[167].array[0].filter = (objectClass=inetOrgPerson)
+roundcube__original_configuration[167].array[0].fuzzy_search = True
+roundcube__original_configuration[167].array[0].vlv = False
+roundcube__original_configuration[167].array[0].vlv_search = False
+roundcube__original_configuration[167].array[0].numsub_filter = (objectClass=organizationalUnit)
+roundcube__original_configuration[167].array[0].config_root_dn = cn=config
+roundcube__original_configuration[167].array[0].sizelimit = 0
+roundcube__original_configuration[167].array[0].timelimit = 0
+roundcube__original_configuration[167].array[0].referrals = False
+roundcube__original_configuration[167].array[0].dereference = 0
+roundcube__original_configuration[167].array[0].groups[0].base_dn = 
+roundcube__original_configuration[167].array[0].groups[0].scope = sub
+roundcube__original_configuration[167].array[0].groups[0].filter = (objectClass=groupOfNames)
+roundcube__original_configuration[167].array[0].groups[0].object_classes[0] = top
+roundcube__original_configuration[167].array[0].groups[0].object_classes[1] = groupOfNames
+roundcube__original_configuration[167].array[0].groups[0].member_attr = member
+roundcube__original_configuration[167].array[0].groups[0].name_attr = cn
+roundcube__original_configuration[167].array[0].groups[0].email_attr = mail
+roundcube__original_configuration[167].array[0].groups[0].member_filter = (objectClass=*)
+roundcube__original_configuration[167].array[0].groups[0].vlv = False
+roundcube__original_configuration[167].array[0].groups[0].class_member_attr[0].groupOfNames = member
+roundcube__original_configuration[167].array[0].groups[0].class_member_attr[0].groupOfUniqueNames = uniqueMember
+roundcube__original_configuration[167].array[0].group_filters[0].departments[0].name = Company Departments
+roundcube__original_configuration[167].array[0].group_filters[0].departments[0].scope = list
+roundcube__original_configuration[167].array[0].group_filters[0].departments[0].base_dn = ou=Groups,dc=mydomain,dc=com
+roundcube__original_configuration[167].array[0].group_filters[0].departments[0].filter = (| (objectclass=groupOfUniqueNames) (objectclass=groupOfURLs) )
+roundcube__original_configuration[167].array[0].group_filters[0].departments[0].name_attr = cn
+roundcube__original_configuration[167].array[0].group_filters[1].customers[0].name = Customers
+roundcube__original_configuration[167].array[0].group_filters[1].customers[0].scope = sub
+roundcube__original_configuration[167].array[0].group_filters[1].customers[0].base_dn = ou=Customers,dc=mydomain,dc=com
+roundcube__original_configuration[167].array[0].group_filters[1].customers[0].filter = (objectClass=inetOrgPerson)
+roundcube__original_configuration[167].array[0].group_filters[1].customers[0].name_attr = sn
+roundcube__original_configuration[167].section = addressbook
+roundcube__original_configuration[167].state = init
+roundcube__original_configuration[168].name = autocomplete_addressbooks
+roundcube__original_configuration[168].comment = An ordered array of the ids of the addressbooks that should be searched
+when populating address autocomplete fields server-side. ex: array('sql','Verisign');
+
+roundcube__original_configuration[168].value[0] = sql
+roundcube__original_configuration[168].section = addressbook
+roundcube__original_configuration[168].state = init
+roundcube__original_configuration[169].name = autocomplete_min_length
+roundcube__original_configuration[169].comment = The minimum number of characters required to be typed in an autocomplete field
+before address books will be searched. Most useful for LDAP directories that
+may need to do lengthy results building given overly-broad searches
+
+roundcube__original_configuration[169].value = 1
+roundcube__original_configuration[169].section = addressbook
+roundcube__original_configuration[169].state = init
+roundcube__original_configuration[170].name = autocomplete_threads
+roundcube__original_configuration[170].comment = Number of parallel autocomplete requests.
+If there's more than one address book, n parallel (async) requests will be created,
+where each request will search in one address book. By default (0), all address
+books are searched in one request.
+
+roundcube__original_configuration[170].value = 0
+roundcube__original_configuration[170].section = addressbook
+roundcube__original_configuration[170].state = init
+roundcube__original_configuration[171].name = autocomplete_max
+roundcube__original_configuration[171].comment = Max. number of entries in autocomplete popup. Default: 15.
+roundcube__original_configuration[171].value = 15
+roundcube__original_configuration[171].section = addressbook
+roundcube__original_configuration[171].state = init
+roundcube__original_configuration[172].name = address_template
+roundcube__original_configuration[172].comment = Show address fields in this order
+Available placeholders: {street}, {locality}, {zipcode}, {country}, {region}
+
+roundcube__original_configuration[172].value = {street}<br/>{locality} {zipcode}<br/>{country} {region}
+roundcube__original_configuration[172].section = addressbook
+roundcube__original_configuration[172].state = init
+roundcube__original_configuration[173].name = addressbook_search_mode
+roundcube__original_configuration[173].comment = Matching mode for addressbook search (including autocompletion)
+0 - partial (*abc*), default
+1 - strict (abc)
+2 - prefix (abc*)
+Note: For LDAP sources fuzzy_search must be enabled to use 'partial' or 'prefix' mode
+
+roundcube__original_configuration[173].value = 0
+roundcube__original_configuration[173].section = addressbook
+roundcube__original_configuration[173].state = init
+roundcube__original_configuration[174].name = contactlist_fields
+roundcube__original_configuration[174].comment = List of fields used on contacts list and for autocompletion searches
+Warning: These are field names not LDAP attributes (see 'fieldmap' setting)!
+
+roundcube__original_configuration[174].value[0] = name
+roundcube__original_configuration[174].value[1] = firstname
+roundcube__original_configuration[174].value[2] = surname
+roundcube__original_configuration[174].value[3] = email
+roundcube__original_configuration[174].section = addressbook
+roundcube__original_configuration[174].state = init
+roundcube__original_configuration[175].name = contact_search_name
+roundcube__original_configuration[175].comment = Template of contact entry on the autocompletion list.
+You can use contact fields as: name, email, organization, department, etc.
+See program/steps/addressbook/func.inc for a list
+
+roundcube__original_configuration[175].value = {name} <{email}>
+roundcube__original_configuration[175].section = addressbook
+roundcube__original_configuration[175].state = init
+roundcube__original_configuration[176].name = default_charset
+roundcube__original_configuration[176].comment = Use this charset as fallback for message decoding
+roundcube__original_configuration[176].value = ISO-8859-1
+roundcube__original_configuration[176].section = userprefs
+roundcube__original_configuration[176].state = init
+roundcube__original_configuration[177].name = skin
+roundcube__original_configuration[177].comment = Skin name: folder from skins/
+roundcube__original_configuration[177].value = elastic
+roundcube__original_configuration[177].section = userprefs
+roundcube__original_configuration[178].name = skins_allowed
+roundcube__original_configuration[178].comment = Limit skins available/shown in the settings section
+roundcube__original_configuration[178].section = userprefs
+roundcube__original_configuration[178].state = init
+roundcube__original_configuration[179].name = standard_windows
+roundcube__original_configuration[179].comment = Enables using standard browser windows (that can be handled as tabs)
+instead of popup windows
+
+roundcube__original_configuration[179].value = False
+roundcube__original_configuration[179].section = userprefs
+roundcube__original_configuration[179].state = init
+roundcube__original_configuration[180].name = mail_pagesize
+roundcube__original_configuration[180].comment = Show up to X items in messages list view
+roundcube__original_configuration[180].value = 50
+roundcube__original_configuration[180].section = userprefs
+roundcube__original_configuration[180].state = init
+roundcube__original_configuration[181].name = addressbook_pagesize
+roundcube__original_configuration[181].comment = Show up to X items in contacts list view
+roundcube__original_configuration[181].value = 50
+roundcube__original_configuration[181].section = userprefs
+roundcube__original_configuration[181].state = init
+roundcube__original_configuration[182].name = addressbook_sort_col
+roundcube__original_configuration[182].comment = Sort contacts by this col (preferably either one of name, firstname, surname)
+
+roundcube__original_configuration[182].value = surname
+roundcube__original_configuration[182].section = userprefs
+roundcube__original_configuration[182].state = init
+roundcube__original_configuration[183].name = addressbook_name_listing
+roundcube__original_configuration[183].comment = The way how contact names are displayed in the list.
+0: prefix firstname middlename surname suffix (only if display name is not set)
+1: firstname middlename surname
+2: surname firstname middlename
+3: surname, firstname middlename
+
+roundcube__original_configuration[183].value = 0
+roundcube__original_configuration[183].section = userprefs
+roundcube__original_configuration[183].state = init
+roundcube__original_configuration[184].name = timezone
+roundcube__original_configuration[184].comment = Use this timezone to display date/time
+Valid timezone identifiers are listed here: php.net/manual/en/timezones.php
+'auto' will use the browser's timezone settings
+
+roundcube__original_configuration[184].value = auto
+roundcube__original_configuration[184].section = userprefs
+roundcube__original_configuration[184].state = init
+roundcube__original_configuration[185].name = prefer_html
+roundcube__original_configuration[185].comment = Prefer displaying HTML messages
+roundcube__original_configuration[185].value = True
+roundcube__original_configuration[185].section = userprefs
+roundcube__original_configuration[185].state = init
+roundcube__original_configuration[186].name = show_images
+roundcube__original_configuration[186].comment = Display remote resources (inline images, styles)
+0 - Never, always ask
+1 - Ask if sender is not in address book
+2 - Always allow
+
+roundcube__original_configuration[186].value = 0
+roundcube__original_configuration[186].section = userprefs
+roundcube__original_configuration[186].state = init
+roundcube__original_configuration[187].name = message_extwin
+roundcube__original_configuration[187].comment = Open messages in new window
+roundcube__original_configuration[187].value = False
+roundcube__original_configuration[187].section = userprefs
+roundcube__original_configuration[187].state = init
+roundcube__original_configuration[188].name = compose_extwin
+roundcube__original_configuration[188].comment = Open message compose form in new window
+roundcube__original_configuration[188].value = False
+roundcube__original_configuration[188].section = userprefs
+roundcube__original_configuration[188].state = init
+roundcube__original_configuration[189].name = htmleditor
+roundcube__original_configuration[189].comment = Compose html formatted messages by default
+ 0 - never,
+ 1 - always,
+ 2 - on reply to HTML message,
+ 3 - on forward or reply to HTML message
+ 4 - always, except when replying to plain text message
+
+roundcube__original_configuration[189].value = 0
+roundcube__original_configuration[189].section = userprefs
+roundcube__original_configuration[189].state = init
+roundcube__original_configuration[190].name = compose_save_localstorage
+roundcube__original_configuration[190].comment = Save copies of compose messages in the browser's local storage
+for recovery in case of browser crashes and session timeout.
+
+roundcube__original_configuration[190].value = True
+roundcube__original_configuration[190].section = userprefs
+roundcube__original_configuration[190].state = init
+roundcube__original_configuration[191].name = prettydate
+roundcube__original_configuration[191].comment = Show pretty dates as standard
+roundcube__original_configuration[191].value = True
+roundcube__original_configuration[191].section = userprefs
+roundcube__original_configuration[191].state = init
+roundcube__original_configuration[192].name = draft_autosave
+roundcube__original_configuration[192].comment = Save compose message every 300 seconds (5min)
+roundcube__original_configuration[192].value = 300
+roundcube__original_configuration[192].section = userprefs
+roundcube__original_configuration[192].state = init
+roundcube__original_configuration[193].name = layout
+roundcube__original_configuration[193].comment = Interface layout. Default: 'widescreen'.
+ 'widescreen' - three columns
+ 'desktop'    - two columns, preview on bottom
+ 'list'       - two columns, no preview
+
+roundcube__original_configuration[193].value = widescreen
+roundcube__original_configuration[193].section = userprefs
+roundcube__original_configuration[193].state = init
+roundcube__original_configuration[194].name = mail_read_time
+roundcube__original_configuration[194].comment = Mark as read when viewing a message (delay in seconds)
+Set to -1 if messages should not be marked as read
+
+roundcube__original_configuration[194].value = 0
+roundcube__original_configuration[194].section = userprefs
+roundcube__original_configuration[194].state = init
+roundcube__original_configuration[195].name = logout_purge
+roundcube__original_configuration[195].comment = Clear Trash on logout
+roundcube__original_configuration[195].value = False
+roundcube__original_configuration[195].section = userprefs
+roundcube__original_configuration[195].state = init
+roundcube__original_configuration[196].name = logout_expunge
+roundcube__original_configuration[196].comment = Compact INBOX on logout
+roundcube__original_configuration[196].value = False
+roundcube__original_configuration[196].section = userprefs
+roundcube__original_configuration[196].state = init
+roundcube__original_configuration[197].name = inline_images
+roundcube__original_configuration[197].comment = Display attached images below the message body
+roundcube__original_configuration[197].value = True
+roundcube__original_configuration[197].section = userprefs
+roundcube__original_configuration[197].state = init
+roundcube__original_configuration[198].name = mime_param_folding
+roundcube__original_configuration[198].comment = Encoding of long/non-ascii attachment names:
+0 - Full RFC 2231 compatible
+1 - RFC 2047 for 'name' and RFC 2231 for 'filename' parameter (Thunderbird's default)
+2 - Full 2047 compatible
+
+roundcube__original_configuration[198].value = 1
+roundcube__original_configuration[198].section = userprefs
+roundcube__original_configuration[198].state = init
+roundcube__original_configuration[199].name = skip_deleted
+roundcube__original_configuration[199].comment = Set true if deleted messages should not be displayed
+This will make the application run slower
+
+roundcube__original_configuration[199].value = False
+roundcube__original_configuration[199].section = userprefs
+roundcube__original_configuration[199].state = init
+roundcube__original_configuration[200].name = read_when_deleted
+roundcube__original_configuration[200].comment = Set true to Mark deleted messages as read as well as deleted
+False means that a message's read status is not affected by marking it as deleted
+
+roundcube__original_configuration[200].value = True
+roundcube__original_configuration[200].section = userprefs
+roundcube__original_configuration[200].state = init
+roundcube__original_configuration[201].name = flag_for_deletion
+roundcube__original_configuration[201].comment = Set to true to never delete messages immediately
+Use 'Purge' to remove messages marked as deleted
+
+roundcube__original_configuration[201].value = False
+roundcube__original_configuration[201].section = userprefs
+roundcube__original_configuration[201].state = init
+roundcube__original_configuration[202].name = refresh_interval
+roundcube__original_configuration[202].comment = Default interval for auto-refresh requests (in seconds)
+These are requests for system state updates e.g. checking for new messages, etc.
+Setting it to 0 disables the feature.
+
+roundcube__original_configuration[202].value = 60
+roundcube__original_configuration[202].section = userprefs
+roundcube__original_configuration[202].state = init
+roundcube__original_configuration[203].name = check_all_folders
+roundcube__original_configuration[203].comment = If true all folders will be checked for recent messages
+roundcube__original_configuration[203].value = False
+roundcube__original_configuration[203].section = userprefs
+roundcube__original_configuration[203].state = init
+roundcube__original_configuration[204].name = display_next
+roundcube__original_configuration[204].comment = If true, after message/contact delete/move, the next message/contact will be displayed
+
+roundcube__original_configuration[204].value = True
+roundcube__original_configuration[204].section = userprefs
+roundcube__original_configuration[204].state = init
+roundcube__original_configuration[205].name = default_list_mode
+roundcube__original_configuration[205].comment = Default messages listing mode. One of 'threads' or 'list'.
+
+roundcube__original_configuration[205].value = list
+roundcube__original_configuration[205].section = userprefs
+roundcube__original_configuration[205].state = init
+roundcube__original_configuration[206].name = autoexpand_threads
+roundcube__original_configuration[206].comment = 0 - Do not expand threads
+1 - Expand all threads automatically
+2 - Expand only threads with unread messages
+
+roundcube__original_configuration[206].value = 0
+roundcube__original_configuration[206].section = userprefs
+roundcube__original_configuration[206].state = init
+roundcube__original_configuration[207].name = reply_mode
+roundcube__original_configuration[207].comment = When replying:
+-1 - don't cite the original message
+0  - place cursor below the original message
+1  - place cursor above original message (top posting)
+2  - place cursor above original message (top posting), but do not indent the quote
+
+roundcube__original_configuration[207].value = 0
+roundcube__original_configuration[207].section = userprefs
+roundcube__original_configuration[207].state = init
+roundcube__original_configuration[208].name = strip_existing_sig
+roundcube__original_configuration[208].comment = When replying strip original signature from message
+roundcube__original_configuration[208].value = True
+roundcube__original_configuration[208].section = userprefs
+roundcube__original_configuration[208].state = init
+roundcube__original_configuration[209].name = show_sig
+roundcube__original_configuration[209].comment = Show signature:
+0 - Never
+1 - Always
+2 - New messages only
+3 - Forwards and Replies only
+
+roundcube__original_configuration[209].value = 1
+roundcube__original_configuration[209].section = userprefs
+roundcube__original_configuration[209].state = init
+roundcube__original_configuration[210].name = sig_below
+roundcube__original_configuration[210].comment = By default the signature is placed depending on cursor position (reply_mode).
+Sometimes it might be convenient to start the reply on top but keep
+the signature below the quoted text (sig_below = true).
+
+roundcube__original_configuration[210].value = False
+roundcube__original_configuration[210].section = userprefs
+roundcube__original_configuration[210].state = init
+roundcube__original_configuration[211].name = sig_separator
+roundcube__original_configuration[211].comment = Enables adding of standard separator to the signature
+
+roundcube__original_configuration[211].value = True
+roundcube__original_configuration[211].section = userprefs
+roundcube__original_configuration[211].state = init
+roundcube__original_configuration[212].name = force_7bit
+roundcube__original_configuration[212].comment = Use MIME encoding (quoted-printable) for 8bit characters in message body
+
+roundcube__original_configuration[212].value = False
+roundcube__original_configuration[212].section = userprefs
+roundcube__original_configuration[212].state = init
+roundcube__original_configuration[213].name = search_mods
+roundcube__original_configuration[213].comment = Defaults of the search field configuration.
+The array can contain a per-folder list of header fields which should be considered when searching
+The entry with key '*' stands for all folders which do not have a specific list set.
+Please note that folder names should to be in sync with $config['*_mbox'] options
+Example: array('*' => array('subject'=>1, 'from'=>1), 'Sent' => array('subject'=>1, 'to'=>1));
+
+roundcube__original_configuration[213].value = null
+roundcube__original_configuration[213].section = userprefs
+roundcube__original_configuration[213].state = init
+roundcube__original_configuration[214].name = addressbook_search_mods
+roundcube__original_configuration[214].comment = Defaults of the addressbook search field configuration.
+Example: array('name'=>1, 'firstname'=>1, 'surname'=>1, 'email'=>1, '*'=>1);
+
+roundcube__original_configuration[214].value = null
+roundcube__original_configuration[214].section = userprefs
+roundcube__original_configuration[214].state = init
+roundcube__original_configuration[215].name = delete_junk
+roundcube__original_configuration[215].comment = Directly delete messages in Junk instead of moving to Trash
+roundcube__original_configuration[215].value = False
+roundcube__original_configuration[215].section = userprefs
+roundcube__original_configuration[215].state = init
+roundcube__original_configuration[216].name = mdn_requests
+roundcube__original_configuration[216].comment = Behavior if a received message requests a message delivery notification (read receipt)
+0 = ask the user, 1 = send automatically, 2 = ignore (never send or ask)
+3 = send automatically if sender is in addressbook, otherwise ask the user
+4 = send automatically if sender is in addressbook, otherwise ignore
+
+roundcube__original_configuration[216].value = 0
+roundcube__original_configuration[216].section = userprefs
+roundcube__original_configuration[216].state = init
+roundcube__original_configuration[217].name = mdn_default
+roundcube__original_configuration[217].comment = Return receipt checkbox default state
+roundcube__original_configuration[217].value = 0
+roundcube__original_configuration[217].section = userprefs
+roundcube__original_configuration[217].state = init
+roundcube__original_configuration[218].name = dsn_default
+roundcube__original_configuration[218].comment = Delivery Status Notification checkbox default state
+
+roundcube__original_configuration[218].value = 0
+roundcube__original_configuration[218].section = userprefs
+roundcube__original_configuration[218].state = init
+roundcube__original_configuration[219].name = reply_same_folder
+roundcube__original_configuration[219].comment = Place replies in the folder of the message being replied to
+
+roundcube__original_configuration[219].value = False
+roundcube__original_configuration[219].section = userprefs
+roundcube__original_configuration[219].state = init
+roundcube__original_configuration[220].name = forward_attachment
+roundcube__original_configuration[220].comment = Sets default mode of Forward feature to "forward as attachment"
+
+roundcube__original_configuration[220].value = False
+roundcube__original_configuration[220].section = userprefs
+roundcube__original_configuration[220].state = init
+roundcube__original_configuration[221].name = default_addressbook
+roundcube__original_configuration[221].comment = Defines address book (internal index) to which new contacts will be added
+By default it is the first writeable addressbook.
+Note: Use '0' for built-in address book.
+
+roundcube__original_configuration[221].value = null
+roundcube__original_configuration[221].section = userprefs
+roundcube__original_configuration[221].state = init
+roundcube__original_configuration[222].name = spellcheck_before_send
+roundcube__original_configuration[222].comment = Enables spell checking before sending a message.
+roundcube__original_configuration[222].value = False
+roundcube__original_configuration[222].section = userprefs
+roundcube__original_configuration[222].state = init
+roundcube__original_configuration[223].name = autocomplete_single
+roundcube__original_configuration[223].comment = Skip alternative email addresses in autocompletion (show one address per contact)
+
+roundcube__original_configuration[223].value = False
+roundcube__original_configuration[223].section = userprefs
+roundcube__original_configuration[223].state = init
+roundcube__original_configuration[224].name = default_font
+roundcube__original_configuration[224].comment = Default font for composed HTML message.
+Supported values: Andale Mono, Arial, Arial Black, Book Antiqua, Courier New,
+Georgia, Helvetica, Impact, Tahoma, Terminal, Times New Roman, Trebuchet MS, Verdana
+
+roundcube__original_configuration[224].value = Verdana
+roundcube__original_configuration[224].section = userprefs
+roundcube__original_configuration[224].state = init
+roundcube__original_configuration[225].name = default_font_size
+roundcube__original_configuration[225].comment = Default font size for composed HTML message.
+Supported sizes: 8pt, 10pt, 12pt, 14pt, 18pt, 24pt, 36pt
+
+roundcube__original_configuration[225].value = 10pt
+roundcube__original_configuration[225].section = userprefs
+roundcube__original_configuration[225].state = init
+roundcube__original_configuration[226].name = message_show_email
+roundcube__original_configuration[226].comment = Enables display of email address with name instead of a name (and address in title)
+
+roundcube__original_configuration[226].value = False
+roundcube__original_configuration[226].section = userprefs
+roundcube__original_configuration[226].state = init
+roundcube__original_configuration[227].name = reply_all_mode
+roundcube__original_configuration[227].comment = Default behavior of Reply-All button:
+0 - Reply-All always
+1 - Reply-List if mailing list is detected
+
+roundcube__original_configuration[227].value = 0
+roundcube__original_configuration[227].section = userprefs
+roundcube__original_configuration[227].state = init
+roundcube__default_configuration[0].name = db_dsnw
+roundcube__default_configuration[0].value = {{ "sqlite:///" + roundcube__git_dest + "/"
+                            + roundcube__database_map[roundcube__database].dbname | d()
+                            + "?mode=640" }}
+
+roundcube__default_configuration[0].state = {{ "present"
+               if (roundcube__database_map[roundcube__database].dbtype == "sqlite")
+               else "ignore" }}
+
+roundcube__default_configuration[1].name = db_dsnw
+roundcube__default_configuration[1].value = {{ "mysql://" + roundcube__database_map[roundcube__database].dbuser | d() + ":"
+                          + roundcube__database_map[roundcube__database].dbpass | d() + "@"
+                          + roundcube__database_map[roundcube__database].dbhost | d() + "/"
+                          + roundcube__database_map[roundcube__database].dbname | d() }}
+
+roundcube__default_configuration[1].state = {{ "present"
+               if (roundcube__database_map[roundcube__database].dbtype == "mysql")
+               else "ignore" }}
+
+roundcube__default_configuration[2].name = db_dsnw
+roundcube__default_configuration[2].value = {{ "pgsql://" + roundcube__database_map[roundcube__database].dbuser | d() + ":"
+                          + roundcube__database_map[roundcube__database].dbpass | d() + "@"
+                          + roundcube__database_map[roundcube__database].dbhost | d() + "/"
+                          + roundcube__database_map[roundcube__database].dbname | d() }}
+
+roundcube__default_configuration[2].state = {{ "present"
+               if (roundcube__database_map[roundcube__database].dbtype == "postgresql")
+               else "ignore" }}
+
+roundcube__default_configuration[3].name = log_driver
+roundcube__default_configuration[3].comment = Log driver: "syslog", "stdout" or "file"
+
+roundcube__default_configuration[3].value = {{ roundcube__log_driver }}
+roundcube__default_configuration[4].name = imap_host
+roundcube__default_configuration[4].value = {{ roundcube__imap_server }}
+roundcube__default_configuration[5].name = imap_cache
+roundcube__default_configuration[5].value = memcached
+roundcube__default_configuration[5].state = {{ "present" if roundcube__memcached_enabled | bool else "ignore" }}
+roundcube__default_configuration[6].name = messages_cache
+roundcube__default_configuration[6].value = True
+roundcube__default_configuration[6].state = {{ "ignore"
+               if (ansible_local | d() and ansible_local.dovecot | d() and
+                   (ansible_local.dovecot.installed | d()) | bool)
+               else "present" }}
+
+roundcube__default_configuration[7].name = smtp_host
+roundcube__default_configuration[7].value = {{ roundcube__smtp_server }}
+roundcube__default_configuration[8].name = smtp_user
+roundcube__default_configuration[8].value = {{ roundcube__smtp_user }}
+roundcube__default_configuration[9].name = smtp_pass
+roundcube__default_configuration[9].value = {{ roundcube__smtp_pass }}
+roundcube__default_configuration[10].name = ldap_cache
+roundcube__default_configuration[10].value = memcached
+roundcube__default_configuration[10].state = {{ "present" if roundcube__memcached_enabled | bool else "ignore" }}
+roundcube__default_configuration[11].name = memcache_hosts
+roundcube__default_configuration[11].value = {{ roundcube__memcached_hosts }}
+roundcube__default_configuration[11].state = {{ "present" if roundcube__memcached_enabled | bool else "ignore" }}
+roundcube__default_configuration[12].name = redis_hosts
+roundcube__default_configuration[12].value = {{ roundcube__redis_hosts }}
+roundcube__default_configuration[12].state = {{ "present" if roundcube__redis_enabled | bool else "ignore" }}
+roundcube__default_configuration[13].name = skin_logo
+roundcube__default_configuration[13].value = {{ roundcube__skin_logo }}
+roundcube__default_configuration[14].name = force_https
+roundcube__default_configuration[14].value = True
+roundcube__default_configuration[15].name = session_storage
+roundcube__default_configuration[15].value = {{ roundcube__session_storage }}
+roundcube__default_configuration[15].state = {{ "present" if roundcube__session_storage | d() else "ignore" }}
+roundcube__default_configuration[16].name = des_key
+roundcube__default_configuration[16].value = {{ roundcube__des_key }}
+roundcube__default_configuration[17].name = cipher_method
+roundcube__default_configuration[17].value = AES-256-CBC
+roundcube__default_configuration[18].name = username_domain
+roundcube__default_configuration[18].value = {{ roundcube__username_domain }}
+roundcube__default_configuration[19].name = sendmail_delay
+roundcube__default_configuration[19].value = 5
+roundcube__default_configuration[20].name = product_name
+roundcube__default_configuration[20].value = {{ roundcube__product_name }}
+roundcube__default_configuration[21].name = mime_types
+roundcube__default_configuration[21].value = /etc/mime.types
+roundcube__default_configuration[22].name = email_dns_check
+roundcube__default_configuration[22].value = True
+roundcube__default_configuration[23].name = plugins
+roundcube__default_configuration[23].value = {{ roundcube__combined_plugins | debops.debops.parse_kv_items
+               | selectattr("state", "equalto", "enabled")
+               | map(attribute="name") | list | unique }}
+
+roundcube__default_configuration[24].name = create_default_folders
+roundcube__default_configuration[24].value = True
+roundcube__default_configuration[25].name = min_refresh_interval
+roundcube__default_configuration[25].value = 300
+roundcube__default_configuration[26].name = autocomplete_addressbooks
+roundcube__default_configuration[26].value = {{ (["sql"] + (["People"] if roundcube__ldap_enabled | bool else []))
+               | flatten }} 
+roundcube__default_configuration[26].state = {{ "present" if roundcube__ldap_enabled | bool else "ignore" }}
+roundcube__default_configuration[27].name = autocomplete_min_length
+roundcube__default_configuration[27].value = 3
+roundcube__default_configuration[28].name = autocomplete_single
+roundcube__default_configuration[28].value = True
+roundcube__default_configuration[29].name = ldap_public_people
+roundcube__default_configuration[29].option[0] = ldap_public
+roundcube__default_configuration[29].option[1] = People
+roundcube__default_configuration[29].section = addressbook
+roundcube__default_configuration[29].state = {{ "present" if roundcube__ldap_enabled | bool else "ignore" }}
+roundcube__default_configuration[29].array[0].name = {{ roundcube__ldap_addressbook_name }}
+roundcube__default_configuration[29].array[0].hosts = {{ (["tls://"] if roundcube__ldap_use_tls else [""])
+                   | product(roundcube__ldap_hosts) | map("join")
+                   | product([roundcube__ldap_port]) | map("join") }}
+
+roundcube__default_configuration[29].array[0].ldap_version = 3
+roundcube__default_configuration[29].array[0].user_specific = True
+roundcube__default_configuration[29].array[0].base_dn = {{ roundcube__ldap_people_dn | join(",") }}
+roundcube__default_configuration[29].array[0].bind_dn = {{ "uid=%u," + roundcube__ldap_people_dn | join(",") }}
+roundcube__default_configuration[29].array[0].bind_pass = 
+roundcube__default_configuration[29].array[0].search_base_dn = {{ roundcube__ldap_base_dn | join(",") }}
+roundcube__default_configuration[29].array[0].search_filter = (& (objectClass=mailRecipient) (| (uid=%u) (mail=%fu) ) )
+roundcube__default_configuration[29].array[0].search_bind_dn = {{ roundcube__ldap_binddn }}
+roundcube__default_configuration[29].array[0].search_bind_pw = {{ roundcube__ldap_bindpw }}
+roundcube__default_configuration[29].array[0].filter = (objectClass=inetOrgPerson)
+roundcube__default_configuration[29].array[0].scope = sub
+roundcube__default_configuration[29].array[0].searchonly = True
+roundcube__default_configuration[29].array[0].vlv = False
+roundcube__default_configuration[29].array[0].sort = sn
+roundcube__default_configuration[29].array[0].search_fields[0] = sn
+roundcube__default_configuration[29].array[0].search_fields[1] = cn
+roundcube__default_configuration[29].array[0].search_fields[2] = mail
+roundcube__default_configuration[29].array[0].search_fields[3] = telephoneNumber
+roundcube__default_configuration[29].array[0].hidden = {{ roundcube__ldap_hidden }}
+roundcube__default_configuration[29].array[0].writable = False
+roundcube__default_configuration[29].array[0].groups[0].base_dn = {{ roundcube__ldap_groups_dn | join(",") }}
+roundcube__default_configuration[29].array[0].groups[0].filter = (objectClass=groupOfNames)
+roundcube__default_configuration[29].array[0].groups[0].object_classes[0] = groupOfNames
+roundcube__default_configuration[29].array[0].fieldmap[0] = {{ roundcube__ldap_field_map }}
+roundcube__default_configuration[30].name = default_charset
+roundcube__default_configuration[30].value = UTF-8
+roundcube__default_configuration[31].name = skin
+roundcube__default_configuration[31].value = {{ roundcube__skin_folder }}
+roundcube__default_configuration[32].name = prefer_html
+roundcube__default_configuration[32].value = False
+roundcube__default_configuration[33].name = refresh_interval
+roundcube__default_configuration[33].value = 900
+roundcube__default_configuration[34].name = delete_junk
+roundcube__default_configuration[34].value = True
+roundcube__default_configuration[35].name = forward_attachment
+roundcube__default_configuration[35].value = True
+roundcube__default_configuration[36].name = message_show_email
+roundcube__default_configuration[36].value = True
+roundcube__default_configuration[37].name = reply_all_mode
+roundcube__default_configuration[37].value = 1
+roundcube__default_configuration[38].name = swipe_actions
+roundcube__default_configuration[38].comment = Configuration for the 'swipe' Roundcube plugin
+
+roundcube__default_configuration[38].array[0].messagelist[0].left = swipe-read
+roundcube__default_configuration[38].array[0].messagelist[0].right = move
+roundcube__default_configuration[38].array[0].messagelist[0].down = checkmail
+roundcube__default_configuration[38].array[1].contactlist[0].left = none
+roundcube__default_configuration[38].array[1].contactlist[0].right = compose
+roundcube__default_configuration[38].array[1].contactlist[0].down = none
+roundcube__default_configuration[39].name = enable_spellcheck
+roundcube__default_configuration[39].value = True
+roundcube__default_configuration[39].state = present
+roundcube__default_configuration[40].name = spellcheck_engine
+roundcube__default_configuration[40].value = enchant
+roundcube__default_configuration[40].state = present
+roundcube__default_configuration[41].name = spellcheck_ignore_caps
+roundcube__default_configuration[41].value = True
+roundcube__default_configuration[41].state = present
+roundcube__default_configuration[42].name = spellcheck_ignore_nums
+roundcube__default_configuration[42].value = True
+roundcube__default_configuration[42].state = present
+roundcube__default_configuration[43].name = spellcheck_ignore_syms
+roundcube__default_configuration[43].value = True
+roundcube__default_configuration[43].state = present
+roundcube__combined_configuration = {{ roundcube__original_configuration
+                                       + roundcube__default_configuration
+                                       + roundcube__configuration
+                                       + roundcube__group_configuration
+                                       + roundcube__host_configuration }}
+
+roundcube__default_configuration_sections[0].name = init
+roundcube__default_configuration_sections[0].state = hidden
+roundcube__default_configuration_sections[1].name = sql
+roundcube__default_configuration_sections[1].title = SQL DATABASE
+roundcube__default_configuration_sections[2].name = logging
+roundcube__default_configuration_sections[2].title = LOGGING/DEBUGGING
+roundcube__default_configuration_sections[3].name = imap
+roundcube__default_configuration_sections[4].name = smtp
+roundcube__default_configuration_sections[5].name = ldap
+roundcube__default_configuration_sections[6].name = cache
+roundcube__default_configuration_sections[6].title = CACHE(S)
+roundcube__default_configuration_sections[7].name = system
+roundcube__default_configuration_sections[8].name = plugins
+roundcube__default_configuration_sections[9].name = ui
+roundcube__default_configuration_sections[9].title = USER INTERFACE
+roundcube__default_configuration_sections[10].name = addressbook
+roundcube__default_configuration_sections[10].title = ADDRESSBOOK SETTINGS
+roundcube__default_configuration_sections[11].name = userprefs
+roundcube__default_configuration_sections[11].title = USER PREFERENCES
+roundcube__default_configuration_sections[12].name = unknown
+roundcube__default_configuration_sections[12].title = OTHER OPTIONS
+roundcube__combined_configuration_sections = {{ roundcube__default_configuration_sections
+                                                + roundcube__configuration_sections }} 
+roundcube__default_plugins[0].name = archive
+roundcube__default_plugins[0].state = enabled
+roundcube__default_plugins[1].name = filesystem_attachments
+roundcube__default_plugins[1].state = enabled
+roundcube__default_plugins[2].name = jqueryui
+roundcube__default_plugins[2].state = enabled
+roundcube__default_plugins[3].name = zipdownload
+roundcube__default_plugins[3].state = enabled
+roundcube__default_plugins[3].options[0].name = zipdownload_attachments
+roundcube__default_plugins[3].options[0].comment = Zip attachments
+Only show the link when there are more than this many attachments
+-1 to prevent downloading of attachments as zip
+
+roundcube__default_plugins[3].options[0].value = 1
+roundcube__default_plugins[3].options[1].name = zipdownload_selection
+roundcube__default_plugins[3].options[1].comment = Zip selection of mail messages
+This option enables downloading of multiple messages as one zip archive.
+The number or string value specifies maximum total size of all messages
+in the archive (not the size of the archive itself).
+
+roundcube__default_plugins[3].options[1].value = 50MB
+roundcube__default_plugins[3].options[2].name = zipdownload_charset
+roundcube__default_plugins[3].options[2].comment = Charset to use for filenames inside the zip
+
+roundcube__default_plugins[3].options[2].value = UTF-8
+roundcube__default_plugins[4].name = ldap_support
+roundcube__default_plugins[4].package = kolab/net_ldap3
+roundcube__default_plugins[4].state = {{ "present" if roundcube__ldap_enabled | bool else "ignore" }}
+roundcube__default_plugins[5].name = contextmenu
+roundcube__default_plugins[5].package = johndoh/contextmenu{{ ":3.2.1"
+              if roundcube__git_version is version("1.5", "<") else "" }} 
+roundcube__default_plugins[5].state = enabled
+roundcube__default_plugins[6].name = show_folder_size
+roundcube__default_plugins[6].package = jfcherng/show-folder-size
+roundcube__default_plugins[6].state = enabled
+roundcube__default_plugins[6].options[0].name = auto_show_folder_size
+roundcube__default_plugins[6].options[0].comment = Automatically show the folder size without clicking on the toolbar button.
+This could be a serious performance penalty if there are many users
+
+roundcube__default_plugins[6].options[0].value = False
+roundcube__default_plugins[6].options[1].name = show_mailboxoptions_button
+roundcube__default_plugins[6].options[1].comment = Show mailbox options button
+roundcube__default_plugins[6].options[1].value = True
+roundcube__default_plugins[6].options[2].name = show_toolbar_button
+roundcube__default_plugins[6].options[2].comment = Show the toolbar button
+roundcube__default_plugins[6].options[2].value = False
+roundcube__default_plugins[7].name = cloud_button
+roundcube__default_plugins[7].package = san4op/cloud_button
+roundcube__default_plugins[7].state = enabled
+roundcube__default_plugins[7].options[0].name = cloud_button_url
+roundcube__default_plugins[7].options[0].comment = URL to cloud storage
+roundcube__default_plugins[7].options[0].value = {{ "https://cloud." + ansible_domain + "/" }}
+roundcube__default_plugins[8].name = new_user_identity
+roundcube__default_plugins[8].state = {{ "enabled" if roundcube__ldap_enabled | bool else "ignore" }}
+roundcube__default_plugins[8].options[0].name = new_user_identity_addressbook
+roundcube__default_plugins[8].options[0].comment = The id of the address book to use to automatically set a
+user's full name in their new identity. (This should be an
+string, which refers to the $config['ldap_public'] array.)
+
+roundcube__default_plugins[8].options[0].value = People
+roundcube__default_plugins[8].options[1].name = new_user_identity_match
+roundcube__default_plugins[8].options[1].comment = When automatically setting a user's full name in their
+new identity, match the user's login name against this field.
+
+roundcube__default_plugins[8].options[1].value = mail
+roundcube__default_plugins[8].options[2].name = new_user_identity_onlogin
+roundcube__default_plugins[8].options[2].comment = Determine whether to import user's identities on each login.
+New user identity will be created for each e-mail address
+present in address book, but not assigned to any identity.
+
+roundcube__default_plugins[8].options[2].value = True
+roundcube__default_plugins[9].name = password
+roundcube__default_plugins[9].state = {{ "enabled" if roundcube__ldap_password_enabled | bool else "absent" }}
+roundcube__default_plugins[9].options[0].name = password_driver
+roundcube__default_plugins[9].options[0].comment = Password Plugin options
+-----------------------
+A driver to use for password change. Default: "sql".
+See README file for list of supported driver names.
+
+roundcube__default_plugins[9].options[0].value = {{ "ldap_exop" if roundcube__ldap_password_enabled | bool else "sql" }}
+roundcube__default_plugins[9].options[1].name = password_strength_driver
+roundcube__default_plugins[9].options[1].comment = A driver to use for checking password strength. Default: null (disabled).
+See README file for list of supported driver names.
+
+roundcube__default_plugins[9].options[1].value = null
+roundcube__default_plugins[9].options[2].name = password_confirm_current
+roundcube__default_plugins[9].options[2].comment = Determine whether current password is required to change password.
+Default: false.
+
+roundcube__default_plugins[9].options[2].value = True
+roundcube__default_plugins[9].options[3].name = password_minimum_length
+roundcube__default_plugins[9].options[3].comment = Require the new password to be a certain length.
+set to blank to allow passwords of any length
+
+roundcube__default_plugins[9].options[3].value = 0
+roundcube__default_plugins[9].options[4].name = password_minimum_score
+roundcube__default_plugins[9].options[4].comment = Require the new password to have at least the specified strength score.
+Note: Password strength is scored from 1 (week) to 5 (strong).
+
+roundcube__default_plugins[9].options[4].value = 0
+roundcube__default_plugins[9].options[5].name = password_log
+roundcube__default_plugins[9].options[5].comment = Enables logging of password changes into logs/password
+
+roundcube__default_plugins[9].options[5].value = False
+roundcube__default_plugins[9].options[6].name = password_login_exceptions
+roundcube__default_plugins[9].options[6].comment = Comma-separated list of login exceptions for which password change
+will be not available (no Password tab in Settings)
+
+roundcube__default_plugins[9].options[6].value = null
+roundcube__default_plugins[9].options[7].name = password_hosts
+roundcube__default_plugins[9].options[7].comment = Array of hosts that support password changing.
+Listed hosts will feature a Password option in Settings; others will not.
+Example: array('mail.example.com', 'mail2.example.org');
+Default is NULL (all hosts supported).
+
+roundcube__default_plugins[9].options[7].value = null
+roundcube__default_plugins[9].options[8].name = password_force_save
+roundcube__default_plugins[9].options[8].comment = Enables saving the new password even if it matches the old password. Useful
+for upgrading the stored passwords after the encryption scheme has changed.
+
+roundcube__default_plugins[9].options[8].value = False
+roundcube__default_plugins[9].options[9].name = password_force_new_user
+roundcube__default_plugins[9].options[9].comment = Enables forcing new users to change their password at their first login.
+
+roundcube__default_plugins[9].options[9].value = False
+roundcube__default_plugins[9].options[10].name = password_algorithm
+roundcube__default_plugins[9].options[10].comment = Default password hashing/crypting algorithm.
+Possible options: des-crypt, ext-des-crypt, md5-crypt, blowfish-crypt,
+sha256-crypt, sha512-crypt, md5, sha, smd5, ssha, ssha512, samba, ad, dovecot, clear.
+For details see password::hash_password() method.
+
+roundcube__default_plugins[9].options[10].value = clear
+roundcube__default_plugins[9].options[11].name = password_algorithm_prefix
+roundcube__default_plugins[9].options[11].comment = Password prefix (e.g. {CRYPT}, {SHA}) for passwords generated
+using password_algorithm above. Default: empty.
+
+roundcube__default_plugins[9].options[11].value = 
+roundcube__default_plugins[9].options[12].name = password_dovecotpw
+roundcube__default_plugins[9].options[12].comment = Path for dovecotpw/doveadm-pw (if not in the $PATH).
+Used for password_algorithm = 'dovecot'.
+$config['password_dovecotpw'] = '/usr/local/sbin/dovecotpw'; // for dovecot-1.x
+
+roundcube__default_plugins[9].options[12].value = /usr/bin/doveadm pw
+roundcube__default_plugins[9].options[13].name = password_dovecotpw_method
+roundcube__default_plugins[9].options[13].comment = Dovecot password scheme.
+Used for password_algorithm = 'dovecot'.
+
+roundcube__default_plugins[9].options[13].value = CRAM-MD5
+roundcube__default_plugins[9].options[14].name = password_dovecotpw_with_method
+roundcube__default_plugins[9].options[14].comment = Enables use of password with method prefix, e.g. {MD5}$1$LUiMYWqx$fEkg/ggr/L6Mb2X7be4i1/
+when using password_algorithm=dovecot
+
+roundcube__default_plugins[9].options[14].value = False
+roundcube__default_plugins[9].options[15].name = password_blowfish_cost
+roundcube__default_plugins[9].options[15].comment = Iteration count parameter for Blowfish-based hashing algo.
+It must be between 4 and 31. Default: 12.
+Be aware, the higher the value, the longer it takes to generate the password hashes.
+
+roundcube__default_plugins[9].options[15].value = 12
+roundcube__default_plugins[9].options[16].name = password_crypt_rounds
+roundcube__default_plugins[9].options[16].comment = Number of rounds for the sha256 and sha512 crypt hashing algorithms.
+Must be at least 1000. If not set, then the number of rounds is left up
+to the crypt() implementation. On glibc this defaults to 5000.
+Be aware, the higher the value, the longer it takes to generate the password hashes.
+
+roundcube__default_plugins[9].options[16].value = 50000
+roundcube__default_plugins[9].options[17].name = password_disabled
+roundcube__default_plugins[9].options[17].comment = This option temporarily disables the password change functionality.
+Use it when the users database server is in maintenance mode or sth like that.
+You can set it to TRUE/FALSE or a text describing the reason
+which will replace the default.
+
+roundcube__default_plugins[9].options[17].value = False
+roundcube__default_plugins[9].options[18].name = password_username_format
+roundcube__default_plugins[9].options[18].comment = Various drivers/setups use different format of the username.
+This option allows you to force specified format use. Default: '%u'.
+Supported variables:
+    %u - full username,
+    %l - the local part of the username (in case the username is an email address)
+    %d - the domain part of the username (in case the username is an email address)
+Note: This may no apply to some drivers implementing their own rules, e.g. sql.
+
+roundcube__default_plugins[9].options[18].value = %u
+roundcube__default_plugins[9].options[19].name = password_db_dsn
+roundcube__default_plugins[9].options[19].comment = SQL Driver options
+------------------
+PEAR database DSN for performing the query. By default
+Roundcube DB settings are used.
+Supported replacement variables:
+%h - user's IMAP hostname
+%n - hostname ($_SERVER['SERVER_NAME'])
+%t - hostname without the first part
+%d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+%z - IMAP domain (IMAP hostname without the first part)
+
+roundcube__default_plugins[9].options[19].value = 
+roundcube__default_plugins[9].options[20].name = password_query
+roundcube__default_plugins[9].options[20].comment = The SQL query used to change the password.
+The query can contain the following macros that will be expanded as follows:
+     %p is replaced with the plaintext new password
+     %P is replaced with the encrypted/hashed new password
+        according to configured password_method
+     %o is replaced with the old (current) password
+     %O is replaced with the encrypted/hashed old (current) password
+        according to configured password_method
+     %h is replaced with the imap host (from the session info)
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username
+        (in case the username is an email address)
+     %d is replaced with the domain part of the username
+        (in case the username is an email address)
+Deprecated macros:
+     %c is replaced with the crypt version of the new password, MD5 if available
+        otherwise DES. More hash function can be enabled using the password_crypt_hash
+        configuration parameter.
+     %D is replaced with the dovecotpw-crypted version of the new password
+     %n is replaced with the hashed version of the new password
+     %q is replaced with the hashed password before the change
+Escaping of macros is handled by this module.
+Default: "SELECT update_passwd(%c, %u)"
+
+roundcube__default_plugins[9].options[20].value = SELECT update_passwd(%c, %u)
+roundcube__default_plugins[9].options[21].name = password_crypt_hash
+roundcube__default_plugins[9].options[21].comment = By default the crypt() function which is used to create the %c
+parameter uses the md5 algorithm (deprecated, use %P).
+You can choose between: des, md5, blowfish, sha256, sha512.
+
+roundcube__default_plugins[9].options[21].value = md5
+roundcube__default_plugins[9].options[22].name = password_idn_ascii
+roundcube__default_plugins[9].options[22].comment = By default domains in variables are using unicode.
+Enable this option to use punycoded names
+
+roundcube__default_plugins[9].options[22].value = False
+roundcube__default_plugins[9].options[23].name = password_hash_algorithm
+roundcube__default_plugins[9].options[23].comment = Using a password hash for %n and %q variables (deprecated, use %P).
+Determine which hashing algorithm should be used to generate
+the hashed new and current password for using them within the
+SQL query. Requires PHP's 'hash' extension.
+
+roundcube__default_plugins[9].options[23].value = sha1
+roundcube__default_plugins[9].options[24].name = password_hash_base64
+roundcube__default_plugins[9].options[24].comment = You can also decide whether the hash should be provided
+as hex string or in base64 encoded format.
+
+roundcube__default_plugins[9].options[24].value = False
+roundcube__default_plugins[9].options[25].name = password_pop_host
+roundcube__default_plugins[9].options[25].comment = Poppassd Driver options
+-----------------------
+The host which changes the password (default: localhost)
+Supported replacement variables:
+  %n - hostname ($_SERVER['SERVER_NAME'])
+  %t - hostname without the first part
+  %d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+  %h - IMAP host
+  %z - IMAP domain without first part
+  %s - domain name after the '@' from e-mail address provided at login screen
+
+roundcube__default_plugins[9].options[25].value = localhost
+roundcube__default_plugins[9].options[26].name = password_pop_port
+roundcube__default_plugins[9].options[26].comment = TCP port used for poppassd connections (default: 106)
+
+roundcube__default_plugins[9].options[26].value = 106
+roundcube__default_plugins[9].options[27].name = password_saslpasswd_args
+roundcube__default_plugins[9].options[27].comment = SASL Driver options
+-------------------
+Additional arguments for the saslpasswd2 call
+
+roundcube__default_plugins[9].options[27].value = 
+roundcube__default_plugins[9].options[28].name = password_ldap_host
+roundcube__default_plugins[9].options[28].comment = LDAP, LDAP_SIMPLE and LDAP_EXOP Driver options
+-----------------------------------
+LDAP server name to connect to.
+You can provide one or several hosts in an array in which case the hosts are tried from left to right.
+Example: array('ldap1.example.com', 'ldap2.example.com');
+Default: 'localhost'
+
+roundcube__default_plugins[9].options[28].value = {{ (roundcube__ldap_hosts | first)
+                   if roundcube__ldap_hosts | d()
+                   else "" }}
+
+roundcube__default_plugins[9].options[29].name = password_ldap_port
+roundcube__default_plugins[9].options[29].comment = LDAP server port to connect to
+Default: '389'
+
+roundcube__default_plugins[9].options[29].value = {{ roundcube__ldap_port }}
+roundcube__default_plugins[9].options[30].name = password_ldap_starttls
+roundcube__default_plugins[9].options[30].comment = TLS is started after connecting
+Using TLS for password modification is recommended.
+Default: false
+
+roundcube__default_plugins[9].options[30].value = {{ roundcube__ldap_use_tls | bool }}
+roundcube__default_plugins[9].options[31].name = password_ldap_version
+roundcube__default_plugins[9].options[31].comment = LDAP version
+Default: '3'
+
+roundcube__default_plugins[9].options[31].value = 3
+roundcube__default_plugins[9].options[32].name = password_ldap_basedn
+roundcube__default_plugins[9].options[32].comment = LDAP base name (root directory)
+Example: 'dc=example,dc=com'
+
+roundcube__default_plugins[9].options[32].value = {{ roundcube__ldap_base_dn | join(",") }}
+roundcube__default_plugins[9].options[33].name = password_ldap_method
+roundcube__default_plugins[9].options[33].comment = LDAP connection method
+There are two connection methods for changing a user's LDAP password.
+'user': use user credential (recommended, require password_confirm_current=true)
+'admin': use admin credential (this mode require password_ldap_adminDN and password_ldap_adminPW)
+Default: 'user'
+
+roundcube__default_plugins[9].options[33].value = user
+roundcube__default_plugins[9].options[34].name = password_ldap_adminDN
+roundcube__default_plugins[9].options[34].comment = LDAP Admin DN
+Used only in admin connection mode
+Default: null
+
+roundcube__default_plugins[9].options[34].value = null
+roundcube__default_plugins[9].options[35].name = password_ldap_adminPW
+roundcube__default_plugins[9].options[35].comment = LDAP Admin Password
+Used only in admin connection mode
+Default: null
+
+roundcube__default_plugins[9].options[35].value = null
+roundcube__default_plugins[9].options[36].name = password_ldap_userDN_mask
+roundcube__default_plugins[9].options[36].comment = LDAP user DN mask
+The user's DN is mandatory and as we only have his login,
+we need to re-create his DN using a mask
+'%login' will be replaced by the current roundcube user's login
+'%name' will be replaced by the current roundcube user's name part
+'%domain' will be replaced by the current roundcube user's domain part
+'%dc' will be replaced by domain name hierarchal string e.g. "dc=test,dc=domain,dc=com"
+Example: 'uid=%login,ou=people,dc=example,dc=com'
+
+roundcube__default_plugins[9].options[36].value = uid=%login,ou=people,dc=example,dc=com
+roundcube__default_plugins[9].options[36].state = comment
+roundcube__default_plugins[9].options[37].name = password_ldap_searchDN
+roundcube__default_plugins[9].options[37].comment = LDAP search DN
+The DN roundcube should bind with to find out user's DN
+based on his login. Note that you should comment out the default
+password_ldap_userDN_mask setting for this to take effect.
+Use this if you cannot specify a general template for user DN with
+password_ldap_userDN_mask. You need to perform a search based on
+users login to find his DN instead. A common reason might be that
+your users are placed under different ou's like engineering or
+sales which cannot be derived from their login only.
+
+roundcube__default_plugins[9].options[37].value = {{ roundcube__ldap_binddn }}
+roundcube__default_plugins[9].options[38].name = password_ldap_searchPW
+roundcube__default_plugins[9].options[38].comment = LDAP search password
+If password_ldap_searchDN is set, the password to use for
+binding to search for user's DN. Note that you should comment out the default
+password_ldap_userDN_mask setting for this to take effect.
+Warning: Be sure to set appropriate permissions on this file so this password
+is only accessible to roundcube and don't forget to restrict roundcube's access to
+your directory as much as possible using ACLs. Should this password be compromised
+you want to minimize the damage.
+
+roundcube__default_plugins[9].options[38].value = {{ roundcube__ldap_bindpw }}
+roundcube__default_plugins[9].options[39].name = password_ldap_search_base
+roundcube__default_plugins[9].options[39].comment = LDAP search base
+If password_ldap_searchDN is set, the base to search in using the filter below.
+Note that you should comment out the default password_ldap_userDN_mask setting
+for this to take effect.
+
+roundcube__default_plugins[9].options[39].value = {{ roundcube__ldap_base_dn | join(",") }}
+roundcube__default_plugins[9].options[40].name = password_ldap_search_filter
+roundcube__default_plugins[9].options[40].comment = LDAP search filter
+If password_ldap_searchDN is set, the filter to use when
+searching for user's DN. Note that you should comment out the default
+password_ldap_userDN_mask setting for this to take effect.
+'%login' will be replaced by the current roundcube user's login
+'%name' will be replaced by the current roundcube user's name part
+'%domain' will be replaced by the current roundcube user's domain part
+'%dc' will be replaced by domain name hierarchal string e.g. "dc=test,dc=domain,dc=com"
+Example: '(uid=%login)'
+Example: '(&(objectClass=posixAccount)(uid=%login))'
+
+roundcube__default_plugins[9].options[40].value = (& (objectClass=mailRecipient) (| (uid=%name) (mail=%login) ) )
+roundcube__default_plugins[9].options[41].name = password_ldap_encodage
+roundcube__default_plugins[9].options[41].comment = LDAP password hash type
+Standard LDAP encryption type which must be one of: crypt,
+ext_des, md5crypt, blowfish, md5, sha, smd5, ssha, ad, cram-md5 (dovecot style) or clear.
+Set to 'default' if you want to use method specified in password_algorithm option above.
+Multiple password Values can be generated by concatenating encodings with a +. E.g. 'cram-md5+crypt'
+Default: 'crypt'.
+
+roundcube__default_plugins[9].options[41].value = clear
+roundcube__default_plugins[9].options[42].name = password_ldap_pwattr
+roundcube__default_plugins[9].options[42].comment = LDAP password attribute
+Name of the ldap's attribute used for storing user password
+Default: 'userPassword'
+
+roundcube__default_plugins[9].options[42].value = userPassword
+roundcube__default_plugins[9].options[43].name = password_ldap_force_replace
+roundcube__default_plugins[9].options[43].comment = LDAP password force replace
+Force LDAP replace in cases where ACL allows only replace not read
+See https://pear.php.net/package/Net_LDAP2/docs/latest/Net_LDAP2/Net_LDAP2_Entry.html#methodreplace
+Default: true
+
+roundcube__default_plugins[9].options[43].value = True
+roundcube__default_plugins[9].options[44].name = password_ldap_lchattr
+roundcube__default_plugins[9].options[44].comment = LDAP Password Last Change Date
+Some places use an attribute to store the date of the last password change
+The date is measured in "days since epoch" (an integer value)
+Whenever the password is changed, the attribute will be updated if set (e.g. shadowLastChange)
+
+roundcube__default_plugins[9].options[44].value = 
+roundcube__default_plugins[9].options[45].name = password_ldap_samba_pwattr
+roundcube__default_plugins[9].options[45].comment = LDAP Samba password attribute, e.g. sambaNTPassword
+Name of the LDAP's Samba attribute used for storing user password
+
+roundcube__default_plugins[9].options[45].value = 
+roundcube__default_plugins[9].options[46].name = password_ldap_samba_lchattr
+roundcube__default_plugins[9].options[46].comment = LDAP Samba Password Last Change Date attribute, e.g. sambaPwdLastSet
+Some places use an attribute to store the date of the last password change
+The date is measured in "seconds since epoch" (an integer value)
+Whenever the password is changed, the attribute will be updated if set
+
+roundcube__default_plugins[9].options[46].value = 
+roundcube__default_plugins[9].options[47].name = password_ldap_ppolicy_cmd
+roundcube__default_plugins[9].options[47].comment = LDAP PPolicy Driver options
+-----------------------------------
+LDAP Change password command - filename of the perl script
+Example: 'change_ldap_pass.pl'
+
+roundcube__default_plugins[9].options[47].value = change_ldap_pass.pl
+roundcube__default_plugins[9].options[48].name = password_ldap_ppolicy_uri
+roundcube__default_plugins[9].options[48].comment = LDAP URI
+Example: 'ldap://ldap.example.com/ ldaps://ldap2.example.com:636/'
+
+roundcube__default_plugins[9].options[48].value = ldap://localhost/
+roundcube__default_plugins[9].options[49].name = password_ldap_ppolicy_basedn
+roundcube__default_plugins[9].options[49].comment = LDAP base name (root directory)
+Example: 'dc=example,dc=com'
+
+roundcube__default_plugins[9].options[49].value = dc=example,dc=com
+roundcube__default_plugins[9].options[50].name = password_ldap_ppolicy_searchDN
+roundcube__default_plugins[9].options[50].value = cn=someuser,dc=example,dc=com
+roundcube__default_plugins[9].options[51].name = password_ldap_ppolicy_searchPW
+roundcube__default_plugins[9].options[51].value = secret
+roundcube__default_plugins[9].options[52].name = password_ldap_policy_search_filter
+roundcube__default_plugins[9].options[52].comment = LDAP search filter
+Example: '(uid=%login)'
+Example: '(&(objectClass=posixAccount)(uid=%login))'
+
+roundcube__default_plugins[9].options[52].value = (uid=%login)
+roundcube__default_plugins[9].options[53].name = password_ldap_ppolicy_cafile
+roundcube__default_plugins[9].options[53].comment = CA Certificate file if in URI is LDAPS connection
+
+roundcube__default_plugins[9].options[53].value = /etc/ssl/certs/ca-certificates.crt
+roundcube__default_plugins[9].options[54].name = password_directadmin_host
+roundcube__default_plugins[9].options[54].comment = DirectAdmin Driver options
+--------------------------
+The host which changes the password
+Use 'ssl://host' instead of 'tcp://host' when running DirectAdmin over SSL.
+The host can contain the following macros that will be expanded as follows:
+    %h is replaced with the imap host (from the session info)
+    %d is replaced with the domain part of the username (if the username is an email)
+
+roundcube__default_plugins[9].options[54].value = tcp://localhost
+roundcube__default_plugins[9].options[55].name = password_directadmin_port
+roundcube__default_plugins[9].options[55].comment = TCP port used for DirectAdmin connections
+
+roundcube__default_plugins[9].options[55].value = 2222
+roundcube__default_plugins[9].options[56].name = password_vpopmaild_host
+roundcube__default_plugins[9].options[56].comment = vpopmaild Driver options
+-----------------------
+The host which changes the password
+
+roundcube__default_plugins[9].options[56].value = localhost
+roundcube__default_plugins[9].options[57].name = password_vpopmaild_port
+roundcube__default_plugins[9].options[57].comment = TCP port used for vpopmaild connections
+
+roundcube__default_plugins[9].options[57].value = 89
+roundcube__default_plugins[9].options[58].name = password_vpopmaild_timeout
+roundcube__default_plugins[9].options[58].comment = Timeout used for the connection to vpopmaild (in seconds)
+
+roundcube__default_plugins[9].options[58].value = 10
+roundcube__default_plugins[9].options[59].name = password_cpanel_host
+roundcube__default_plugins[9].options[59].comment = cPanel Driver options
+--------------------------
+The cPanel Host name
+
+roundcube__default_plugins[9].options[59].value = host.domain.com
+roundcube__default_plugins[9].options[60].name = password_cpanel_username
+roundcube__default_plugins[9].options[60].comment = The cPanel admin username
+
+roundcube__default_plugins[9].options[60].value = username
+roundcube__default_plugins[9].options[61].name = password_cpanel_password
+roundcube__default_plugins[9].options[61].comment = The cPanel admin password
+
+roundcube__default_plugins[9].options[61].value = password
+roundcube__default_plugins[9].options[62].name = password_cpanel_hash
+roundcube__default_plugins[9].options[62].comment = The cPanel admin hash
+If you prefer to use a hash (Remote Access Key) instead of plain password, enter it below.
+Hash takes precedence over password auth.
+You can generate a Remote Access Key in WHM -> Clusters -> Remote Access Key
+
+roundcube__default_plugins[9].options[62].value = 
+roundcube__default_plugins[9].options[63].name = password_cpanel_port
+roundcube__default_plugins[9].options[63].comment = The cPanel port to use
+
+roundcube__default_plugins[9].options[63].value = 2087
+roundcube__default_plugins[9].options[64].name = password_cpanel_webmail_host
+roundcube__default_plugins[9].options[64].comment = cPanel Webmail Driver options
+-----------------------------
+The cPanel Host name
+
+roundcube__default_plugins[9].options[64].value = host.domain.com
+roundcube__default_plugins[9].options[65].name = password_cpanel_webmail_port
+roundcube__default_plugins[9].options[65].comment = The cPanel port to use
+
+roundcube__default_plugins[9].options[65].value = 2096
+roundcube__default_plugins[9].options[66].name = password_ximss_host
+roundcube__default_plugins[9].options[66].comment = XIMSS (Communigate server) Driver options
+-----------------------------------------
+Host name of the Communigate server
+
+roundcube__default_plugins[9].options[66].value = mail.example.com
+roundcube__default_plugins[9].options[67].name = password_ximss_port
+roundcube__default_plugins[9].options[67].comment = XIMSS port on Communigate server
+
+roundcube__default_plugins[9].options[67].value = 11024
+roundcube__default_plugins[9].options[68].name = password_chpasswd_cmd
+roundcube__default_plugins[9].options[68].comment = chpasswd Driver options
+---------------------
+Command to use (see "Sudo setup" in README)
+
+roundcube__default_plugins[9].options[68].value = sudo /usr/sbin/chpasswd 2> /dev/null
+roundcube__default_plugins[9].options[69].name = xmail_host
+roundcube__default_plugins[9].options[69].comment = XMail Driver options
+---------------------
+
+roundcube__default_plugins[9].options[69].value = localhost
+roundcube__default_plugins[9].options[70].name = xmail_user
+roundcube__default_plugins[9].options[70].value = YourXmailControlUser
+roundcube__default_plugins[9].options[71].name = xmail_pass
+roundcube__default_plugins[9].options[71].value = YourXmailControlPass
+roundcube__default_plugins[9].options[72].name = xmail_port
+roundcube__default_plugins[9].options[72].value = 6017
+roundcube__default_plugins[9].options[73].name = hmailserver_remote_dcom
+roundcube__default_plugins[9].options[73].comment = hMail Driver options
+-----------------------
+Remote hMailServer configuration
+true:  HMailserver is on a remote box (php.ini: com.allow_dcom = true)
+false: Hmailserver is on same box as PHP
+
+roundcube__default_plugins[9].options[73].value = False
+roundcube__default_plugins[9].options[74].name = hmailserver_server
+roundcube__default_plugins[9].options[74].comment = Windows credentials
+roundcube__default_plugins[9].options[74].array[0].Server = localhost
+roundcube__default_plugins[9].options[74].array[1].Username = administrator
+roundcube__default_plugins[9].options[74].array[2].Password = password
+roundcube__default_plugins[9].options[75].name = password_pw_usermod_cmd
+roundcube__default_plugins[9].options[75].comment = pw_usermod Driver options
+--------------------------
+Use comma delimited exlist to disable password change for users.
+See "Sudo setup" in README file.
+
+roundcube__default_plugins[9].options[75].value = sudo /usr/sbin/pw usermod -h 0 -n
+roundcube__default_plugins[9].options[76].name = password_dbmail_args
+roundcube__default_plugins[9].options[76].comment = DBMail Driver options
+-------------------
+Additional arguments for the dbmail-users call
+
+roundcube__default_plugins[9].options[76].value = -p sha512
+roundcube__default_plugins[9].options[77].name = password_expect_bin
+roundcube__default_plugins[9].options[77].comment = Expect Driver options
+---------------------
+Location of expect binary
+
+roundcube__default_plugins[9].options[77].value = /usr/bin/expect
+roundcube__default_plugins[9].options[78].name = password_expect_script
+roundcube__default_plugins[9].options[78].comment = Location of expect script (see helpers/passwd-expect)
+
+roundcube__default_plugins[9].options[78].value = 
+roundcube__default_plugins[9].options[79].name = password_expect_params
+roundcube__default_plugins[9].options[79].comment = Arguments for the expect script. See the helpers/passwd-expect file for details.
+This is probably a good starting default:
+  -telent -host localhost -output /tmp/passwd.log -log /tmp/passwd.log
+
+roundcube__default_plugins[9].options[79].value = 
+roundcube__default_plugins[9].options[80].name = password_smb_host
+roundcube__default_plugins[9].options[80].comment = smb Driver options
+---------------------
+Samba host (default: localhost)
+Supported replacement variables:
+%n - hostname ($_SERVER['SERVER_NAME'])
+%t - hostname without the first part
+%d - domain (http hostname $_SERVER['HTTP_HOST'] without the first part)
+
+roundcube__default_plugins[9].options[80].value = localhost
+roundcube__default_plugins[9].options[81].name = password_smb_cmd
+roundcube__default_plugins[9].options[81].comment = Location of smbpasswd binary (default: /usr/bin/smbpasswd)
+
+roundcube__default_plugins[9].options[81].value = /usr/bin/smbpasswd
+roundcube__default_plugins[9].options[82].name = password_gearman_host
+roundcube__default_plugins[9].options[82].comment = gearman driver options
+---------------------
+Gearman host (default: localhost)
+
+roundcube__default_plugins[9].options[82].value = localhost
+roundcube__default_plugins[9].options[83].name = password_plesk_host
+roundcube__default_plugins[9].options[83].comment = Plesk/PPA Driver options
+--------------------
+You need to allow RCP for IP of roundcube-server in Plesk/PPA Panel
+
+Plesk RCP Host
+
+roundcube__default_plugins[9].options[83].value = 10.0.0.5
+roundcube__default_plugins[9].options[84].name = password_plesk_user
+roundcube__default_plugins[9].options[84].comment = Plesk RPC Username
+roundcube__default_plugins[9].options[84].value = admin
+roundcube__default_plugins[9].options[85].name = password_plesk_pass
+roundcube__default_plugins[9].options[85].comment = Plesk RPC Password
+roundcube__default_plugins[9].options[85].value = password
+roundcube__default_plugins[9].options[86].name = password_plesk_rpc_port
+roundcube__default_plugins[9].options[86].comment = Plesk RPC Port
+roundcube__default_plugins[9].options[86].value = 8443
+roundcube__default_plugins[9].options[87].name = password_plesk_rpc_path
+roundcube__default_plugins[9].options[87].comment = Plesk RPC Path
+roundcube__default_plugins[9].options[87].value = enterprise/control/agent.php
+roundcube__default_plugins[9].options[88].name = password_kpasswd_cmd
+roundcube__default_plugins[9].options[88].comment = kasswd Driver options
+---------------------
+Command to use
+
+roundcube__default_plugins[9].options[88].value = /usr/bin/kpasswd
+roundcube__default_plugins[9].options[89].name = password_modoboa_api_token
+roundcube__default_plugins[9].options[89].comment = Modoboa Driver options
+---------------------
+put token number from Modoboa server
+
+roundcube__default_plugins[9].options[89].value = 
+roundcube__default_plugins[10].name = help
+roundcube__default_plugins[10].state = enabled
+roundcube__default_plugins[10].options[0].name = help_source
+roundcube__default_plugins[10].options[0].comment = Help content iframe source
+%l will be replaced by the language code resolved using the 'help_language_map' option
+If you are serving roundcube via https, then change this URL to https also.
+
+roundcube__default_plugins[10].options[0].value = https://docs.roundcube.net/doc/help/1.1/%l/
+roundcube__default_plugins[10].options[1].name = help_index_map
+roundcube__default_plugins[10].options[1].comment = Map task/action combinations to deep-links
+Use '<task>/<action>' or only '<task>' strings as keys
+The values will be appended to the 'help_source' URL
+
+roundcube__default_plugins[10].options[1].array[0].login = login.html
+roundcube__default_plugins[10].options[1].array[0].mail = mail/index.html
+roundcube__default_plugins[10].options[1].array[0].mail/compose = mail/compose.html
+roundcube__default_plugins[10].options[1].array[0].addressbook = addressbook/index.html
+roundcube__default_plugins[10].options[1].array[0].settings = settings/index.html
+roundcube__default_plugins[10].options[1].array[0].settings/preferences = settings/preferences.html
+roundcube__default_plugins[10].options[1].array[0].settings/folders = settings/folders.html
+roundcube__default_plugins[10].options[1].array[0].settings/identities = settings/identities.html
+roundcube__default_plugins[10].options[2].name = help_language_map
+roundcube__default_plugins[10].options[2].comment = Map to translate Roundcube language codes into help document languages
+The '*' entry will be used as default
+
+roundcube__default_plugins[10].options[2].array[0].* = en_US
+roundcube__default_plugins[10].options[3].name = help_about_url
+roundcube__default_plugins[10].options[3].comment = Enter an absolute URL to a page displaying information about this webmail
+Alternatively, create a HTML file under <this-plugin-dir>/content/about.html
+
+roundcube__default_plugins[10].options[3].value = null
+roundcube__default_plugins[10].options[4].name = help_license_url
+roundcube__default_plugins[10].options[4].comment = Enter an absolute URL to a page displaying information about this webmail
+Alternatively, put your license text to <this-plugin-dir>/content/license.html
+
+roundcube__default_plugins[10].options[4].value = null
+roundcube__default_plugins[10].options[5].name = help_open_extwin
+roundcube__default_plugins[10].options[5].comment = Determine whether to open the elp in a new window
+roundcube__default_plugins[10].options[5].value = False
+roundcube__default_plugins[10].options[6].name = help_csrf_info
+roundcube__default_plugins[10].options[6].comment = URL to additional information about CSRF protection
+roundcube__default_plugins[10].options[6].value = null
+roundcube__default_plugins[11].name = markasjunk
+roundcube__default_plugins[11].state = enabled
+roundcube__default_plugins[11].options[0].name = markasjunk_learning_driver
+roundcube__default_plugins[11].options[0].comment = Learning driver
+Use an external process such as sa-learn to learn from spam/ham messages. Default: null.
+Please see the README for more information
+
+roundcube__default_plugins[11].options[0].value = null
+roundcube__default_plugins[11].options[1].name = markasjunk_ham_mbox
+roundcube__default_plugins[11].options[1].comment = Ham mailbox
+Mailbox messages should be moved to when they are marked as ham. null = INBOX
+set to FALSE to disable message moving
+
+roundcube__default_plugins[11].options[1].value = null
+roundcube__default_plugins[11].options[2].name = markasjunk_spam_mbox
+roundcube__default_plugins[11].options[2].comment = Spam mailbox
+Mailbox messages should be moved to when they are marked as spam.
+null = the mailbox assigned as the spam folder in Roundcube settings
+set to FALSE to disable message moving
+
+roundcube__default_plugins[11].options[2].value = null
+roundcube__default_plugins[11].options[3].name = markasjunk_read_spam
+roundcube__default_plugins[11].options[3].comment = Mark messages as read when reporting them as spam
+roundcube__default_plugins[11].options[3].value = True
+roundcube__default_plugins[11].options[4].name = markasjunk_unread_ham
+roundcube__default_plugins[11].options[4].comment = Mark messages as unread when reporting them as ham
+roundcube__default_plugins[11].options[4].value = True
+roundcube__default_plugins[11].options[5].name = markasjunk_spam_flag
+roundcube__default_plugins[11].options[5].comment = Add flag to messages marked as spam (flag will be removed when marking as ham)
+If you do not want to use message flags set this to false
+
+roundcube__default_plugins[11].options[5].value = Junk
+roundcube__default_plugins[11].options[6].name = markasjunk_ham_flag
+roundcube__default_plugins[11].options[6].comment = Add flag to messages marked as ham (flag will be removed when marking as spam)
+If you do not want to use message flags set this to false
+
+roundcube__default_plugins[11].options[6].value = NonJunk
+roundcube__default_plugins[11].options[7].name = markasjunk_debug
+roundcube__default_plugins[11].options[7].comment = Write output from spam/ham commands to the log for debug
+roundcube__default_plugins[11].options[7].value = False
+roundcube__default_plugins[11].options[8].name = markasjunk_toolbar
+roundcube__default_plugins[11].options[8].comment = The mark as spam/ham icon can either be displayed on the toolbar or as part of the mark messages menu.
+Set to False to use Mark menu instead of the toolbar. Default: true.
+
+roundcube__default_plugins[11].options[8].value = True
+roundcube__default_plugins[11].options[9].name = markasjunk_move_spam
+roundcube__default_plugins[11].options[9].comment = Learn any message moved to the spam mailbox as spam (not just when the button is pressed)
+
+roundcube__default_plugins[11].options[9].value = True
+roundcube__default_plugins[11].options[10].name = markasjunk_move_ham
+roundcube__default_plugins[11].options[10].comment = Learn any message moved from the spam mailbox to the ham mailbox as ham (not just when the button is pressed)
+
+roundcube__default_plugins[11].options[10].value = True
+roundcube__default_plugins[11].options[11].name = markasjunk_permanently_remove
+roundcube__default_plugins[11].options[11].comment = Some drivers create new copies of the target message(s), in this case the original message(s) will be deleted
+Rather than deleting the message(s) (moving to Trash) setting this option true will cause the original message(s) to be permanently removed
+
+roundcube__default_plugins[11].options[11].value = False
+roundcube__default_plugins[11].options[12].name = markasjunk_spam_only
+roundcube__default_plugins[11].options[12].comment = Display only a mark as spam button
+roundcube__default_plugins[11].options[12].value = False
+roundcube__default_plugins[11].options[13].name = markasjunk_allowed_hosts
+roundcube__default_plugins[11].options[13].comment = Activate markasjunk for selected mail hosts only. If this is not set all mail hosts are allowed.
+Example: $config['markasjunk_allowed_hosts'] = array('mail1.domain.tld', 'mail2.domain.tld');
+
+roundcube__default_plugins[11].options[13].value = null
+roundcube__default_plugins[11].options[14].name = markasjunk_host_config
+roundcube__default_plugins[11].options[14].comment = Load specific config for different mail hosts
+Example: $config['markasjunk_host_config'] = array(
+   'mail1.domain.tld' => 'mail1_config.inc.php',
+   'mail2.domain.tld' => 'mail2_config.inc.php',
+);
+
+roundcube__default_plugins[11].options[14].value = null
+roundcube__default_plugins[11].options[15].name = markasjunk_spam_cmd
+roundcube__default_plugins[11].options[15].comment = cmd_learn Driver options
+------------------------
+The command used to learn that a message is spam
+The command can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %i is replaced with the email address from the user's default identity
+     %s is replaced with the email address the message is from
+     %f is replaced with the path to the message file
+     %h:<header name> is replaced with the content of that header from the message (lower case) eg: %h:x-dspam-signature
+If you do not want to run the command set this to null
+
+roundcube__default_plugins[11].options[15].value = null
+roundcube__default_plugins[11].options[16].name = markasjunk_ham_cmd
+roundcube__default_plugins[11].options[16].comment = The command used to learn that a message is ham
+The command can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %i is replaced with the email address from the user's default identity
+     %s is replaced with the email address the message is from
+     %f is replaced with the path to the message file
+     %h:<header name> is replaced with the content of that header from the message (lower case) eg: %h:x-dspam-signature
+If you do not want to run the command set this to null
+
+roundcube__default_plugins[11].options[16].value = null
+roundcube__default_plugins[11].options[17].name = markasjunk_spam_dir
+roundcube__default_plugins[11].options[17].comment = dir_learn Driver options
+------------------------
+The full path of the directory used to store spam (must be writable by webserver)
+
+roundcube__default_plugins[11].options[17].value = null
+roundcube__default_plugins[11].options[18].name = markasjunk_ham_dir
+roundcube__default_plugins[11].options[18].comment = The full path of the directory used to store ham (must be writable by webserver)
+
+roundcube__default_plugins[11].options[18].value = null
+roundcube__default_plugins[11].options[19].name = markasjunk_filename
+roundcube__default_plugins[11].options[19].comment = The filename prefix
+The filename can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %t is replaced with the type of message (spam/ham)
+
+roundcube__default_plugins[11].options[19].value = null
+roundcube__default_plugins[11].options[20].name = markasjunk_email_spam
+roundcube__default_plugins[11].options[20].comment = email_learn Driver options
+--------------------------
+The email address that spam messages will be sent to
+The address can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %i is replaced with the email address from the user's default identity
+If you do not want to send an email set this to null
+
+roundcube__default_plugins[11].options[20].value = null
+roundcube__default_plugins[11].options[21].name = markasjunk_email_ham
+roundcube__default_plugins[11].options[21].comment = The email address that ham messages will be sent to
+The address can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %i is replaced with the email address from the user's default identity
+If you do not want to send an email set this to null
+
+roundcube__default_plugins[11].options[21].value = null
+roundcube__default_plugins[11].options[22].name = markasjunk_email_attach
+roundcube__default_plugins[11].options[22].comment = Should the spam/ham message be sent as an attachment
+roundcube__default_plugins[11].options[22].value = True
+roundcube__default_plugins[11].options[23].name = markasjunk_email_subject
+roundcube__default_plugins[11].options[23].comment = The email subject (when sending as attachment)
+The subject can contain the following macros that will be expanded as follows:
+     %u is replaced with the username (from the session info)
+     %l is replaced with the local part of the username (if the username is an email address)
+     %d is replaced with the domain part of the username (if the username is an email address or default mail domain if not)
+     %t is replaced with the type of message (spam/ham)
+
+roundcube__default_plugins[11].options[23].value = learn this message as %t
+roundcube__default_plugins[11].options[24].name = markasjunk_sauserprefs_config
+roundcube__default_plugins[11].options[24].comment = sa_blacklist Driver options
+---------------------------
+Path to SAUserPrefs config file
+
+roundcube__default_plugins[11].options[24].value = ../sauserprefs/config.inc.php
+roundcube__default_plugins[11].options[25].name = markasjunk_amacube_config
+roundcube__default_plugins[11].options[25].comment = amavis_blacklist Driver options
+---------------------------
+Path to amacube config file
+
+roundcube__default_plugins[11].options[25].value = ../amacube/config.inc.php
+roundcube__default_plugins[11].options[26].name = markasjunk_spam_patterns
+roundcube__default_plugins[11].options[26].comment = edit_headers Driver options
+---------------------------
+Patterns to match and replace headers for spam messages
+Replacement method uses preg_replace - http://www.php.net/manual/function.preg-replace.php
+WARNING: Be sure to match the entire header line, including the name of the header, also use ^ and $ and the 'm' flag
+see the README for an example
+TEST CAREFULLY BEFORE USE ON REAL MESSAGES
+
+roundcube__default_plugins[11].options[27].name = markasjunk_ham_patterns
+roundcube__default_plugins[11].options[27].comment = Patterns to match and replace headers for spam messages
+Replacement method uses preg_replace - http://www.php.net/manual/function.preg-replace.php
+WARNING: Be sure to match the entire header line, including the name of the header, also use ^ and $ and the 'm' flag
+see the README for an example
+TEST CAREFULLY BEFORE USE ON REAL MESSAGES
+
+roundcube__default_plugins[12].name = listcommands
+roundcube__default_plugins[12].package = cor/listcommands
+roundcube__default_plugins[12].state = enabled
+roundcube__default_plugins[13].name = swipe
+roundcube__default_plugins[13].package = johndoh/swipe:0.1.0
+roundcube__default_plugins[13].state = enabled
+roundcube__default_plugins[14].name = dovecot_ident
+roundcube__default_plugins[14].package = cor/dovecot-ident
+roundcube__default_plugins[14].state = enabled
+roundcube__default_plugins[15].name = vcard_attachments
+roundcube__default_plugins[15].state = enabled
+roundcube__default_plugins[16].name = identicon
+roundcube__default_plugins[16].state = enabled
+roundcube__default_plugins[17].name = managesieve
+roundcube__default_plugins[17].state = enabled
+roundcube__default_plugins[17].options[0].name = managesieve_host
+roundcube__default_plugins[17].options[0].comment = managesieve server address, default is localhost.
+Replacement variables supported in host name:
+%h - user's IMAP hostname
+%n - http hostname ($_SERVER['SERVER_NAME'])
+%d - domain (http hostname without the first part)
+For example %n = mail.domain.tld, %d = domain.tld
+
+roundcube__default_plugins[17].options[0].value = {{ roundcube__sieve_server }}
+roundcube__default_plugins[17].options[1].name = managesieve_auth_type
+roundcube__default_plugins[17].options[1].comment = Authentication method. Can be CRAM-MD5, DIGEST-MD5, PLAIN, LOGIN, EXTERNAL
+or none. Optional, defaults to best method supported by server.
+
+roundcube__default_plugins[17].options[1].value = null
+roundcube__default_plugins[17].options[2].name = managesieve_auth_cid
+roundcube__default_plugins[17].options[2].comment = Optional managesieve authentication identifier to be used as authorization proxy.
+Authenticate as a different user but act on behalf of the logged in user.
+Works with PLAIN and DIGEST-MD5 auth.
+
+roundcube__default_plugins[17].options[2].value = null
+roundcube__default_plugins[17].options[3].name = managesieve_auth_pw
+roundcube__default_plugins[17].options[3].comment = Optional managesieve authentication password to be used for imap_auth_cid
+
+roundcube__default_plugins[17].options[3].value = null
+roundcube__default_plugins[17].options[4].name = managesieve_conn_options
+roundcube__default_plugins[17].options[4].comment = Connection scket context options
+See https://php.net/manual/en/context.ssl.php
+The example below enables server certificate validation
+
+roundcube__default_plugins[17].options[4].array[0].ssl[0].verify_peer = True
+roundcube__default_plugins[17].options[4].array[0].ssl[0].verify_depth = 3
+roundcube__default_plugins[17].options[4].array[0].ssl[0].cafile = /etc/ssl/certs/ca-certificates.crt
+roundcube__default_plugins[17].options[4].state = comment
+roundcube__default_plugins[17].options[5].name = managesieve_default
+roundcube__default_plugins[17].options[5].comment = A file with default script content (eg. spam filter)
+
+roundcube__default_plugins[17].options[5].value = /etc/dovecot/sieve/global
+roundcube__default_plugins[17].options[6].name = managesieve_script_name
+roundcube__default_plugins[17].options[6].comment = The name of the script which will be used when there's no user script
+
+roundcube__default_plugins[17].options[6].value = managesieve
+roundcube__default_plugins[17].options[7].name = managesieve_mbox_encoding
+roundcube__default_plugins[17].options[7].comment = Sieve RFC says that we should use UTF-8 encoding for mailbox names,
+but some implementations does not convert UTF-8 to modified UTF-7.
+Defaults to UTF7-IMAP
+
+roundcube__default_plugins[17].options[7].value = UTF-8
+roundcube__default_plugins[17].options[8].name = managesieve_replace_delimiter
+roundcube__default_plugins[17].options[8].comment = I need this because my dovecot (with listescape plugin) uses
+':' delimiter, but creates folders with dot delimiter
+
+roundcube__default_plugins[17].options[8].value = 
+roundcube__default_plugins[17].options[9].name = managesieve_disabled_extensions
+roundcube__default_plugins[17].options[9].comment = Disabled sieve extensions (body, copy, date, editheader, encoded-character,
+envelope, environment, ereject, fileinto, ihave, imap4flags, index,
+mailbox, mboxmetadata, regex, reject, relational, servermetadata,
+spamtest, spamtestplus, subaddress, vacation, variables, virustest, etc.
+Note: not all extensions are implemented
+
+roundcube__default_plugins[17].options[10].name = managesieve_debug
+roundcube__default_plugins[17].options[10].comment = Enables debugging of conversation with sieve server. Logs it into <log_dir>/sieve
+
+roundcube__default_plugins[17].options[10].value = False
+roundcube__default_plugins[17].options[11].name = managesieve_kolab_master
+roundcube__default_plugins[17].options[11].comment = Enables features described in http://wiki.kolab.org/KEP:14
+
+roundcube__default_plugins[17].options[11].value = False
+roundcube__default_plugins[17].options[12].name = managesieve_filename_extension
+roundcube__default_plugins[17].options[12].comment = Script name extension used for scripts including. Dovecot uses '.sieve',
+Cyrus uses '.siv'. Doesn't matter if you have managesieve_kolab_master disabled.
+
+roundcube__default_plugins[17].options[12].value = .sieve
+roundcube__default_plugins[17].options[13].name = managesieve_filename_exceptions
+roundcube__default_plugins[17].options[13].comment = List of reserved script names (without extension).
+Scripts listed here will be not presented to the user.
+
+roundcube__default_plugins[17].options[14].name = managesieve_domains
+roundcube__default_plugins[17].options[14].comment = List of domains limiting destination emails in redirect action
+If not empty, user will need to select domain from a list
+
+roundcube__default_plugins[17].options[15].name = managesieve_default_headers
+roundcube__default_plugins[17].options[15].comment = Default list of entries in header selector
+
+roundcube__default_plugins[17].options[15].value[0] = Subject
+roundcube__default_plugins[17].options[15].value[1] = From
+roundcube__default_plugins[17].options[15].value[2] = To
+roundcube__default_plugins[17].options[16].name = managesieve_vacation
+roundcube__default_plugins[17].options[16].comment = Enables separate management interface for vacation responses (out-of-office)
+0 - no separate section (default),
+1 - add Vacation section,
+2 - add Vacation section, but hide Filters section
+
+roundcube__default_plugins[17].options[16].value = 1
+roundcube__default_plugins[17].options[17].name = managesieve_forward
+roundcube__default_plugins[17].options[17].comment = Enables separate management interface for setting forwards (redirect to and copy to)
+0 - no separate section (default),
+1 - add Forward section,
+2 - add Forward section, but hide Filters section
+
+roundcube__default_plugins[17].options[17].value = 1
+roundcube__default_plugins[17].options[18].name = managesieve_vacation_interval
+roundcube__default_plugins[17].options[18].comment = Default vacation interval (in days).
+Note: If server supports vacation-seconds extension it is possible
+to define interval in seconds here (as a string), e.g. "3600s".
+
+roundcube__default_plugins[17].options[18].value = 0
+roundcube__default_plugins[17].options[19].name = managesieve_vacation_addresses_init
+roundcube__default_plugins[17].options[19].comment = Some servers require vacation :addresses to be filled with all
+user addresses (aliases). This option enables automatic filling
+of these on initial vacation form creation.
+
+roundcube__default_plugins[17].options[19].value = True
+roundcube__default_plugins[17].options[20].name = managesieve_vacation_from_init
+roundcube__default_plugins[17].options[20].comment = Sometimes you want to always reply with mail email address
+This option enables automatic filling of :from field on initial
+vacation form creation.
+
+roundcube__default_plugins[17].options[20].value = True
+roundcube__default_plugins[17].options[21].name = managesieve_notify_methods
+roundcube__default_plugins[17].options[21].comment = Supported methods of notify extension. Default: 'mailto'
+
+roundcube__default_plugins[17].options[21].value[0] = mailto
+roundcube__default_plugins[17].options[22].name = managesieve_raw_editor
+roundcube__default_plugins[17].options[22].comment = Enables scripts RAW editor feature
+roundcube__default_plugins[17].options[22].value = True
+roundcube__default_plugins[17].options[23].name = managesieve_disabled_actions
+roundcube__default_plugins[17].options[23].comment = Disabled actions
+Prevent user from performing specific actions:
+list_sets, enable_disable_set, delete_set, new_set, download_set, new_rule, delete_rule
+Note: disabling list_sets removes the Filter sets widget from the UI and means
+      the set defined in managesieve_script_name will always be used (and activated)
+
+roundcube__default_plugins[17].options[24].name = managesieve_allowed_hosts
+roundcube__default_plugins[17].options[24].comment = List of hosts that support managesieve.
+Activate managesieve for selected hosts only. If this is not set all hosts are allowed.
+Example: $config['managesieve_allowed_hosts'] = array('host1.mydomain.com','host2.mydomain.com');
+
+roundcube__default_plugins[17].options[24].value = null
+roundcube__combined_plugins = {{ roundcube__default_plugins
+                                 + roundcube__plugins
+                                 + roundcube__group_plugins
+                                 + roundcube__host_plugins }}
+
+roundcube__skin_folder = elastic
+roundcube__skin_logo = null
+roundcube__max_file_size = 30
+roundcube__keyring__dependent_gpg_user = {{ roundcube__user }}
+roundcube__keyring__dependent_gpg_keys[0].user = {{ roundcube__user }}
+roundcube__keyring__dependent_gpg_keys[0].group = {{ roundcube__group }}
+roundcube__keyring__dependent_gpg_keys[0].home = {{ roundcube__home }}
+roundcube__keyring__dependent_gpg_keys[0].id = {{ roundcube__git_gpg_key }}
+roundcube__keyring__dependent_gpg_keys[1] = {{ roundcube__git_additional_gpg_keys }}
+roundcube__ldap__dependent_tasks[0].name = Create roundcube account for {{ roundcube__ldap_device_dn | join(",") }}
+roundcube__ldap__dependent_tasks[0].dn = {{ roundcube__ldap_binddn }}
+roundcube__ldap__dependent_tasks[0].objectClass = {{ roundcube__ldap_self_object_classes }}
+roundcube__ldap__dependent_tasks[0].attributes = {{ roundcube__ldap_self_attributes }}
+roundcube__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+roundcube__ldap__dependent_tasks[0].state = {{ "present" if roundcube__ldap_password_enabled and
+                            roundcube__ldap_device_dn | d() else "ignore" }} 
+roundcube__nginx__dependent_servers[0].name = {{ roundcube__fqdn }}
+roundcube__nginx__dependent_servers[0].filename = debops.roundcube
+roundcube__nginx__dependent_servers[0].by_role = debops.roundcube
+roundcube__nginx__dependent_servers[0].type = php
+roundcube__nginx__dependent_servers[0].root = {{ roundcube__git_dest }}
+roundcube__nginx__dependent_servers[0].webroot_create = False
+roundcube__nginx__dependent_servers[0].access_policy = {{ roundcube__nginx_access_policy }}
+roundcube__nginx__dependent_servers[0].index = index.php
+roundcube__nginx__dependent_servers[0].options = autoindex off;
+client_max_body_size {{ roundcube__max_file_size }}M;
+client_body_buffer_size 128k;
+
+roundcube__nginx__dependent_servers[0].location_list[0].pattern = /
+roundcube__nginx__dependent_servers[0].location_list[0].options = try_files $uri $uri/ @roundcube;
+
+roundcube__nginx__dependent_servers[0].location_list[1].pattern = @roundcube
+roundcube__nginx__dependent_servers[0].location_list[1].options = rewrite ^/favicon\.ico$ skins/{{ roundcube__skin_folder }}/images/favicon.ico last;
+
+roundcube__nginx__dependent_servers[0].location_list[2].pattern = ~ ^/?(installer|[A-Z0-9]+$)
+roundcube__nginx__dependent_servers[0].location_list[2].options = deny all;
+
+roundcube__nginx__dependent_servers[0].location_list[3].pattern = ~ ^/?(\.git|\.tx|SQL|bin|config|logs|temp|tests|program\/(include|lib|localization|steps))
+roundcube__nginx__dependent_servers[0].location_list[3].options = deny all;
+
+roundcube__nginx__dependent_servers[0].location_list[4].pattern = ~ /(README\.md|composer\.json-dist|composer\.json|package\.xml|Dockerfile)$
+roundcube__nginx__dependent_servers[0].location_list[4].options = deny all;
+
+roundcube__nginx__dependent_servers[0].php_options = fastcgi_intercept_errors        on;
+fastcgi_ignore_client_abort     off;
+fastcgi_connect_timeout         60;
+fastcgi_send_timeout            180;
+fastcgi_read_timeout            180;
+fastcgi_buffer_size             128k;
+fastcgi_buffers               4 256k;
+fastcgi_busy_buffers_size       256k;
+fastcgi_temp_file_write_size    256k;
+
+roundcube__nginx__dependent_servers[0].php_upstream = php_roundcube
+roundcube__nginx_access_policy = 
+roundcube__nginx__dependent_upstreams[0].name = php_roundcube
+roundcube__nginx__dependent_upstreams[0].by_role = debops.roundcube
+roundcube__nginx__dependent_upstreams[0].enabled = True
+roundcube__nginx__dependent_upstreams[0].type = php
+roundcube__nginx__dependent_upstreams[0].php_pool = roundcube
+roundcube__php__dependent_packages[0] = {{ roundcube__base_php_packages }}
+roundcube__php__dependent_packages[1] = {{ roundcube__optional_php_packages }}
+roundcube__php__dependent_packages[2] = {{ roundcube__custom_php_packages }}
+roundcube__php__dependent_pools.name = roundcube
+roundcube__php__dependent_pools.by_role = debops.roundcube
+roundcube__php__dependent_pools.user = {{ roundcube__user }}
+roundcube__php__dependent_pools.group = {{ roundcube__group }}
+roundcube__php__dependent_pools.owner = {{ roundcube__user }}
+roundcube__php__dependent_pools.home = {{ roundcube__home }}
+roundcube__php__dependent_pools.php_values.upload_max_filesize = {{ roundcube__max_file_size }}M
+roundcube__php__dependent_pools.php_values.post_max_size = {{ roundcube__max_file_size }}M
+roundcube__php__dependent_pools.php_values.file_uploads = on
+roundcube__php__dependent_pools.php_values["mbstring.func_overload"] = off
+roundcube__php__dependent_pools.php_values.memory_limit = 64M
+roundcube__php__dependent_pools.php_values.magic_quotes_runtime = off
+roundcube__php__dependent_pools.php_values.magic_quotes_sybase = off
+roundcube__php__dependent_pools.php_values["session.auto_start"] = off
+roundcube__php__dependent_pools.php_values["suhosin.session.encrypt"] = off
+roundcube__nodejs__npm_dependent_packages[0] = less
+roundcube__nodejs__npm_dependent_packages[1] = tslib

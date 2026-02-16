@@ -1,0 +1,8 @@
+~d0.name = Configure swap files
+~d1.collections = [ 'debops.debops', 'debops.roles01',
+~d1.hosts = [ 'debops_service_swapfile' ]
+~d1.become = True
+~d1.environment = '{{ inventory__environment | d({})
+~d1.roles = 
+~d2.role = swapfile
+~d3.tags = [ 'role::swapfile', 'skip::swapfile' ]

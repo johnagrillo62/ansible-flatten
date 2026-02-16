@@ -1,0 +1,144 @@
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Ensure optional packages are in there desired state
+[1]["ansible.builtin.package"].name = {{ q("flattened", (apache__packages
+                              + apache__group_packages
+                              + apache__host_packages
+                              + apache__dependent_packages)) }}
+
+[1]["ansible.builtin.package"].state = {{ "present" if (apache__deploy_state == "present") else "absent" }}
+[1].register = apache__register_packages
+[1].until = apache__register_packages is succeeded
+[2].name = Get list of available modules
+[2]["ansible.builtin.find"].file_type = file
+[2]["ansible.builtin.find"].paths[0] = {{ apache__config_path + "/mods-available/" }}
+[2]["ansible.builtin.find"].patterns[0] = *.load
+[2].register = apache__register_mods_available
+[2].tags[0] = role::apache:modules
+[3].name = Set list of available modules
+[3]["ansible.builtin.set_fact"].apache__tpl_available_modules = {{ apache__register_mods_available.files | d({})
+                                       | map(attribute="path")
+                                       | map("replace", apache__config_path + "/mods-available/", "")
+                                       | map("regex_replace", "\.load$", "") | list }}
+
+[3].tags[0] = role::apache:modules
+[4].name = Configure Apache module state
+[4]["ansible.builtin.include_tasks"] = apache_module_state.yml
+[5].name = Divert conf-available configuration
+[5]["debops.debops.dpkg_divert"].path = {{ apache__config_path + "/conf-available/" + item.key + ".conf" }}
+[5]["debops.debops.dpkg_divert"].divert = {{ (item.value.divert
+                 | d(apache__config_path + "/conf-available/"
+                     + (item.value.divert_filename | d(item.key)) + ".conf"))
+                + item.value.divert_suffix | d(".dpkg-divert") }}
+
+[5].when = (item.value.type | d("default") in ["divert"])
+[5].with_dict = {{ apache__combined_snippets }}
+[6].name = Remove conf-available snippets
+[6]["ansible.builtin.file"].path = {{ apache__config_path + "/conf-available/" + item.key + ".conf" }}
+[6]["ansible.builtin.file"].state = absent
+[6].when = (item.value.state | d("present") == "absent")
+[6].with_dict = {{ apache__combined_snippets }}
+[6].tags[0] = role::apache:vhosts
+[7].name = Create conf-available snippets
+[7]["ansible.builtin.template"].src = etc/apache2/conf-available/{{ "raw"
+                                        if (item.value.type | d("default") in ["divert", "raw"] and
+                                            item.value.raw | d())
+                                        else item.key }}
+
+.conf.j2
+[7]["ansible.builtin.template"].dest = {{ apache__config_path + "/conf-available/" + item.key + ".conf" }}
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0644
+[7].when = (item.value.state | d("present") != "absent" and (item.value.type | d("default") not in ["divert", "dont-create"] or item.value.raw | d()))
+[7].with_dict = {{ apache__combined_snippets }}
+[7].notify[0] = Test apache and reload
+[8].name = Enable/disable configuration snippets
+[8]["ansible.builtin.file"].path = {{ apache__config_path + "/conf-enabled/" + item.key + ".conf" }}
+[8]["ansible.builtin.file"].src = {{ (((item.value.enabled | d(True)
+                  if (item.value is mapping)
+                  else item.value | d(True)))
+                 if (item.value.state | d("present") != "absent")
+                 else False) | bool
+                 | ternary("../conf-available/" + item.key + ".conf",
+                           omit) }}
+
+[8]["ansible.builtin.file"].mode = 0644
+[8]["ansible.builtin.file"].force = {{ ansible_check_mode | d() | bool }}
+[8]["ansible.builtin.file"].state = {{ (((item.value.enabled | d(True)
+                  if (item.value is mapping)
+                  else item.value | d(True)))
+                 if (item.value.state | d("present") != "absent")
+                 else False) | bool | ternary("link", "absent") }}
+
+[8].when = (item.value.type | d("default") not in ["divert"])
+[8].with_dict = {{ apache__combined_snippets }}
+[8].notify[0] = Test apache and reload
+[9].name = Divert sites-available configuration
+[9]["debops.debops.dpkg_divert"].path = {{ apache__config_path + "/sites-available/"
+              + item.filename | d([item.name] | flatten | first | d("default"))
+              + ".conf" }}
+
+[9]["debops.debops.dpkg_divert"].divert = {{ (item.divert
+                 | d(apache__config_path + "/sites-available/"
+                     + item.divert_filename | d(item.filename | d([item.name] | flatten | first | d("default")))
+                     + ".conf")
+                 + item.divert_suffix | d(".dpkg-divert")) }}
+
+[9].when = (item.type | d(apache__vhost_type) in ["divert"])
+[9].loop = {{ q("flattened", apache__combined_vhosts) }}
+[10].name = Remove sites-available configuration
+[10]["ansible.builtin.file"].path = {{ apache__config_path }}/sites-available/{{ item.filename | d(item.name
+                                                                          if (item.name is string)
+                                                                          else item.name[0] | d("default")) }}
+.conf
+[10]["ansible.builtin.file"].state = absent
+[10].when = (item.state | d("present") == 'absent')
+[10].loop = {{ q("flattened", apache__combined_vhosts) }}
+[10].tags[0] = role::apache:vhosts
+[11].name = Create sites-available configuration
+[11]["ansible.builtin.template"].src = etc/apache2/sites-available/{{ item.type | d(apache__vhost_type) }}.conf.j2
+[11]["ansible.builtin.template"].dest = {{ apache__config_path }}/sites-available/{{ item.filename | d(item.name
+                                                                          if (item.name is string)
+                                                                          else item.name[0] | d("default")) }}
+.conf
+[11]["ansible.builtin.template"].owner = root
+[11]["ansible.builtin.template"].group = root
+[11]["ansible.builtin.template"].mode = 0644
+[11].notify[0] = Test apache and reload
+[11].when = (item.state | d("present") != "absent" and item.type | d(apache__vhost_type) not in ["divert", "dont-create"])
+[11].loop = {{ q("flattened", apache__combined_vhosts) }}
+[11].tags[0] = role::apache:vhosts
+[12].name = Enable/disable Apache virtual hosts
+[12]["ansible.builtin.file"].path = {{ apache__config_path }}/sites-enabled/{{ item.filename | d(item.name
+                                                                        if (item.name is string)
+                                                                        else item.name[0] | d("default")) }}
+.conf
+[12]["ansible.builtin.file"].src = {{ ("../sites-available/" + item.filename
+                                      | d(item.name
+                                          if (item.name is string)
+                                          else item.name[0] | d("default")) + ".conf")
+             if (item.enabled | d(True) | bool and (item.state | d("present") != "absent"))
+             else omit }}
+
+[12]["ansible.builtin.file"].force = {{ item.force | d(ansible_check_mode) | bool }}
+[12]["ansible.builtin.file"].state = {{ item.enabled | d(True) | bool | ternary("link", "absent")
+               if (item.state | d("present") != "absent")
+               else "absent" }}
+
+[12]["ansible.builtin.file"].owner = root
+[12]["ansible.builtin.file"].group = root
+[12]["ansible.builtin.file"].mode = 0644
+[12].notify[0] = Test apache and reload
+[12].when = (item.type | d(apache__vhost_type) not in ["divert"])
+[12].loop = {{ q("flattened", apache__combined_vhosts) }}
+[12].tags[0] = role::apache:vhosts
+[13].name = Detect if the rewrite module has been used in the active configuration
+[13]["ansible.builtin.shell"] = grep --recursive --ignore-case '^\s*RewriteEngine On' {{ apache__config_path | quote }}
+[13].register = apache__register_mod_rewrite_used
+[13].check_mode = False
+[13].failed_when = apache__register_mod_rewrite_used.rc not in [0, 1]
+[13].changed_when = False
+[13].when = apache__register_mod_rewrite_used is undefined
+[14].name = Finish configuration of Apache module state
+[14]["ansible.builtin.include_tasks"] = apache_module_state.yml

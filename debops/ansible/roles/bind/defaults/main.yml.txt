@@ -1,0 +1,678 @@
+bind__features[0] = dns
+bind__features[1] = dnssec
+bind__features[2] = {{ "dot" if bind__pki else [] }}
+bind__features[3] = {{ "doh_https"
+        if (bind__pki
+            and not ansible_local.nginx.enabled | d(False)
+            and not ansible_local.apache.enabled | d(False)
+            and "debops_service_nginx" not in group_names
+            and "debops_service_apache" not in group_names)
+        else [] }}
+
+bind__features[4] = {{ "doh_proxy"
+        if (bind__pki and ansible_local.nginx.enabled | d(False)
+            or "debops_service_nginx" in group_names)
+        else [] }}
+
+bind__features[5] = {{ "stats_proxy"
+        if (bind__pki and ansible_local.nginx.enabled | d(False)
+            or "debops_service_nginx" in group_names)
+        else [] }}
+
+bind__version = {{ ansible_local.bind.version | d("0.0.0") }}
+bind__fqdn = dns.{{ bind__domain }}
+bind__domain = {{ ansible_domain }}
+bind__blocked_domains[0] = use-application-dns.net
+bind__user = bind
+bind__additional_groups[0] = ssl-cert
+bind__base_packages[0] = bind9
+bind__base_packages[1] = bind9-dnsutils
+bind__snapshot_enabled = True
+bind__snapshot_cron_jobs[0] = daily
+bind__snapshot_cron_jobs[1] = weekly
+bind__snapshot_cron_jobs[2] = monthly
+bind__dnssec_use_nsec3 = True
+bind__dnssec_script_enabled = {{ True if "dnssec" in bind__features else False }}
+bind__dnssec_script_method = email
+bind__dnssec_script_default_configuration[0].name = method
+bind__dnssec_script_default_configuration[0].value = {{ bind__dnssec_script_method }}
+bind__dnssec_script_default_configuration[1].name = log_file
+bind__dnssec_script_default_configuration[1].value = /var/log/debops-bind-rollkey.log
+bind__dnssec_script_default_configuration[2].name = email_to
+bind__dnssec_script_default_configuration[2].value = {{ ansible_local.core.admin_public_email[0]
+               | d("root@" + ansible_domain) }} 
+bind__dnssec_script_default_configuration[3].name = email_from
+bind__dnssec_script_default_configuration[3].value = {{ "noreply@" + ansible_domain }}
+bind__dnssec_script_default_configuration[4].name = email_host
+bind__dnssec_script_default_configuration[4].value = localhost
+bind__dnssec_script_default_configuration[5].name = email_port
+bind__dnssec_script_default_configuration[5].value = 25
+bind__dnssec_script_default_configuration[6].name = email_subject
+bind__dnssec_script_default_configuration[6].value = BIND DNSSEC key updates
+bind__dnssec_script_default_configuration[7].name = external_script
+bind__dnssec_script_default_configuration[7].value = /usr/local/sbin/debops-bind-rollkey-action
+bind__dnssec_script_default_configuration[8].name = zones
+bind__dnssec_script_default_configuration[8].value = {{ bind__dnssec_script_domains }}
+bind__dnssec_script_combined_configuration = {{
+  bind__dnssec_script_default_configuration
+  + bind__dnssec_script_configuration
+  + bind__dnssec_script_group_configuration
+  + bind__dnssec_script_host_configuration }}
+
+bind__doh_endpoints[0] = /dns-query
+bind__doh_proxy_port = 83
+bind__doh_proxy_allow = {%- set cidrs = [] -%} {%- for item in ((ansible_interfaces
+                  | map('extract', ansible_facts, 'ipv4')
+                  | select('defined') | list | flatten) +
+                 (ansible_interfaces
+                  | map('extract', ansible_facts, 'ipv6')
+                  | select('defined') | list | flatten)) | d([]) -%}
+{%-   if item.address | d() and not item.address | ansible.utils.ipaddr('link-local') -%} {%-     set address = item.address -%} {%-     set prefix_or_mask = item.prefix | d(item.netmask) -%} {%-     set cidr = '{}/{}'.format(address, prefix_or_mask) -%} {%-     set _ = cidrs.append(cidr | ansible.utils.ipaddr('network/prefix')) -%} {%-   endif -%} {%- endfor -%} {{ cidrs | unique | sort }}
+
+                                                                 # ]]]
+bind__doh_proxy_access_policy = 
+bind__stats_proxy_port = 84
+bind__stats_proxy_allow = {{ ["127.0.0.1", "::1"]
+                             + ansible_all_ipv4_addresses | d([])
+                             + (ansible_all_ipv6_addresses | d([])
+                                | difference(ansible_all_ipv6_addresses | d([])
+                                             | ansible.utils.ipaddr("link-local")))
+                             | unique | sort }}
+
+bind__stats_proxy_access_policy = 
+bind__default_configuration[0].name = debops-tls
+bind__default_configuration[0].option = tls "debops-tls"
+bind__default_configuration[0].comment = TLS options for DoH and DoT
+bind__default_configuration[0].state = {{ "present" if bind__features | intersect(["dot", "doh_https"])
+               else "absent" }} 
+bind__default_configuration[0].options[0].name = ciphers
+bind__default_configuration[0].options[0].value = "{{ bind__tls_cipher_list }}"
+bind__default_configuration[0].options[1].name = dhparam-file
+bind__default_configuration[0].options[1].value = "{{ bind__tls_dh_file }}"
+bind__default_configuration[0].options[1].state = {{ "present" if bind__dhparam else "absent" }}
+bind__default_configuration[0].options[2].name = cert-file
+bind__default_configuration[0].options[2].value = "{{ bind__pki_path + "/" + bind__pki_realm + "/" + bind__pki_crt }}"
+bind__default_configuration[0].options[3].name = key-file
+bind__default_configuration[0].options[3].value = "{{ bind__pki_path + "/" + bind__pki_realm + "/" + bind__pki_key }}"
+bind__default_configuration[0].options[4].name = protocols
+bind__default_configuration[0].options[4].options[0].name = protocols
+bind__default_configuration[0].options[4].options[0].raw = {{ bind__tls_protocols | d([]) | join("; ") }};
+bind__default_configuration[0].options[5].name = session-tickets
+bind__default_configuration[0].options[5].value = no
+bind__default_configuration[0].options[6].name = prefer-server-ciphers
+bind__default_configuration[0].options[6].value = yes
+bind__default_configuration[0].options[7].name = ca-file
+bind__default_configuration[0].options[7].state = absent
+bind__default_configuration[0].options[8].name = remote-hostname
+bind__default_configuration[0].options[8].state = absent
+bind__default_configuration[1].name = http "debops-http"
+bind__default_configuration[1].comment = DoH options
+bind__default_configuration[1].state = {{ "present"
+               if bind__features | intersect(["doh_https", "doh_proxy", "doh_http"])
+               else "absent" }}
+
+bind__default_configuration[1].options[0].name = endpoints
+bind__default_configuration[1].options[0].options[0].name = endpoints
+bind__default_configuration[1].options[0].options[0].raw = {{ bind__doh_endpoints | map('regex_replace', '^(.*)$', '\"\\1\";') | join(' ') }}
+bind__default_configuration[1].options[1].name = listener-clients
+bind__default_configuration[1].options[1].state = absent
+bind__default_configuration[1].options[2].name = streams-per-connection
+bind__default_configuration[1].options[2].state = absent
+bind__default_configuration[2].name = statistics-channels
+bind__default_configuration[2].comment = Make stats available via a reverse proxy
+bind__default_configuration[2].state = {{ "present" if "stats_proxy" in bind__features else "absent" }}
+bind__default_configuration[2].options[0].name = statistics-localhost
+bind__default_configuration[2].options[0].raw = inet 127.0.0.1 port {{ bind__stats_proxy_port }} allow { any; };
+bind__default_configuration[3].name = options
+bind__default_configuration[3].options[0].name = directory
+bind__default_configuration[3].options[0].comment = For storage of non-authoritative/secondary zones
+bind__default_configuration[3].options[0].value = "/var/cache/bind"
+bind__default_configuration[3].options[1].name = forwarders
+bind__default_configuration[3].options[1].state = absent
+bind__default_configuration[3].options[1].options[0].name = forwarder-1
+bind__default_configuration[3].options[1].options[0].raw = 1.1.1.1;
+bind__default_configuration[3].options[2].name = zone-statistics
+bind__default_configuration[3].options[2].comment = Collect stats for all zones, available via rndc stats
+bind__default_configuration[3].options[2].value = yes
+bind__default_configuration[3].options[3].name = listen-dns-v4
+bind__default_configuration[3].options[3].option = listen-on
+bind__default_configuration[3].options[3].comment = Regular DNS (Do53) - IPv4
+bind__default_configuration[3].options[3].state = {{ "present" if "dns" in bind__features else "absent" }}
+bind__default_configuration[3].options[3].options[0].name = any
+bind__default_configuration[3].options[3].options[0].raw = any;
+bind__default_configuration[3].options[4].name = listen-dot-v4
+bind__default_configuration[3].options[4].option = listen-on port 853 tls debops-tls
+bind__default_configuration[3].options[4].comment = DNS over TLS (DoT) - IPv4
+bind__default_configuration[3].options[4].state = {{ "present" if "dot" in bind__features else "absent" }}
+bind__default_configuration[3].options[4].options[0].name = any
+bind__default_configuration[3].options[4].options[0].raw = any;
+bind__default_configuration[3].options[5].name = listen-doh-https-v4
+bind__default_configuration[3].options[5].option = listen-on port 443 tls debops-tls http debops-http
+bind__default_configuration[3].options[5].comment = DNS over HTTPS (DoH) - IPv4
+bind__default_configuration[3].options[5].state = {{ "present" if "doh_https" in bind__features else "absent" }}
+bind__default_configuration[3].options[5].options[0].name = any
+bind__default_configuration[3].options[5].options[0].raw = any;
+bind__default_configuration[3].options[6].name = listen-doh-http-v4
+bind__default_configuration[3].options[6].option = listen-on port 80 tls none http debops-http
+bind__default_configuration[3].options[6].comment = DNS over HTTP (DoH) - IPv4
+bind__default_configuration[3].options[6].state = {{ "present" if "doh_http" in bind__features else "absent" }}
+bind__default_configuration[3].options[6].options[0].name = localhost
+bind__default_configuration[3].options[6].options[0].raw = any;
+bind__default_configuration[3].options[7].name = listen-doh-proxy-v4
+bind__default_configuration[3].options[7].option = listen-on port {{ bind__doh_proxy_port | d("83") }} tls none http debops-http
+bind__default_configuration[3].options[7].comment = DNS over HTTP (DoH), behind proxy - IPv4
+bind__default_configuration[3].options[7].state = {{ "present" if "doh_proxy" in bind__features else "absent" }}
+bind__default_configuration[3].options[7].options[0].name = localhost
+bind__default_configuration[3].options[7].options[0].raw = 127.0.0.1;
+bind__default_configuration[3].options[8].name = listen-dns-v6
+bind__default_configuration[3].options[8].option = listen-on-v6
+bind__default_configuration[3].options[8].comment = Regular DNS (Do53) - IPv6
+bind__default_configuration[3].options[8].state = {{ "present" if "dns" in bind__features else "absent" }}
+bind__default_configuration[3].options[8].options[0].name = any
+bind__default_configuration[3].options[8].options[0].raw = any;
+bind__default_configuration[3].options[9].name = listen-dns-dot-v6
+bind__default_configuration[3].options[9].option = listen-on-v6 port 853 tls debops-tls
+bind__default_configuration[3].options[9].comment = DNS over TLS (DoT) - IPv6
+bind__default_configuration[3].options[9].state = {{ "present" if "dot" in bind__features else "absent" }}
+bind__default_configuration[3].options[9].options[0].name = any
+bind__default_configuration[3].options[9].options[0].raw = any;
+bind__default_configuration[3].options[10].name = listen-doh-https-v6
+bind__default_configuration[3].options[10].option = listen-on-v6 port 443 tls debops-tls http debops-http
+bind__default_configuration[3].options[10].comment = DNS over HTTPS (DoH) - IPv6
+bind__default_configuration[3].options[10].state = {{ "present" if "doh_https" in bind__features else "absent" }}
+bind__default_configuration[3].options[10].options[0].name = any
+bind__default_configuration[3].options[10].options[0].raw = any;
+bind__default_configuration[3].options[11].name = listen-doh-http-v6
+bind__default_configuration[3].options[11].option = listen-on-v6 port 80 tls none http debops-http
+bind__default_configuration[3].options[11].state = {{ "present" if "doh_http" in bind__features else "absent" }}
+bind__default_configuration[3].options[11].comment = DNS over HTTP (DoH) - IPv6
+bind__default_configuration[3].options[11].options[0].name = localhost
+bind__default_configuration[3].options[11].options[0].raw = any;
+bind__default_configuration[3].options[12].name = listen-doh-proxy-v6
+bind__default_configuration[3].options[12].option = listen-on-v6 port {{ bind__doh_proxy_port | d("83") }} tls none http debops-http
+bind__default_configuration[3].options[12].comment = DNS over HTTP (DoH), behind proxy - IPv6
+bind__default_configuration[3].options[12].state = {{ "present" if "doh_proxy" in bind__features else "absent" }}
+bind__default_configuration[3].options[12].options[0].name = localhost
+bind__default_configuration[3].options[12].options[0].raw = ::1;
+bind__default_configuration[3].options[13].name = qname-minimization
+bind__default_configuration[3].options[13].comment = Perform strict QNAME minimization (RFC7816)
+bind__default_configuration[3].options[13].value = strict
+bind__default_configuration[3].options[13].state = comment
+bind__default_configuration[3].options[14].name = dnssec-validation
+bind__default_configuration[3].options[14].comment = This is for when BIND acts as a resolver
+bind__default_configuration[3].options[14].value = auto
+bind__default_configuration[3].options[15].name = key-directory
+bind__default_configuration[3].options[15].comment = For storage of DNSSEC keys
+bind__default_configuration[3].options[15].value = "/var/lib/bind/dnssec-keys"
+bind__default_configuration[3].options[15].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[3].options[16].name = dnssec-dnskey-kskonly
+bind__default_configuration[3].options[16].comment = https://gitlab.isc.org/isc-projects/bind9/-/issues/1316
+bind__default_configuration[3].options[16].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[3].options[16].value = yes
+bind__default_configuration[3].options[17].name = response-policy-blocked-domains
+bind__default_configuration[3].options[17].raw = response-policy { zone "rpz.local"; } break-dnssec yes;
+bind__default_configuration[3].options[17].state = {{ "present" if bind__blocked_domains | d([]) | length > 0 else "absent" }}
+bind__default_configuration[3].options[18].name = max-udp-size
+bind__default_configuration[3].options[18].comment = https://www.isc.org/blogs/dns-flag-day-2020-2/
+bind__default_configuration[3].options[18].value = 1220
+bind__default_configuration[3].options[19].name = edns-udp-size
+bind__default_configuration[3].options[19].comment = https://www.isc.org/blogs/dns-flag-day-2020-2/
+bind__default_configuration[3].options[19].value = 1220
+bind__default_configuration[3].options[20].name = serial-update-method
+bind__default_configuration[3].options[20].comment = Make the serial numbers meaningful to a human admin
+bind__default_configuration[3].options[20].value = date
+bind__default_configuration[4].name = logging
+bind__default_configuration[4].state = absent
+bind__default_configuration[4].options[0].name = channel client_spam_channel
+bind__default_configuration[4].options[0].options[0].name = file
+bind__default_configuration[4].options[0].options[0].value = "/var/log/named/named_recent_client.log" versions 3 size 5m suffix increment
+bind__default_configuration[4].options[0].options[1].name = severity
+bind__default_configuration[4].options[0].options[1].value = info
+bind__default_configuration[4].options[0].options[2].name = print-time
+bind__default_configuration[4].options[0].options[2].value = yes
+bind__default_configuration[4].options[0].options[3].name = print-category
+bind__default_configuration[4].options[0].options[3].value = yes
+bind__default_configuration[4].options[0].options[4].name = print-severity
+bind__default_configuration[4].options[0].options[4].value = yes
+bind__default_configuration[4].options[0].options[5].name = buffered
+bind__default_configuration[4].options[0].options[5].value = no
+bind__default_configuration[4].options[1].name = channel server_spam_channel
+bind__default_configuration[4].options[1].options[0].name = file
+bind__default_configuration[4].options[1].options[0].value = "/var/log/named/named_recent_server.log" versions 3 size 5m suffix increment
+bind__default_configuration[4].options[1].options[1].name = severity
+bind__default_configuration[4].options[1].options[1].value = info
+bind__default_configuration[4].options[1].options[2].name = print-time
+bind__default_configuration[4].options[1].options[2].value = yes
+bind__default_configuration[4].options[1].options[3].name = print-category
+bind__default_configuration[4].options[1].options[3].value = yes
+bind__default_configuration[4].options[1].options[4].name = print-severity
+bind__default_configuration[4].options[1].options[4].value = yes
+bind__default_configuration[4].options[1].options[5].name = buffered
+bind__default_configuration[4].options[1].options[5].value = no
+bind__default_configuration[4].options[2].name = category client
+bind__default_configuration[4].options[2].options[0].name = channel-1
+bind__default_configuration[4].options[2].options[0].raw = client_spam_channel;
+bind__default_configuration[4].options[3].name = category query-errors
+bind__default_configuration[4].options[3].options[0].name = channel-1
+bind__default_configuration[4].options[3].options[0].raw = client_spam_channel;
+bind__default_configuration[4].options[4].name = category resolver
+bind__default_configuration[4].options[4].options[0].name = channel-1
+bind__default_configuration[4].options[4].options[0].raw = client_spam_channel;
+bind__default_configuration[4].options[5].name = category security
+bind__default_configuration[4].options[5].options[0].name = channel-1
+bind__default_configuration[4].options[5].options[0].raw = client_spam_channel;
+bind__default_configuration[4].options[6].name = category spill
+bind__default_configuration[4].options[6].options[0].name = channel-1
+bind__default_configuration[4].options[6].options[0].raw = client_spam_channel;
+bind__default_configuration[4].options[7].name = category cname
+bind__default_configuration[4].options[7].options[0].name = channel-1
+bind__default_configuration[4].options[7].options[0].raw = server_spam_channel;
+bind__default_configuration[4].options[8].name = category edns-disabled
+bind__default_configuration[4].options[8].options[0].name = channel-1
+bind__default_configuration[4].options[8].options[0].raw = server_spam_channel;
+bind__default_configuration[4].options[9].name = category lame-servers
+bind__default_configuration[4].options[9].options[0].name = channel-1
+bind__default_configuration[4].options[9].options[0].raw = server_spam_channel;
+bind__default_configuration[5].name = generated-keys
+bind__default_configuration[5].comment = Keys defined by the Ansible role
+bind__default_configuration[5].state = {{ "present"
+               if bind__combined_keys
+                  | flatten
+                  | debops.debops.parse_kv_items
+                  | selectattr("state", "equalto", "present")
+                  | length > 0
+               else "absent" }}
+
+bind__default_configuration[5].autovalue = keys
+bind__default_configuration[6].name = acl debops-acl
+bind__default_configuration[6].state = {{ "present"
+               if "debops-key" in (bind__combined_keys
+                                   | flatten
+                                   | debops.debops.parse_kv_items
+                                   | selectattr("state", "equalto", "present")
+                                   | map(attribute="name"))
+               else "absent" }}
+
+bind__default_configuration[6].options[0].name = debops-key
+bind__default_configuration[6].options[0].raw = key debops-key;
+bind__default_configuration[7].name = dnssec-policy-csk
+bind__default_configuration[7].option = dnssec-policy "csk"
+bind__default_configuration[7].comment = Single CSK without rollover (BINDs default policy)
+bind__default_configuration[7].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[7].options[0].name = keys
+bind__default_configuration[7].options[0].options[0].name = csk
+bind__default_configuration[7].options[0].options[0].value = key-directory lifetime unlimited algorithm ecdsap256sha256
+bind__default_configuration[7].options[1].name = nsec3param
+bind__default_configuration[7].options[1].comment = If you consider changing these values, first read:
+https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-nsec3-guidance-10#section-3.1
+
+bind__default_configuration[7].options[1].state = {{ "present" if bind__dnssec_use_nsec3 | d(False) else "absent" }}
+bind__default_configuration[7].options[1].value = iterations 0 optout no salt-length 0
+bind__default_configuration[7].options[2].name = dnskey-ttl
+bind__default_configuration[7].options[2].comment = Key timings
+bind__default_configuration[7].options[2].separator = True
+bind__default_configuration[7].options[2].value = 3600
+bind__default_configuration[7].options[3].name = publish-safety
+bind__default_configuration[7].options[3].value = 1h
+bind__default_configuration[7].options[4].name = retire-safety
+bind__default_configuration[7].options[4].value = 1h
+bind__default_configuration[7].options[5].name = purge-keys
+bind__default_configuration[7].options[5].value = P90D
+bind__default_configuration[7].options[6].name = signatures-refresh
+bind__default_configuration[7].options[6].comment = Signature timings
+bind__default_configuration[7].options[6].separator = True
+bind__default_configuration[7].options[6].value = 5d
+bind__default_configuration[7].options[7].name = signatures-validity
+bind__default_configuration[7].options[7].value = 14d
+bind__default_configuration[7].options[8].name = signatures-validity-dnskey
+bind__default_configuration[7].options[8].value = 14d
+bind__default_configuration[7].options[9].name = max-zone-ttl
+bind__default_configuration[7].options[9].comment = Zone parameters
+bind__default_configuration[7].options[9].separator = True
+bind__default_configuration[7].options[9].value = 86400
+bind__default_configuration[7].options[10].name = zone-propagation-delay
+bind__default_configuration[7].options[10].value = 300
+bind__default_configuration[7].options[11].name = parent-ds-ttl
+bind__default_configuration[7].options[11].comment = Parent parameters
+bind__default_configuration[7].options[11].separator = True
+bind__default_configuration[7].options[11].value = 86400
+bind__default_configuration[7].options[12].name = parent-propagation-delay
+bind__default_configuration[7].options[12].value = 1h
+bind__default_configuration[8].name = dnssec-policy-csk-rollover
+bind__default_configuration[8].option = dnssec-policy "csk-rollover"
+bind__default_configuration[8].comment = Single CSK with rollover
+bind__default_configuration[8].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[8].options[0].name = keys
+bind__default_configuration[8].options[0].options[0].name = csk
+bind__default_configuration[8].options[0].options[0].value = key-directory lifetime 365d algorithm ecdsap256sha256
+bind__default_configuration[8].options[1].name = nsec3param
+bind__default_configuration[8].options[1].comment = If you consider changing these values, first read:
+https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-nsec3-guidance-10#section-3.1
+
+bind__default_configuration[8].options[1].state = {{ "present" if bind__dnssec_use_nsec3 | d(False) else "absent" }}
+bind__default_configuration[8].options[1].value = iterations 0 optout no salt-length 0
+bind__default_configuration[8].options[2].name = dnskey-ttl
+bind__default_configuration[8].options[2].comment = Key timings
+bind__default_configuration[8].options[2].separator = True
+bind__default_configuration[8].options[2].value = 3600
+bind__default_configuration[8].options[3].name = publish-safety
+bind__default_configuration[8].options[3].value = 1h
+bind__default_configuration[8].options[4].name = retire-safety
+bind__default_configuration[8].options[4].value = 1h
+bind__default_configuration[8].options[5].name = purge-keys
+bind__default_configuration[8].options[5].value = P90D
+bind__default_configuration[8].options[6].name = signatures-refresh
+bind__default_configuration[8].options[6].comment = Signature timings
+bind__default_configuration[8].options[6].separator = True
+bind__default_configuration[8].options[6].value = 5d
+bind__default_configuration[8].options[7].name = signatures-validity
+bind__default_configuration[8].options[7].value = 14d
+bind__default_configuration[8].options[8].name = signatures-validity-dnskey
+bind__default_configuration[8].options[8].value = 14d
+bind__default_configuration[8].options[9].name = max-zone-ttl
+bind__default_configuration[8].options[9].comment = Zone parameters
+bind__default_configuration[8].options[9].separator = True
+bind__default_configuration[8].options[9].value = 86400
+bind__default_configuration[8].options[10].name = zone-propagation-delay
+bind__default_configuration[8].options[10].value = 300
+bind__default_configuration[8].options[11].name = parent-ds-ttl
+bind__default_configuration[8].options[11].comment = Parent parameters
+bind__default_configuration[8].options[11].separator = True
+bind__default_configuration[8].options[11].value = 86400
+bind__default_configuration[8].options[12].name = parent-propagation-delay
+bind__default_configuration[8].options[12].value = 1h
+bind__default_configuration[9].name = dnssec-policy-kskzsk
+bind__default_configuration[9].option = dnssec-policy "kskzsk"
+bind__default_configuration[9].comment = Separate KSK and ZSK without rollover
+bind__default_configuration[9].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[9].options[0].name = keys
+bind__default_configuration[9].options[0].options[0].name = ksk
+bind__default_configuration[9].options[0].options[0].value = key-directory lifetime unlimited algorithm ecdsap256sha256
+bind__default_configuration[9].options[0].options[1].name = zsk
+bind__default_configuration[9].options[0].options[1].value = key-directory lifetime unlimited algorithm ecdsap256sha256
+bind__default_configuration[9].options[1].name = nsec3param
+bind__default_configuration[9].options[1].comment = If you consider changing these values, first read:
+https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-nsec3-guidance-10#section-3.1
+
+bind__default_configuration[9].options[1].state = {{ "present" if bind__dnssec_use_nsec3 | d(False) else "absent" }}
+bind__default_configuration[9].options[1].value = iterations 0 optout no salt-length 0
+bind__default_configuration[9].options[2].name = dnskey-ttl
+bind__default_configuration[9].options[2].comment = Key timings
+bind__default_configuration[9].options[2].separator = True
+bind__default_configuration[9].options[2].value = 3600
+bind__default_configuration[9].options[3].name = publish-safety
+bind__default_configuration[9].options[3].value = 1h
+bind__default_configuration[9].options[4].name = retire-safety
+bind__default_configuration[9].options[4].value = 1h
+bind__default_configuration[9].options[5].name = purge-keys
+bind__default_configuration[9].options[5].value = P90D
+bind__default_configuration[9].options[6].name = signatures-refresh
+bind__default_configuration[9].options[6].comment = Signature timings
+bind__default_configuration[9].options[6].separator = True
+bind__default_configuration[9].options[6].value = 5d
+bind__default_configuration[9].options[7].name = signatures-validity
+bind__default_configuration[9].options[7].value = 14d
+bind__default_configuration[9].options[8].name = signatures-validity-dnskey
+bind__default_configuration[9].options[8].value = 14d
+bind__default_configuration[9].options[9].name = max-zone-ttl
+bind__default_configuration[9].options[9].comment = Zone parameters
+bind__default_configuration[9].options[9].separator = True
+bind__default_configuration[9].options[9].value = 86400
+bind__default_configuration[9].options[10].name = zone-propagation-delay
+bind__default_configuration[9].options[10].value = 300
+bind__default_configuration[9].options[11].name = parent-ds-ttl
+bind__default_configuration[9].options[11].comment = Parent parameters
+bind__default_configuration[9].options[11].separator = True
+bind__default_configuration[9].options[11].value = 86400
+bind__default_configuration[9].options[12].name = parent-propagation-delay
+bind__default_configuration[9].options[12].value = 1h
+bind__default_configuration[10].name = dnssec-policy-kskzsk-rollover
+bind__default_configuration[10].option = dnssec-policy "kskzsk-rollover"
+bind__default_configuration[10].comment = Separate KSK and ZSK with rollover (the traditional policy)
+bind__default_configuration[10].state = {{ "present" if "dnssec" in bind__features else "absent" }}
+bind__default_configuration[10].options[0].name = keys
+bind__default_configuration[10].options[0].options[0].name = ksk
+bind__default_configuration[10].options[0].options[0].value = key-directory lifetime 365d algorithm ecdsap256sha256
+bind__default_configuration[10].options[0].options[1].name = zsk
+bind__default_configuration[10].options[0].options[1].value = key-directory lifetime 60d algorithm ecdsap256sha256
+bind__default_configuration[10].options[1].name = nsec3param
+bind__default_configuration[10].options[1].comment = If you consider changing these values, first read:
+https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-nsec3-guidance-10#section-3.1
+
+bind__default_configuration[10].options[1].state = {{ "present" if bind__dnssec_use_nsec3 | d(False) else "absent" }}
+bind__default_configuration[10].options[1].value = iterations 0 optout no salt-length 0
+bind__default_configuration[10].options[2].name = dnskey-ttl
+bind__default_configuration[10].options[2].comment = Key timings
+bind__default_configuration[10].options[2].separator = True
+bind__default_configuration[10].options[2].value = 3600
+bind__default_configuration[10].options[3].name = publish-safety
+bind__default_configuration[10].options[3].value = 1h
+bind__default_configuration[10].options[4].name = retire-safety
+bind__default_configuration[10].options[4].value = 1h
+bind__default_configuration[10].options[5].name = purge-keys
+bind__default_configuration[10].options[5].value = P90D
+bind__default_configuration[10].options[6].name = signatures-refresh
+bind__default_configuration[10].options[6].comment = Signature timings
+bind__default_configuration[10].options[6].separator = True
+bind__default_configuration[10].options[6].value = 5d
+bind__default_configuration[10].options[7].name = signatures-validity
+bind__default_configuration[10].options[7].value = 14d
+bind__default_configuration[10].options[8].name = signatures-validity-dnskey
+bind__default_configuration[10].options[8].value = 14d
+bind__default_configuration[10].options[9].name = max-zone-ttl
+bind__default_configuration[10].options[9].comment = Zone parameters
+bind__default_configuration[10].options[9].separator = True
+bind__default_configuration[10].options[9].value = 86400
+bind__default_configuration[10].options[10].name = zone-propagation-delay
+bind__default_configuration[10].options[10].value = 300
+bind__default_configuration[10].options[11].name = parent-ds-ttl
+bind__default_configuration[10].options[11].comment = Parent parameters
+bind__default_configuration[10].options[11].separator = True
+bind__default_configuration[10].options[11].value = 86400
+bind__default_configuration[10].options[12].name = parent-propagation-delay
+bind__default_configuration[10].options[12].value = 1h
+bind__default_configuration[11].name = generated-zones
+bind__default_configuration[11].comment = Views/zones defined by the Ansible role
+bind__default_configuration[11].autovalue = zones
+bind__default_configuration[11].weight = 10000
+bind__combined_configuration = {{ bind__default_configuration
+                                   + bind__configuration
+                                   + bind__group_configuration
+                                   + bind__host_configuration }}
+
+bind__default_keys[0].name = debops-key
+bind__default_keys[0].algorithm = hmac-sha512
+bind__default_keys[0].type = tsig
+bind__combined_keys = {{ bind__default_keys
+                          + bind__keys
+                          + bind__group_keys
+                          + bind__host_keys }}
+
+bind__default_zone_ttl = 1D
+bind__default_zone_soa_primary = {{ ansible_fqdn | regex_replace("\.*$", ".") }}
+bind__default_zone_soa_email = {{ "hostmaster." + ansible_domain + "." }}
+bind__default_zone_soa_serial = 1
+bind__default_zone_soa_refresh = 1D
+bind__default_zone_soa_retry = 2H
+bind__default_zone_soa_expire = 1000H
+bind__default_zone_soa_neg_ttl = 2D
+bind__default_zones[0].name = rpz.local
+bind__default_zones[0].force = True
+bind__default_zones[0].comment = Domain blocklist
+bind__default_zones[0].state = {{ "present" if bind__blocked_domains | d([]) | length > 0 else "absent" }}
+bind__default_zones[0].options[0].name = type
+bind__default_zones[0].options[0].value = master
+bind__default_zones[0].options[1].name = file
+bind__default_zones[0].options[1].autovalue = zone_file_path
+bind__default_zones[0].content = {{ ["@	IN NS localhost."]
+                 + bind__blocked_domains | d([]) | map("regex_replace", "^(.*)$", "\1 CNAME .")
+              }}
+
+bind__combined_zones = {{ bind__default_zones
+                           + bind__zones
+                           + bind__group_zones
+                           + bind__host_zones }}
+
+bind__default_generic_zones[0].name = .
+bind__default_generic_zones[0].comment = prime the server with knowledge of the root servers
+bind__default_generic_zones[0].options[0].name = type
+bind__default_generic_zones[0].options[0].value = hint
+bind__default_generic_zones[0].options[1].name = file
+bind__default_generic_zones[0].options[1].value = "/usr/share/dns/root.hints"
+bind__default_generic_zones[1].name = localhost
+bind__default_generic_zones[1].comment = be authoritative for the localhost forward zone (RFC1912, 4.1)
+bind__default_generic_zones[1].options[0].name = type
+bind__default_generic_zones[1].options[0].value = master
+bind__default_generic_zones[1].options[1].name = file
+bind__default_generic_zones[1].options[1].value = "/etc/bind/db.local"
+bind__default_generic_zones[2].name = 127.in-addr.arpa
+bind__default_generic_zones[2].comment = be authoritative for the localhost reverse zone (RFC1912, 4.1)
+bind__default_generic_zones[2].options[0].name = type
+bind__default_generic_zones[2].options[0].value = master
+bind__default_generic_zones[2].options[1].name = file
+bind__default_generic_zones[2].options[1].value = "/etc/bind/db.127"
+bind__default_generic_zones[3].name = 0.in-addr.arpa
+bind__default_generic_zones[3].comment = be authoritative for this network (RFC1912, 4.1)
+bind__default_generic_zones[3].options[0].name = type
+bind__default_generic_zones[3].options[0].value = master
+bind__default_generic_zones[3].options[1].name = file
+bind__default_generic_zones[3].options[1].value = "/etc/bind/db.0"
+bind__default_generic_zones[4].name = 255.in-addr.arpa
+bind__default_generic_zones[4].comment = be authoritative for the broadcast zone (RFC1912, 4.1)
+bind__default_generic_zones[4].options[0].name = type
+bind__default_generic_zones[4].options[0].value = master
+bind__default_generic_zones[4].options[1].name = file
+bind__default_generic_zones[4].options[1].value = "/etc/bind/db.255"
+bind__combined_generic_zones = {{ bind__default_generic_zones
+                                   + bind__generic_zones
+                                   + bind__group_generic_zones
+                                   + bind__host_generic_zones }}
+
+bind__pki = {{ True
+               if (ansible_local.pki.enabled | d(False) | bool
+                   and bind__version is version("9.18.0", ">="))
+               else False }}
+
+bind__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
+bind__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
+bind__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
+bind__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
+bind__pki_key = {{ ansible_local.pki.key | d("default.key") }}
+bind__tls_ca_cert_dir = /etc/ssl/certs/
+bind__tls_protocols[0] = TLSv1.3
+bind__tls_cipher_list = HIGH:!kRSA:!aNULL:!eNULL:!RC4:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!SHA1:!SHA256:!SHA384
+bind__pki_hook_name = bind
+bind__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
+bind__pki_hook_action = reload
+bind__dhparam = {{ ansible_local.dhparam.enabled | d(False) }}
+bind__dhparam_set = default
+bind__tls_dh_file = {{ ansible_local.dhparam[bind__dhparam_set] | d("") }}
+bind__tcp_ports[0] = {{ "domain" if "dns" in bind__features else [] }}
+bind__tcp_ports[1] = {{ "domain-s" if "dot" in bind__features else [] }}
+bind__tcp_ports[2] = {{ "http" if "doh_http" in bind__features else [] }}
+bind__tcp_ports[3] = {{ "https" if "doh_https" in bind__features else [] }}
+bind__udp_ports[0] = {{ "domain" if "dns" in bind__features else [] }}
+bind__accept_any = {{ True
+                      if bind__features
+                         | intersect(["dns", "dot", "doh_http", "doh_https"])
+                      else False }}
+
+bind__ferm__dependent_rules[0].name = reject_bind_tcp
+bind__ferm__dependent_rules[0].type = accept
+bind__ferm__dependent_rules[0].protocol = tcp
+bind__ferm__dependent_rules[0].dport = {{ q("flattened", bind__tcp_ports) }}
+bind__ferm__dependent_rules[0].multiport = True
+bind__ferm__dependent_rules[0].saddr = {{ bind__deny + bind__group_deny + bind__host_deny }}
+bind__ferm__dependent_rules[0].weight = 45
+bind__ferm__dependent_rules[0].by_role = debops.bind
+bind__ferm__dependent_rules[0].target = REJECT
+bind__ferm__dependent_rules[0].rule_state = {{ "present"
+                    if (bind__deny + bind__group_deny + bind__host_deny)
+                    else "absent" }}
+
+bind__ferm__dependent_rules[1].name = reject_bind_udp
+bind__ferm__dependent_rules[1].type = accept
+bind__ferm__dependent_rules[1].protocol = udp
+bind__ferm__dependent_rules[1].dport = {{ q("flattened", bind__udp_ports) }}
+bind__ferm__dependent_rules[1].multiport = True
+bind__ferm__dependent_rules[1].saddr = {{ bind__deny + bind__group_deny + bind__host_deny }}
+bind__ferm__dependent_rules[1].weight = 45
+bind__ferm__dependent_rules[1].by_role = debops.bind
+bind__ferm__dependent_rules[1].target = REJECT
+bind__ferm__dependent_rules[1].rule_state = {{ "present"
+                    if (bind__deny + bind__group_deny + bind__host_deny)
+                    else "absent" }}
+
+bind__ferm__dependent_rules[2].name = accept_bind_tcp
+bind__ferm__dependent_rules[2].type = accept
+bind__ferm__dependent_rules[2].protocol = tcp
+bind__ferm__dependent_rules[2].dport = {{ q("flattened", bind__tcp_ports) }}
+bind__ferm__dependent_rules[2].multiport = True
+bind__ferm__dependent_rules[2].saddr = {{ bind__allow + bind__group_allow + bind__host_allow }}
+bind__ferm__dependent_rules[2].accept_any = {{ bind__accept_any }}
+bind__ferm__dependent_rules[2].weight = 50
+bind__ferm__dependent_rules[2].by_role = debops.bind
+bind__ferm__dependent_rules[3].name = accept_bind_udp
+bind__ferm__dependent_rules[3].type = accept
+bind__ferm__dependent_rules[3].protocol = udp
+bind__ferm__dependent_rules[3].dport = {{ q("flattened", bind__udp_ports) }}
+bind__ferm__dependent_rules[3].multiport = True
+bind__ferm__dependent_rules[3].saddr = {{ bind__allow + bind__group_allow + bind__host_allow }}
+bind__ferm__dependent_rules[3].accept_any = {{ bind__accept_any }}
+bind__ferm__dependent_rules[3].weight = 50
+bind__ferm__dependent_rules[3].by_role = debops.bind
+bind__nginx__dependent_servers[0].name = {{ bind__fqdn }}
+bind__nginx__dependent_servers[0].filename = debops.bind
+bind__nginx__dependent_servers[0].by_role = debops.bind
+bind__nginx__dependent_servers[0].type = default
+bind__nginx__dependent_servers[0].webroot_create = False
+bind__nginx__dependent_servers[0].state = {{ "present"
+               if bind__features | intersect(["doh_proxy", "stats_proxy"])
+               else "absent" }}
+
+bind__nginx__dependent_servers[0].root = False
+bind__nginx__dependent_servers[0].maintenance = False
+bind__nginx__dependent_servers[0].toplevel_options = {% if "doh_proxy" in bind__features | d([]) %}
+# address and port of the DoH server, serving unencrypted HTTP/2
+upstream http2-doh {
+        server 127.0.0.1:{{ bind__doh_proxy_port }};
+}{% endif %}
+bind__nginx__dependent_servers[0].location_list = {%- set locations =  [{
+          "pattern": "/",
+          "options": "proxy_pass http://127.0.0.1:"
+                      + bind__stats_proxy_port | string + ";",
+          "allow": bind__stats_proxy_allow,
+          "access_policy": bind__stats_proxy_access_policy,
+          "enabled": True if "stats_proxy" in bind__features else False
+    }] -%}
+{%- for endpoint in bind__doh_endpoints | d([]) -%} {%-   set _ = locations.append({
+                "pattern": endpoint,
+                "options": "grpc_pass grpc://http2-doh;",
+                "allow": bind__doh_proxy_allow,
+                "access_policy": bind__doh_proxy_access_policy,
+                "enabled": True if "doh_proxy" in bind__features else False
+      }) -%}
+{%- endfor -%} {{ locations }}
+
+                                                             # ]]]
+bind__logrotate__dependent_config[0].filename = debops-bind-rollkeys
+bind__logrotate__dependent_config[0].state = {{ "present"
+                if ("dnssec" in bind__features and
+                    bind__dnssec_script_enabled | d(False))
+                else "absent" }}
+
+bind__logrotate__dependent_config[0].sections[0].logs = /var/log/debops-bind-rollkey.log
+bind__logrotate__dependent_config[0].sections[0].options = notifempty
+missingok
+yearly
+rotate 10
+compress
+
+bind__logrotate__dependent_config[0].sections[0].comment = BIND DNSSEC key rollover logs
+bind__apt_preferences__dependent_list[0].packages[0] = bind9
+bind__apt_preferences__dependent_list[0].packages[1] = bind9-dnsutils
+bind__apt_preferences__dependent_list[0].packages[2] = bind9-libs
+bind__apt_preferences__dependent_list[0].packages[3] = bind9-utils
+bind__apt_preferences__dependent_list[0].backports[0] = bullseye
+bind__apt_preferences__dependent_list[0].reason = Support for DNS-over-TLS/HTTPS
+bind__apt_preferences__dependent_list[0].by_role = debops.bind

@@ -1,0 +1,10 @@
+[0].name = Calico-rr | Disable calico-rr service if it exists
+[0].service.name = calico-rr
+[0].service.state = stopped
+[0].service.enabled = false
+[0].failed_when = false
+[1].name = Calico-rr | Delete obsolete files
+[1].file.path = {{ item }}
+[1].file.state = absent
+[1].with_items[0] = /etc/calico/calico-rr.env
+[1].with_items[1] = /etc/systemd/system/calico-rr.service

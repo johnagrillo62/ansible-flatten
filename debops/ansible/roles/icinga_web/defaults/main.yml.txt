@@ -1,0 +1,668 @@
+icinga_web__base_packages[0] = icingaweb2
+icinga_web__base_packages[1] = icingaweb2-module-doc
+icinga_web__base_packages[2] = icingaweb2-module-monitoring
+icinga_web__base_packages[3] = icingacli
+icinga_web__user = www-data
+icinga_web__group = icingaweb2
+icinga_web__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
+                     + "/icinga_web" }} 
+icinga_web__fqdn = icinga.{{ icinga_web__domain }}
+icinga_web__domain = {{ ansible_domain }}
+icinga_web__node_fqdn = {{ ansible_fqdn }}
+icinga_web__default_modules[0].name = toplevelview
+icinga_web__default_modules[0].git_repo = https://github.com/Icinga/icingaweb2-module-toplevelview
+icinga_web__default_modules[0].git_version = v0.3.3
+icinga_web__default_modules[0].state = present
+icinga_web__default_modules[1].name = monitoring
+icinga_web__default_modules[1].state = present
+icinga_web__default_modules[2].name = businessprocess
+icinga_web__default_modules[2].git_repo = https://github.com/Icinga/icingaweb2-module-businessprocess
+icinga_web__default_modules[2].git_version = v2.3.1
+icinga_web__default_modules[2].state = present
+icinga_web__default_modules[3].name = graphite
+icinga_web__default_modules[3].git_repo = https://github.com/Icinga/icingaweb2-module-graphite
+icinga_web__default_modules[3].git_version = v1.1.0
+icinga_web__default_modules[3].enabled = False
+icinga_web__default_modules[3].state = present
+icinga_web__default_modules[4].name = director
+icinga_web__default_modules[4].git_repo = https://github.com/Icinga/icingaweb2-module-director
+icinga_web__default_modules[4].git_version = v1.8.1
+icinga_web__default_modules[4].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__default_modules[5].name = generictts
+icinga_web__default_modules[5].git_repo = https://github.com/Icinga/icingaweb2-module-generictts
+icinga_web__default_modules[5].git_version = v2.0.0
+icinga_web__default_modules[5].state = present
+icinga_web__default_modules[6].name = grafana
+icinga_web__default_modules[6].git_repo = https://github.com/Mikesch-mp/icingaweb2-module-grafana
+icinga_web__default_modules[6].git_version = v1.4.2
+icinga_web__default_modules[6].state = present
+icinga_web__default_modules[7].name = map
+icinga_web__default_modules[7].git_repo = https://github.com/nbuchwitz/icingaweb2-module-map
+icinga_web__default_modules[7].git_version = v1.1.0
+icinga_web__default_modules[7].state = present
+icinga_web__default_modules[8].name = pnp
+icinga_web__default_modules[8].git_repo = https://github.com/Icinga/icingaweb2-module-pnp
+icinga_web__default_modules[8].git_version = v1.1.0
+icinga_web__default_modules[8].enabled = False
+icinga_web__default_modules[8].state = present
+icinga_web__default_modules[9].name = elasticsearch
+icinga_web__default_modules[9].git_repo = https://github.com/Icinga/icingaweb2-module-elasticsearch
+icinga_web__default_modules[9].git_version = v0.9.0
+icinga_web__default_modules[9].state = present
+icinga_web__default_modules[10].name = cube
+icinga_web__default_modules[10].git_repo = https://github.com/Icinga/icingaweb2-module-cube
+icinga_web__default_modules[10].git_version = v1.1.1
+icinga_web__default_modules[10].state = present
+icinga_web__default_modules[11].name = netboximport
+icinga_web__default_modules[11].git_repo = https://github.com/Uberspace/icingaweb2-module-netboximport
+icinga_web__default_modules[11].git_version = master
+icinga_web__default_modules[11].state = present
+icinga_web__default_modules[12].name = doc
+icinga_web__default_modules[12].state = present
+icinga_web__default_modules[13].name = ipl
+icinga_web__default_modules[13].git_repo = https://github.com/Icinga/icingaweb2-module-ipl
+icinga_web__default_modules[13].git_version = v0.5.0
+icinga_web__default_modules[13].state = present
+icinga_web__default_modules[14].name = reactbundle
+icinga_web__default_modules[14].git_repo = https://github.com/Icinga/icingaweb2-module-reactbundle
+icinga_web__default_modules[14].git_version = v0.9.0
+icinga_web__default_modules[14].state = present
+icinga_web__default_modules[15].name = incubator
+icinga_web__default_modules[15].git_repo = https://github.com/Icinga/icingaweb2-module-incubator
+icinga_web__default_modules[15].git_version = v0.6.0
+icinga_web__default_modules[15].state = present
+icinga_web__default_modules[16].name = x509
+icinga_web__default_modules[16].git_repo = https://github.com/icinga/icingaweb2-module-x509
+icinga_web__default_modules[16].git_version = v1.0.0
+icinga_web__default_modules[16].state = {{ "present" if icinga_web__x509_enabled | bool else "ignore" }}
+icinga_web__database_type = {{ ansible_local.icinga_web.database_type
+                               | d(ansible_local.icinga_db.type | d(""), true)
+                               | d("postgresql" if ansible_local.postgresql is defined else "", true)
+                               | d("mariadb" if ansible_local.mariadb is defined else "", true) }}
+
+icinga_web__database_map.postgresql.ido = pgsql
+icinga_web__database_map.postgresql.db_name = icingaweb2_production
+icinga_web__database_map.postgresql.db_user = icingaweb2
+icinga_web__database_map.postgresql.db_host = {{ ansible_local.postgresql.server | d("localhost") }}
+icinga_web__database_map.postgresql.db_port = {{ ansible_local.postgresql.port | d(5432) }}
+icinga_web__database_map.postgresql.db_schema = /usr/share/icingaweb2/etc/schema/pgsql.schema.sql
+icinga_web__database_map.postgresql.pw_path = {{ secret + "/postgresql/"
+                 + ansible_local.postgresql.delegate_to | d(inventory_hostname)
+                 + "/" + ansible_local.postgresql.port | d("5432")
+                 + "/credentials/icingaweb2/password" }}
+
+icinga_web__database_map.mariadb.ido = mysql
+icinga_web__database_map.mariadb.db_name = icingaweb2
+icinga_web__database_map.mariadb.db_user = icingaweb2
+icinga_web__database_map.mariadb.db_host = {{ ansible_local.mariadb.server | d("localhost") }}
+icinga_web__database_map.mariadb.db_port = {{ ansible_local.mariadb.port | d(3306) }}
+icinga_web__database_map.mariadb.db_schema = /usr/share/icingaweb2/etc/schema/mysql.schema.sql
+icinga_web__database_map.mariadb.pw_path = {{ secret + "/mariadb/"
+                 + ansible_local.mariadb.delegate_to | d(inventory_hostname)
+                 + "/credentials/icingaweb2/password" }}
+
+icinga_web__database_name = {{ icinga_web__database_map[icinga_web__database_type].db_name }}
+icinga_web__database_user = {{ icinga_web__database_map[icinga_web__database_type].db_user }}
+icinga_web__database_password_path = {{ icinga_web__database_map[icinga_web__database_type].pw_path }}
+icinga_web__database_password = {{ lookup('password', icinga_web__database_password_path
+                                   + ' length=48 chars=ascii_letters,digits,.-_') }} 
+icinga_web__database_host = {{ icinga_web__database_map[icinga_web__database_type].db_host }}
+icinga_web__database_port = {{ icinga_web__database_map[icinga_web__database_type].db_port }}
+icinga_web__database_ssl = {{ False if icinga_web__database_host == "localhost"
+                              else ansible_local.pki.enabled | d(False) | bool }} 
+icinga_web__database_schema = {{ icinga_web__database_map[icinga_web__database_type].db_schema }}
+icinga_web__database_init = {{ not (ansible_local.icinga_web.installed | d(False) | bool) }}
+icinga_web__master_database_enabled = {{ ansible_local.icinga_db.configured | d(False) | bool }}
+icinga_web__master_database_type = {{ ansible_local.icinga_db.type | d("") }}
+icinga_web__master_database_ido = {{ ansible_local.icinga_db.ido | d("") }}
+icinga_web__master_database_name = {{ ansible_local.icinga_db.db_name | d("icinga2") }}
+icinga_web__master_database_user = {{ ansible_local.icinga_db.db_user | d("icinga2") }}
+icinga_web__master_database_password = {{ ansible_local.icinga_db.db_password | d("") }}
+icinga_web__master_database_host = {{ ansible_local.icinga_db.db_host | d("localhost") }}
+icinga_web__master_database_port = {{ ansible_local.icinga_db.db_port | d("") }}
+icinga_web__master_database_ssl = {{ ansible_local.icinga_db.db_ssl | d(False) }}
+icinga_web__director_enabled = True
+icinga_web__director_user = icingadirector
+icinga_web__director_group = {{ icinga_web__group }}
+icinga_web__director_home = /var/local/{{ icinga_web__director_user }}
+icinga_web__director_home_mode = 0755
+icinga_web__director_shell = /usr/sbin/nologin
+icinga_web__director_api_fqdn = {{ icinga_web__fqdn }}
+icinga_web__director_api_url = https://{{ icinga_web__director_api_fqdn }}/director
+icinga_web__director_api_user = director-api
+icinga_web__director_api_password = {{ lookup("password", secret + "/icinga_web/api/"
+                                       + icinga_web__director_api_fqdn + "/credentials/"
+                                       + icinga_web__director_api_user + "/password") }}
+
+icinga_web__director_database_type = {{ icinga_web__database_type | d("invalid") }}
+icinga_web__director_database_map.postgresql.ido = pgsql
+icinga_web__director_database_map.postgresql.db_name = icinga2_director_production
+icinga_web__director_database_map.postgresql.db_user = icinga2_director
+icinga_web__director_database_map.postgresql.db_host = {{ ansible_local.postgresql.server | d("localhost") }}
+icinga_web__director_database_map.postgresql.db_port = {{ ansible_local.postgresql.port | d(5432) }}
+icinga_web__director_database_map.postgresql.pw_path = {{ secret + "/postgresql/"
+                 + ansible_local.postgresql.delegate_to | d(inventory_hostname)
+                 + "/" + ansible_local.postgresql.port | d("5432")
+                 + "/credentials/icinga2_director/password" }}
+
+icinga_web__director_database_map.mariadb.ido = mysql
+icinga_web__director_database_map.mariadb.db_name = icinga2_director
+icinga_web__director_database_map.mariadb.db_user = icinga2_director
+icinga_web__director_database_map.mariadb.db_host = {{ ansible_local.mariadb.server | d("localhost") }}
+icinga_web__director_database_map.mariadb.db_port = {{ ansible_local.mariadb.port | d() }}
+icinga_web__director_database_map.mariadb.pw_path = {{ secret + "/mariadb/"
+                 + ansible_local.mariadb.delegate_to | d(inventory_hostname)
+                 + "/credentials/icinga2_director/password" }}
+
+icinga_web__director_database_name = {{ icinga_web__director_database_map[icinga_web__director_database_type].db_name }}
+icinga_web__director_database_user = {{ icinga_web__director_database_map[icinga_web__director_database_type].db_user }}
+icinga_web__director_database_password_path = {{ icinga_web__director_database_map[icinga_web__director_database_type].pw_path }}
+icinga_web__director_database_password = {{ lookup('password', icinga_web__director_database_password_path
+                                            + ' length=48 chars=ascii_letters,digits,.-_') }} 
+icinga_web__director_database_host = {{ icinga_web__director_database_map[icinga_web__director_database_type].db_host }}
+icinga_web__director_database_port = {{ icinga_web__director_database_map[icinga_web__director_database_type].db_port }}
+icinga_web__director_database_ssl = {{ False if icinga_web__director_database_host == "localhost"
+                                       else ansible_local.pki.enabled | d(False) | bool }} 
+icinga_web__director_database_init = {{ not (ansible_local.icinga_web.installed | d(False) | bool) }}
+icinga_web__director_kickstart_enabled = {{ ansible_local.icinga.installed | d(False) | bool }}
+icinga_web__director_default_templates[0].name = generic-host
+icinga_web__director_default_templates[0].api_endpoint = /host
+icinga_web__director_default_templates[0].data.object_type = template
+icinga_web__director_default_templates[0].data.object_name = generic-host
+icinga_web__director_default_templates[0].data.check_command = hostalive
+icinga_web__director_default_templates[0].data.check_interval = 5m
+icinga_web__director_default_templates[0].data.retry_interval = 30s
+icinga_web__director_default_templates[0].data.max_check_attempts = 5
+icinga_web__director_default_templates[0].state = present
+icinga_web__director_default_templates[1].name = icinga-agent-host
+icinga_web__director_default_templates[1].api_endpoint = /host
+icinga_web__director_default_templates[1].data.object_type = template
+icinga_web__director_default_templates[1].data.object_name = icinga-agent-host
+icinga_web__director_default_templates[1].data.has_agent = true
+icinga_web__director_default_templates[1].data.master_should_connect = true
+icinga_web__director_default_templates[1].data.accept_config = true
+icinga_web__director_default_templates[1].data.imports[0] = generic-host
+icinga_web__director_default_templates[1].state = present
+icinga_web__director_combined_templates = {{ icinga_web__director_default_templates
+                                             + icinga_web__director_templates
+                                             + icinga_web__director_group_templates
+                                             + icinga_web__director_host_templates }}
+
+icinga_web__x509_enabled = {{ icinga_web__director_database_type == "mariadb"
+                              and ansible_local.mariadb is defined }} 
+icinga_web__x509_database_type = {{ icinga_web__database_type | d("invalid") }}
+icinga_web__x509_database_map.postgresql.ido = pgsql
+icinga_web__x509_database_map.postgresql.db_name = icingaweb2_x509
+icinga_web__x509_database_map.postgresql.db_user = icingaweb2_x509
+icinga_web__x509_database_map.postgresql.db_host = {{ ansible_local.postgresql.server | d("localhost") }}
+icinga_web__x509_database_map.postgresql.db_port = {{ ansible_local.postgresql.port | d(5432) }}
+icinga_web__x509_database_map.postgresql.db_schema = /usr/share/icingaweb2/modules/x509/etc/schema/pgsql.schema.sql
+icinga_web__x509_database_map.postgresql.pw_path = {{ secret + "/postgresql/"
+                 + ansible_local.postgresql.delegate_to | d(inventory_hostname)
+                 + "/" + ansible_local.postgresql.port | d("5432")
+                 + "/credentials/icingaweb2_x509/password" }}
+
+icinga_web__x509_database_map.mariadb.ido = mysql
+icinga_web__x509_database_map.mariadb.db_name = icingaweb2_x509
+icinga_web__x509_database_map.mariadb.db_user = icingaweb2_x509
+icinga_web__x509_database_map.mariadb.db_host = {{ ansible_local.mariadb.server | d("localhost") }}
+icinga_web__x509_database_map.mariadb.db_port = {{ ansible_local.mariadb.port | d(3306) }}
+icinga_web__x509_database_map.mariadb.db_schema = /usr/share/icingaweb2/modules/x509/etc/schema/mysql.schema.sql
+icinga_web__x509_database_map.mariadb.pw_path = {{ secret + "/mariadb/"
+                 + ansible_local.mariadb.delegate_to | d(inventory_hostname)
+                 + "/credentials/icingaweb2_x509/password" }}
+
+icinga_web__x509_database_name = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].db_name }}
+icinga_web__x509_database_user = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].db_user }}
+icinga_web__x509_database_password_path = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].pw_path }}
+icinga_web__x509_database_password = {{ lookup("password", icinga_web__x509_database_password_path
+                                        + " length=48 chars=ascii_letters,digits,.-_") }} 
+icinga_web__x509_database_host = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].db_host }}
+icinga_web__x509_database_port = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].db_port }}
+icinga_web__x509_database_schema = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].db_schema }}
+icinga_web__x509_database_ssl = {{ False if icinga_web__x509_database_host == "localhost"
+                                   else ansible_local.pki.enabled | d(False) | bool }} 
+icinga_web__x509_database_init = {{ not ansible_local.icinga_web.x509_installed | d(False) }}
+icinga_web__icinga_api_fqdn = {{ icinga_web__node_fqdn }}
+icinga_web__icinga_api_port = 5665
+icinga_web__icinga_api_user = root
+icinga_web__icinga_api_password = {{ lookup("password", secret + "/icinga/api/"
+                                     + icinga_web__icinga_api_fqdn + "/credentials/"
+                                     + icinga_web__icinga_api_user
+                                     + "/password") }}
+
+icinga_web__initial_account_groups[0].name = Administrators
+icinga_web__initial_account_groups[1].name = Users
+icinga_web__initial_accounts[0].name = root
+icinga_web__initial_accounts[0].password = {{ lookup("password", secret + "/icinga_web/auth/"
+                  + inventory_hostname + "/credentials/root/password") }} 
+icinga_web__initial_accounts[1].name = {{ icinga_web__director_api_user }}
+icinga_web__initial_accounts[1].password = {{ icinga_web__director_api_password }}
+icinga_web__default_account_password = {{ lookup("password", secret + "/icinga_web/auth/"
+                                          + inventory_hostname + "/default_password") }} 
+icinga_web__ldap_enabled = {{ True
+                              if ansible_local.ldap.enabled | d() | bool
+                              else False }}
+
+icinga_web__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
+icinga_web__ldap_groups_rdn = {{ ansible_local.ldap.groups_rdn
+                                  | d("ou=Groups") }} 
+icinga_web__ldap_groups_dn = {{ [icinga_web__ldap_groups_rdn]
+                                + icinga_web__ldap_base_dn }} 
+icinga_web__ldap_people_rdn = {{ ansible_local.ldap.people_rdn
+                                  | d("ou=People") }} 
+icinga_web__ldap_people_dn = {{ [icinga_web__ldap_people_rdn]
+                                + icinga_web__ldap_base_dn }} 
+icinga_web__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
+icinga_web__ldap_self_rdn = uid=icingaweb
+icinga_web__ldap_self_object_classes[0] = account
+icinga_web__ldap_self_object_classes[1] = simpleSecurityObject
+icinga_web__ldap_self_attributes.uid = {{ icinga_web__ldap_self_rdn.split("=")[1] }}
+icinga_web__ldap_self_attributes.userPassword = {{ icinga_web__ldap_bindpw }}
+icinga_web__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
+icinga_web__ldap_self_attributes.description = Account used by the "Icinga Web" service to access the LDAP directory
+icinga_web__ldap_binddn = {{ ([icinga_web__ldap_self_rdn]
+                              + icinga_web__ldap_device_dn) | join(",") }} 
+icinga_web__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
+                                     + icinga_web__ldap_binddn | to_uuid
+                                     + ".password length=48 "
+                                     + "chars=ascii_letters,digits,.-_"))
+                              if icinga_web__ldap_enabled | bool
+                              else "" }}
+
+icinga_web__ldap_hostname = {{ ansible_local.ldap.hosts | d([""]) | first }}
+icinga_web__ldap_encryption = {{ "ldaps"
+                                 if ansible_local.ldap.protocol | d("") == "ldaps"
+                                 else ("starttls"
+                                       if ansible_local.ldap.start_tls | d(True) | bool
+                                       else "plain") }}
+
+icinga_web__ldap_port = {{ ansible_local.ldap.port | d(389) }}
+icinga_web__ldap_user_filter = (& (objectClass={{ icinga_web__ldap_user_class }}) ( | (authorizedService=all) (authorizedService=icingaweb) ) )
+icinga_web__ldap_user_class = inetOrgPerson
+icinga_web__ldap_user_name_attribute = uid
+icinga_web__ldap_group_filter = objectClass={{ icinga_web__ldap_group_class }}
+icinga_web__ldap_group_class = groupOfNames
+icinga_web__ldap_group_member_attribute = member
+icinga_web__ldap_group_name_attribute = cn
+icinga_web__current_authentication = {{ (icinga_web__register_config.stdout
+                                         | from_json)["authentication.ini"] | d([]) }} 
+icinga_web__default_authentication[0].name = icingaweb2
+icinga_web__default_authentication[0].options[0].name = backend
+icinga_web__default_authentication[0].options[0].value = db
+icinga_web__default_authentication[0].options[1].name = resource
+icinga_web__default_authentication[0].options[1].value = icingaweb_db
+icinga_web__default_authentication[1].name = ldap_users
+icinga_web__default_authentication[1].options[0].name = backend
+icinga_web__default_authentication[1].options[0].value = ldap
+icinga_web__default_authentication[1].options[1].name = resource
+icinga_web__default_authentication[1].options[1].value = ldap_db
+icinga_web__default_authentication[1].options[2].name = user_class
+icinga_web__default_authentication[1].options[2].value = {{ icinga_web__ldap_user_class }}
+icinga_web__default_authentication[1].options[3].name = user_name_attribute
+icinga_web__default_authentication[1].options[3].value = {{ icinga_web__ldap_user_name_attribute }}
+icinga_web__default_authentication[1].options[4].name = filter
+icinga_web__default_authentication[1].options[4].value = {{ icinga_web__ldap_user_filter }}
+icinga_web__default_authentication[1].state = {{ "present" if icinga_web__ldap_enabled | bool else "ignore" }}
+icinga_web__combined_authentication = {{ icinga_web__current_authentication
+                                         + icinga_web__default_authentication
+                                         + icinga_web__authentication }}
+
+icinga_web__current_config = {{ (icinga_web__register_config.stdout
+                                 | from_json)["config.ini"] | d([]) }} 
+icinga_web__default_config[0].name = global
+icinga_web__default_config[0].options[0].name = show_stacktraces
+icinga_web__default_config[0].options[0].value = 0
+icinga_web__default_config[0].options[1].name = config_backend
+icinga_web__default_config[0].options[1].value = db
+icinga_web__default_config[0].options[2].name = config_resource
+icinga_web__default_config[0].options[2].value = icingaweb_db
+icinga_web__default_config[0].options[3].name = module_path
+icinga_web__default_config[0].options[3].value = /usr/share/icingaweb2/modules
+icinga_web__default_config[1].name = logging
+icinga_web__default_config[1].options[0].name = log
+icinga_web__default_config[1].options[0].value = syslog
+icinga_web__default_config[1].options[1].name = level
+icinga_web__default_config[1].options[1].value = ERROR
+icinga_web__default_config[1].options[2].name = application
+icinga_web__default_config[1].options[2].value = icingaweb2
+icinga_web__default_config[1].options[3].name = facility
+icinga_web__default_config[1].options[3].value = user
+icinga_web__default_config[2].name = themes
+icinga_web__combined_config = {{ icinga_web__current_config
+                                 + icinga_web__default_config
+                                 + icinga_web__config }}
+
+icinga_web__current_groups = {{ (icinga_web__register_config.stdout
+                                 | from_json)["groups.ini"] | d([]) }} 
+icinga_web__default_groups[0].name = icingaweb2
+icinga_web__default_groups[0].options[0].name = backend
+icinga_web__default_groups[0].options[0].value = db
+icinga_web__default_groups[0].options[1].name = resource
+icinga_web__default_groups[0].options[1].value = icingaweb_db
+icinga_web__default_groups[1].name = ldap_groups
+icinga_web__default_groups[1].options[0].name = backend
+icinga_web__default_groups[1].options[0].value = ldap
+icinga_web__default_groups[1].options[1].name = resource
+icinga_web__default_groups[1].options[1].value = ldap_db
+icinga_web__default_groups[1].options[2].name = user_backend
+icinga_web__default_groups[1].options[2].value = ldap_users
+icinga_web__default_groups[1].options[3].name = base_dn
+icinga_web__default_groups[1].options[3].value = {{ icinga_web__ldap_groups_dn | join(",") }}
+icinga_web__default_groups[1].options[4].name = group_class
+icinga_web__default_groups[1].options[4].value = {{ icinga_web__ldap_group_class }}
+icinga_web__default_groups[1].options[5].name = group_member_attribute
+icinga_web__default_groups[1].options[5].value = {{ icinga_web__ldap_group_member_attribute }}
+icinga_web__default_groups[1].options[6].name = group_name_attribute
+icinga_web__default_groups[1].options[6].value = {{ icinga_web__ldap_group_name_attribute }}
+icinga_web__default_groups[1].options[7].name = group_filter
+icinga_web__default_groups[1].options[7].value = {{ icinga_web__ldap_group_filter }}
+icinga_web__default_groups[1].state = {{ "present" if icinga_web__ldap_enabled | bool else "ignore" }}
+icinga_web__combined_groups = {{ icinga_web__current_groups
+                                 + icinga_web__default_groups
+                                 + icinga_web__groups }}
+
+icinga_web__current_resources = {{ (icinga_web__register_config.stdout
+                                    | from_json)["resources.ini"] | d([]) }} 
+icinga_web__default_resources[0].name = icingaweb_db
+icinga_web__default_resources[0].options[0].name = type
+icinga_web__default_resources[0].options[0].value = db
+icinga_web__default_resources[0].options[1].name = db
+icinga_web__default_resources[0].options[1].value = {{ icinga_web__database_map[icinga_web__database_type].ido }}
+icinga_web__default_resources[0].options[2].name = host
+icinga_web__default_resources[0].options[2].value = {{ icinga_web__database_host }}
+icinga_web__default_resources[0].options[3].name = port
+icinga_web__default_resources[0].options[3].value = {{ icinga_web__database_port }}
+icinga_web__default_resources[0].options[3].state = {{ "present" if icinga_web__database_port | d() else "absent" }}
+icinga_web__default_resources[0].options[4].name = dbname
+icinga_web__default_resources[0].options[4].value = {{ icinga_web__database_name }}
+icinga_web__default_resources[0].options[5].name = username
+icinga_web__default_resources[0].options[5].value = {{ icinga_web__database_user }}
+icinga_web__default_resources[0].options[6].name = password
+icinga_web__default_resources[0].options[6].value = {{ icinga_web__database_password }}
+icinga_web__default_resources[0].options[7].name = charset
+icinga_web__default_resources[0].options[7].value = utf8
+icinga_web__default_resources[0].options[8].name = persistent
+icinga_web__default_resources[0].options[8].value = 0
+icinga_web__default_resources[0].options[9].name = use_ssl
+icinga_web__default_resources[0].options[9].value = {{ "1" if icinga_web__database_ssl | d(False) | bool else "0" }}
+icinga_web__default_resources[1].name = icinga2
+icinga_web__default_resources[1].state = {{ "present" if icinga_web__master_database_enabled | bool else "ignore" }}
+icinga_web__default_resources[1].options[0].name = type
+icinga_web__default_resources[1].options[0].value = db
+icinga_web__default_resources[1].options[1].name = db
+icinga_web__default_resources[1].options[1].value = {{ icinga_web__master_database_ido }}
+icinga_web__default_resources[1].options[2].name = host
+icinga_web__default_resources[1].options[2].value = {{ icinga_web__master_database_host }}
+icinga_web__default_resources[1].options[3].name = port
+icinga_web__default_resources[1].options[3].value = {{ icinga_web__master_database_port }}
+icinga_web__default_resources[1].options[3].state = {{ "present" if icinga_web__master_database_port | d() else "absent" }}
+icinga_web__default_resources[1].options[4].name = dbname
+icinga_web__default_resources[1].options[4].value = {{ icinga_web__master_database_name }}
+icinga_web__default_resources[1].options[5].name = username
+icinga_web__default_resources[1].options[5].value = {{ icinga_web__master_database_user }}
+icinga_web__default_resources[1].options[6].name = password
+icinga_web__default_resources[1].options[6].value = {{ icinga_web__master_database_password }}
+icinga_web__default_resources[1].options[7].name = charset
+icinga_web__default_resources[1].options[7].value = utf8
+icinga_web__default_resources[1].options[8].name = persistent
+icinga_web__default_resources[1].options[8].value = 0
+icinga_web__default_resources[1].options[9].name = use_ssl
+icinga_web__default_resources[1].options[9].value = {{ "1" if icinga_web__master_database_ssl | d(False) | bool else "0" }}
+icinga_web__default_resources[2].name = icinga2_director
+icinga_web__default_resources[2].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__default_resources[2].options[0].name = type
+icinga_web__default_resources[2].options[0].value = db
+icinga_web__default_resources[2].options[1].name = db
+icinga_web__default_resources[2].options[1].value = {{ icinga_web__director_database_map[icinga_web__director_database_type].ido }}
+icinga_web__default_resources[2].options[2].name = host
+icinga_web__default_resources[2].options[2].value = {{ icinga_web__director_database_host }}
+icinga_web__default_resources[2].options[3].name = port
+icinga_web__default_resources[2].options[3].value = {{ icinga_web__director_database_port }}
+icinga_web__default_resources[2].options[3].state = {{ "present" if icinga_web__director_database_port | d() else "absent" }}
+icinga_web__default_resources[2].options[4].name = dbname
+icinga_web__default_resources[2].options[4].value = {{ icinga_web__director_database_name }}
+icinga_web__default_resources[2].options[5].name = username
+icinga_web__default_resources[2].options[5].value = {{ icinga_web__director_database_user }}
+icinga_web__default_resources[2].options[6].name = password
+icinga_web__default_resources[2].options[6].value = {{ icinga_web__director_database_password }}
+icinga_web__default_resources[2].options[7].name = charset
+icinga_web__default_resources[2].options[7].value = utf8
+icinga_web__default_resources[2].options[8].name = persistent
+icinga_web__default_resources[2].options[8].value = 0
+icinga_web__default_resources[2].options[9].name = use_ssl
+icinga_web__default_resources[2].options[9].value = {{ "1" if icinga_web__director_database_ssl | d(False) | bool else "0" }}
+icinga_web__default_resources[3].name = ldap_db
+icinga_web__default_resources[3].state = {{ "present" if icinga_web__ldap_enabled | bool else "ignore" }}
+icinga_web__default_resources[3].options[0].name = type
+icinga_web__default_resources[3].options[0].value = ldap
+icinga_web__default_resources[3].options[1].name = hostname
+icinga_web__default_resources[3].options[1].value = {{ icinga_web__ldap_hostname }}
+icinga_web__default_resources[3].options[2].name = port
+icinga_web__default_resources[3].options[2].value = {{ icinga_web__ldap_port }}
+icinga_web__default_resources[3].options[3].name = root_dn
+icinga_web__default_resources[3].options[3].value = {{ icinga_web__ldap_base_dn | join(",") }}
+icinga_web__default_resources[3].options[4].name = bind_dn
+icinga_web__default_resources[3].options[4].value = {{ icinga_web__ldap_binddn }}
+icinga_web__default_resources[3].options[5].name = bind_pw
+icinga_web__default_resources[3].options[5].value = {{ icinga_web__ldap_bindpw }}
+icinga_web__default_resources[3].options[6].name = encryption
+icinga_web__default_resources[3].options[6].value = {{ icinga_web__ldap_encryption }}
+icinga_web__default_resources[4].name = icingaweb2_x509
+icinga_web__default_resources[4].state = {{ "present" if icinga_web__x509_enabled | bool else "ignore" }}
+icinga_web__default_resources[4].options[0].name = type
+icinga_web__default_resources[4].options[0].value = db
+icinga_web__default_resources[4].options[1].name = db
+icinga_web__default_resources[4].options[1].value = {{ icinga_web__x509_database_map[icinga_web__x509_database_type].ido }}
+icinga_web__default_resources[4].options[2].name = host
+icinga_web__default_resources[4].options[2].value = {{ icinga_web__x509_database_host }}
+icinga_web__default_resources[4].options[3].name = port
+icinga_web__default_resources[4].options[3].value = {{ icinga_web__x509_database_port }}
+icinga_web__default_resources[4].options[4].name = dbname
+icinga_web__default_resources[4].options[4].value = {{ icinga_web__x509_database_name }}
+icinga_web__default_resources[4].options[5].name = username
+icinga_web__default_resources[4].options[5].value = {{ icinga_web__x509_database_user }}
+icinga_web__default_resources[4].options[6].name = password
+icinga_web__default_resources[4].options[6].value = {{ icinga_web__x509_database_password }}
+icinga_web__default_resources[4].options[7].name = charset
+icinga_web__default_resources[4].options[7].value = utf8
+icinga_web__default_resources[4].options[8].name = use_ssl
+icinga_web__default_resources[4].options[8].value = {{ "1" if icinga_web__x509_database_ssl | d(False) | bool else "0" }}
+icinga_web__combined_resources = {{ icinga_web__current_resources
+                                    + icinga_web__default_resources
+                                    + icinga_web__resources }}
+
+icinga_web__current_roles = {{ (icinga_web__register_config.stdout
+                                | from_json)["roles.ini"] | d([]) }} 
+icinga_web__default_roles[0].name = Administrators
+icinga_web__default_roles[0].options[0].name = users
+icinga_web__default_roles[0].options[0].value = {{ ansible_local.core.admin_users | d([]) | join(",") }}
+icinga_web__default_roles[0].options[1].name = permissions
+icinga_web__default_roles[0].options[1].value = *
+icinga_web__default_roles[0].options[2].name = groups
+icinga_web__default_roles[0].options[2].value = Administrators
+icinga_web__combined_roles = {{ icinga_web__current_roles
+                                + icinga_web__default_roles
+                                + icinga_web__roles }}
+
+icinga_web__current_backends = {{ (icinga_web__register_config.stdout
+                                   | from_json)["modules/monitoring/backends.ini"] | d([]) }} 
+icinga_web__default_backends[0].name = icinga2
+icinga_web__default_backends[0].state = {{ "present"
+               if (icinga_web__master_database_enabled | bool)
+               else "ignore" }}
+
+icinga_web__default_backends[0].options[0].name = type
+icinga_web__default_backends[0].options[0].value = ido
+icinga_web__default_backends[0].options[1].name = resource
+icinga_web__default_backends[0].options[1].value = icinga2
+icinga_web__combined_backends = {{ icinga_web__current_backends
+                                   + icinga_web__default_backends
+                                   + icinga_web__backends }}
+
+icinga_web__current_commandtransports = {{ (icinga_web__register_config.stdout
+                                            | from_json)["modules/monitoring/commandtransports.ini"] | d([]) }} 
+icinga_web__default_commandtransports[0].name = icinga2
+icinga_web__default_commandtransports[0].options[0].name = transport
+icinga_web__default_commandtransports[0].options[0].value = api
+icinga_web__default_commandtransports[0].options[1].name = host
+icinga_web__default_commandtransports[0].options[1].value = {{ icinga_web__icinga_api_fqdn }}
+icinga_web__default_commandtransports[0].options[2].name = port
+icinga_web__default_commandtransports[0].options[2].value = {{ icinga_web__icinga_api_port }}
+icinga_web__default_commandtransports[0].options[3].name = username
+icinga_web__default_commandtransports[0].options[3].value = {{ icinga_web__icinga_api_user }}
+icinga_web__default_commandtransports[0].options[4].name = password
+icinga_web__default_commandtransports[0].options[4].value = {{ icinga_web__icinga_api_password }}
+icinga_web__default_commandtransports[0].state = {{ "present"
+               if (ansible_local | d() and ansible_local.icinga | d() and
+                   (ansible_local.icinga.installed | d()) | bool)
+               else "ignore" }}
+
+icinga_web__combined_commandtransports = {{ icinga_web__current_commandtransports
+                                            + icinga_web__default_commandtransports
+                                            + icinga_web__commandtransports }}
+
+icinga_web__current_director_cfg = {{ (icinga_web__register_config.stdout
+                                       | from_json)["modules/director/config.ini"] | d([]) }} 
+icinga_web__default_director_cfg[0].name = db
+icinga_web__default_director_cfg[0].options[0].name = resource
+icinga_web__default_director_cfg[0].options[0].value = icinga2_director
+icinga_web__default_director_cfg[0].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__combined_director_cfg = {{ icinga_web__current_director_cfg
+                                       + icinga_web__default_director_cfg
+                                       + icinga_web__director_cfg }}
+
+icinga_web__current_director_kickstart_cfg = {{ (icinga_web__register_config.stdout
+                                                 | from_json)["modules/director/kickstart.ini"] | d([]) }} 
+icinga_web__default_director_kickstart_cfg[0].name = config
+icinga_web__default_director_kickstart_cfg[0].options[0].name = endpoint
+icinga_web__default_director_kickstart_cfg[0].options[0].value = {{ icinga_web__icinga_api_fqdn }}
+icinga_web__default_director_kickstart_cfg[0].options[1].name = host
+icinga_web__default_director_kickstart_cfg[0].options[1].value = {{ icinga_web__icinga_api_fqdn }}
+icinga_web__default_director_kickstart_cfg[0].options[2].name = port
+icinga_web__default_director_kickstart_cfg[0].options[2].value = {{ icinga_web__icinga_api_port }}
+icinga_web__default_director_kickstart_cfg[0].options[3].name = username
+icinga_web__default_director_kickstart_cfg[0].options[3].value = {{ icinga_web__icinga_api_user }}
+icinga_web__default_director_kickstart_cfg[0].options[4].name = password
+icinga_web__default_director_kickstart_cfg[0].options[4].value = {{ icinga_web__icinga_api_password }}
+icinga_web__default_director_kickstart_cfg[0].state = {{ "present"
+               if (ansible_local | d() and ansible_local.icinga | d() and
+                   (ansible_local.icinga.installed | d()) | bool)
+               else "ignore" }}
+
+icinga_web__combined_director_kickstart_cfg = {{ icinga_web__current_director_kickstart_cfg
+                                                 + icinga_web__default_director_kickstart_cfg
+                                                 + icinga_web__director_kickstart_cfg }}
+
+icinga_web__current_x509_cfg = {{ (icinga_web__register_config.stdout
+                                       | from_json)["modules/x509/config.ini"] | d([]) }} 
+icinga_web__default_x509_cfg[0].name = backend
+icinga_web__default_x509_cfg[0].options[0].name = resource
+icinga_web__default_x509_cfg[0].options[0].value = icingaweb2_x509
+icinga_web__default_x509_cfg[0].state = {{ "present" if icinga_web__x509_enabled | bool else "ignore" }}
+icinga_web__combined_x509_cfg = {{ icinga_web__current_x509_cfg
+                                       + icinga_web__default_x509_cfg }} 
+icinga_web__apt_preferences__dependent_list[0].package[0] = icingaweb2
+icinga_web__apt_preferences__dependent_list[0].package[1] = icingaweb2-*
+icinga_web__apt_preferences__dependent_list[0].package[2] = icingacli
+icinga_web__apt_preferences__dependent_list[0].package[3] = php-icinga
+icinga_web__apt_preferences__dependent_list[0].backports[0] = stretch
+icinga_web__apt_preferences__dependent_list[0].by_role = debops.icinga_web
+icinga_web__apt_preferences__dependent_list[0].reason = Incompatibility with PHP 7.3
+icinga_web__ldap__dependent_tasks[0].name = Create Icinga Web account for {{ icinga_web__ldap_device_dn | join(",") }}
+icinga_web__ldap__dependent_tasks[0].dn = {{ icinga_web__ldap_binddn }}
+icinga_web__ldap__dependent_tasks[0].objectClass = {{ icinga_web__ldap_self_object_classes }}
+icinga_web__ldap__dependent_tasks[0].attributes = {{ icinga_web__ldap_self_attributes }}
+icinga_web__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
+icinga_web__ldap__dependent_tasks[0].state = {{ "present" if icinga_web__ldap_enabled else "ignore" }}
+icinga_web__postgresql__dependent_roles[0].name = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_roles[0].flags[0] = NOLOGIN
+icinga_web__postgresql__dependent_roles[1].name = {{ icinga_web__database_user }}
+icinga_web__postgresql__dependent_roles[1].password = {{ icinga_web__database_password }}
+icinga_web__postgresql__dependent_roles[1].db = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_roles[1].priv[0] = ALL
+icinga_web__postgresql__dependent_roles[2].name = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_roles[2].flags[0] = NOLOGIN
+icinga_web__postgresql__dependent_roles[2].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__postgresql__dependent_roles[3].name = {{ icinga_web__director_database_user }}
+icinga_web__postgresql__dependent_roles[3].password = {{ icinga_web__director_database_password }}
+icinga_web__postgresql__dependent_roles[3].db = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_roles[3].priv[0] = ALL
+icinga_web__postgresql__dependent_roles[3].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__postgresql__dependent_databases[0].name = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_databases[0].owner = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_databases[1].name = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_databases[1].owner = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_databases[1].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__postgresql__dependent_groups[0].roles[0] = {{ icinga_web__database_user }}
+icinga_web__postgresql__dependent_groups[0].groups[0] = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_groups[0].database = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_groups[1].roles[0] = {{ icinga_web__director_database_user }}
+icinga_web__postgresql__dependent_groups[1].groups[0] = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_groups[1].database = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_groups[1].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__postgresql__dependent_privileges[0].roles[0] = {{ icinga_web__database_user }}
+icinga_web__postgresql__dependent_privileges[0].database = {{ icinga_web__database_name }}
+icinga_web__postgresql__dependent_privileges[0].objs[0] = ALL_DEFAULT
+icinga_web__postgresql__dependent_privileges[0].privs[0] = SELECT
+icinga_web__postgresql__dependent_privileges[0].privs[1] = INSERT
+icinga_web__postgresql__dependent_privileges[0].privs[2] = UPDATE
+icinga_web__postgresql__dependent_privileges[0].privs[3] = DELETE
+icinga_web__postgresql__dependent_privileges[0].type = default_privs
+icinga_web__postgresql__dependent_extensions[0].database = {{ icinga_web__director_database_name }}
+icinga_web__postgresql__dependent_extensions[0].extension = pgcrypto
+icinga_web__postgresql__dependent_extensions[0].state = {{ "present" if icinga_web__director_enabled | bool else "ignore" }}
+icinga_web__mariadb__dependent_databases[0].name = {{ icinga_web__database_name }}
+icinga_web__mariadb__dependent_databases[0].state = {{ "present" if icinga_web__database_type == "mariadb" else "ignore" }}
+icinga_web__mariadb__dependent_databases[1].name = {{ icinga_web__director_database_name }}
+icinga_web__mariadb__dependent_databases[1].state = {{ "present"
+                if (icinga_web__director_enabled | bool and icinga_web__director_database_type == "mariadb")
+                else "ignore" }}
+
+icinga_web__mariadb__dependent_databases[2].name = {{ icinga_web__x509_database_name }}
+icinga_web__mariadb__dependent_databases[2].state = {{ "present" if icinga_web__x509_enabled | bool else "ignore" }}
+icinga_web__mariadb__dependent_users[0].database = {{ icinga_web__database_name }}
+icinga_web__mariadb__dependent_users[0].user = {{ icinga_web__database_user }}
+icinga_web__mariadb__dependent_users[0].password = {{ icinga_web__database_password }}
+icinga_web__mariadb__dependent_users[0].state = {{ "present" if icinga_web__database_type == "mariadb" else "ignore" }}
+icinga_web__mariadb__dependent_users[1].database = {{ icinga_web__director_database_name }}
+icinga_web__mariadb__dependent_users[1].user = {{ icinga_web__director_database_user }}
+icinga_web__mariadb__dependent_users[1].password = {{ icinga_web__director_database_password }}
+icinga_web__mariadb__dependent_users[1].state = {{ "present"
+                if (icinga_web__director_enabled | bool and icinga_web__director_database_type == "mariadb")
+                else "ignore" }}
+
+icinga_web__mariadb__dependent_users[2].database = {{ icinga_web__x509_database_name }}
+icinga_web__mariadb__dependent_users[2].user = {{ icinga_web__x509_database_user }}
+icinga_web__mariadb__dependent_users[2].state = {{ "present" if icinga_web__x509_enabled | bool else "ignore" }}
+icinga_web__php__dependent_packages[0] = mysql
+icinga_web__php__dependent_packages[1] = intl
+icinga_web__php__dependent_packages[2] = ldap
+icinga_web__php__dependent_packages[3] = imagick
+icinga_web__php__dependent_packages[4] = pgsql
+icinga_web__php__dependent_packages[5] = curl
+icinga_web__php__dependent_packages[6] = yaml
+icinga_web__php__dependent_packages[7] = gmp
+icinga_web__php__dependent_pools[0].name = icingaweb
+icinga_web__php__dependent_pools[0].user = www-data
+icinga_web__php__dependent_pools[0].group = www-data
+icinga_web__nginx__dependent_upstreams[0].name = php_icingaweb
+icinga_web__nginx__dependent_upstreams[0].type = php
+icinga_web__nginx__dependent_upstreams[0].php_pool = icingaweb
+icinga_web__nginx__dependent_servers[0].by_role = debops.icinga_web
+icinga_web__nginx__dependent_servers[0].type = php
+icinga_web__nginx__dependent_servers[0].name = {{ icinga_web__fqdn }}
+icinga_web__nginx__dependent_servers[0].root = /usr/share/icingaweb2/public
+icinga_web__nginx__dependent_servers[0].webroot_create = False
+icinga_web__nginx__dependent_servers[0].filename = debops.icinga_web
+icinga_web__nginx__dependent_servers[0].php_upstream = php_icingaweb
+icinga_web__nginx__dependent_servers[0].php_limit_except[0] = GET
+icinga_web__nginx__dependent_servers[0].php_limit_except[1] = HEAD
+icinga_web__nginx__dependent_servers[0].php_limit_except[2] = POST
+icinga_web__nginx__dependent_servers[0].php_limit_except[3] = DELETE
+icinga_web__nginx__dependent_servers[0].options = if (!-d $request_filename) {
+        rewrite ^/(.+)/$ /$1 permanent;
+}
+
+icinga_web__nginx__dependent_servers[0].location_list[0].pattern = /
+icinga_web__nginx__dependent_servers[0].location_list[0].options = try_files $1 $uri $uri/ /index.php$is_args$args;

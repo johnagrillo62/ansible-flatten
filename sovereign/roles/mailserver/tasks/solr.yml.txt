@@ -1,0 +1,16 @@
+[0].name = Install Solr and related packages
+[0].apt = pkg={{ item }} state=present
+[0].with_items[0] = dovecot-solr
+[0].with_items[1] = solr-tomcat
+[0].tags[0] = dependencies
+[1].name = Work around Debian bug and copy Solr schema file into place
+[1].copy = src=solr-schema.xml dest=/etc/solr/conf/schema.xml group=root owner=root
+[2].name = Copy tweaked Tomcat config file into place
+[2].copy = src=etc_tomcat7_server.xml dest=/etc/tomcat7/server.xml group=tomcat7 owner=root
+[2].notify = restart solr
+[3].name = Copy tweaked Solr config file into place
+[3].copy = src=etc_solr_conf_solrconfig.xml dest=/etc/solr/conf/solrconfig.xml group=root owner=root
+[3].notify = restart solr
+[4].name = Create Solr index directory
+[4].file = state=directory path=/decrypted/solr group=tomcat7 owner=tomcat7
+[4].notify = restart solr

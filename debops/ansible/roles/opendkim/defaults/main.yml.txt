@@ -1,0 +1,163 @@
+opendkim__base_packages[0] = opendkim
+opendkim__base_packages[1] = opendkim-tools
+opendkim__version = {{ ansible_local.opendkim.version | d("0.0.0") }}
+opendkim__user = opendkim
+opendkim__group = opendkim
+opendkim__postfix_integration = {{ ansible_local.postfix.installed
+                                   if (ansible_local | d() and ansible_local.postfix | d() and
+                                       ansible_local.postfix.installed is defined)
+                                   else False }}
+
+opendkim__postfix_group = {{ ansible_local.postfix.system_group | d("postfix") }}
+opendkim__pidfile = /var/run/opendkim/opendkim.pid
+opendkim__socket = {{ "/var/spool/postfix/opendkim/opendkim.sock"
+                      if opendkim__postfix_integration | bool
+                      else "/var/run/opendkim/opendkim.sock" }}
+
+opendkim__domain = {{ ansible_domain }}
+opendkim__fqdn = {{ ansible_fqdn }}
+opendkim__dkimkeys_path = /etc/dkimkeys
+opendkim__default_key_size = 2048
+opendkim__default_keys[0].name = mail
+opendkim__combined_keys = {{ opendkim__default_keys
+                             + opendkim__keys
+                             + opendkim__group_keys
+                             + opendkim__host_keys }}
+
+opendkim__default_signing_table[0].name = mail
+opendkim__default_signing_table[0].from = {{ opendkim__domain }}
+opendkim__default_signing_table[0].domain = {{ opendkim__domain }}
+opendkim__default_signing_table[0].subdomains = True
+opendkim__combined_signing_table = {{ opendkim__default_signing_table
+                                      + opendkim__signing_table
+                                      + opendkim__group_signing_table
+                                      + opendkim__host_signing_table }}
+
+opendkim__default_trusted_hosts[0] = 127.0.0.1
+opendkim__default_trusted_hosts[1] = ::1
+opendkim__default_trusted_hosts[2] = localhost
+opendkim__default_trusted_hosts[3] = {{ opendkim__fqdn }}
+opendkim__combined_trusted_hosts = {{ opendkim__default_trusted_hosts
+                                      + opendkim__trusted_hosts
+                                      + opendkim__group_trusted_hosts
+                                      + opendkim__host_trusted_hosts }}
+
+opendkim__original_config[0].name = config-header
+opendkim__original_config[0].comment = This is a basic configuration that can easily be adapted to suit a standard
+installation. For more advanced options, see opendkim.conf(5) and/or
+/usr/share/doc/opendkim/examples/opendkim.conf.sample.
+
+opendkim__original_config[0].state = hidden
+opendkim__original_config[1].name = Syslog
+opendkim__original_config[1].comment = Log to syslog
+opendkim__original_config[1].value = True
+opendkim__original_config[2].name = UMask
+opendkim__original_config[2].comment = Required to use local socket with MTAs that access the socket as a non-
+privileged user (e. g. Postfix)
+
+opendkim__original_config[2].value = 002
+opendkim__original_config[3].name = Domain
+opendkim__original_config[3].comment = Sign for example.com with key in /etc/mail/dkim.key using
+selector '2007' (e. g. 2007._domainkey.example.com)
+
+opendkim__original_config[3].value = example.com
+opendkim__original_config[3].state = comment
+opendkim__original_config[4].name = KeyFile
+opendkim__original_config[4].value = /etc/mail/dkim.key
+opendkim__original_config[4].state = comment
+opendkim__original_config[5].name = Selector
+opendkim__original_config[5].value = 2007
+opendkim__original_config[5].state = comment
+opendkim__original_config[6].name = Canonicalization
+opendkim__original_config[6].comment = Commonly-used options; the commented-out versions show the defaults.
+opendkim__original_config[6].value = simple
+opendkim__original_config[6].state = comment
+opendkim__original_config[7].name = Mode
+opendkim__original_config[7].value = sv
+opendkim__original_config[7].state = comment
+opendkim__original_config[8].name = Subdomains
+opendkim__original_config[8].value = False
+opendkim__original_config[8].state = comment
+opendkim__original_config[9].name = OversignHeaders
+opendkim__original_config[9].comment = Always oversign From (sign using actual From and a null From to prevent
+malicious signatures header fields (From and/or others) between the signer
+and the verifier.  From is oversigned by default in the Debian package
+because it is often the identity key used by reputation systems and thus
+somewhat security sensitive.
+
+opendkim__original_config[9].value[0] = From
+opendkim__original_config[10].name = ResolverConfiguration
+opendkim__original_config[10].comment = ResolverConfiguration filename
+    default (none)
+
+Specifies a configuration file to be passed to the Unbound library that
+performs DNS queries applying the DNSSEC protocol.  See the Unbound
+documentation at https://unbound.net/ for the expected content of this file.
+The results of using this and the TrustAnchorFile setting at the same
+time are undefined.
+In Debian, /etc/unbound/unbound.conf is shipped as part of the Suggested
+unbound package
+
+opendkim__original_config[10].value = /etc/unbound/unbound.conf
+opendkim__original_config[10].state = comment
+opendkim__original_config[11].name = TrustAnchorFile
+opendkim__original_config[11].comment = TrustAnchorFile filename
+    default (none)
+
+Specifies a file from which trust anchor data should be read when doing
+DNS queries and applying the DNSSEC protocol.  See the Unbound documentation
+at https://unbound.net/ for the expected format of this file.
+
+opendkim__original_config[11].value = /usr/share/dns/root.key
+opendkim__default_config[0].name = ResolverConfiguration
+opendkim__default_config[0].state = {{ "present"
+               if (ansible_local | d() and ansible_local.unbound | d() and
+                   (ansible_local.unbound.installed | d()) | bool)
+               else "ignore" }}
+
+opendkim__default_config[1].name = TrustAnchorFile
+opendkim__default_config[1].state = {{ "absent"
+               if (ansible_local | d() and ansible_local.unbound | d() and
+                   (ansible_local.unbound.installed | d()) | bool)
+               else "ignore" }}
+
+opendkim__default_config[2].name = Socket
+opendkim__default_config[2].comment = Listen for connections in the Postfix chroot
+opendkim__default_config[2].value = local:{{ opendkim__socket }}
+opendkim__default_config[2].state = {{ "present" if opendkim__postfix_integration | bool else "ignore" }}
+opendkim__default_config[3].name = UserID
+opendkim__default_config[3].comment = Required by the systemd opendkim.service unit
+opendkim__default_config[3].value = {{ opendkim__user + ":" + opendkim__group }}
+opendkim__default_config[4].name = PidFile
+opendkim__default_config[4].comment = Required by the systemd opendkim.service unit
+opendkim__default_config[4].value = /run/opendkim/opendkim.pid
+opendkim__default_config[5].name = KeyTable
+opendkim__default_config[5].value = {{ opendkim__dkimkeys_path + "/KeyTable" }}
+opendkim__default_config[5].copy_id_from = Selector
+opendkim__default_config[5].weight = 1
+opendkim__default_config[6].name = SigningTable
+opendkim__default_config[6].value = {{ opendkim__dkimkeys_path + "/SigningTable" }}
+opendkim__default_config[6].copy_id_from = KeyTable
+opendkim__default_config[6].weight = 2
+opendkim__default_config[7].name = InternalHosts
+opendkim__default_config[7].value = {{ opendkim__dkimkeys_path + "/TrustedHosts" }}
+opendkim__default_config[7].copy_id_from = KeyTable
+opendkim__default_config[7].weight = 3
+opendkim__default_config[8].name = ExternalIgnoreList
+opendkim__default_config[8].value = {{ opendkim__dkimkeys_path + "/TrustedHosts" }}
+opendkim__default_config[8].copy_id_from = KeyTable
+opendkim__default_config[8].weight = 4
+opendkim__combined_config = {{ opendkim__original_config
+                               + opendkim__default_config
+                               + opendkim__config
+                               + opendkim__group_config
+                               + opendkim__host_config }}
+
+opendkim__postfix__dependent_maincf[0].name = smtpd_milters
+opendkim__postfix__dependent_maincf[0].value[0].name = unix:/opendkim/opendkim.sock
+opendkim__postfix__dependent_maincf[0].value[0].weight = -300
+opendkim__postfix__dependent_maincf[0].state = present
+opendkim__postfix__dependent_maincf[1].name = non_smtpd_milters
+opendkim__postfix__dependent_maincf[1].value[0].name = unix:/opendkim/opendkim.sock
+opendkim__postfix__dependent_maincf[1].value[0].weight = -300
+opendkim__postfix__dependent_maincf[1].state = present

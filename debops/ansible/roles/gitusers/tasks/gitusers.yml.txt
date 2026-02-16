@@ -1,0 +1,60 @@
+[0].name = Manage user accounts without UIDs
+[0]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
+[0]["ansible.builtin.user"].state = {{ item.state | default("present") }}
+[0]["ansible.builtin.user"].group = {{ item.group | default(item.name + gitusers_name_suffix) }}
+[0]["ansible.builtin.user"].comment = {{ item.comment | default("") }}
+[0]["ansible.builtin.user"].system = {{ item.systemuser | default("no") }}
+[0]["ansible.builtin.user"].shell = {{ item.shell | default(gitusers_default_shell) }}
+[0]["ansible.builtin.user"].home = {{ item.home | default(gitusers_default_home_prefix + "/" + item.name + gitusers_name_suffix) }}
+[0]["ansible.builtin.user"].createhome = no
+[0].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[0].when = ((item.name is defined and item.name) and (item.uid is undefined or (item.uid is defined and not item.uid)))
+[1].name = Manage user accounts with UIDs
+[1]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
+[1]["ansible.builtin.user"].uid = {{ item.uid }}
+[1]["ansible.builtin.user"].state = {{ item.state | default("present") }}
+[1]["ansible.builtin.user"].group = {{ item.group | default(item.name + gitusers_name_suffix) }}
+[1]["ansible.builtin.user"].comment = {{ item.comment | default("") }}
+[1]["ansible.builtin.user"].system = {{ item.systemuser | default("no") }}
+[1]["ansible.builtin.user"].shell = {{ item.shell | default(gitusers_default_shell) }}
+[1]["ansible.builtin.user"].home = {{ item.home | default(gitusers_default_home_prefix + "/" + item.name + gitusers_name_suffix) }}
+[1]["ansible.builtin.user"].createhome = no
+[1].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[1].when = ((item.name is defined and item.name) and (item.uid is defined and item.uid))
+[2].name = Manage user default groups
+[2]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
+[2]["ansible.builtin.user"].state = {{ item.state | default("present") }}
+[2]["ansible.builtin.user"].groups = {{ gitusers_default_groups_list | join(",") }}
+[2]["ansible.builtin.user"].append = {{ gitusers_default_groups_append }}
+[2].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[2].when = ((item.name is defined and item.name) and (gitusers_default_groups_list is defined and gitusers_default_groups_list))
+[3].name = Manage user custom groups
+[3]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
+[3]["ansible.builtin.user"].state = {{ item.state | default("present") }}
+[3]["ansible.builtin.user"].groups = {{ item.groups | join(",") }}
+[3]["ansible.builtin.user"].append = {{ item.append | default("yes") }}
+[3].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[3].when = ((item.name is defined and item.name) and (item.groups is defined and item.groups))
+[4].name = Enforce home directories permissions
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].path = {{ item.home | default(gitusers_default_home_prefix + "/" + item.name + gitusers_name_suffix) }}
+[4]["ansible.builtin.file"].owner = {{ item.name + gitusers_name_suffix }}
+[4]["ansible.builtin.file"].group = {{ item.group | default(item.name + gitusers_name_suffix) }}
+[4]["ansible.builtin.file"].mode = {{ gitusers_default_home_mode }}
+[4].loop = {{ q("flattened", gitusers_list
+                           + gitusers_group_list
+                           + gitusers_host_list) }}
+
+[4].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))

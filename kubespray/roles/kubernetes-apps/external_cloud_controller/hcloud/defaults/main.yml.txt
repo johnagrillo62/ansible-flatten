@@ -1,0 +1,6 @@
+~d0.external_hcloud_cloud = 
+~d1.hcloud_api_token = ""
+~d1.token_secret_name = hcloud
+~d1.service_account_name = cloud-controller-manager
+~d1.controller_image_tag = "latest"
+~d1.controller_extra_args = {}

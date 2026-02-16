@@ -1,0 +1,7 @@
+~d0.cloud_image = rockylinux-10-extra
+~d0.vm_memory = 3072
+~d0.kube_network_plugin = cilium
+~d0.cilium_kube_proxy_replacement = true
+~d0.kube_owner = root
+~d0.node_feature_discovery_enabled = true
+~d0.kube_asymmetric_encryption_algorithm = "ECDSA-P256"
