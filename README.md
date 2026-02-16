@@ -23,9 +23,9 @@ Parsed with a custom script.
 
 ## Why
 
-Ansible YAML files contain Jinja2 template expressions (`{{ }}`). Every standard YAML parser chokes on these. Security scanners silently skip files they can't parse.
+This started as an attempt to create round-trip YAML tests — parse Ansible YAML, flatten it, verify the structure. No current tool could do it. Every standard YAML parser chokes on Jinja2 template expressions (`{{ }}`). Security scanners silently skip files they can't parse.
 
-This means the files most likely to contain hardcoded credentials — the ones with dynamic templates — are the ones scanners never see.
+Once the round-trip worked, the whole structure became visible — and things fell out that you'd never notice reading individual files.  The flattened tree adds structure on top — you can see where in the tree a password lives, which task runs a shell command, what module disables TLS. Structure, not just matches. The files most likely to contain hardcoded credentials — the ones with dynamic templates — are exactly the ones scanners never see.
 
 This repo makes those files visible. Every path. Every value. Every Jinja2 expression. Greppable with standard Unix tools.
 
