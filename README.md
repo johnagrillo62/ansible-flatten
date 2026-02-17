@@ -94,6 +94,4 @@ The files with the most Jinja2 are the most security-critical — they contain d
 - [algo-vpn/algo](https://github.com/algo-vpn/algo)
 - [leucos/ansible-tuto](https://github.com/leucos/ansible-tuto)
 
-## Tool
 
-Tool set created with AI-powered scanners. Coming soon.
