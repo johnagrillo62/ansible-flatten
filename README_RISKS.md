@@ -1,16 +1,16 @@
 # FINDINGS.md
 
-Security findings from grepping 86,811 flattened paths across 14 public Ansible repos.
+Security findings from grepping 14 public Ansible repos.
 
-Everything below was found with grep on the flattened output. These findings need evaluation. Until now, that evaluation was not possible — the files could not be parsed by any standard tool. These repos are templates, examples, and frameworks used in unknown environments. They may be running in hospitals, utilities, schools, government, or production infrastructure. The risk has never been assessed because the files have never been readable by scanners.
+Everything below was found with `grep`. No scanner flagged any of it.
 
 ## Summary
 
 | Finding | Count |
 |---------|-------|
 | Hardcoded passwords (not in variables) | 343 |
-| Shell/command/raw calls | 1,389 |
-| Shell with Jinja2 (injection surface) | 569 |
+| Shell/command/raw calls | 345 |
+| Shell with Jinja2 (injection surface) | 184 |
 | no_log = true (hidden output) | 256 |
 | validate_certs = false (TLS disabled) | 34 |
 | become/sudo escalation | 142 |
@@ -22,7 +22,7 @@ Everything below was found with grep on the flattened output. These findings nee
 
 ## Hardcoded passwords
 
-Plaintext passwords in public repos. Not in variables. Not in vault.
+Plaintext passwords in public repos. Not in variables. Not in vault. Just sitting there.
 
 ```
 vault_userpass_password = "userpass123"
@@ -34,7 +34,7 @@ authorize_password = authorize-me
 password = foobarbaz
 ```
 
-Some are test fixtures. Whether test fixtures represent risk depends on whether people copy them as templates — which is what test fixtures are for.
+Some are test fixtures. That's worse — test fixtures become templates. People copy them.
 
 ## Hardcoded tokens and secrets
 
@@ -50,7 +50,7 @@ account_token = a_token
 
 ## Credentials in URLs
 
-Database passwords, user credentials, embedded in connection strings.
+Database passwords and user credentials embedded in connection strings.
 
 ```
 db-url=mysql://domain:1234@localhost/domain
@@ -75,143 +75,157 @@ These are the files that configure how secrets are stored and retrieved. The sec
 
 ## Shell commands with Jinja2 injection surfaces
 
-569 shell commands with Jinja2 variables interpolated directly into the command string. Every one is an injection surface if the variable contains user-controlled input.
+184 shell commands with Jinja2 variables interpolated directly into the command string. Every one is an injection surface if the variable contains user-controlled input.
 
 ```
-command = "{{ galaxy_venv_dir }}/bin/python {{ galaxy_server_dir }}/scripts/manage_db.py -c {{ galaxy_config_file }} upgrade"
-shell = "{{ sources_dest }}/minikube start --driver={{ driver }}"
-command = openssl genrsa -out {{ work_sign_private_keyfile }} {{ receptor_rsa_bits }}
-command = docker login -u="{{ docker_user }}" -p="{{ docker_password }}" "{{ docker_host }}"
+shell: head -c {{ item.0.keyfile_size | d(cryptsetup__keyfile_size) }} {{ item.0.keyfile_source | d(cryptsetup__keyfile_source) }} > {{ item.0.keyfile | d(...) }}
+shell: cryptsetup isLuks "{{ item.0.ciphertext_block_device }}" || cryptsetup luksFormat --batch-mode --verbose {{ ... }}
+shell: sudo /usr/sbin/chpasswd 2> /dev/null
 ```
 
-The last one puts the password on the command line — visible in the process list to anyone on the box.
+No quoting. No escaping. No validation. If the variable has a space or a semicolon, the command breaks or executes something else.
 
-## no_log hiding output
+## no_log: hiding output
 
-256 tasks across the repos hide their output from logs. Some legitimate (certificate handling). Some suspicious. No scanner checks what's behind `no_log = true` because no scanner can parse the files.
-
-## SSH security disabled
+256 tasks use `no_log: true`. This hides task output from the Ansible log. Legitimate use: don't log passwords. Actual use: you can't tell.
 
 ```
-StrictHostKeyChecking=no
-UserKnownHostsFile=/dev/null
-host_key_checking = false
+no_log: '{{ not ansible_verbosity >= 3 }}'
+no_log: '{{ debops__no_log | d(True) }}'
+no_log: True
 ```
 
-MITM wide open. These are Kubernetes deployment playbooks (kubespray) — the nodes that run your production workloads accept connections from anything that answers.
+When `no_log` is itself a Jinja2 expression, the decision to hide output is made at runtime by a variable you can't see in the file.
 
-## SELinux and firewalls disabled
+## ignore_errors: silent failures
 
-```
-preinstall_selinux_state = permissive
-name = Ensure firewalld is stopped (since this is a test server).
-service = name=firewalld state=stopped
-```
-
-Marked as test configuration. Whether these defaults propagate to production deployments is unknown without evaluating downstream usage.
-
-## Unpinned pip installs from public repos
-
-These playbooks run on internal nodes with `become = true` (root). They pull packages from public PyPI with no version pins.
+222 tasks use `ignore_errors: true`. The task runs, fails, and nobody knows.
 
 ```
-pip.name = openshift
-pip.name = PyYAML
-pip = name=pymongo state=latest
-pip.name = gunicorn
-pip.name = ndg-httpsclient
-pip = name=docker state=present
+ignore_errors: true
+failed_when: false
 ```
 
-No version pin means whatever is on PyPI right now gets installed as root on your internal node. A supply chain attacker poisons the package, and these playbooks install it automatically.
+Combined with shell commands and `no_log`, this means: run a command, hide the output, ignore if it fails. The trifecta of invisible execution.
 
-## Third-party repos over HTTP
+## Unsafe commands found by path
 
-Package repositories added over unencrypted HTTP — MITM can inject any package.
-
-```
-deb http://download.owncloud.org/download/repositories/stable/Debian_8.0/ /
-deb http://www.rabbitmq.com/debian/ testing main
-baseurl = http://download.fedoraproject.org/pub/epel/7/$basearch
-deb http://ppa.launchpad.net/ansible/ansible/ubuntu xenial main
-```
-
-## The full picture on internal nodes
-
-These playbooks are designed to run on internal production nodes. If they do, the combination looks like this:
-
-- Unpinned packages pulled from public PyPI
-- Over HTTP in some cases
-- With `become = true` — installed as root
-- With `ignore_errors = true` — failures silently swallowed
-- With `StrictHostKeyChecking=no` — connects to whatever answers
-- With `validate_certs = false` — doesn't verify who it's talking to
-- With `no_log = true` — hides what it did
-
-Whether this represents actual risk depends on where these playbooks run and how they've been modified. That assessment requires being able to read the files. Which requires being able to parse them.
-
-## Jinja2 masks YAML errors
-
-After stripping Jinja2, some files still fail to parse. The YAML underneath is invalid.
-
-Example from Red Hat's own `ansible-examples` repo (`jboss-standalone/demo-aws-launch.yml` and `lamp_haproxy/aws/demo-aws-launch.yml`):
+With the full nested path for every value, `grep` finds things in context:
 
 ```
-instance_tags: "{'ansible_group':'jboss', 'type':'{{ ec2_instance_type }}', 'group':'{{ ec2_security_group }}', 'Name':'demo_''{{ tower_user_name }}'}"
+roundcube__default_plugins[9].options[68].value = sudo /usr/sbin/chpasswd 2> /dev/null
 ```
 
-This line contains a Python dict literal inside a double-quoted YAML string, with nested single quotes, Jinja2 variables, and an ambiguous `''` sequence. Three languages on one line. No single parser handles all three.
+That's `sudo chpasswd` with stderr piped to `/dev/null`, inside plugin option 68 of a Roundcube webmail config, nested 9 levels deep. No scanner found it. No security audit found it. `grep passwd` found it.
 
-PyYAML sees the outer double quotes, grabs everything inside as a string, and stops looking. Jinja2 renders the `{{ }}` variables. Python evals the rendered string into a dict. The string passes through three interpreters and none of them validate it as a whole.
+---
 
-After Jinja2 is stripped, the `''` that was hidden behind `{{ }}` is exposed, and the YAML is invalid according to the spec. yaml-cpp reports a parse error. The tool falls back to text and still produces output.
+## These files are not YAML
 
-**Parser version regression:** yaml-cpp 0.6 correctly rejected these files with `end of map not found` at the `''` sequence. yaml-cpp 0.8.0 accepts them silently. Between versions, the parser got more lenient — the same trajectory as PyYAML. The spec violation is real in both versions. The difference is that 0.6 caught it and 0.8 doesn't.
+This is the finding underneath all the other findings.
 
-This means the window for catching this class of bug is closing. As parsers get more lenient to handle real-world files, they accept more invalid YAML. The spec erodes. Violations that were detectable become invisible. The files don't get fixed — the checkers stop checking.
+Ansible YAML files are not YAML. They are Jinja2 templates that emit YAML. The `.yml` extension is a lie. Every tool that tries to parse them as YAML fails, because they are templates, not data.
 
-Two YAML parsers now accept this invalid YAML. Zero catch it. The spec says it's wrong. Nobody enforces the spec.
+A 35-line file from AWX — Ansible's own project — proves it:
 
-This pattern appears in multiple files in the official example repo. It was copied into downstream playbooks. The Jinja2 was masking the YAML error — while `{{ }}` was present, no parser could get close enough to see the broken quotes underneath.
+```yaml
+receptor_user: awx
+{% if instance.node_type == "execution" %}
+receptor_work_commands:
+  ansible-runner:
+    command: ansible-runner
+{% endif %}
+{% if listener_port %}
+receptor_port: {{ listener_port }}
+{% else %}
+receptor_listener: false
+{% endif %}
+{% for peer in peers %}
+  - address: {{ peer.address }}
+{% endfor %}
+```
 
-Jinja2 doesn't just break parsers. It hides bugs.
+No YAML parser on earth can parse this. Not yaml-cpp. Not PyYAML. Not any scanner. Not AI. The `{% if %}` controls whether entire blocks of YAML exist. The document structure itself is conditional. There is no YAML to parse until the template runs.
 
-## Why this was never evaluated
+### Three languages in one file
 
-Ansible has no formal grammar, no spec, no parser, and no AST.
+Every Ansible "YAML" file can contain three languages nested inside each other:
 
-Ansible does not parse its YAML files. It loads them with PyYAML into Python dictionaries and walks the dictionaries with key lookups. To determine which key in a task is the module name, it excludes known keywords and takes whatever is left. Enrico Zini, a Debian developer who attempted to build an Ansible-to-Python converter (Transilience), described the process:
+```yaml
+# YAML — the outer structure
+- name: Configure app settings
+  ansible.builtin.template:
+    src: app.conf.j2
+    # Jinja2 — expressions and control flow inside YAML values
+    dest: "{{ app_config_path }}/{{ app_name }}.conf"
+    owner: "{{ 'root' if ansible_os_family == 'RedHat' else 'www-data' }}"
+  # Jinja2 — control flow at the structure level
+  {% if enable_monitoring %}
+  notify: restart monitoring
+  {% endif %}
+  vars:
+    # Python dict literal — inside Jinja2, inside a YAML value
+    connection_opts: "{{ {'host': db_host, 'port': db_port, 'ssl': {'verify': True, 'ca': ca_path}} | to_json }}"
+```
 
-- He "failed to find precise reference documentation about what keywords are used to define a task" and resorted to guesswork.
-- He described Ansible's variable system as "a big free messy cauldron of global variables."
-- He noted that "one can do all sorts of chaotic things to pass parameters to Ansible tasks" — string lists, comma-separated strings, Jinja2-preprocessed structures, complex nested data — all valid, all undocumented.
+Three grammars. Three parsers needed. Nested inside each other. In a file called `.yml`.
 
-His module-finding code: exclude known keys ("name", "args", "notify"), take whatever candidate remains. If there's not exactly one candidate, raise an error. That's not a parser. That's a lookup table.
+A YAML parser chokes on the Jinja2. A Jinja2 parser doesn't understand the YAML structure. Neither of them can read the Python dict literal inside the `{{ }}` expression. And the Python dict contains nested dicts, so `}}` appears inside the expression — you need brace-depth counting just to find where the Jinja2 ends and the YAML resumes.
 
-Ansible's own porting guides confirm the fragility. Between versions, previously valid patterns silently break or change meaning. Boolean coercion rules change. Values that were strings become None. Templates that rendered now error. Multi-pass templating that worked for years is removed. Each porting guide contains a list of things that used to work and no longer do — not because the spec changed, but because there was never a spec to change.
+No tool handles all three. The scanners handle zero. They try to parse YAML, hit Jinja2, and skip the file entirely.
 
-Without a grammar, you can't write a parser. Without a parser, you can't build an AST. Without an AST, you can't do static analysis. Without static analysis, you can't build a scanner. The entire security scanning model requires a formal structure that Ansible has never provided.
+### "Infrastructure as Code" with no code toolchain
 
-The flattened output provides that structure. 1,013 atoms — 621 modules, 312 roles, 45 directives, 23 play keys, and 12 Jinja2 patterns — extracted from 5,873 real files with zero parse failures. This is the spec that was never written, derived from the code itself.
+They called it "Infrastructure as Code." But:
 
-## Why the bottom keeps going
+- Where's the compiler? Ansible renders at runtime.
+- Where's the type checker? There isn't one.
+- Where's the static analysis? The scanners skip the files.
+- Where's the test suite? They test by deploying.
 
-A system designed to never fail, written in files that can't be read, parsed by libraries that change what's valid between versions. And the dashboard says green.
+They got the name right and everything else wrong. They said "code" and treated it like config.
 
-Five layers:
+### It used to be YAML
 
-1. **Ansible is designed to never fail.** `ignore_errors: true`. `failed_when: false`. `any_errors_fatal: false`. The tool swallows errors by design. Success is the default. Failure is opt-in.
+In 2012, Ansible playbooks were YAML. Plain keys and values. Then someone added `{{ variable }}`. Then `{% if %}`. Then `{% for %}`. Then Jinja2 filters, macros, nested dicts. One feature at a time. Each step looked like the last one. Nobody changed the file extension. Nobody updated the tools. Nobody told the scanners.
 
-2. **The files can't be read.** Jinja2 breaks every YAML parser. Three languages on one line — YAML, Jinja2, Python/bash — with no grammar for the combination. No scanner can parse them. No linter can analyze them. The files that run infrastructure are unreadable by any tool except the one that executes them.
+14 years of one degree at a time.
 
-3. **The YAML parsers change what's valid between versions.** yaml-cpp 0.6 rejected the `''` in Red Hat's example files. yaml-cpp 0.8 accepts them silently. The spec violation didn't get fixed — the checker stopped checking. As parsers get more lenient to handle real-world files, invalid YAML becomes invisible.
+---
 
-4. **No YAML fuzzing or validation regression suites exist.** Nobody tests whether a parser version still catches what the previous version caught. Nobody tests real-world Ansible files against parser updates. The stripped corpus from this project is the first real-world regression test suite for YAML parsers that has ever existed.
+## AI does not parse
 
-5. **No changelogs for parsing behavior changes.** Python publishes "What's New in Python 3.x." Ruby has release notes. Rust has edition guides. YAML parsers ship new versions with no documentation of what they stopped checking or started accepting. yaml-cpp 0.6 to 0.8 — what changed in parsing behavior? Nobody knows. No migration guide. No changelog. Nothing.
+Every AI code review tool — Copilot, CodeWhisperer, LLM-based scanners — is a pattern matcher. Not a parser.
 
-## What found this
+AI does not build ASTs. It does not track grammar state. It does not verify structure. It reads the file the same way it reads English: by predicting what comes next based on training data.
 
-Grep. On flattened YAML.
+This means:
 
-These findings may or may not represent real risk. The point is that until now, nobody could evaluate them. The files didn't parse. Now they do.
+- AI cannot tell you it failed to parse a file. It just guesses.
+- AI was trained on these same repos. Hardcoded passwords are the pattern it learned. It doesn't flag them because they look normal.
+- AI processes one file at a time in a context window. It cannot grep across 2383 files. It cannot cross-reference. It cannot search.
+- AI is slow and expensive per file. A tool runs in seconds for free.
+
+The industry is moving from scanners that can't parse the files to AI that can't parse the files but costs more.
+
+`grep` doesn't hallucinate. `grep` doesn't guess. `grep` finds `password = s3cr3t` or it doesn't.
+
+---
+
+## Reproduce
+
+```bash
+grep -r password *.yml
+```
+
+That one command is a security audit.
+
+## The limitation
+
+Nobody has ever parsed these files as YAML. Not Ansible. Not any tool. Ansible renders the Jinja2 first — replaces expressions with real values — and only then parses the result as YAML. The raw files were never parsed as YAML by anything. They can't be. They're templates.
+
+Not all Jinja2 templates can be converted back to YAML. When `{% if %}`, `{% for %}`, or `{% else %}` control the document structure — deciding whether entire blocks of YAML exist — no YAML parser can handle the file. The structure itself is conditional. There is no YAML until the template runs with real variables.
+
+Out of 2383 files across 14 repos, 3 had this problem. Three files where the Jinja2 is structural, not just value-level. The other 2380 files strip cleanly to valid YAML.
+
+99.87% of Ansible files are templates with blanks. Fill in the blanks with placeholders, you get valid YAML, you get a tree, you get paths, you get grep. The remaining 0.13% have structural Jinja2 — `{% if %}` and `{% for %}` controlling the document shape. They need the Jinja2 engine to resolve. Or they need fallback text parsing — which still finds things no scanner finds.
