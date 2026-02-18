@@ -102,6 +102,24 @@ The code is broken right now. It has been broken since it was written. It just h
 
 CWE-78 is not a bug that fails. It is a bug that waits.
 
+### This bug has been seen before — and never understood
+
+OpenStack's kayobe project hit the exact same quoting interaction. From their commit message:
+
+> "Ansible for some reason loses the 42 from the description."
+
+They saw the symptom. A variable with a space — `"interface 42"` — lost the `42` after passing through Ansible. They worked around it by adding more quoting. They never understood why.
+
+Source: https://opendev.org/openstack/kayobe/commit/196d28e766
+
+An Ansible forum user reported the same symptom in 2017. Passing `"Good Day"` from shell to Ansible to shell, the second script received only `Good` — the space split the value because the variable was unquoted after rendering.
+
+Source: https://www.unix.com/unix-and-linux-applications/271911-passing-variables-unix-ansible-unix-shell.html
+
+The symptom has been reported for years. The cause has never been identified. Nobody traced it to the three-language quoting interaction. Nobody ran shellcheck. Nobody extracted the shell. Nobody saw CWE-78.
+
+They all said "for some reason."
+
 ### Every instance found
 
 **mongodb — port unquoted**
@@ -327,3 +345,4 @@ Nobody checked them. Not because nobody cared. Because the toolchain had a gap. 
 The gap is closed now. Extract the shell. Run shellcheck. Read the findings. Fix the quotes.
 
 One character. One quote. One fix. Before the bug that waits stops waiting.
+
