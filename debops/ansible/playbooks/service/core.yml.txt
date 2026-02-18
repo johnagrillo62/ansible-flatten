@@ -10,7 +10,6 @@
 [0].environment = {{ inventory__environment | d({})
                    | combine(inventory__group_environment | d({}))
                    | combine(inventory__host_environment  | d({})) }}
-
 [0].roles[0].role = core
 [0].roles[0].tags[0] = role::core
 [0].roles[0].tags[1] = skip::core

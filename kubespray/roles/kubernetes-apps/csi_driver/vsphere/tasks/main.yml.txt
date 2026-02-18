@@ -1,37 +1,40 @@
-~d0.name = VSphere CSI Driver | Check vsphare credentials
-~d1.include_tasks = vsphere-credentials-check.yml
-~d0.name = VSphere CSI Driver | Generate CSI cloud-config
-~d1.template = 
-~d2.src = "{{ item }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item }}"
-~d2.mode = "0640"
-~d1.with_items = 
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = VSphere CSI Driver | Generate Manifests
-~d1.template = 
-~d2.src = "{{ item }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item }}"
-~d2.mode = "0644"
-~d1.with_items = 
-~d1.register = vsphere_csi_manifests
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = VSphere CSI Driver | Apply Manifests
-~d1.kube = 
-~d2.kubectl = "{{ bin_dir }}/kubectl"
-~d2.filename = "{{ kube_config_dir }}/{{ item.item }}"
-~d2.state = "latest"
-~d1.with_items = 
-~d1.when = 
-~d1.loop_control = 
-~d2.label = "{{ item.item }}"
-~d0.name = VSphere CSI Driver | Generate a CSI secret manifest
-~d1.command = "{{ kubectl }} create secret generic vsphere-config-secret --from-file=csi-vsphere.conf={{ kube_config_dir }}/vsphere-csi-cloud-config -n {{ vsphere_csi_namespace }} --dry-run --save-config -o yaml"
-~d1.register = vsphere_csi_secret_manifest
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d1.no_log = "{{ not (unsafe_show_logs | bool) }}"
-~d0.name = VSphere CSI Driver | Apply a CSI secret manifest
-~d1.command = 
-~d2.cmd = "{{ kubectl }} apply -f -"
-~d2.stdin = "{{ vsphere_csi_secret_manifest.stdout }}"
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d1.no_log = "{{ not (unsafe_show_logs | bool) }}"
+[0].name = VSphere CSI Driver | Check vsphare credentials
+[0].include_tasks = vsphere-credentials-check.yml
+[1].name = VSphere CSI Driver | Generate CSI cloud-config
+[1].template.src = {{ item }}.j2
+[1].template.dest = {{ kube_config_dir }}/{{ item }}
+[1].template.mode = 0640
+[1].with_items[0] = vsphere-csi-cloud-config
+[1].when = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = VSphere CSI Driver | Generate Manifests
+[2].template.src = {{ item }}.j2
+[2].template.dest = {{ kube_config_dir }}/{{ item }}
+[2].template.mode = 0644
+[2].with_items[0] = vsphere-csi-namespace.yml
+[2].with_items[1] = vsphere-csi-driver.yml
+[2].with_items[2] = vsphere-csi-controller-rbac.yml
+[2].with_items[3] = vsphere-csi-node-rbac.yml
+[2].with_items[4] = vsphere-csi-controller-config.yml
+[2].with_items[5] = vsphere-csi-controller-deployment.yml
+[2].with_items[6] = vsphere-csi-controller-service.yml
+[2].with_items[7] = vsphere-csi-node.yml
+[2].register = vsphere_csi_manifests
+[2].when = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = VSphere CSI Driver | Apply Manifests
+[3].kube.kubectl = {{ bin_dir }}/kubectl
+[3].kube.filename = {{ kube_config_dir }}/{{ item.item }}
+[3].kube.state = latest
+[3].with_items[0] = {{ vsphere_csi_manifests.results }}
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[3].when[1] = not item is skipped
+[3].loop_control.label = {{ item.item }}
+[4].name = VSphere CSI Driver | Generate a CSI secret manifest
+[4].command = {{ kubectl }} create secret generic vsphere-config-secret --from-file=csi-vsphere.conf={{ kube_config_dir }}/vsphere-csi-cloud-config -n {{ vsphere_csi_namespace }} --dry-run --save-config -o yaml
+[4].register = vsphere_csi_secret_manifest
+[4].when = inventory_hostname == groups['kube_control_plane'][0]
+[4].no_log = {{ not (unsafe_show_logs | bool) }}
+[5].name = VSphere CSI Driver | Apply a CSI secret manifest
+[5].command.cmd = {{ kubectl }} apply -f -
+[5].command.stdin = {{ vsphere_csi_secret_manifest.stdout }}
+[5].when = inventory_hostname == groups['kube_control_plane'][0]
+[5].no_log = {{ not (unsafe_show_logs | bool) }}

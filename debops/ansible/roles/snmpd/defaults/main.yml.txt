@@ -2,12 +2,10 @@ snmpd_user = {{ "snmp"
                 if (ansible_distribution == "Ubuntu" and
                     ansible_distribution_release not in ["bionic"])
                 else "Debian-snmp" }}
-
 snmpd_group = {{ "snmp"
                  if (ansible_distribution == "Ubuntu" and
                      ansible_distribution_release not in ["bionic"])
                  else "Debian-snmp" }}
-
 snmpd_logging_options = -LScd
 snmpd_custom_options = 
 snmpd_group_custom_options = 
@@ -15,19 +13,16 @@ snmpd_host_custom_options =
 snmpd_combined_custom_options = {{ snmpd_custom_options
                                    + snmpd_group_custom_options
                                    + snmpd_host_custom_options }}
-
 snmpd_download_mibs = {{ True
                          if (ansible_local | d() and ansible_local.apt | d() and
                              (ansible_local.apt.nonfree | d()) | bool)
                          else False }}
-
 snmpd_extension_scripts = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                             + "/snmpd" }} 
+                             + "/snmpd" }}
 snmpd_local_allow = {{ ansible_all_ipv4_addresses | d([]) +
                        (ansible_all_ipv6_addresses | d([])
                         | difference(ansible_all_ipv6_addresses | d([])
                                      | ansible.utils.ipaddr("link-local"))) }}
-
 snmpd_agent_address[0] = udp:0.0.0.0:161
 snmpd_agent_address[1] = udp6:[::]:161
 snmpd_organization = {{ ansible_domain.split(".") | first | capitalize }}
@@ -51,20 +46,16 @@ snmpd_load_weight_map.default[2] = 1.8
 snmpd_load_1min = {{ (((snmpd_load_base | float) *
                       (snmpd_load_percent_map[snmpd_load_percent][0] | float) / 100) | float *
                        snmpd_load_weight_map[snmpd_load_weight][0] | float) }}
-
 snmpd_load_5min = {{ (((snmpd_load_base | float) *
                       (snmpd_load_percent_map[snmpd_load_percent][1] | float) / 100) | float *
                        snmpd_load_weight_map[snmpd_load_weight][1] | float) }}
-
 snmpd_load_15min = {{ (((snmpd_load_base | float) *
                       (snmpd_load_percent_map[snmpd_load_percent][2] | float) / 100) | float *
                        snmpd_load_weight_map[snmpd_load_weight][2] | float) }}
-
 snmpd_proc_hidepid = {{ True
                         if (ansible_local | d() and ansible_local.proc_hidepid | d() and
                             (ansible_local.proc_hidepid.enabled | d()) | bool)
                         else False }}
-
 snmpd_proc_hidepid_group = {{ ansible_local.proc_hidepid.group | d("") }}
 snmpd_account = True
 snmpd_account_username_length = 16
@@ -72,19 +63,15 @@ snmpd_account_password_length = 48
 snmpd_account_admin_username = {{ lookup("password", secret +
                                   "/snmp/credentials/admin/username chars=ascii_letters,digits length=" +
                                   snmpd_account_username_length) }}
-
 snmpd_account_admin_password = {{ lookup("password", secret +
                                   "/snmp/credentials/admin/password chars=ascii_letters,digits,hexdigits length=" +
                                   snmpd_account_password_length) }}
-
 snmpd_account_agent_username = {{ lookup("password", secret +
                                   "/snmp/credentials/agent/username chars=ascii_letters,digits length=" +
                                   snmpd_account_username_length) }}
-
 snmpd_account_agent_password = {{ lookup("password", secret +
                                   "/snmp/credentials/agent/password chars=ascii_letters,digits,hexdigits length=" +
                                   snmpd_account_password_length) }}
-
 snmpd_ferm_dependent_rules[0].type = accept
 snmpd_ferm_dependent_rules[0].protocol[0] = udp
 snmpd_ferm_dependent_rules[0].dport[0] = snmp

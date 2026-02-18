@@ -1,7 +1,6 @@
-doc[0][0].hosts = all
-doc[0][0].roles[0].role = foo
-doc[0][0].roles[0].param1 = {{ foo }}
-doc[0][0].roles[0].param2 = {{ some_var1 + "/" + some_var2 }}
-doc[0][0].roles[0].when = ansible_os_family == 'RedHat'
-doc[0][0].tasks[0].shell = echo 'this is a loose task'
-doc[1] = 
+[0].hosts = all
+[0].roles[0].role = foo
+[0].roles[0].param1 = {{ foo }}
+[0].roles[0].param2 = {{ some_var1 + "/" + some_var2 }}
+[0].roles[0].when = ansible_os_family == 'RedHat'
+[0].tasks[0].shell = echo 'this is a loose task'

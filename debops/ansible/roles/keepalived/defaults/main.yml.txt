@@ -13,7 +13,6 @@ keepalived__combined_configuration = {{ keepalived__default_configuration
                                         + keepalived__configuration
                                         + keepalived__group_configuration
                                         + keepalived__host_configuration }}
-
 keepalived__sysctl__dependent_parameters[0].name = keepalived
 keepalived__sysctl__dependent_parameters[0].weight = 80
 keepalived__sysctl__dependent_parameters[0].options[0].name = net.ipv4.ip_nonlocal_bind

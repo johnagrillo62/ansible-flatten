@@ -1,176 +1,180 @@
-~d0.name = Check if shared memory support is available
-~d1.ansible.builtin.shell = set -o nounset -o pipefail -o errexit && mount | grep /dev/shm || true
-~d1.args = 
-~d2.executable = 'bash'
-~d1.register = postgresql_server__register_shm
-~d1.changed_when = False
-~d1.check_mode = False
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Create PostgreSQL clusters
-~d1.environment = 
-~d2.LANG = '{{ item.locale | d(postgresql_server__locale) }}'
-~d2.LC_ALL = '{{ item.locale | d(postgresql_server__locale) }}'
-~d1.ansible.builtin.command = pg_createcluster --user={{ item.user | d(postgresql_server__user) }}
-~d1.args = 
-~d2.creates = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/postgresql.conf'
-~d1.register = postgresql_server__register_createcluster
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d() and item.port | d()
-~d0.name = Remove data directory for PostgreSQL replication standby clusters
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.item.data_directory | d(postgresql_server__data_directory + "/"
-~d2.state = absent
-~d1.when = 
-~d1.with_items = '{{ postgresql_server__register_createcluster.results }}'
-~d1.loop_control = 
-~d2.label = '{{ item.item }}'
-~d0.name = Synchronize data for PostgreSQL replication standby clusters
-~d1.environment = 
-~d2.LANG = '{{ item.item.locale | d(postgresql_server__locale) }}'
-~d2.LC_ALL = '{{ item.item.locale | d(postgresql_server__locale) }}'
-~d1.ansible.builtin.command = >-
-~d1.become = True
-~d1.become_user = '{{ item.user | d(postgresql_server__user) }}'
-~d1.when = 
-~d1.with_items = '{{ postgresql_server__register_createcluster.results }}'
-~d1.loop_control = 
-~d2.label = '{{ item.item }}'
-~d1.register = postgresql_server__register_basebackup
-~d1.changed_when = postgresql_server__register_basebackup.changed | bool
-~d0.name = Log directory path
-~d1.ansible.builtin.file = 
-~d2.name = "{{ item.log_directory }}"
-~d2.mode = '0750'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.state = directory
-~d2.recurse = yes
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.log_directory | d() and item.log_directory is abs
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Ensure that conf.d directories exist
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/conf.d'
-~d2.state = 'directory'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0755'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL clusters
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/postgresql.conf.j2'
-~d2.dest = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/postgresql.conf'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_config
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL cluster environment
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/environment.j2'
-~d2.dest = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/environment'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_config_environment
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL user identification
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/pg_ident.conf.j2'
-~d2.dest = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/pg_ident.conf'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0640'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_config_ident
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL cluster host authentication
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/pg_hba.conf.j2'
-~d2.dest = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/pg_hba.conf'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0640'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_config_hba
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL cluster trusted local roles
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/trusted.j2'
-~d2.dest = '/etc/postgresql/{{ (item.version | d(postgresql_server__version)) + "/" + item.name + "/trusted" }}'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0640'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_trusted
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Configure PostgreSQL cluster start options
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql/start.conf.j2'
-~d2.dest = '/etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/start.conf'
-~d2.owner = '{{ item.user | d(postgresql_server__user) }}'
-~d2.group = '{{ item.group | d(postgresql_server__group) }}'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = item.name | d()
-~d1.register = postgresql_server__register_config_start
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Symlink SSL root certificate
-~d1.ansible.builtin.file = 
-~d2.src = '{{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
-~d2.dest = '{{ (item.data_directory | d(postgresql_server__data_directory
-~d2.state = 'link'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and
-~d0.name = Symlink SSL certificate
-~d1.ansible.builtin.file = 
-~d2.src = '{{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
-~d2.dest = '{{ (item.data_directory | d(postgresql_server__data_directory
-~d2.state = 'link'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and
-~d0.name = Symlink SSL key
-~d1.ansible.builtin.file = 
-~d2.src = '{{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
-~d2.dest = '{{ (item.data_directory | d(postgresql_server__data_directory
-~d2.state = 'link'
-~d2.mode = '0640'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and
-~d0.name = Start PostgreSQL clusters when not started
-~d1.ansible.builtin.command = pg_ctlcluster {{ item.version | d(postgresql_server__version) }} {{ item.name }} start
-~d1.args = 
-~d2.creates = '{{ item.external_pid_file | d("/var/run/postgresql/" + (item.version | d(postgresql_server__version))
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = (ansible_service_mgr != 'systemd' and
-~d0.name = Start PostgreSQL clusters when not started (systemd)
-~d1.ansible.builtin.service = 
-~d2.name = 'postgresql@{{ item.version | d(postgresql_server__version) }}-{{ item.name }}.service'
-~d2.state = 'started'
-~d1.loop = '{{ q("flattened", postgresql_server__clusters) }}'
-~d1.when = (ansible_service_mgr == 'systemd' and
-~d0.name = Reload PostgreSQL clusters when needed
-~d1.ansible.builtin.command = 'pg_ctlcluster {{ item.item.version | d(postgresql_server__version) }} {{ item.item.name }} reload'  # noqa no-handler
-~d1.loop = '{{ q("flattened", postgresql_server__register_config.results
-~d1.register = postgresql_server__register_pg_cluster_reload
-~d1.changed_when = postgresql_server__register_pg_cluster_reload.changed | bool
-~d1.when = (ansible_service_mgr != 'systemd' and
-~d1.tags = [ 'role::postgresql_server:config' ]
-~d0.name = Reload PostgreSQL clusters when needed (systemd)
-~d1.ansible.builtin.service = # noqa no-handler
-~d2.name = 'postgresql@{{ item.item.version | d(postgresql_server__version) }}-{{ item.item.name }}.service'
-~d2.state = 'reloaded'
-~d1.loop = '{{ q("flattened", postgresql_server__register_config.results
-~d1.when = (ansible_service_mgr == 'systemd' and
-~d1.tags = [ 'role::postgresql_server:config' ]
+[0].name = Check if shared memory support is available
+[0]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && mount | grep /dev/shm || true
+[0].args.executable = bash
+[0].register = postgresql_server__register_shm
+[0].changed_when = False
+[0].check_mode = False
+[0].tags[0] = role::postgresql_server:config
+[1].name = Create PostgreSQL clusters
+[1].environment.LANG = {{ item.locale | d(postgresql_server__locale) }}
+[1].environment.LC_ALL = {{ item.locale | d(postgresql_server__locale) }}
+[1]["ansible.builtin.command"] = pg_createcluster --user={{ item.user | d(postgresql_server__user) }} --group={{ item.group | d(postgresql_server__group) }} --locale={{ item.locale | d(postgresql_server__locale) }} --start-conf={{ item.start_conf | d(postgresql_server__start_conf) }} --port={{ item.port }} {{ item.version | d(postgresql_server__version) }} {{ item.name }}
+[1].args.creates = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/postgresql.conf
+[1].register = postgresql_server__register_createcluster
+[1].loop = {{ q("flattened", postgresql_server__clusters) }}
+[1].when = item.name | d() and item.port | d()
+[2].name = Remove data directory for PostgreSQL replication standby clusters
+[2]["ansible.builtin.file"].path = {{ item.item.data_directory | d(postgresql_server__data_directory + "/"
+                                           + (item.item.version | d(postgresql_server__version))
+                                           + "/" + item.item.name) }}
+[2]["ansible.builtin.file"].state = absent
+[2].when[0] = item.item.standby is defined
+[2].when[1] = item is changed
+[2].when[2] = item is success
+[2].with_items = {{ postgresql_server__register_createcluster.results }}
+[2].loop_control.label = {{ item.item }}
+[3].name = Synchronize data for PostgreSQL replication standby clusters
+[3].environment.LANG = {{ item.item.locale | d(postgresql_server__locale) }}
+[3].environment.LC_ALL = {{ item.item.locale | d(postgresql_server__locale) }}
+[3]["ansible.builtin.command"] = pg_basebackup --pgdata={{ item.item.data_directory | d(postgresql_server__data_directory + "/"
+                                         + (item.item.version | d(postgresql_server__version))
+                                         + "/" + item.item.name) }}
+--dbname="{{ item.item.standby.conninfo }}" --write-recovery-conf {% if item.item.standby.slot_name is defined %} --slot={{ item.item.standby.slot_name }} --create-slot {% endif %}
+[3].become = True
+[3].become_user = {{ item.user | d(postgresql_server__user) }}
+[3].when[0] = item.item.standby is defined
+[3].when[1] = item is changed
+[3].when[2] = item is success
+[3].with_items = {{ postgresql_server__register_createcluster.results }}
+[3].loop_control.label = {{ item.item }}
+[3].register = postgresql_server__register_basebackup
+[3].changed_when = postgresql_server__register_basebackup.changed | bool
+[4].name = Log directory path
+[4]["ansible.builtin.file"].name = {{ item.log_directory }}
+[4]["ansible.builtin.file"].mode = 0750
+[4]["ansible.builtin.file"].owner = {{ item.user | d(postgresql_server__user) }}
+[4]["ansible.builtin.file"].group = {{ item.group | d(postgresql_server__group) }}
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].recurse = yes
+[4].loop = {{ q("flattened", postgresql_server__clusters) }}
+[4].when = item.log_directory | d() and item.log_directory is abs
+[4].tags[0] = role::postgresql_server:config
+[5].name = Ensure that conf.d directories exist
+[5]["ansible.builtin.file"].path = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/conf.d
+[5]["ansible.builtin.file"].state = directory
+[5]["ansible.builtin.file"].owner = {{ item.user | d(postgresql_server__user) }}
+[5]["ansible.builtin.file"].group = {{ item.group | d(postgresql_server__group) }}
+[5]["ansible.builtin.file"].mode = 0755
+[5].loop = {{ q("flattened", postgresql_server__clusters) }}
+[5].when = item.name | d()
+[5].tags[0] = role::postgresql_server:config
+[6].name = Configure PostgreSQL clusters
+[6]["ansible.builtin.template"].src = etc/postgresql/postgresql.conf.j2
+[6]["ansible.builtin.template"].dest = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/postgresql.conf
+[6]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[6]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[6]["ansible.builtin.template"].mode = 0644
+[6].loop = {{ q("flattened", postgresql_server__clusters) }}
+[6].when = item.name | d()
+[6].register = postgresql_server__register_config
+[6].tags[0] = role::postgresql_server:config
+[7].name = Configure PostgreSQL cluster environment
+[7]["ansible.builtin.template"].src = etc/postgresql/environment.j2
+[7]["ansible.builtin.template"].dest = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/environment
+[7]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[7]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[7]["ansible.builtin.template"].mode = 0644
+[7].loop = {{ q("flattened", postgresql_server__clusters) }}
+[7].when = item.name | d()
+[7].register = postgresql_server__register_config_environment
+[7].tags[0] = role::postgresql_server:config
+[8].name = Configure PostgreSQL user identification
+[8]["ansible.builtin.template"].src = etc/postgresql/pg_ident.conf.j2
+[8]["ansible.builtin.template"].dest = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/pg_ident.conf
+[8]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[8]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[8]["ansible.builtin.template"].mode = 0640
+[8].loop = {{ q("flattened", postgresql_server__clusters) }}
+[8].when = item.name | d()
+[8].register = postgresql_server__register_config_ident
+[8].tags[0] = role::postgresql_server:config
+[9].name = Configure PostgreSQL cluster host authentication
+[9]["ansible.builtin.template"].src = etc/postgresql/pg_hba.conf.j2
+[9]["ansible.builtin.template"].dest = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/pg_hba.conf
+[9]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[9]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[9]["ansible.builtin.template"].mode = 0640
+[9].loop = {{ q("flattened", postgresql_server__clusters) }}
+[9].when = item.name | d()
+[9].register = postgresql_server__register_config_hba
+[9].tags[0] = role::postgresql_server:config
+[10].name = Configure PostgreSQL cluster trusted local roles
+[10]["ansible.builtin.template"].src = etc/postgresql/trusted.j2
+[10]["ansible.builtin.template"].dest = /etc/postgresql/{{ (item.version | d(postgresql_server__version)) + "/" + item.name + "/trusted" }}
+[10]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[10]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[10]["ansible.builtin.template"].mode = 0640
+[10].loop = {{ q("flattened", postgresql_server__clusters) }}
+[10].when = item.name | d()
+[10].register = postgresql_server__register_trusted
+[10].tags[0] = role::postgresql_server:config
+[11].name = Configure PostgreSQL cluster start options
+[11]["ansible.builtin.template"].src = etc/postgresql/start.conf.j2
+[11]["ansible.builtin.template"].dest = /etc/postgresql/{{ item.version | d(postgresql_server__version) }}/{{ item.name }}/start.conf
+[11]["ansible.builtin.template"].owner = {{ item.user | d(postgresql_server__user) }}
+[11]["ansible.builtin.template"].group = {{ item.group | d(postgresql_server__group) }}
+[11]["ansible.builtin.template"].mode = 0644
+[11].loop = {{ q("flattened", postgresql_server__clusters) }}
+[11].when = item.name | d()
+[11].register = postgresql_server__register_config_start
+[11].tags[0] = role::postgresql_server:config
+[12].name = Symlink SSL root certificate
+[12]["ansible.builtin.file"].src = {{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
+             + "/" + item.pki_ca | d(postgresql_server__pki_ca) }}
+[12]["ansible.builtin.file"].dest = {{ (item.data_directory | d(postgresql_server__data_directory
+                                       + (item.version | d(postgresql_server__version)) + "/" + item.name))
+              + "/root.crt" }}
+[12]["ansible.builtin.file"].state = link
+[12]["ansible.builtin.file"].mode = 0644
+[12].loop = {{ q("flattened", postgresql_server__clusters) }}
+[12].when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and (item.name | d()) and ((item.version | d() and item.version == '9.1') or (postgresql_server__version | d() and postgresql_server__version == '9.1')))
+[13].name = Symlink SSL certificate
+[13]["ansible.builtin.file"].src = {{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
+             + "/" + item.pki_crt | d(postgresql_server__pki_crt) }}
+[13]["ansible.builtin.file"].dest = {{ (item.data_directory | d(postgresql_server__data_directory
+                                       + (item.version | d(postgresql_server__version)) + "/" + item.name))
+              + "/server.crt" }}
+[13]["ansible.builtin.file"].state = link
+[13]["ansible.builtin.file"].mode = 0644
+[13].loop = {{ q("flattened", postgresql_server__clusters) }}
+[13].when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and (item.name | d()) and ((item.version | d() and item.version == '9.1') or (postgresql_server__version | d() and postgresql_server__version == '9.1')))
+[14].name = Symlink SSL key
+[14]["ansible.builtin.file"].src = {{ item.pki_path | d(postgresql_server__pki_path) + "/" + item.pki_realm | d(postgresql_server__pki_realm)
+             + "/" + item.pki_key | d(postgresql_server__pki_key) }}
+[14]["ansible.builtin.file"].dest = {{ (item.data_directory | d(postgresql_server__data_directory
+                                       + (item.version | d(postgresql_server__version)) + "/" + item.name))
+              + "/server.key" }}
+[14]["ansible.builtin.file"].state = link
+[14]["ansible.builtin.file"].mode = 0640
+[14].loop = {{ q("flattened", postgresql_server__clusters) }}
+[14].when = ((postgresql_server__pki | d() and postgresql_server__pki | bool) and (item.name | d()) and ((item.version | d() and item.version == '9.1') or (postgresql_server__version | d() and postgresql_server__version == '9.1')))
+[15].name = Start PostgreSQL clusters when not started
+[15]["ansible.builtin.command"] = pg_ctlcluster {{ item.version | d(postgresql_server__version) }} {{ item.name }} start
+[15].args.creates = {{ item.external_pid_file | d("/var/run/postgresql/" + (item.version | d(postgresql_server__version))
+                                            + "-" + item.name + ".pid") }}
+[15].loop = {{ q("flattened", postgresql_server__clusters) }}
+[15].when = (ansible_service_mgr != 'systemd' and ((item.name | d()) and (item.start_conf is undefined or item.start_conf == 'auto')))
+[16].name = Start PostgreSQL clusters when not started (systemd)
+[16]["ansible.builtin.service"].name = postgresql@{{ item.version | d(postgresql_server__version) }}-{{ item.name }}.service
+[16]["ansible.builtin.service"].state = started
+[16].loop = {{ q("flattened", postgresql_server__clusters) }}
+[16].when = (ansible_service_mgr == 'systemd' and ((item.name | d()) and (item.start_conf is undefined or item.start_conf == 'auto')))
+[17].name = Reload PostgreSQL clusters when needed
+[17]["ansible.builtin.command"] = pg_ctlcluster {{ item.item.version | d(postgresql_server__version) }} {{ item.item.name }} reload
+[17].loop = {{ q("flattened", postgresql_server__register_config.results
+                           + postgresql_server__register_config_hba.results
+                           + postgresql_server__register_config_ident.results
+                           + postgresql_server__register_trusted.results) }}
+[17].register = postgresql_server__register_pg_cluster_reload
+[17].changed_when = postgresql_server__register_pg_cluster_reload.changed | bool
+[17].when = (ansible_service_mgr != 'systemd' and ((item is changed and (item.item.start_conf is undefined or item.item.start_conf == 'auto'))))
+[17].tags[0] = role::postgresql_server:config
+[18].name = Reload PostgreSQL clusters when needed (systemd)
+[18]["ansible.builtin.service"].name = postgresql@{{ item.item.version | d(postgresql_server__version) }}-{{ item.item.name }}.service
+[18]["ansible.builtin.service"].state = reloaded
+[18].loop = {{ q("flattened", postgresql_server__register_config.results
+                           + postgresql_server__register_config_hba.results
+                           + postgresql_server__register_config_ident.results
+                           + postgresql_server__register_trusted.results) }}
+[18].when = (ansible_service_mgr == 'systemd' and ((item is changed and (item.item.start_conf is undefined or item.item.start_conf == 'auto'))))
+[18].tags[0] = role::postgresql_server:config

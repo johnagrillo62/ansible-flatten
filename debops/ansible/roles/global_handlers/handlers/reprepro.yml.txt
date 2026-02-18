@@ -1,4 +1,3 @@
-~d0.name = Restart inoticoming
-~d1.ansible.builtin.service = 
-~d2.name = 'inoticoming'
-~d2.state = 'restarted'
+[0].name = Restart inoticoming
+[0]["ansible.builtin.service"].name = inoticoming
+[0]["ansible.builtin.service"].state = restarted

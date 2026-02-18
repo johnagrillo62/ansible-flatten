@@ -1,8 +1,6 @@
-~d0.name = Prometheus Operator CRDs | Download YAML
-~d1.include_tasks = "../../../../download/tasks/download_file.yml"
-~d1.vars = 
-~d2.download = "{{ download_defaults | combine(downloads.prometheus_operator_crds) }}"
-~d0.name = Prometheus Operator CRDs | Install
-~d1.command = 
-~d2.cmd = "{{ bin_dir }}/kubectl apply -f {{ local_release_dir }}/prometheus-operator-crds.yaml"
-~d1.when = 
+[0].name = Prometheus Operator CRDs | Download YAML
+[0].include_tasks = ../../../../download/tasks/download_file.yml
+[0].vars.download = {{ download_defaults | combine(downloads.prometheus_operator_crds) }}
+[1].name = Prometheus Operator CRDs | Install
+[1].command.cmd = {{ bin_dir }}/kubectl apply -f {{ local_release_dir }}/prometheus-operator-crds.yaml
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]

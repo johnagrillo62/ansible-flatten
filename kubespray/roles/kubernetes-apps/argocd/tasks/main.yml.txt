@@ -1,75 +1,70 @@
-~d0.name = Kubernetes Apps | Download yq
-~d1.include_tasks = "../../../download/tasks/download_file.yml"
-~d1.vars = 
-~d2.download = "{{ download_defaults | combine(downloads.yq) }}"
-~d0.name = Kubernetes Apps | Copy yq binary from download dir
-~d1.ansible.posix.synchronize = 
-~d2.src = "{{ downloads.yq.dest }}"
-~d2.dest = "{{ bin_dir }}/yq"
-~d2.compress = false
-~d2.perms = true
-~d2.owner = false
-~d2.group = false
-~d1.delegate_to = "{{ inventory_hostname }}"
-~d0.name = Kubernetes Apps | Set ArgoCD template list
-~d1.set_fact = 
-~d2.argocd_templates = 
-~d3.name = namespace
-~d4.file = argocd-namespace.yml
-~d3.name = install
-~d4.file = "{{ downloads.argocd_install.dest | basename }}"
-~d4.namespace = "{{ argocd_namespace }}"
-~d4.download = "{{ downloads.argocd_install }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Download ArgoCD remote manifests
-~d1.include_tasks = "../../../download/tasks/download_file.yml"
-~d1.vars = 
-~d2.download = "{{ download_defaults | combine(item.download) }}"
-~d1.with_items = "{{ argocd_templates | selectattr('download', 'defined') | list }}"
-~d1.loop_control = 
-~d2.label = "{{ item.file }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Copy ArgoCD remote manifests from download dir
-~d1.ansible.posix.synchronize = 
-~d2.src = "{{ local_release_dir }}/{{ item.file }}"
-~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.compress = false
-~d2.perms = true
-~d2.owner = false
-~d2.group = false
-~d1.delegate_to = "{{ inventory_hostname }}"
-~d1.with_items = "{{ argocd_templates | selectattr('download', 'defined') | list }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Set ArgoCD namespace for remote manifests
-~d1.become = true
-~d1.command = |
-~d1.with_items = "{{ argocd_templates | selectattr('download', 'defined') | list }}"
-~d1.loop_control = 
-~d2.label = "{{ item.file }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Create ArgoCD manifests from templates
-~d1.become = true
-~d1.template = 
-~d2.src = "{{ item.file }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.mode = "0644"
-~d1.with_items = "{{ argocd_templates | selectattr('download', 'undefined') | list }}"
-~d1.loop_control = 
-~d2.label = "{{ item.file }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Install ArgoCD
-~d1.become = true
-~d1.kube = 
-~d2.name = ArgoCD
-~d2.kubectl = "{{ bin_dir }}/kubectl"
-~d2.filename = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.state = latest
-~d1.with_items = "{{ argocd_templates }}"
-~d1.when = 
-~d0.name = Kubernetes Apps | Set ArgoCD custom admin password
-~d1.become = true
-~d1.shell = |
-~d4."stringData" = {
-~d5."admin.password" = "{{ argocd_admin_password | password_hash('bcrypt') }}",
-~d5."admin.passwordMtime" = "'$(date +%FT%T%Z)'"
-~d1.when = 
+[0].name = Kubernetes Apps | Download yq
+[0].include_tasks = ../../../download/tasks/download_file.yml
+[0].vars.download = {{ download_defaults | combine(downloads.yq) }}
+[1].name = Kubernetes Apps | Copy yq binary from download dir
+[1]["ansible.posix.synchronize"].src = {{ downloads.yq.dest }}
+[1]["ansible.posix.synchronize"].dest = {{ bin_dir }}/yq
+[1]["ansible.posix.synchronize"].compress = false
+[1]["ansible.posix.synchronize"].perms = true
+[1]["ansible.posix.synchronize"].owner = false
+[1]["ansible.posix.synchronize"].group = false
+[1].delegate_to = {{ inventory_hostname }}
+[2].name = Kubernetes Apps | Set ArgoCD template list
+[2].set_fact.argocd_templates[0].name = namespace
+[2].set_fact.argocd_templates[0].file = argocd-namespace.yml
+[2].set_fact.argocd_templates[1].name = install
+[2].set_fact.argocd_templates[1].file = {{ downloads.argocd_install.dest | basename }}
+[2].set_fact.argocd_templates[1].namespace = {{ argocd_namespace }}
+[2].set_fact.argocd_templates[1].download = {{ downloads.argocd_install }}
+[2].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = Kubernetes Apps | Download ArgoCD remote manifests
+[3].include_tasks = ../../../download/tasks/download_file.yml
+[3].vars.download = {{ download_defaults | combine(item.download) }}
+[3].with_items = {{ argocd_templates | selectattr('download', 'defined') | list }}
+[3].loop_control.label = {{ item.file }}
+[3].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[4].name = Kubernetes Apps | Copy ArgoCD remote manifests from download dir
+[4]["ansible.posix.synchronize"].src = {{ local_release_dir }}/{{ item.file }}
+[4]["ansible.posix.synchronize"].dest = {{ kube_config_dir }}/{{ item.file }}
+[4]["ansible.posix.synchronize"].compress = false
+[4]["ansible.posix.synchronize"].perms = true
+[4]["ansible.posix.synchronize"].owner = false
+[4]["ansible.posix.synchronize"].group = false
+[4].delegate_to = {{ inventory_hostname }}
+[4].with_items = {{ argocd_templates | selectattr('download', 'defined') | list }}
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[5].name = Kubernetes Apps | Set ArgoCD namespace for remote manifests
+[5].become = true
+[5].command = {{ bin_dir }}/yq eval-all -i '.metadata.namespace="{{ argocd_namespace }}"' {{ kube_config_dir }}/{{ item.file }}
+
+[5].with_items = {{ argocd_templates | selectattr('download', 'defined') | list }}
+[5].loop_control.label = {{ item.file }}
+[5].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[6].name = Kubernetes Apps | Create ArgoCD manifests from templates
+[6].become = true
+[6].template.src = {{ item.file }}.j2
+[6].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[6].template.mode = 0644
+[6].with_items = {{ argocd_templates | selectattr('download', 'undefined') | list }}
+[6].loop_control.label = {{ item.file }}
+[6].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[7].name = Kubernetes Apps | Install ArgoCD
+[7].become = true
+[7].kube.name = ArgoCD
+[7].kube.kubectl = {{ bin_dir }}/kubectl
+[7].kube.filename = {{ kube_config_dir }}/{{ item.file }}
+[7].kube.state = latest
+[7].with_items = {{ argocd_templates }}
+[7].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[8].name = Kubernetes Apps | Set ArgoCD custom admin password
+[8].become = true
+[8].shell = {{ bin_dir }}/kubectl --kubeconfig /etc/kubernetes/admin.conf -n {{ argocd_namespace }} patch secret argocd-secret -p \
+  '{
+    "stringData": {
+      "admin.password": "{{ argocd_admin_password | password_hash('bcrypt') }}",
+      "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+    }
+  }'
+
+[8].when[0] = argocd_admin_password is defined
+[8].when[1] = inventory_hostname == groups['kube_control_plane'][0]

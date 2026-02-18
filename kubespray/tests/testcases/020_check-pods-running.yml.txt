@@ -1,32 +1,26 @@
-~d0.import_role = # noqa name[missing]
-~d2.name = cluster-dump
-~d0.name = Check kubectl output
-~d1.command = "{{ bin_dir }}/kubectl get pods --all-namespaces -owide"
-~d1.changed_when = false
-~d0.name = Check pods
-~d1.vars = 
-~d2.query_pods_not_running = "items[?status.phase != 'Running']"
-~d2.query_pods_not_ready = "items[?(status.conditions[?type == 'Ready'])[0].status != 'True']"
-~d2.pods_not_running = "{{ run_pods_log.stdout | from_json | json_query(query_pods_not_running + '.metadata') }}"
-~d2.pods_not_ready = "{{ run_pods_log.stdout | from_json | json_query(query_pods_not_ready + '.metadata') }}"
-~d1.block = 
-~d1.name = Check that all pods are running
-~d2.command = "{{ bin_dir }}/kubectl get pods --all-namespaces -o json"
-~d2.register = run_pods_log
-~d2.changed_when = false
-~d2.until = 
-~d2.retries = 30
-~d2.delay = 10
-~d1.rescue = 
-~d1.name = Describe broken pods
-~d2.command = "{{ bin_dir }}/kubectl describe pod -n {{ item.namespace }} {{ item.name }}"
-~d2.loop = "{{ pods_not_running + pods_not_ready }}"
-~d2.loop_control = 
-~d3.label = "{{ item.namespace }}/{{ item.name }}"
-~d1.name = Get logs from broken pods
-~d2.command = "{{ bin_dir }}/kubectl logs -n {{ item.namespace }} {{ item.name }}"
-~d2.loop = "{{ pods_not_running + pods_not_ready }}"
-~d2.loop_control = 
-~d3.label = "{{ item.namespace }}/{{ item.name }}"
-~d1.name = Fail CI
-~d2.fail = {}
+[0].import_role.name = cluster-dump
+[1].name = Check kubectl output
+[1].command = {{ bin_dir }}/kubectl get pods --all-namespaces -owide
+[1].changed_when = false
+[2].name = Check pods
+[2].vars.query_pods_not_running = items[?status.phase != 'Running']
+[2].vars.query_pods_not_ready = items[?(status.conditions[?type == 'Ready'])[0].status != 'True']
+[2].vars.pods_not_running = {{ run_pods_log.stdout | from_json | json_query(query_pods_not_running + '.metadata') }}
+[2].vars.pods_not_ready = {{ run_pods_log.stdout | from_json | json_query(query_pods_not_ready + '.metadata') }}
+[2].block[0].name = Check that all pods are running
+[2].block[0].command = {{ bin_dir }}/kubectl get pods --all-namespaces -o json
+[2].block[0].register = run_pods_log
+[2].block[0].changed_when = false
+[2].block[0].until[0] = run_pods_log.stdout | from_json | json_query(query_pods_not_running) == []
+[2].block[0].until[1] = run_pods_log.stdout | from_json | json_query(query_pods_not_ready) == []
+[2].block[0].retries = 30
+[2].block[0].delay = 10
+[2].rescue[0].name = Describe broken pods
+[2].rescue[0].command = {{ bin_dir }}/kubectl describe pod -n {{ item.namespace }} {{ item.name }}
+[2].rescue[0].loop = {{ pods_not_running + pods_not_ready }}
+[2].rescue[0].loop_control.label = {{ item.namespace }}/{{ item.name }}
+[2].rescue[1].name = Get logs from broken pods
+[2].rescue[1].command = {{ bin_dir }}/kubectl logs -n {{ item.namespace }} {{ item.name }}
+[2].rescue[1].loop = {{ pods_not_running + pods_not_ready }}
+[2].rescue[1].loop_control.label = {{ item.namespace }}/{{ item.name }}
+[2].rescue[2].name = Fail CI

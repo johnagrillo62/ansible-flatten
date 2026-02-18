@@ -75,17 +75,14 @@ mariadb_server__client_options[0].options.default_character_set = utf8mb4
 mariadb_server__client_cnf_file = {{ "/etc/mysql/mariadb.conf.d/90-client.cnf"
                                      if (mariadb_server__register_confd.stat.exists | bool)
                                      else "/etc/mysql/conf.d/zz-client.cnf" }}
-
 mariadb_server__mysqld_cnf_file = {{ "/etc/mysql/mariadb.conf.d/90-mysqld.cnf"
                                      if (mariadb_server__register_confd.stat.exists | bool)
                                      else "/etc/mysql/conf.d/zz-mysqld.cnf" }}
-
 mariadb_server__append_groups[0] = ssl-cert
 mariadb_server__pki = {{ (True
                       if (ansible_local.pki.enabled | d() and
                           mariadb_server__pki_realm in ansible_local.pki.known_realms)
                       else False) | bool }}
-
 mariadb_server__pki_path = {{ ansible_local.pki.base_path | d("/etc/pki") }}
 mariadb_server__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 mariadb_server__pki_ca = CA.crt

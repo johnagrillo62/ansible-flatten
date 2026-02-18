@@ -8,11 +8,10 @@ phpipam__webserver_user = {{ ansible_local.nginx.user
                                  ansible_local.nginx is defined and
                                  ansible_local.nginx.user is defined)
                              else "www-data" }}
-
 phpipam__user = phpipam
 phpipam__group = phpipam
 phpipam__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                   + "/" + phpipam__user }} 
+                   + "/" + phpipam__user }}
 phpipam__database_user = phpipam
 phpipam__database_host = {{ ansible_local.mariadb.server }}
 phpipam__database_name = phpipam
@@ -20,16 +19,14 @@ phpipam__database_password = {{ lookup('password', secret + '/mariadb/' +
                                 ansible_local.mariadb.delegate_to +
                                 '/credentials/' + phpipam__database_user +
                                 '/password length=48') }}
-
 phpipam__database_schema = {{ phpipam__git_checkout + "/db/SCHEMA.sql" }}
 phpipam__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                  + "/" + phpipam__user }} 
+                  + "/" + phpipam__user }}
 phpipam__www = {{ (ansible_local.nginx.www
                   if (ansible_local is defined and
                       ansible_local.nginx is defined and
                       ansible_local.nginx.www is defined)
                   else "/srv/www") + "/" + phpipam__user }}
-
 phpipam__git_repo = https://github.com/phpipam/phpipam.git
 phpipam__git_dest = {{ phpipam__src + "/" + phpipam__git_repo.split("://")[1] }}
 phpipam__git_version = v1.4.1
@@ -37,7 +34,6 @@ phpipam__git_checkout = {{ phpipam__www + "/sites/" + phpipam__fqdn + "/public" 
 phpipam__php_session_name = {{ lookup('password', secret + '/credentials/'
                                + inventory_hostname + '/phpipam/php_session_name
                                chars=hexdigits length=30') }}
-
 phpipam__scripts_git_repo = https://github.com/debops/phpipam-scripts
 phpipam__scripts_git_dest = {{ "/usr/local/src/phpipam/" + phpipam__scripts_git_repo.split("://")[1] }}
 phpipam__scripts_git_version = master

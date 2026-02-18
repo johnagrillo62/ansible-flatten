@@ -1,34 +1,43 @@
-~d0.sks_recon_name = 'sks'
-~d0.sks_recon_port = 11370
-~d0.sks_hkp_frontend_name = 'hkp-backend'
-~d0.sks_hkp_frontend_port = '11372'
-~d0.sks_nginx_frontend = 
-~d1.by_role = 'debops.sks'
-~d1.enabled = True
-~d1.default = False
-~d1.name = '{{ ["default_sks"] + sks_domain }}'
-~d1.root = '{{ "/srv/www/sites/" + sks_domain[0] + "/public" }}'
-~d1.webroot_create = False
-~d1.ssl = False
-~d1.listen = [ '[::]:80', '[::]:11371' ]
-~d1.location = 
-~d2.'/' = |
-~d2.'/pks' = |
-~d3.proxy_pass http = //sks_servers/pks;
-~d0.sks_nginx_ssl_frontend = 
-~d1.by_role = 'debops.sks'
-~d1.enabled = True
-~d1.default = False
-~d1.state = '{{ "present"
-~d1.name = '{{ sks_domain }}'
-~d1.listen = False
-~d1.location = 
-~d2.'/' = |
-~d2.'/pks' = |
-~d3.proxy_pass http = //sks_servers/pks;
-~d0.sks_nginx_upstreams = 
-~d1.enabled = True
-~d1.name = 'sks_servers'
-~d1.server = 'localhost:{{ sks_hkp_frontend_port }}'
-~d1.cluster = '{{ sks_cluster | difference(sks_frontends) }}'
-~d1.port = '11371'
+sks_recon_name = sks
+sks_recon_port = 11370
+sks_hkp_frontend_name = hkp-backend
+sks_hkp_frontend_port = 11372
+sks_nginx_frontend.by_role = debops.sks
+sks_nginx_frontend.enabled = True
+sks_nginx_frontend.default = False
+sks_nginx_frontend.name = {{ ["default_sks"] + sks_domain }}
+sks_nginx_frontend.root = {{ "/srv/www/sites/" + sks_domain[0] + "/public" }}
+sks_nginx_frontend.webroot_create = False
+sks_nginx_frontend.ssl = False
+sks_nginx_frontend.listen[0] = [::]:80
+sks_nginx_frontend.listen[1] = [::]:11371
+sks_nginx_frontend.location./ = try_files $uri $uri/ =404;
+index index.html;
+
+sks_nginx_frontend.location./pks = proxy_pass http://sks_servers/pks;
+proxy_pass_header Server;
+add_header Via "1.1 {{ ansible_fqdn }} (nginx)";
+proxy_ignore_client_abort on;
+
+sks_nginx_ssl_frontend.by_role = debops.sks
+sks_nginx_ssl_frontend.enabled = True
+sks_nginx_ssl_frontend.default = False
+sks_nginx_ssl_frontend.state = {{ "present"
+             if (ansible_local | d() and ansible_local.pki | d() and
+                 (ansible_local.pki.enabled | d()) | bool)
+             else "absent" }}
+sks_nginx_ssl_frontend.name = {{ sks_domain }}
+sks_nginx_ssl_frontend.listen = False
+sks_nginx_ssl_frontend.location./ = try_files $uri $uri/ =404;
+index index.html;
+
+sks_nginx_ssl_frontend.location./pks = proxy_pass http://sks_servers/pks;
+proxy_pass_header Server;
+add_header Via "1.1 {{ ansible_fqdn }} (nginx)";
+proxy_ignore_client_abort on;
+
+sks_nginx_upstreams.enabled = True
+sks_nginx_upstreams.name = sks_servers
+sks_nginx_upstreams.server = localhost:{{ sks_hkp_frontend_port }}
+sks_nginx_upstreams.cluster = {{ sks_cluster | difference(sks_frontends) }}
+sks_nginx_upstreams.port = 11371

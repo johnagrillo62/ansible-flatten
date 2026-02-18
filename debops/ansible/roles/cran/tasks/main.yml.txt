@@ -1,38 +1,40 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Install system packages required for R support
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (cran__base_packages
-~d2.state = 'present'
-~d1.register = cran__register_packages
-~d1.until = cran__register_packages is succeeded
-~d0.name = Configure Java environment in R
-~d1.ansible.builtin.command = R CMD javareconf
-~d1.register = cran__register_java_reconf
-~d1.changed_when = cran__register_java_reconf.changed | bool
-~d1.when = (cran__java_integration | bool and
-~d0.name = Manage R packages
-~d1.cran = # noqa fqcn
-~d2.name = '{{ item.name | d(item) }}'
-~d2.repo = '{{ item.repo | d(cran__upstream_mirror) }}'
-~d2.state = '{{ item.state | d("present") }}'
-~d1.loop = '{{ q("flattened", cran__r_packages
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Save CRAN local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/cran.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/cran.fact'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update Ansible facts if they were modified
-~d1.ansible.builtin.meta = 'flush_handlers'
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Install system packages required for R support
+[1]["ansible.builtin.package"].name = {{ q("flattened", (cran__base_packages
+                              + cran__packages
+                              + cran__group_packages
+                              + cran__host_packages
+                              + cran__dependent_packages)) }}
+[1]["ansible.builtin.package"].state = present
+[1].register = cran__register_packages
+[1].until = cran__register_packages is succeeded
+[2].name = Configure Java environment in R
+[2]["ansible.builtin.command"] = R CMD javareconf
+[2].register = cran__register_java_reconf
+[2].changed_when = cran__register_java_reconf.changed | bool
+[2].when = (cran__java_integration | bool and (ansible_local | d() and ansible_local.cran is undefined))
+[3].name = Manage R packages
+[3].cran.name = {{ item.name | d(item) }}
+[3].cran.repo = {{ item.repo | d(cran__upstream_mirror) }}
+[3].cran.state = {{ item.state | d("present") }}
+[3].loop = {{ q("flattened", cran__r_packages
+                           + cran__group_r_packages
+                           + cran__host_r_packages
+                           + cran__dependent_r_packages) }}
+[4].name = Make sure that Ansible local facts directory exists
+[4]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].owner = root
+[4]["ansible.builtin.file"].group = root
+[4]["ansible.builtin.file"].mode = 0755
+[5].name = Save CRAN local facts
+[5]["ansible.builtin.template"].src = etc/ansible/facts.d/cran.fact.j2
+[5]["ansible.builtin.template"].dest = /etc/ansible/facts.d/cran.fact
+[5]["ansible.builtin.template"].owner = root
+[5]["ansible.builtin.template"].group = root
+[5]["ansible.builtin.template"].mode = 0755
+[5].notify[0] = Refresh host facts
+[5].tags[0] = meta::facts
+[6].name = Update Ansible facts if they were modified
+[6]["ansible.builtin.meta"] = flush_handlers

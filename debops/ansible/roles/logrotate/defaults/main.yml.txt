@@ -23,7 +23,6 @@ logrotate__default_config[0].state = {{ "present"
                if (ansible_distribution_release in
                    (["stretch", "trusty", "xenial", "bionic"]))
                else "absent" }}
-
 logrotate__default_config[1].log = /var/log/btmp
 logrotate__default_config[1].options = missingok
 monthly
@@ -34,9 +33,7 @@ logrotate__default_config[1].state = {{ "present"
                if (ansible_distribution_release in
                    (["stretch", "trusty", "xenial", "bionic"]))
                else "absent" }}
-
 logrotate__combined_config = {{ logrotate__config
                                 + logrotate__group_config
                                 + logrotate__host_config
                                 + logrotate__dependent_config }}
-

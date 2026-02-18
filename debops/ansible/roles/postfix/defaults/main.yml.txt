@@ -13,7 +13,6 @@ postfix__doc_installed = {{ ansible_local.postfix.doc_installed
                             if (ansible_local | d() and ansible_local.postfix | d() and
                                 ansible_local.postfix.doc_installed is defined)
                             else False }}
-
 postfix__fqdn = {{ ansible_fqdn }}
 postfix__domain = {{ ansible_domain }}
 postfix__relayhost = 
@@ -27,9 +26,9 @@ postfix__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
 postfix__pki_key = {{ ansible_local.pki.key | d("default.key") }}
 postfix__tls_ca_file = /etc/ssl/certs/ca-certificates.crt
 postfix__tls_cert_file = {{ (postfix__pki_path + "/" + postfix__pki_realm + "/" + postfix__pki_crt)
-                            if postfix__pki | bool else "/etc/ssl/certs/ssl-cert-snakeoil.pem" }} 
+                            if postfix__pki | bool else "/etc/ssl/certs/ssl-cert-snakeoil.pem" }}
 postfix__tls_key_file = {{ (postfix__pki_path + "/" + postfix__pki_realm + "/" + postfix__pki_key)
-                           if postfix__pki | bool else "/etc/ssl/private/ssl-cert-snakeoil.key" }} 
+                           if postfix__pki | bool else "/etc/ssl/private/ssl-cert-snakeoil.key" }}
 postfix__pki_hook_name = postfix
 postfix__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
 postfix__pki_hook_action = reload
@@ -37,18 +36,15 @@ postfix__dhparam = {{ ansible_local.dhparam.enabled
                       if (ansible_local | d() and ansible_local.dhparam | d() and
                           ansible_local.dhparam.enabled is defined)
                       else False }}
-
 postfix__dhparam_set = default
 postfix__tls_dh1024_param_file = {{ ansible_local.dhparam[postfix__dhparam_set]
                                     if (ansible_local | d() and ansible_local.dhparam | d() and
                                         ansible_local.dhparam[postfix__dhparam_set] | d())
                                     else "" }}
-
 postfix__tls_dh512_param_file = {{ ansible_local.dhparam[postfix__dhparam_set]
                                    if (ansible_local | d() and ansible_local.dhparam | d() and
                                        ansible_local.dhparam[postfix__dhparam_set] | d())
                                    else "" }}
-
 postfix__original_maincf[0].name = myorigin_example
 postfix__original_maincf[0].option = myorigin
 postfix__original_maincf[0].value = /etc/mailname
@@ -77,7 +73,6 @@ postfix__original_maincf[5].name = readme_directory
 postfix__original_maincf[5].value = {{ "/usr/share/doc/postfix"
                if postfix__doc_installed | bool
                else False }}
-
 postfix__original_maincf[5].section = base
 postfix__original_maincf[6].name = compatibility_level
 postfix__original_maincf[6].value = 2
@@ -88,7 +83,6 @@ postfix__original_maincf[6].section = base
 postfix__original_maincf[6].state = {{ "present"
                if (postfix__version is version_compare("3.0.0", ">="))
                else "ignore" }}
-
 postfix__original_maincf[7].name = smtpd_tls_cert_file
 postfix__original_maincf[7].value = {{ postfix__tls_cert_file }}
 postfix__original_maincf[7].comment = TLS parameters
@@ -116,7 +110,6 @@ postfix__original_maincf[13].section = base
 postfix__original_maincf[13].state = {{ "present"
                if (postfix__version is version_compare("2.10.0", ">="))
                else "ignore" }}
-
 postfix__original_maincf[13].value[0].name = permit_mynetworks
 postfix__original_maincf[13].value[0].weight = -300
 postfix__original_maincf[13].value[1].name = permit_sasl_authenticated
@@ -168,12 +161,10 @@ postfix__original_maincf[24].section = base
 postfix__original_maincf[24].state = {{ "present"
                if (ansible_distribution_release == "stretch")
                else "ignore" }}
-
 postfix__original_maincf[25].name = html_directory
 postfix__original_maincf[25].value = {{ "/usr/share/doc/postfix/html"
                if postfix__doc_installed | bool
                else False }}
-
 postfix__original_maincf[25].section = base
 postfix__default_maincf[0].name = smtpd_banner
 postfix__default_maincf[0].value = $myhostname ESMTP
@@ -183,7 +174,6 @@ postfix__default_maincf[1].section = base
 postfix__default_maincf[1].state = {{ "present"
                if (postfix__version is version_compare("2.9.0", ">="))
                else "ignore" }}
-
 postfix__tls_maincf[0].name = smtp_tls_client_comment
 postfix__tls_maincf[0].state = absent
 postfix__tls_maincf[1].name = smtpd_use_tls
@@ -350,7 +340,6 @@ postfix__tls_maincf[39].section = tls
 postfix__tls_maincf[39].state = {{ "present"
               if (postfix__version is version_compare("2.11.0", ">="))
               else "ignore" }}
-
 postfix__restrictions_maincf[0].name = smtpd_helo_required
 postfix__restrictions_maincf[0].value = True
 postfix__restrictions_maincf[0].section = restrictions
@@ -393,7 +382,6 @@ postfix__restrictions_maincf[7].weight = 40
 postfix__restrictions_maincf[7].state = {{ "present"
                if (postfix__version is version_compare("2.10.0", ">="))
                else "ignore" }}
-
 postfix__restrictions_maincf[8].name = smtpd_recipient_restrictions
 postfix__restrictions_maincf[8].section = restrictions
 postfix__restrictions_maincf[8].weight = 50
@@ -420,9 +408,8 @@ postfix__combined_maincf = {{ postfix__original_maincf
                               + postfix__maincf
                               + postfix__group_maincf
                               + postfix__host_maincf }}
-
 postfix__init_maincf = {{ lookup("template",
-                          "lookup/postfix__init_maincf.j2") }} 
+                          "lookup/postfix__init_maincf.j2") }}
 postfix__maincf_sections[0].name = base
 postfix__maincf_sections[1].name = auth
 postfix__maincf_sections[1].title = Authentication and authorization
@@ -501,7 +488,6 @@ postfix__original_mastercf[5].options[8].value[1] = reject
 postfix__original_mastercf[5].options[8].state = {{ "present"
                   if (postfix__version is version_compare("2.10.0", ">="))
                   else "ignore" }}
-
 postfix__original_mastercf[5].options[9].milter_macro_daemon_name = ORIGINATING
 postfix__original_mastercf[6].name = smtps
 postfix__original_mastercf[6].type = inet
@@ -529,7 +515,6 @@ postfix__original_mastercf[6].options[8].value[1] = reject
 postfix__original_mastercf[6].options[8].state = {{ "present"
                   if (postfix__version is version_compare("2.10.0", ">="))
                   else "ignore" }}
-
 postfix__original_mastercf[6].options[9].milter_macro_daemon_name = ORIGINATING
 postfix__original_mastercf[7].name = qmqp
 postfix__original_mastercf[7].service = 628
@@ -759,16 +744,14 @@ postfix__combined_mastercf = {{ postfix__original_mastercf
                                 + postfix__mastercf
                                 + postfix__group_mastercf
                                 + postfix__host_mastercf }}
-
 postfix__dependent_lookup_tables_filter = {{ lookup("flattened",
-                                             postfix__dependent_lookup_tables) }} 
+                                             postfix__dependent_lookup_tables) }}
 postfix__combined_lookup_tables = {{ ([postfix__dependent_lookup_tables_filter]
                                       if postfix__dependent_lookup_tables_filter is mapping
                                       else postfix__dependent_lookup_tables_filter)
                                      + postfix__lookup_tables
                                      + postfix__group_lookup_tables
                                      + postfix__host_lookup_tables }}
-
 postfix__ferm__dependent_rules[0].name = postfix_smtp
 postfix__ferm__dependent_rules[0].type = accept
 postfix__ferm__dependent_rules[0].by_role = debops.postfix
@@ -778,7 +761,6 @@ postfix__ferm__dependent_rules[0].accept_any = {{ postfix__accept_any }}
 postfix__ferm__dependent_rules[0].rule_state = {{ "present"
                     if ("smtp" in postfix__env_active_services | d([]))
                     else "absent" }}
-
 postfix__ferm__dependent_rules[1].name = postfix_smtps
 postfix__ferm__dependent_rules[1].type = accept
 postfix__ferm__dependent_rules[1].by_role = debops.postfix
@@ -788,7 +770,6 @@ postfix__ferm__dependent_rules[1].accept_any = {{ postfix__accept_any }}
 postfix__ferm__dependent_rules[1].rule_state = {{ "present"
                     if ("smtps" in postfix__env_active_services | d([]))
                     else "absent" }}
-
 postfix__ferm__dependent_rules[2].name = postfix_submission
 postfix__ferm__dependent_rules[2].type = accept
 postfix__ferm__dependent_rules[2].by_role = debops.postfix
@@ -798,4 +779,3 @@ postfix__ferm__dependent_rules[2].accept_any = {{ postfix__accept_any }}
 postfix__ferm__dependent_rules[2].rule_state = {{ "present"
                     if ("submission" in postfix__env_active_services | d([]))
                     else "absent" }}
-

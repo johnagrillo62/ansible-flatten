@@ -9,5 +9,4 @@ ruby__dev_packages = {{ ["ruby-dev", "build-essential"]
 	                    ruby__user_gems or ruby__group_user_gems or
 	                    ruby__host_user_gems or ruby__dependent_user_gems)
 	                else [] }}
-
 ruby__dev_support = False

@@ -1,131 +1,138 @@
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Import DebOps secret role
-~d1.ansible.builtin.import_role = 
-~d2.name = 'secret'
-~d0.name = Check Ansible Controller library version  # noqa no-shorthand
-~d1.ansible.builtin.shell = |
-~d1.args = 
-~d2.executable = 'bash'
-~d1.changed_when = False
-~d1.register = dhparam__register_version
-~d1.delegate_to = 'localhost'
-~d1.become = False
-~d1.run_once = True
-~d1.check_mode = False
-~d1.tags = [ 'meta::provision' ]
-~d0.name = Assert that required software is installed
-~d1.ansible.builtin.assert = 
-~d2.that = 
-~d1.delegate_to = 'localhost'
-~d1.become = False
-~d1.run_once = True
-~d1.tags = [ 'meta::provision' ]
-~d0.name = Create required directories on Ansible Controller
-~d1.ansible.builtin.file = 
-~d2.path = '{{ dhparam__source_path }}'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d1.delegate_to = 'localhost'
-~d1.become = False
-~d1.run_once = True
-~d1.tags = [ 'meta::provision' ]
-~d0.name = Generate Diffie-Hellman params on Ansible Controller  # noqa no-shorthand
-~d1.ansible.builtin.command = |
-~d1.args = 
-~d2.creates = '{{ dhparam__source_path + "/" + dhparam__prefix + item + dhparam__suffix }}'
-~d1.with_items = '{{ dhparam__bits }}'
-~d1.delegate_to = 'localhost'
-~d1.become = False
-~d1.run_once = True
-~d1.tags = [ 'meta::provision' ]
-~d0.name = Install encryption software
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (dhparam__base_packages + dhparam__packages)) }}'
-~d2.state = 'present'
-~d1.when = dhparam__deploy_state in ['present']
-~d1.register = dhparam__register_packages
-~d1.until = dhparam__register_packages is succeeded
-~d1.tags = [ 'meta::provision' ]
-~d0.name = Create required directories
-~d1.ansible.builtin.file = 
-~d2.path = '{{ dhparam__hook_path }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = dhparam__deploy_state in ['present']
-~d1.notify = [ 'Regenerate DH parameters on first install' ]
-~d0.name = Preseed Diffie-Hellman parameters
-~d1.ansible.builtin.copy = 
-~d2.src = '{{ dhparam__source_path + "/" }}'
-~d2.dest = '{{ dhparam__path + "/params/" + dhparam__set_prefix + item + "/" }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d2.force = False
-~d1.when = dhparam__deploy_state in ['present']
-~d1.with_sequence = 'start=0 count={{ dhparam__sets }}'
-~d1.notify = [ 'Execute DH parameter hooks' ]
-~d0.name = Create default symlinks for all sets
-~d1.ansible.builtin.file = 
-~d2.src = '{{ "params/" + dhparam__set_prefix + item + "/"
-~d2.path = '{{ dhparam__path + "/" + dhparam__set_prefix + item }}'
-~d2.state = 'link'
-~d2.mode = '0644'
-~d1.when = dhparam__deploy_state in ['present'] and not ansible_check_mode
-~d1.with_sequence = 'start=0 count={{ dhparam__sets }}'
-~d0.name = Install DHE generation script
-~d1.ansible.builtin.template = 
-~d2.src = 'usr/local/lib/dhparam-generate-params.j2'
-~d2.dest = '{{ dhparam__generate_params }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = dhparam__deploy_state in ['present']
-~d0.name = Enable periodic DH parameters generation via cron
-~d1.ansible.builtin.cron = 
-~d2.name = 'Generate new Diffie-Hellman ephemeral parameters'
-~d2.job = 'test -x {{ dhparam__generate_params }} && {{ dhparam__generate_params }} schedule'
-~d2.cron_file = 'dhparam-generate-params'
-~d2.user = 'root'
-~d2.special_time = '{{ dhparam__generate_cron_period }}'
-~d2.state = '{{ "present"
-~d1.when = not ansible_check_mode
-~d0.name = Setup systemd timer for periodic DH parameter regeneration
-~d1.ansible.builtin.template = 
-~d2.src = '{{ item }}.j2'
-~d2.dest = '/{{ item }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.with_items = 
-~d1.register = dhparam__register_systemd
-~d1.when = dhparam__deploy_state in ['present'] and ansible_service_mgr == 'systemd'
-~d0.name = Enable systemd timer
-~d1.ansible.builtin.systemd = 
-~d2.daemon_reload = True
-~d2.name = 'dhparam-generate-params.timer'
-~d2.enabled = '{{ True
-~d2.state = '{{ "started"
-~d1.when = dhparam__deploy_state in ['present'] and ansible_service_mgr == 'systemd' and
-~d0.name = Make sure the Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = dhparam__deploy_state in ['present']
-~d0.name = Save dhparam local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/dhparam.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/dhparam.fact'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Gather facts if they changed
-~d1.ansible.builtin.meta = 'flush_handlers'
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = secret
+[2].name = Check Ansible Controller library version
+[2]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit &&
+{% if dhparam__source_library == 'gnutls' %}
+certtool --version | head -n 1 | awk '{print $NF}'
+{% elif dhparam__source_library == 'openssl' %}
+openssl version | awk '{print $2}'
+{% endif %}
+
+[2].args.executable = bash
+[2].changed_when = False
+[2].register = dhparam__register_version
+[2].delegate_to = localhost
+[2].become = False
+[2].run_once = True
+[2].check_mode = False
+[2].tags[0] = meta::provision
+[3].name = Assert that required software is installed
+[3]["ansible.builtin.assert"].that[0] = dhparam__register_version is defined and dhparam__register_version.stdout
+[3].delegate_to = localhost
+[3].become = False
+[3].run_once = True
+[3].tags[0] = meta::provision
+[4].name = Create required directories on Ansible Controller
+[4]["ansible.builtin.file"].path = {{ dhparam__source_path }}
+[4]["ansible.builtin.file"].state = directory
+[4]["ansible.builtin.file"].mode = 0755
+[4].delegate_to = localhost
+[4].become = False
+[4].run_once = True
+[4].tags[0] = meta::provision
+[5].name = Generate Diffie-Hellman params on Ansible Controller
+[5]["ansible.builtin.command"] = {% if dhparam__source_library == 'gnutls' %}
+certtool --generate-dh-params
+         --outfile {{ dhparam__source_path + "/" + dhparam__prefix + item + dhparam__suffix }}
+         --bits {{ item }}
+{% elif dhparam__source_library == 'openssl' %}
+openssl dhparam {{ dhparam__openssl_options }} -out {{ dhparam__source_path + "/" + dhparam__prefix + item + dhparam__suffix }} {{ item }}
+{% endif %}
+
+[5].args.creates = {{ dhparam__source_path + "/" + dhparam__prefix + item + dhparam__suffix }}
+[5].with_items = {{ dhparam__bits }}
+[5].delegate_to = localhost
+[5].become = False
+[5].run_once = True
+[5].tags[0] = meta::provision
+[6].name = Install encryption software
+[6]["ansible.builtin.package"].name = {{ q("flattened", (dhparam__base_packages + dhparam__packages)) }}
+[6]["ansible.builtin.package"].state = present
+[6].when = dhparam__deploy_state in ['present']
+[6].register = dhparam__register_packages
+[6].until = dhparam__register_packages is succeeded
+[6].tags[0] = meta::provision
+[7].name = Create required directories
+[7]["ansible.builtin.file"].path = {{ dhparam__hook_path }}
+[7]["ansible.builtin.file"].state = directory
+[7]["ansible.builtin.file"].owner = root
+[7]["ansible.builtin.file"].group = root
+[7]["ansible.builtin.file"].mode = 0755
+[7].when = dhparam__deploy_state in ['present']
+[7].notify[0] = Regenerate DH parameters on first install
+[8].name = Preseed Diffie-Hellman parameters
+[8]["ansible.builtin.copy"].src = {{ dhparam__source_path + "/" }}
+[8]["ansible.builtin.copy"].dest = {{ dhparam__path + "/params/" + dhparam__set_prefix + item + "/" }}
+[8]["ansible.builtin.copy"].owner = root
+[8]["ansible.builtin.copy"].group = root
+[8]["ansible.builtin.copy"].mode = 0644
+[8]["ansible.builtin.copy"].force = False
+[8].when = dhparam__deploy_state in ['present']
+[8].with_sequence = start=0 count={{ dhparam__sets }}
+[8].notify[0] = Execute DH parameter hooks
+[9].name = Create default symlinks for all sets
+[9]["ansible.builtin.file"].src = {{ "params/" + dhparam__set_prefix + item + "/"
+             + dhparam__prefix + dhparam__default_length + dhparam__suffix }}
+[9]["ansible.builtin.file"].path = {{ dhparam__path + "/" + dhparam__set_prefix + item }}
+[9]["ansible.builtin.file"].state = link
+[9]["ansible.builtin.file"].mode = 0644
+[9].when = dhparam__deploy_state in ['present'] and not ansible_check_mode
+[9].with_sequence = start=0 count={{ dhparam__sets }}
+[10].name = Install DHE generation script
+[10]["ansible.builtin.template"].src = usr/local/lib/dhparam-generate-params.j2
+[10]["ansible.builtin.template"].dest = {{ dhparam__generate_params }}
+[10]["ansible.builtin.template"].owner = root
+[10]["ansible.builtin.template"].group = root
+[10]["ansible.builtin.template"].mode = 0755
+[10].when = dhparam__deploy_state in ['present']
+[11].name = Enable periodic DH parameters generation via cron
+[11]["ansible.builtin.cron"].name = Generate new Diffie-Hellman ephemeral parameters
+[11]["ansible.builtin.cron"].job = test -x {{ dhparam__generate_params }} && {{ dhparam__generate_params }} schedule
+[11]["ansible.builtin.cron"].cron_file = dhparam-generate-params
+[11]["ansible.builtin.cron"].user = root
+[11]["ansible.builtin.cron"].special_time = {{ dhparam__generate_cron_period }}
+[11]["ansible.builtin.cron"].state = {{ "present"
+               if (ansible_service_mgr != "systemd" and
+                   dhparam__generate_cron | bool and
+                   dhparam__deploy_state in ["present"])
+               else "absent" }}
+[11].when = not ansible_check_mode
+[12].name = Setup systemd timer for periodic DH parameter regeneration
+[12]["ansible.builtin.template"].src = {{ item }}.j2
+[12]["ansible.builtin.template"].dest = /{{ item }}
+[12]["ansible.builtin.template"].owner = root
+[12]["ansible.builtin.template"].group = root
+[12]["ansible.builtin.template"].mode = 0644
+[12].with_items[0] = etc/systemd/system/dhparam-generate-params.service
+[12].with_items[1] = etc/systemd/system/dhparam-generate-params.timer
+[12].register = dhparam__register_systemd
+[12].when = dhparam__deploy_state in ['present'] and ansible_service_mgr == 'systemd'
+[13].name = Enable systemd timer
+[13]["ansible.builtin.systemd"].daemon_reload = True
+[13]["ansible.builtin.systemd"].name = dhparam-generate-params.timer
+[13]["ansible.builtin.systemd"].enabled = {{ True
+                 if (dhparam__generate_cron | bool)
+                 else False }}
+[13]["ansible.builtin.systemd"].state = {{ "started"
+                 if (dhparam__generate_cron | bool)
+                 else "stopped" }}
+[13].when = dhparam__deploy_state in ['present'] and ansible_service_mgr == 'systemd' and not ansible_check_mode
+[14].name = Make sure the Ansible local facts directory exists
+[14]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[14]["ansible.builtin.file"].state = directory
+[14]["ansible.builtin.file"].owner = root
+[14]["ansible.builtin.file"].group = root
+[14]["ansible.builtin.file"].mode = 0755
+[14].when = dhparam__deploy_state in ['present']
+[15].name = Save dhparam local facts
+[15]["ansible.builtin.template"].src = etc/ansible/facts.d/dhparam.fact.j2
+[15]["ansible.builtin.template"].dest = /etc/ansible/facts.d/dhparam.fact
+[15]["ansible.builtin.template"].owner = root
+[15]["ansible.builtin.template"].group = root
+[15]["ansible.builtin.template"].mode = 0644
+[15].notify[0] = Refresh host facts
+[15].tags[0] = meta::facts
+[16].name = Gather facts if they changed
+[16]["ansible.builtin.meta"] = flush_handlers

@@ -1,9 +1,8 @@
-~d0.name = Test and restart dnsmasq
-~d1.ansible.builtin.command = dnsmasq --test
-~d1.register = global_handlers__dnsmasq_register_config_test
-~d1.changed_when = global_handlers__dnsmasq_register_config_test.changed | bool
-~d1.notify = [ 'Restart dnsmasq' ]
-~d0.name = Restart dnsmasq
-~d1.ansible.builtin.service = 
-~d2.name = 'dnsmasq'
-~d2.state = 'restarted'
+[0].name = Test and restart dnsmasq
+[0]["ansible.builtin.command"] = dnsmasq --test
+[0].register = global_handlers__dnsmasq_register_config_test
+[0].changed_when = global_handlers__dnsmasq_register_config_test.changed | bool
+[0].notify[0] = Restart dnsmasq
+[1].name = Restart dnsmasq
+[1]["ansible.builtin.service"].name = dnsmasq
+[1]["ansible.builtin.service"].state = restarted

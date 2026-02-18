@@ -1,29 +1,25 @@
-~d0.name = Kube-vip  | Check cluster settings for kube-vip
-~d1.fail = 
-~d2.msg = "kube-vip require kube_proxy_strict_arp = true, see https://github.com/kube-vip/kube-vip/blob/main/docs/kubernetes/arp/index.md"
-~d1.when = 
-~d0.name = Kube-vip | Check if super-admin.conf exists
-~d1.stat = 
-~d2.path = "{{ kube_config_dir }}/super-admin.conf"
-~d1.failed_when = false
-~d1.changed_when = false
-~d1.register = stat_kube_vip_super_admin
-~d0.name = Kube-vip | Check if kubeadm has already run
-~d1.stat = 
-~d2.path = "/var/lib/kubelet/config.yaml"
-~d2.get_attributes = false
-~d2.get_checksum = false
-~d2.get_mime = false
-~d1.register = kubeadm_already_run
-~d0.name = Kube-vip | Set admin.conf
-~d1.set_fact = 
-~d2.kube_vip_admin_conf = admin.conf
-~d0.name = Kube-vip | Set admin.conf for first Control Plane
-~d1.set_fact = 
-~d2.kube_vip_admin_conf = super-admin.conf
-~d1.when = 
-~d0.name = Kube-vip | Write static pod
-~d1.template = 
-~d2.src = manifests/kube-vip.manifest.j2
-~d2.dest = "{{ kube_manifest_dir }}/kube-vip.yml"
-~d2.mode = "0640"
+[0].name = Kube-vip  | Check cluster settings for kube-vip
+[0].fail.msg = kube-vip require kube_proxy_strict_arp = true, see https://github.com/kube-vip/kube-vip/blob/main/docs/kubernetes/arp/index.md
+[0].when[0] = kube_proxy_mode == 'ipvs' and not kube_proxy_strict_arp
+[0].when[1] = kube_vip_arp_enabled
+[1].name = Kube-vip | Check if super-admin.conf exists
+[1].stat.path = {{ kube_config_dir }}/super-admin.conf
+[1].failed_when = false
+[1].changed_when = false
+[1].register = stat_kube_vip_super_admin
+[2].name = Kube-vip | Check if kubeadm has already run
+[2].stat.path = /var/lib/kubelet/config.yaml
+[2].stat.get_attributes = false
+[2].stat.get_checksum = false
+[2].stat.get_mime = false
+[2].register = kubeadm_already_run
+[3].name = Kube-vip | Set admin.conf
+[3].set_fact.kube_vip_admin_conf = admin.conf
+[4].name = Kube-vip | Set admin.conf for first Control Plane
+[4].set_fact.kube_vip_admin_conf = super-admin.conf
+[4].when[0] = inventory_hostname == groups['kube_control_plane'] | first
+[4].when[1] = (stat_kube_vip_super_admin.stat.exists and stat_kube_vip_super_admin.stat.isreg) or (not kubeadm_already_run.stat.exists )
+[5].name = Kube-vip | Write static pod
+[5].template.src = manifests/kube-vip.manifest.j2
+[5].template.dest = {{ kube_manifest_dir }}/kube-vip.yml
+[5].template.mode = 0640

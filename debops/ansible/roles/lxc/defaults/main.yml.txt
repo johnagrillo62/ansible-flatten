@@ -6,37 +6,30 @@ lxc__base_packages[1] = {{ ["dnsmasq-base"] if (lxc__net_deploy_state == "presen
 lxc__base_packages[2] = {{ []
         if (ansible_distribution_release in ["stretch", "trusty", "xenial"])
         else ["apparmor", "lxc-templates"] }}
-
 lxc__version = {{ ansible_local.lxc.version | d("0.0.0") }}
 lxc__root_subuid_start = {{ ansible_local.root_account.subuids[0]["start"]
                             if (ansible_local.root_account.subuids | d())
                             else "100000" }}
-
 lxc__root_subuid_count = {{ ansible_local.root_account.subuids[0]["count"]
                             if (ansible_local.root_account.subuids | d())
                             else "65536" }}
-
 lxc__root_subgid_start = {{ ansible_local.root_account.subgids[0]["start"]
                             if (ansible_local.root_account.subgids | d())
                             else "100000" }}
-
 lxc__root_subgid_count = {{ ansible_local.root_account.subgids[0]["count"]
                             if (ansible_local.root_account.subgids | d())
                             else "65536" }}
-
 lxc__net_deploy_state = {{ "absent"
                            if ((ansible_virtualization_type in ["lxc", "docker", "openvz"] and
                                 ansible_virtualization_role == "guest") or
                                (inventory_hostname in groups["debops_service_lxd"] | d([])) or
                                (ansible_local.lxd.installed | d(False)) | bool)
                            else "present" }}
-
 lxc__net_resolver = {{ "resolvconf"
                        if ((ansible_local.resolvconf.deploy_state | d("absent")) == "present")
                        else ("systemd-resolved"
                              if ((ansible_local.resolved.state | d("disabled")) == "enabled")
                              else "none") }}
-
 lxc__net_bridge = lxcbr0
 lxc__net_address = 10.0.3.1/24
 lxc__net_router = True
@@ -46,10 +39,9 @@ lxc__net_base_domain = {{ ansible_domain }}
 lxc__net_domain = {{ "lxc" + (("." + lxc__net_base_domain)
                               if lxc__net_base_domain | d()
                               else "") }}
-
 lxc__net_use_nft = false
 lxc__net_fqdn = {{ ansible_hostname + "."
-                   + ansible_local.lxc.net_domain | d(lxc__net_domain) }} 
+                   + ansible_local.lxc.net_domain | d(lxc__net_domain) }}
 lxc__net_dnsmasq_conf = /etc/lxc/lxc-net-dnsmasq.conf
 lxc__net_dnsmasq_options = 
 lxc__default_configuration[0].name = lxc
@@ -62,7 +54,6 @@ lxc__default_configuration[0].options[1].value = @all
 lxc__default_configuration[0].options[1].state = {{ "present"
                    if (lxc__version is version("2.1.0", "<"))
                    else "absent" }}
-
 lxc__default_configuration[0].options[2].name = lxc.default_config
 lxc__default_configuration[0].options[2].comment = Default configuration file used for new LXC containers if not
 specified otherwise
@@ -77,12 +68,10 @@ lxc__default_configuration[1].name = unprivileged
 lxc__default_configuration[1].options[0].name = {{ "lxc.network.type"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.type" }}
-
 lxc__default_configuration[1].options[0].value = veth
 lxc__default_configuration[1].options[1].name = {{ "lxc.network.link"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.link" }}
-
 lxc__default_configuration[1].options[1].value = {{ "br0"
                    if ((ansible_local | d() and ansible_local.ifupdown | d() and
                         (ansible_local.ifupdown.configured | d()) | bool) or
@@ -90,24 +79,20 @@ lxc__default_configuration[1].options[1].value = {{ "br0"
                    else (lxc__net_bridge
                          if (lxc__net_deploy_state == "present")
                          else "br0") }}
-
 lxc__default_configuration[1].options[2].name = {{ "lxc.network.flags"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.flags" }}
-
 lxc__default_configuration[1].options[2].value = up
 lxc__default_configuration[1].options[3].name = lxc.id_map_user
 lxc__default_configuration[1].options[3].alias = {{ "lxc.id_map"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.idmap" }}
-
 lxc__default_configuration[1].options[3].value = u 0 {{ lxc__root_subuid_start }} {{ lxc__root_subuid_count }}
 lxc__default_configuration[1].options[3].separator = True
 lxc__default_configuration[1].options[4].name = lxc.id_map_group
 lxc__default_configuration[1].options[4].alias = {{ "lxc.id_map"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.idmap" }}
-
 lxc__default_configuration[1].options[4].value = g 0 {{ lxc__root_subgid_start }} {{ lxc__root_subgid_count }}
 lxc__default_configuration[1].options[5].name = lxc.start.auto
 lxc__default_configuration[1].options[5].value = 0
@@ -118,7 +103,6 @@ lxc__default_configuration[1].options[6].value = {{ ["mknod", "sys_rawio", "sysl
                   + ([] if (lxc__version is version("3.0.0", "<") or
                             lxc__version is version("4.0.0", ">="))
                   else ["sys_admin"]) }}
-
 lxc__default_configuration[1].options[7].name = lxc.cgroup.cpuset.cpus
 lxc__default_configuration[1].options[7].value = 0-{{ ansible_processor_vcpus | int - 1 }}
 lxc__default_configuration[1].options[7].state = comment
@@ -138,17 +122,14 @@ lxc__default_configuration[1].options[11].state = {{ "absent"
                    if (lxc__version is version("3.0.0", "<") or
                        lxc__version is version("4.1.0", ">="))
                    else "present" }}
-
 lxc__default_configuration[2].name = privileged
 lxc__default_configuration[2].options[0].name = {{ "lxc.network.type"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.type" }}
-
 lxc__default_configuration[2].options[0].value = veth
 lxc__default_configuration[2].options[1].name = {{ "lxc.network.link"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.link" }}
-
 lxc__default_configuration[2].options[1].value = {{ "br0"
                    if ((ansible_local | d() and ansible_local.ifupdown | d() and
                         (ansible_local.ifupdown.configured | d()) | bool) or
@@ -156,11 +137,9 @@ lxc__default_configuration[2].options[1].value = {{ "br0"
                    else (lxc__net_bridge
                          if (lxc__net_deploy_state == "present")
                          else "br0") }}
-
 lxc__default_configuration[2].options[2].name = {{ "lxc.network.flags"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.flags" }}
-
 lxc__default_configuration[2].options[2].value = up
 lxc__default_configuration[2].options[3].name = lxc.start.auto
 lxc__default_configuration[2].options[3].value = 0
@@ -171,36 +150,30 @@ lxc__default_configuration[2].options[4].value = {{ ["mknod", "sys_rawio", "sysl
                   + ([] if (lxc__version is version("3.0.0", "<") or
                             lxc__version is version("4.0.0", ">="))
                             else ["sys_admin"]) }}
-
 lxc__default_configuration[3].name = internal-unprivileged
 lxc__default_configuration[3].state = {{ "present" if (lxc__net_deploy_state == "present") else "absent" }}
 lxc__default_configuration[3].options[0].name = {{ "lxc.network.type"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.type" }}
-
 lxc__default_configuration[3].options[0].value = veth
 lxc__default_configuration[3].options[1].name = {{ "lxc.network.link"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.link" }}
-
 lxc__default_configuration[3].options[1].value = {{ lxc__net_bridge }}
 lxc__default_configuration[3].options[2].name = {{ "lxc.network.flags"
                   if (lxc__version is version("2.1.0", "<"))
                   else "lxc.net.0.flags" }}
-
 lxc__default_configuration[3].options[2].value = up
 lxc__default_configuration[3].options[3].name = lxc.id_map_user
 lxc__default_configuration[3].options[3].alias = {{ "lxc.id_map"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.idmap" }}
-
 lxc__default_configuration[3].options[3].value = u 0 {{ lxc__root_subuid_start }} {{ lxc__root_subuid_count }}
 lxc__default_configuration[3].options[3].separator = True
 lxc__default_configuration[3].options[4].name = lxc.id_map_group
 lxc__default_configuration[3].options[4].alias = {{ "lxc.id_map"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.idmap" }}
-
 lxc__default_configuration[3].options[4].value = g 0 {{ lxc__root_subgid_start }} {{ lxc__root_subgid_count }}
 lxc__default_configuration[3].options[5].name = lxc.start.auto
 lxc__default_configuration[3].options[5].value = 0
@@ -211,7 +184,6 @@ lxc__default_configuration[3].options[6].value = {{ ["mknod", "sys_rawio", "sysl
                   + ([] if (lxc__version is version("3.0.0", "<") or
                             lxc__version is version("4.0.0", ">="))
                             else ["sys_admin"]) }}
-
 lxc__default_configuration[3].options[7].name = lxc.cgroup.cpuset.cpus
 lxc__default_configuration[3].options[7].value = 0-{{ ansible_processor_vcpus | int - 1 }}
 lxc__default_configuration[3].options[7].state = comment
@@ -231,19 +203,16 @@ lxc__default_configuration[3].options[11].state = {{ "absent"
                    if (lxc__version is version("3.0.0", "<") or
                        lxc__version is version("4.1.0", ">="))
                    else "present" }}
-
 lxc__default_configuration[4].name = external-internal
 lxc__default_configuration[4].options[0].name = lxc.network.type_net0
 lxc__default_configuration[4].options[0].alias = {{ "lxc.network.type"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.0.type" }}
-
 lxc__default_configuration[4].options[0].value = veth
 lxc__default_configuration[4].options[1].name = lxc.network.link_net0
 lxc__default_configuration[4].options[1].alias = {{ "lxc.network.link"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.0.link" }}
-
 lxc__default_configuration[4].options[1].value = {{ "br0"
                    if ((ansible_local | d() and ansible_local.ifupdown | d() and
                         (ansible_local.ifupdown.configured | d()) | bool) or
@@ -251,31 +220,26 @@ lxc__default_configuration[4].options[1].value = {{ "br0"
                    else (lxc__net_bridge
                          if (lxc__net_deploy_state == "present")
                          else "br0") }}
-
 lxc__default_configuration[4].options[2].name = lxc.network.flags_net0
 lxc__default_configuration[4].options[2].alias = {{ "lxc.network.flags"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.0.flags" }}
-
 lxc__default_configuration[4].options[2].value = up
 lxc__default_configuration[4].options[3].name = lxc.network.type_net1
 lxc__default_configuration[4].options[3].alias = {{ "lxc.network.type"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.1.type" }}
-
 lxc__default_configuration[4].options[3].value = veth
 lxc__default_configuration[4].options[3].separator = True
 lxc__default_configuration[4].options[4].name = lxc.network.link_net1
 lxc__default_configuration[4].options[4].alias = {{ "lxc.network.link"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.1.link" }}
-
 lxc__default_configuration[4].options[4].value = br1
 lxc__default_configuration[4].options[5].name = lxc.network.flags_net1
 lxc__default_configuration[4].options[5].alias = {{ "lxc.network.flags"
                    if (lxc__version is version("2.1.0", "<"))
                    else "lxc.net.1.flags" }}
-
 lxc__default_configuration[4].options[5].value = up
 lxc__default_configuration[4].options[6].name = lxc.start.auto
 lxc__default_configuration[4].options[6].value = 0
@@ -286,12 +250,10 @@ lxc__default_configuration[4].options[7].value = {{ ["mknod", "sys_rawio", "sysl
                   + ([] if (lxc__version is version("3.0.0", "<") or
                             lxc__version is version("4.0.0", ">="))
                   else ["sys_admin"]) }}
-
 lxc__combined_configuration = {{ lxc__default_configuration
                                  + lxc__configuration
                                  + lxc__group_configuration
                                  + lxc__host_configuration }}
-
 lxc__common_default_conf[0].name = static-hwaddr
 lxc__common_default_conf[0].comment = Generate static, predictable MAC addresses for container network
 interfaces before the container is started. Containers will have to be
@@ -311,7 +273,6 @@ lxc__common_combined_conf = {{ lxc__common_default_conf
                                + lxc__common_conf
                                + lxc__common_group_conf
                                + lxc__common_host_conf }}
-
 lxc__default_container_config = /etc/lxc/unprivileged.conf
 lxc__default_container_ssh = True
 lxc__default_container_template = download
@@ -320,7 +281,6 @@ lxc__default_container_release = {{ ansible_local.core.distribution_release | d(
 lxc__default_container_architecture = {{ "amd64"
                                          if (ansible_architecture == "x86_64")
                                          else ansible_architecture }}
-
 lxc__default_container_backing_store = dir
 lxc__python__dependent_packages3[0] = python3-lxc
 lxc__python__dependent_packages2[0] = python-lxc

@@ -1,2 +1,2 @@
-~d0.name = Create Application Database
-~d1.script = "create-db.ps1"
+[0].name = Create Application Database
+[0].script = create-db.ps1

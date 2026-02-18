@@ -1,6 +1,4 @@
-~d0.name = Hello World Sample
-~d1.hosts = all
-~d1.tasks = 
-~d2.name = Hello Message
-~d3.ansible.builtin.debug = 
-~d4.msg = "Hello World!"
+[0].name = Hello World Sample
+[0].hosts = all
+[0].tasks[0].name = Hello Message
+[0].tasks[0]["ansible.builtin.debug"].msg = Hello World!

@@ -1,89 +1,79 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d0.name = Save journald local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/journald.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/journald.fact'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update Ansible facts if they were modified
-~d1.ansible.builtin.meta = 'flush_handlers'
-~d0.name = Import DebOps secret role
-~d1.ansible.builtin.import_role = 
-~d2.name = 'secret'
-~d1.vars = 
-~d2.secret__directories = 
-~d0.name = Move persistent journal to volatile storage if requested
-~d1.ansible.builtin.command = 'journalctl --relinquish-var'
-~d1.register = journald__register_relinquish_var
-~d1.changed_when = journald__register_relinquish_var.changed | bool
-~d1.when = (journald__enabled | bool and journald__version is version("244", ">=") and
-~d0.name = Remove persistent journal storage if requested
-~d1.ansible.builtin.file = 
-~d2.path = '/var/log/journal'
-~d2.state = 'absent'
-~d1.when = journald__enabled | bool and
-~d0.name = Create persistent journal storage directory
-~d1.ansible.builtin.file = 
-~d2.path = '/var/log/journal/{{ ansible_machine_id }}'
-~d2.state = 'directory'
-~d2.group = 'systemd-journal'
-~d2.mode = '2755'
-~d1.register = journald__register_persistent
-~d1.when = journald__enabled | bool and
-~d0.name = Apply extended permissions in the persistent storage
-~d1.ansible.builtin.command = 'systemd-tmpfiles --create --prefix /var/log/journal'
-~d1.changed_when = False
-~d1.when = journald__enabled | bool and
-~d0.name = Create Forward Secure Seal keys when requested
-~d1.ansible.builtin.command = 'journalctl --setup-keys --interval={{ journald__fss_interval }}'
-~d1.register = journald__register_fss
-~d1.changed_when = journald__register_fss.stderr_lines | count > 1
-~d1.when = (journald__enabled | bool and
-~d0.name = Save Forward Secure Seal verification key on Ansible Controller
-~d1.ansible.builtin.copy = # noqa no-handler
-~d2.content = '{{ journald__register_fss.stdout }}'
-~d2.dest = '{{ secret + "/" + journald__fss_verify_key_path }}'
-~d2.mode = '0600'
-~d1.delegate_to = 'localhost'
-~d1.become = False
-~d1.when = journald__register_fss is changed
-~d0.name = Flush journal to persistent storage
-~d1.ansible.builtin.systemd = # noqa no-handler
-~d2.name = 'systemd-journal-flush.service'
-~d2.state = 'restarted'
-~d1.when = journald__enabled | bool and journald__persistent_state != 'absent' and
-~d0.name = Create journald configuration directory
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/systemd/journald.conf.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d1.when = journald__enabled | bool
-~d0.name = Generate journald configuration
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/systemd/journald.conf.d/ansible.conf.j2'
-~d2.dest = '/etc/systemd/journald.conf.d/ansible.conf'
-~d2.mode = '0644'
-~d1.register = journald__register_config
-~d1.when = journald__enabled | bool
-~d0.name = Restart journald if its configuration was modified
-~d1.ansible.builtin.service = # noqa no-handler
-~d2.name = 'systemd-journald'
-~d2.state = 'restarted'
-~d1.when = journald__enabled | bool and journald__register_config is changed
-~d0.name = Verify journal logs using FSS when requested
-~d1.ansible.builtin.command = 'journalctl --verify --verify-key="{{ journald__fss_verify_key }}"'
-~d1.register = journald__register_fss_verify
-~d1.when = journald__enabled | bool and journald__persistent_state != 'absent'
-~d1.changed_when = False
-~d1.tags = [ 'never', 'role::journald:fss:verify' ]
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Make sure that Ansible local facts directory exists
+[2]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[2]["ansible.builtin.file"].state = directory
+[2]["ansible.builtin.file"].mode = 0755
+[3].name = Save journald local facts
+[3]["ansible.builtin.template"].src = etc/ansible/facts.d/journald.fact.j2
+[3]["ansible.builtin.template"].dest = /etc/ansible/facts.d/journald.fact
+[3]["ansible.builtin.template"].mode = 0755
+[3].notify[0] = Refresh host facts
+[3].tags[0] = meta::facts
+[4].name = Update Ansible facts if they were modified
+[4]["ansible.builtin.meta"] = flush_handlers
+[5].name = Import DebOps secret role
+[5]["ansible.builtin.import_role"].name = secret
+[5].vars.secret__directories[0] = {{ (journald__fss_verify_key_path | dirname)
+            if journald__fss_enabled | bool
+            else [] }}
+[6].name = Move persistent journal to volatile storage if requested
+[6]["ansible.builtin.command"] = journalctl --relinquish-var
+[6].register = journald__register_relinquish_var
+[6].changed_when = journald__register_relinquish_var.changed | bool
+[6].when = (journald__enabled | bool and journald__version is version("244", ">=") and journald__persistent_state == 'absent' and (ansible_local.journald.persistent | d(False)) | bool)
+[7].name = Remove persistent journal storage if requested
+[7]["ansible.builtin.file"].path = /var/log/journal
+[7]["ansible.builtin.file"].state = absent
+[7].when = journald__enabled | bool and journald__storage in ['auto', 'none', 'volatile'] and journald__persistent_state == 'absent'
+[8].name = Create persistent journal storage directory
+[8]["ansible.builtin.file"].path = /var/log/journal/{{ ansible_machine_id }}
+[8]["ansible.builtin.file"].state = directory
+[8]["ansible.builtin.file"].group = systemd-journal
+[8]["ansible.builtin.file"].mode = 2755
+[8].register = journald__register_persistent
+[8].when = journald__enabled | bool and journald__storage in ['auto', 'persistent'] and journald__persistent_state != 'absent'
+[9].name = Apply extended permissions in the persistent storage
+[9]["ansible.builtin.command"] = systemd-tmpfiles --create --prefix /var/log/journal
+[9].changed_when = False
+[9].when = journald__enabled | bool and journald__storage in ['auto', 'persistent'] and journald__persistent_state != 'absent'
+[10].name = Create Forward Secure Seal keys when requested
+[10]["ansible.builtin.command"] = journalctl --setup-keys --interval={{ journald__fss_interval }}
+[10].register = journald__register_fss
+[10].changed_when = journald__register_fss.stderr_lines | count > 1
+[10].when = (journald__enabled | bool and journald__storage in ['auto', 'persistent'] and journald__persistent_state != 'absent' and journald__fss_enabled | bool and (not ansible_local.journald.sealed | d()) | bool)
+[11].name = Save Forward Secure Seal verification key on Ansible Controller
+[11]["ansible.builtin.copy"].content = {{ journald__register_fss.stdout }}
+[11]["ansible.builtin.copy"].dest = {{ secret + "/" + journald__fss_verify_key_path }}
+[11]["ansible.builtin.copy"].mode = 0600
+[11].delegate_to = localhost
+[11].become = False
+[11].when = journald__register_fss is changed
+[12].name = Flush journal to persistent storage
+[12]["ansible.builtin.systemd"].name = systemd-journal-flush.service
+[12]["ansible.builtin.systemd"].state = restarted
+[12].when = journald__enabled | bool and journald__persistent_state != 'absent' and journald__register_persistent is changed
+[13].name = Create journald configuration directory
+[13]["ansible.builtin.file"].path = /etc/systemd/journald.conf.d
+[13]["ansible.builtin.file"].state = directory
+[13]["ansible.builtin.file"].mode = 0755
+[13].when = journald__enabled | bool
+[14].name = Generate journald configuration
+[14]["ansible.builtin.template"].src = etc/systemd/journald.conf.d/ansible.conf.j2
+[14]["ansible.builtin.template"].dest = /etc/systemd/journald.conf.d/ansible.conf
+[14]["ansible.builtin.template"].mode = 0644
+[14].register = journald__register_config
+[14].when = journald__enabled | bool
+[15].name = Restart journald if its configuration was modified
+[15]["ansible.builtin.service"].name = systemd-journald
+[15]["ansible.builtin.service"].state = restarted
+[15].when = journald__enabled | bool and journald__register_config is changed
+[16].name = Verify journal logs using FSS when requested
+[16]["ansible.builtin.command"] = journalctl --verify --verify-key="{{ journald__fss_verify_key }}"
+[16].register = journald__register_fss_verify
+[16].when = journald__enabled | bool and journald__persistent_state != 'absent'
+[16].changed_when = False
+[16].tags[0] = never
+[16].tags[1] = role::journald:fss:verify

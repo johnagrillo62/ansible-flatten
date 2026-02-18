@@ -1,15 +1,30 @@
-~d0.networkd__host_units = 
-~d1.name = '30-bond1.network'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = '30-bond1.netdev'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = '30-bond1-dev1.network'
-~d2.raw = |
-~d3.MACAddress=52 = 54:00:e9:64:41
-~d2.state = 'present'
-~d1.name = '30-bond1-dev2.network'
-~d2.raw = |
-~d3.MACAddress=52 = 54:00:e9:64:42
-~d2.state = 'present'
+networkd__host_units[0].name = 30-bond1.network
+networkd__host_units[0].raw = [Match]
+Name=bond1
+
+[Network]
+DHCP=ipv6
+
+networkd__host_units[0].state = present
+networkd__host_units[1].name = 30-bond1.netdev
+networkd__host_units[1].raw = [NetDev]
+Name=bond1
+Kind=bond
+
+networkd__host_units[1].state = present
+networkd__host_units[2].name = 30-bond1-dev1.network
+networkd__host_units[2].raw = [Match]
+MACAddress=52:54:00:e9:64:41
+
+[Network]
+Bond=bond1
+
+networkd__host_units[2].state = present
+networkd__host_units[3].name = 30-bond1-dev2.network
+networkd__host_units[3].raw = [Match]
+MACAddress=52:54:00:e9:64:42
+
+[Network]
+Bond=bond1
+
+networkd__host_units[3].state = present

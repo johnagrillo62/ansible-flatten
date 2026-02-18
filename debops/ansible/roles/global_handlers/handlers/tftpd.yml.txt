@@ -1,4 +1,3 @@
-~d0.name = Restart tftpd-hpa
-~d1.ansible.builtin.service = 
-~d2.name = 'tftpd-hpa'
-~d2.state = 'restarted'
+[0].name = Restart tftpd-hpa
+[0]["ansible.builtin.service"].name = tftpd-hpa
+[0]["ansible.builtin.service"].state = restarted

@@ -2,36 +2,32 @@ pdns__base_packages = {{ ["pdns-server"]
                          + (["pdns-backend-pgsql"]
                             if "gpgsql" in pdns__backends
                             else []) }}
-
 pdns__allow[0] = 0.0.0.0/0
 pdns__allow[1] = ::/0
 pdns__local_address = {{ (ansible_all_ipv4_addresses
                           + ansible_all_ipv6_addresses)
                          | difference(ansible_all_ipv6_addresses | d([])
                                       | ansible.utils.ipaddr("link-local")) }}
-
 pdns__local_port = 53
 pdns__primary = False
 pdns__secondary = False
 pdns__autosecondary = False
 pdns__resolver = {{ ansible_local.resolvconf.nameservers[0]
-                     | d(ansible_dns.nameservers[0]) }} 
+                     | d(ansible_dns.nameservers[0]) }}
 pdns__backends[0] = gpgsql
 pdns__api = {{ True
                if "debops_service_pdns_nginx" in group_names
                else False }}
-
 pdns__api_key = {{ lookup("password", secret + "/pdns/" + ansible_fqdn
                           + "/api_key chars=ascii_letters,digits length=22")
                    if pdns__api
                    else "" }}
-
 pdns__metrics = {{ pdns__api }}
 pdns__http_port = 16836
 pdns__nginx_fqdn = powerdns.{{ ansible_domain }}
 pdns__dnsupdate = True
 pdns__postgresql_delegate_to = {{ ansible_local.postgresql.delegate_to
-                                   | d(ansible_fqdn) }} 
+                                   | d(ansible_fqdn) }}
 pdns__postgresql_server = {{ ansible_local.postgresql.server | d("localhost") }}
 pdns__postgresql_port = {{ ansible_local.postgresql.port | d("5432") }}
 pdns__postgresql_database = pdns
@@ -44,7 +40,6 @@ pdns__postgresql_password = {{ lookup("password", secret + "/postgresql/"
                                       + "length=22")
                                if "gpgsql" in pdns__backends
                                else "" }}
-
 pdns__postgresql_schema = /usr/share/pdns-backend-pgsql/schema/schema.pgsql.sql
 pdns__postgresql_dnssec = True
 pdns__original_configuration[0].name = include-dir
@@ -63,7 +58,6 @@ pdns__original_configuration[3].value = pdns
 pdns__original_configuration[3].state = {{ "present"
                if ansible_local.pdns.version is version("4.3.0", "<")
                else "absent" }}
-
 pdns__original_configuration[4].name = setuid
 pdns__original_configuration[4].comment = Run as an unprivileged user instead of root. Explicitly configuring this
 is no longer necessary since pdns 4.3.0.
@@ -71,12 +65,11 @@ pdns__original_configuration[4].value = pdns
 pdns__original_configuration[4].state = {{ "present"
                if ansible_local.pdns.version is version("4.3.0", "<")
                else "absent" }}
-
 pdns__default_configuration[0].name = local-address
 pdns__default_configuration[0].comment = Local IP addresses to which we bind. Accepts IPv6 addresses since pdns
 4.3.0.
 pdns__default_configuration[0].value = {{ (pdns__local_address if ansible_local.pdns.version is version("4.3.0", ">=")
-                else (pdns__local_address | ansible.utils.ipv4)) | join(",") }} 
+                else (pdns__local_address | ansible.utils.ipv4)) | join(",") }}
 pdns__default_configuration[1].name = local-ipv6
 pdns__default_configuration[1].comment = Local IPv6 addresses to which we bind. Will be deprecated in pdns 4.3.0
 and removed in pdns 4.5.0.
@@ -84,7 +77,6 @@ pdns__default_configuration[1].value = {{ pdns__local_address | ansible.utils.ip
 pdns__default_configuration[1].state = {{ "present"
                if ansible_local.pdns.version is version("4.3.0", "<")
                else "absent" }}
-
 pdns__default_configuration[2].name = local-port
 pdns__default_configuration[2].comment = Local TCP and UDP port to bind to.
 pdns__default_configuration[2].value = {{ pdns__local_port }}
@@ -95,7 +87,6 @@ pdns__default_configuration[3].value = {{ pdns__resolver }}
 pdns__default_configuration[4].name = {{ "primary"
               if ansible_local.pdns.version is version("4.5.0", ">=")
               else "master" }}
-
 pdns__default_configuration[4].comment = Turn on primary operation. Note: the name of this setting was changed
 with the release of pdns 4.5.0.
 pdns__default_configuration[4].value = True
@@ -103,7 +94,6 @@ pdns__default_configuration[4].state = {{ "present" if pdns__primary else "absen
 pdns__default_configuration[5].name = {{ "secondary"
               if ansible_local.pdns.version is version("4.5.0", ">=")
               else "slave" }}
-
 pdns__default_configuration[5].comment = Turn on secondary operation. Note: the name of this setting was changed
 with the release of pdns 4.5.0.
 pdns__default_configuration[5].value = True
@@ -113,7 +103,6 @@ pdns__default_configuration[6].name = {{ "autosecondary"
               else "superslave"
                    if ansible_local.pdns.version is version("4.2.0", ">=")
                    else "supermaster" }}
-
 pdns__default_configuration[6].comment = Turn on autosecondary operation. Note: the name of this setting was
 changed with the release of pdns 4.2.0, and once more with the release of
 pdns 4.5.0.
@@ -175,7 +164,6 @@ pdns__combined_configuration = {{ pdns__original_configuration
                                   + pdns__configuration
                                   + pdns__group_configuration
                                   + pdns__host_configuration }}
-
 pdns__etc_services__dependent_list[0].name = powerdns-http
 pdns__etc_services__dependent_list[0].port = {{ pdns__http_port }}
 pdns__etc_services__dependent_list[0].protocols[0] = tcp

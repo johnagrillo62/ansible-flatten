@@ -24,7 +24,6 @@ slapd__combined_schemas = {{ slapd__default_schemas
                              + slapd__schemas
                              + slapd__group_schemas
                              + slapd__host_schemas }}
-
 slapd__base_packages[0] = slapd
 slapd__base_packages[1] = ldap-utils
 slapd__base_packages[2] = ssl-cert
@@ -39,28 +38,23 @@ slapd__domain = {{ ansible_domain }}
 slapd__base_dn = {{ slapd__domain.split(".")
                     | map("regex_replace", "^(.*)$", "dc=\1")
                     | list }}
-
 slapd__basedn = {{ slapd__base_dn | join(",") }}
 slapd__superuser_config_password = {{ "{CRYPT}" + lookup("password", secret
                                                          + "/slapd/credentials/"
                                                          + slapd__config_rootdn | to_uuid + ".password"
                                                          + " encrypt=sha512_crypt length=32") }}
-
 slapd__config_rootdn = cn=admin,cn=config
 slapd__config_rootpw = {{ lookup("file", secret + "/slapd/credentials/"
                                          + slapd__config_rootdn | to_uuid
                                          + ".password").split()[0] }}
-
 slapd__superuser_data_password = {{ "{CRYPT}" + lookup("password", secret
                                                        + "/slapd/credentials/"
                                                        + slapd__data_rootdn | to_uuid + ".password"
                                                        + " encrypt=sha512_crypt length=32") }}
-
 slapd__data_rootdn = {{ (["cn=admin"] + slapd__base_dn) | join(",") }}
 slapd__data_rootpw = {{ lookup("file", secret + "/slapd/credentials/"
                                        + slapd__data_rootdn | to_uuid
                                        + ".password").split()[0] }}
-
 slapd__uid_gid_min = 2000000000
 slapd__groupid_min = {{ slapd__uid_gid_min }}
 slapd__groupid_max = {{ slapd__uid_gid_min | int + 1999999 }}
@@ -72,7 +66,6 @@ slapd__pki_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
 slapd__pki_realm = {{ slapd__domain
                       if (slapd__domain in ansible_local.pki.known_realms | d([]))
                       else ansible_local.pki.realm | d("domain") }}
-
 slapd__pki_ca = CA.crt
 slapd__pki_crt = default.crt
 slapd__pki_key = default.key
@@ -618,7 +611,6 @@ slapd__combined_tasks = {{ slapd__default_tasks
                            + slapd__tasks
                            + slapd__group_tasks
                            + slapd__host_tasks }}
-
 slapd__snapshot_deploy_state = present
 slapd__snapshot_cron_jobs[0] = daily
 slapd__snapshot_cron_jobs[1] = weekly
@@ -646,7 +638,6 @@ slapd__slapacl_default_tasks[1].attributes.roleOccupant = uid=slapacl-test-ldap-
 slapd__slapacl_default_tasks[1].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "ignore" }}
-
 slapd__slapacl_default_tasks[2].name = Manage LDAP Editor object for ACL tests
 slapd__slapacl_default_tasks[2].dn = uid=slapacl-test-ldap-editor,ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tasks[2].objectClass[0] = inetOrgPerson
@@ -660,7 +651,6 @@ slapd__slapacl_default_tasks[3].attributes.roleOccupant = uid=slapacl-test-ldap-
 slapd__slapacl_default_tasks[3].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "ignore" }}
-
 slapd__slapacl_default_tasks[4].name = Manage UNIX Administrator object for ACL tests
 slapd__slapacl_default_tasks[4].dn = uid=slapacl-test-unix-admin,ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tasks[4].objectClass[0] = inetOrgPerson
@@ -674,7 +664,6 @@ slapd__slapacl_default_tasks[5].attributes.member = uid=slapacl-test-unix-admin,
 slapd__slapacl_default_tasks[5].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "ignore" }}
-
 slapd__slapacl_default_tasks[6].name = Manage Account Administrator object for ACL tests
 slapd__slapacl_default_tasks[6].dn = uid=slapacl-test-account-admin,ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tasks[6].objectClass[0] = inetOrgPerson
@@ -688,7 +677,6 @@ slapd__slapacl_default_tasks[7].attributes.roleOccupant = uid=slapacl-test-accou
 slapd__slapacl_default_tasks[7].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "ignore" }}
-
 slapd__slapacl_default_tasks[8].name = Manage unprivileged user object for ACL tests
 slapd__slapacl_default_tasks[8].dn = uid=slapacl-test-unpriv-user,ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tasks[8].objectClass[0] = inetOrgPerson
@@ -700,7 +688,6 @@ slapd__slapacl_combined_tasks = {{ slapd__slapacl_default_tasks
                                    + slapd__slapacl_tasks
                                    + slapd__slapacl_group_tasks
                                    + slapd__slapacl_host_tasks }}
-
 slapd__slapacl_default_tests[0].name = Deny anonymous access to cn=config
 slapd__slapacl_default_tests[0].dn = cn=config
 slapd__slapacl_default_tests[0].authdn = 
@@ -719,7 +706,6 @@ slapd__slapacl_default_tests[2].dry_run = True
 slapd__slapacl_default_tests[2].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[3].name = Deny direct admin access to cn=config
 slapd__slapacl_default_tests[3].dn = cn=config
 slapd__slapacl_default_tests[3].authdn = uid=slapacl-test-ldap-admin,ou=People,{{ slapd__basedn }}
@@ -728,7 +714,6 @@ slapd__slapacl_default_tests[3].dry_run = True
 slapd__slapacl_default_tests[3].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[4].name = Deny anonymous access to cn=Monitor
 slapd__slapacl_default_tests[4].dn = cn=Monitor
 slapd__slapacl_default_tests[4].authdn = 
@@ -747,7 +732,6 @@ slapd__slapacl_default_tests[6].policy = auth(=xd)
 slapd__slapacl_default_tests[6].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[7].name = Deny password read access by anonymous users
 slapd__slapacl_default_tests[7].dn = uid=slapacl-test-unpriv-user,ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tests[7].authdn = 
@@ -756,7 +740,6 @@ slapd__slapacl_default_tests[7].policy = denied
 slapd__slapacl_default_tests[7].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[8].name = Deny anonymous access to ou=People
 slapd__slapacl_default_tests[8].dn = ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tests[8].authdn = 
@@ -767,7 +750,6 @@ slapd__slapacl_default_tests[8].queries[1].result = children: none(=0)
 slapd__slapacl_default_tests[8].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[9].name = Deny write access to ou=People by unprivileged users
 slapd__slapacl_default_tests[9].dn = ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tests[9].authdn = uid=slapacl-test-unpriv-user,ou=People,{{ slapd__basedn }}
@@ -776,7 +758,6 @@ slapd__slapacl_default_tests[9].policy = denied
 slapd__slapacl_default_tests[9].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_default_tests[10].name = Allow write access to ou=People by administrators
 slapd__slapacl_default_tests[10].dn = ou=People,{{ slapd__basedn }}
 slapd__slapacl_default_tests[10].authdn = uid=slapacl-test-ldap-admin,ou=People,{{ slapd__basedn }}
@@ -785,12 +766,10 @@ slapd__slapacl_default_tests[10].policy = allowed
 slapd__slapacl_default_tests[10].state = {{ "present"
                if (slapd__slapacl_test_objects_state == "present")
                else "init" }}
-
 slapd__slapacl_combined_tests = {{ slapd__slapacl_default_tests
                                    + slapd__slapacl_tests
                                    + slapd__slapacl_group_tests
                                    + slapd__slapacl_host_tests }}
-
 slapd__logrotate__dependent_config[0].filename = slapd
 slapd__logrotate__dependent_config[0].sections[0].logs = {{ slapd__log_dir + "/*.log" }}
 slapd__logrotate__dependent_config[0].sections[0].options = notifempty
@@ -814,7 +793,6 @@ slapd__python__dependent_packages3[0] = {{ []
         if (ansible_distribution_release in
             ["stretch", "trusty", "xenial"])
         else "python3-ldap" }}
-
 slapd__python__dependent_packages2[0] = python-ldap
 slapd__ferm__dependent_rules[0].name = reject_slapd
 slapd__ferm__dependent_rules[0].type = accept
@@ -828,7 +806,6 @@ slapd__ferm__dependent_rules[0].target = REJECT
 slapd__ferm__dependent_rules[0].rule_state = {{ "present"
                     if (slapd__deny + slapd__group_deny + slapd__host_deny)
                     else "absent" }}
-
 slapd__ferm__dependent_rules[1].name = accept_slapd
 slapd__ferm__dependent_rules[1].type = accept
 slapd__ferm__dependent_rules[1].protocol = tcp

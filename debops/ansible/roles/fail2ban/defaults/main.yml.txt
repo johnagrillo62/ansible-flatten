@@ -35,5 +35,4 @@ fail2ban_jails[0].enabled = true
 fail2ban_ssh_jail_name = {{ fail2ban_ssh_jail_distribution_map[ansible_distribution_release]
                             if ansible_distribution_release in fail2ban_ssh_jail_distribution_map.keys()
                             else "sshd" }}
-
 fail2ban_ssh_jail_distribution_map.trusty = ssh

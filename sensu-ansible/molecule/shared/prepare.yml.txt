@@ -1,4 +1,3 @@
-~d0.name = Prepare
-~d1.hosts = all
-~d1.gather_facts = false
-~d1.tasks = []
+[0].name = Prepare
+[0].hosts = all
+[0].gather_facts = false

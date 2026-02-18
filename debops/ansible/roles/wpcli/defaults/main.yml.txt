@@ -34,7 +34,7 @@ wpcli__release_files[7].dest = {{ wpcli__src }}/wp-cli-2.5.0.completion.bash
 wpcli__release_files[7].checksum = sha256:443ca0610ccae8d2d6aceba0ec4aa7929b87ed6cf54f666afed18d663a18a395
 wpcli__release_files[7].version = 2.5.0
 wpcli__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                + "/wpcli" }} 
+                + "/wpcli" }}
 wpcli__binary = /usr/local/bin/wp
 wpcli__bash_completion = /etc/bash_completion.d/wp-completion
 wpcli__secure_wpconfig_enabled = True

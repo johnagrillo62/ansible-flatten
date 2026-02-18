@@ -4,18 +4,18 @@ reprepro__user = reprepro
 reprepro__group = reprepro
 reprepro__additional_groups[0] = {{ ansible_local.system_groups.local_prefix + "sshusers" }}
 reprepro__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                    + "/" + reprepro__user }} 
+                    + "/" + reprepro__user }}
 reprepro__comment = Local APT repositories
 reprepro__data_root = {{ reprepro__home + "/repositories" }}
 reprepro__public_root = {{ (ansible_local.fhs.www | d("/srv/www"))
-                           + "/reprepro" }} 
+                           + "/reprepro" }}
 reprepro__spool_root = {{ (ansible_local.fhs.spool | d("/var/spool"))
-                          + "/reprepro" }} 
+                          + "/reprepro" }}
 reprepro__admin_sshkeys[0] = {{ lookup("pipe", "ssh-add -L | grep ^\\\(sk-\\\)\\\?ssh || cat ~/.ssh/*.pub || cat ~/.ssh/authorized_keys || true") }}
 reprepro__fqdn = {{ ansible_fqdn }}
 reprepro__domain = {{ ansible_domain }}
 reprepro__origin = {{ ansible_local.machine.organization
-                      | d(reprepro__domain.split(".")[0] | capitalize) }} 
+                      | d(reprepro__domain.split(".")[0] | capitalize) }}
 reprepro__mail_from = {{ reprepro__user + "@" + reprepro__fqdn }}
 reprepro__mail_to = {{ "root@" + reprepro__domain }}
 reprepro__max_body_size = 50M
@@ -181,7 +181,6 @@ reprepro__combined_instances = {{ reprepro__default_instances
                                      + reprepro__instances
                                      + reprepro__group_instances
                                      + reprepro__host_instances }}
-
 reprepro__keyring__dependent_gpg_user = {{ reprepro__user }}
 reprepro__keyring__dependent_gpg_keys[0].user = {{ reprepro__user }}
 reprepro__keyring__dependent_gpg_keys[0].group = {{ reprepro__group }}

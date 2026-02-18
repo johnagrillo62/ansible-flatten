@@ -16,7 +16,6 @@
                               + (libvirtd__kvm_packages
                                  if libvirtd__kvm_support | bool
                                  else []))) }}
-
 [2]["ansible.builtin.package"].state = present
 [2]["ansible.builtin.package"].install_recommends = False
 [2].register = libvirtd__register_packages

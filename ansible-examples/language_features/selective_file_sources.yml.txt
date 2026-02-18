@@ -1,8 +1,7 @@
-doc[0][0].hosts = all
-doc[0][0].tasks[0].name = template a config file
-doc[0][0].tasks[0].template = dest=/etc/imaginary_file.conf
-doc[0][0].tasks[0].first_available_file[0] = /srv/whatever/{{ansible_hostname}}.conf
-doc[0][0].tasks[0].first_available_file[1] = /srv/whatever/{{ansible_distribution}}{{ansible_distribution_version}}.conf
-doc[0][0].tasks[0].first_available_file[2] = /srv/whatever/{{ansible_distribution}}.conf
-doc[0][0].tasks[0].first_available_file[3] = /srv/whatever/default
-doc[1] = 
+[0].hosts = all
+[0].tasks[0].name = template a config file
+[0].tasks[0].template = dest=/etc/imaginary_file.conf
+[0].tasks[0].first_available_file[0] = /srv/whatever/{{ansible_hostname}}.conf
+[0].tasks[0].first_available_file[1] = /srv/whatever/{{ansible_distribution}}{{ansible_distribution_version}}.conf
+[0].tasks[0].first_available_file[2] = /srv/whatever/{{ansible_distribution}}.conf
+[0].tasks[0].first_available_file[3] = /srv/whatever/default

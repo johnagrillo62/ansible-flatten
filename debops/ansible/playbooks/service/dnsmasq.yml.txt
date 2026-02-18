@@ -1,4 +1,4 @@
-~d0.name = Manage regular dnsmasq installation
-~d1.import_playbook = 'dnsmasq-plain.yml'
-~d0.name = Manage dnsmasq installation on QbesOS
-~d1.import_playbook = 'dnsmasq-persistent_paths.yml'
+[0].name = Manage regular dnsmasq installation
+[0].import_playbook = dnsmasq-plain.yml
+[1].name = Manage dnsmasq installation on QbesOS
+[1].import_playbook = dnsmasq-persistent_paths.yml

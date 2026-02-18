@@ -10,5 +10,4 @@ keyring__base_packages[3] = {{ "apt-transport-https"
         if (ansible_distribution_release in
             ["stretch", "trusty", "xenial"])
         else [] }}
-
 keyring__dependent_gpg_user = 

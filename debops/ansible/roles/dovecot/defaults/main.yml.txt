@@ -9,7 +9,6 @@ dovecot__version = {{ ansible_local.dovecot.version | d("0.0.0") }}
 dovecot__user_accounts = {{ ["deny", "ldap"]
                             if dovecot__ldap_enabled | bool
                             else ["deny", "system"] }}
-
 dovecot__deny_users[0] = root
 dovecot__mail_location = maildir:~/Maildir
 dovecot__auth_default_realm = {{ ansible_domain }}
@@ -17,11 +16,10 @@ dovecot__vmail_enabled = {{ True if (dovecot__user_accounts |
                                      intersect(["mysql", "pgsql", "sqlite",
                                                 "ldap", "passwdfile"]))
                             else False }}
-
 dovecot__vmail_posix_user = {{ ansible_local.postldap.vmail_posix_user
-                               | d("vmail") }} 
+                               | d("vmail") }}
 dovecot__vmail_posix_group = {{ ansible_local.postldap.vmail_posix_group
-                                | d("vmail") }} 
+                                | d("vmail") }}
 dovecot__vmail_base = /var/vmail
 dovecot__vmail_home = {{ dovecot__vmail_base ~ "/%d/%n" }}
 dovecot__dsync_port = 12345
@@ -29,12 +27,10 @@ dovecot__dsync_host =
 dovecot__dsync_replica = {{ ("tcps" if dovecot__pki | d(True) else "tcp") ~ ":" ~
                             dovecot__dsync_host ~ ":" ~
                             dovecot__dsync_port }}
-
 dovecot__dsync_password_path = {{ "dovecot/credentials/dsync.password" }}
 dovecot__dsync_password = {{ lookup("password", secret + "/"
                                     + dovecot__dsync_password_path
                                     + " length=32") }}
-
 dovecot__sql_connect = 
 dovecot__sql_default_pass_scheme = SSHA512
 dovecot__sql_password_query = SELECT userid AS username, domain, password FROM users WHERE userid = '%n' AND domain = '%d'
@@ -66,13 +62,11 @@ dovecot__dhparam = {{ ansible_local.dhparam.enabled
                       if (ansible_local | d() and ansible_local.dhparam | d() and
                           ansible_local.dhparam.enabled is defined)
                       else False }}
-
 dovecot__dhparam_set = default
 dovecot__ssl_dh_file = {{ ansible_local.dhparam[dovecot__dhparam_set]
                           if (ansible_local | d() and ansible_local.dhparam | d() and
                             ansible_local.dhparam[dovecot__dhparam_set] | d())
                           else "" }}
-
 dovecot__default_configuration[0].section = main
 dovecot__default_configuration[0].title = Main Configuration
 dovecot__default_configuration[0].options[0].name = protocols
@@ -126,7 +120,7 @@ dovecot__default_configuration[1].options[8].options[1].value = blocking=no
 dovecot__default_configuration[1].options[9].name = passdb_sql
 dovecot__default_configuration[1].options[9].option = passdb
 dovecot__default_configuration[1].options[9].state = {{ "present" if (dovecot__user_accounts | d([]) |
-                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }} 
+                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }}
 dovecot__default_configuration[1].options[9].options[0].name = driver
 dovecot__default_configuration[1].options[9].options[0].value = sql
 dovecot__default_configuration[1].options[9].options[1].name = args
@@ -134,7 +128,7 @@ dovecot__default_configuration[1].options[9].options[1].value = /etc/dovecot/dov
 dovecot__default_configuration[1].options[10].name = userdb_sql
 dovecot__default_configuration[1].options[10].option = userdb
 dovecot__default_configuration[1].options[10].state = {{ "present" if (dovecot__user_accounts | d([]) |
-                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }} 
+                     intersect(["mysql", "pgsql", "sqlite"])) else "absent" }}
 dovecot__default_configuration[1].options[10].options[0].name = driver
 dovecot__default_configuration[1].options[10].options[0].value = sql
 dovecot__default_configuration[1].options[10].options[1].name = args
@@ -178,7 +172,7 @@ dovecot__default_configuration[1].options[14].options[3].state = comment
 dovecot__default_configuration[1].options[15].name = passdb_checkpassword
 dovecot__default_configuration[1].options[15].option = passdb
 dovecot__default_configuration[1].options[15].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
-                     dovecot__checkpassword_passdb_command | d()) else "absent" }} 
+                     dovecot__checkpassword_passdb_command | d()) else "absent" }}
 dovecot__default_configuration[1].options[15].options[0].name = driver
 dovecot__default_configuration[1].options[15].options[0].value = checkpassword
 dovecot__default_configuration[1].options[15].options[1].name = args
@@ -186,13 +180,13 @@ dovecot__default_configuration[1].options[15].options[1].value = {{ dovecot__che
 dovecot__default_configuration[1].options[16].name = userdb_checkpassword_pre
 dovecot__default_configuration[1].options[16].option = userdb
 dovecot__default_configuration[1].options[16].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
-                     dovecot__checkpassword_userdb_command | d()) else "absent" }} 
+                     dovecot__checkpassword_userdb_command | d()) else "absent" }}
 dovecot__default_configuration[1].options[16].options[0].name = driver
 dovecot__default_configuration[1].options[16].options[0].value = prefetch
 dovecot__default_configuration[1].options[17].name = userdb_checkpassword_main
 dovecot__default_configuration[1].options[17].option = userdb
 dovecot__default_configuration[1].options[17].state = {{ "present" if ("checkpassword" in dovecot__user_accounts and
-                     dovecot__checkpassword_userdb_command | d()) else "absent" }} 
+                     dovecot__checkpassword_userdb_command | d()) else "absent" }}
 dovecot__default_configuration[1].options[17].options[0].name = driver
 dovecot__default_configuration[1].options[17].options[0].value = checkpassword
 dovecot__default_configuration[1].options[17].options[1].name = args
@@ -321,7 +315,7 @@ dovecot__default_configuration[4].options[10].options[0].options[2].name = user
 dovecot__default_configuration[4].options[10].options[0].options[2].value = postfix
 dovecot__default_configuration[4].options[10].options[1].name = unix_listener auth-userdb
 dovecot__default_configuration[4].options[10].options[1].state = {{ "present" if (dovecot__vmail_enabled | d(False) and
-                         "lmtp" in dovecot__features) else "absent" }} 
+                         "lmtp" in dovecot__features) else "absent" }}
 dovecot__default_configuration[4].options[10].options[1].options[0].name = mode
 dovecot__default_configuration[4].options[10].options[1].options[0].value = 0660
 dovecot__default_configuration[4].options[10].options[1].options[1].name = group
@@ -431,7 +425,6 @@ dovecot__combined_configuration = {{ dovecot__default_configuration
                                       + dovecot__configuration
                                       + dovecot__group_configuration
                                       + dovecot__host_configuration }}
-
 dovecot__mail_plugins[0] = $mail_plugins
 dovecot__mail_plugins[1] = {{ "notify" if "dsync" in dovecot__features else [] }}
 dovecot__mail_plugins[2] = {{ "replication" if "dsync" in dovecot__features else [] }}
@@ -451,7 +444,6 @@ dovecot__ldap_enabled = {{ True
                            if (ansible_local | d() and ansible_local.ldap | d() and
                               (ansible_local.ldap.enabled | d()) | bool)
                            else False }}
-
 dovecot__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 dovecot__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 dovecot__ldap_self_rdn = uid=dovecot
@@ -462,16 +454,15 @@ dovecot__ldap_self_attributes.userPassword = {{ dovecot__ldap_bindpw }}
 dovecot__ldap_self_attributes.host = {{ [ansible_fqdn, ansible_hostname] | unique }}
 dovecot__ldap_self_attributes.description = Account used by the "Dovecot" service to access the LDAP directory
 dovecot__ldap_binddn = {{ ([dovecot__ldap_self_rdn]
-                           + dovecot__ldap_device_dn) | join(",") }} 
+                           + dovecot__ldap_device_dn) | join(",") }}
 dovecot__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                            + dovecot__ldap_binddn | to_uuid + ".password length=32 "
                            + "chars=ascii_letters,digits,!@_$%^&*"))
                           if dovecot__ldap_enabled | bool
                           else "" }}
-
 dovecot__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
 dovecot__ldap_people_dn = {{ [dovecot__ldap_people_rdn]
-                             + dovecot__ldap_base_dn }} 
+                             + dovecot__ldap_base_dn }}
 dovecot__ldap_uri = {{ ansible_local.ldap.uri | d([""]) }}
 dovecot__ldap_start_tls = {{ ansible_local.ldap.start_tls | d(True) | bool }}
 dovecot__ldap_user_filter = (& (objectClass=mailRecipient) (| (uid=%n) (mail=%u) ) (| (authorizedService=all) (authorizedService=mail:access) ) )
@@ -490,20 +481,17 @@ dovecot__ldap__dependent_tasks[0].state = {{ "present"
                 if (dovecot__ldap_enabled | bool and
                     dovecot__ldap_device_dn | d())
                 else "ignore" }}
-
 dovecot__postfix__dependent_maincf[0].name = lmtp_tls_security_level
 dovecot__postfix__dependent_maincf[0].comment = Security level overridden via local Dovecot installation
 
 dovecot__postfix__dependent_maincf[0].value = {{ "none"
                if dovecot__postfix_lmtp_transport.startswith("lmtp:unix:")
                else "may" }}
-
 dovecot__postfix__dependent_maincf[0].state = {{ "present" if "lmtp" in dovecot__features else "ignore" }}
 dovecot__postfix__dependent_maincf[1].name = lmtp_tls_note_starttls_offer
 dovecot__postfix__dependent_maincf[1].value = {{ False
                if dovecot__postfix_lmtp_transport.startswith("lmtp:unix:")
                else True }}
-
 dovecot__postfix__dependent_maincf[1].state = {{ "present" if "lmtp" in dovecot__features else "ignore" }}
 dovecot__postfix__dependent_maincf[2].name = virtual_transport
 dovecot__postfix__dependent_maincf[2].value = {{ dovecot__postfix_lmtp_transport }}
@@ -511,14 +499,12 @@ dovecot__postfix__dependent_maincf[2].state = {{ "present"
                if ("lmtp" in dovecot__features and
                    dovecot__ldap_enabled | bool)
                else "ignore" }}
-
 dovecot__postfix__dependent_maincf[3].name = mailbox_transport
 dovecot__postfix__dependent_maincf[3].value = {{ dovecot__postfix_lmtp_transport }}
 dovecot__postfix__dependent_maincf[3].state = {{ "present"
                if ("lmtp" in dovecot__features and
                    not dovecot__ldap_enabled | bool)
                else "ignore" }}
-
 dovecot__etc_services__dependent_list[0].name = doveadm
 dovecot__etc_services__dependent_list[0].port = {{ dovecot__dsync_port }}
 dovecot__etc_services__dependent_list[0].protocols[0] = tcp
@@ -532,7 +518,6 @@ dovecot__ferm__dependent_rules[0].accept_any = {{ dovecot__accept_any }}
 dovecot__ferm__dependent_rules[0].rule_state = {{ "present"
                     if ("imap" in dovecot__features | d([]))
                     else "absent" }}
-
 dovecot__ferm__dependent_rules[1].name = dovecot_imaps
 dovecot__ferm__dependent_rules[1].type = accept
 dovecot__ferm__dependent_rules[1].by_role = debops.dovecot
@@ -543,7 +528,6 @@ dovecot__ferm__dependent_rules[1].rule_state = {{ "present"
                     if ("imaps" in dovecot__features | d([])
                          and dovecot__pki | d(True))
                     else "absent" }}
-
 dovecot__ferm__dependent_rules[2].name = dovecot_pop3
 dovecot__ferm__dependent_rules[2].type = accept
 dovecot__ferm__dependent_rules[2].by_role = debops.dovecot
@@ -553,7 +537,6 @@ dovecot__ferm__dependent_rules[2].accept_any = {{ dovecot__accept_any }}
 dovecot__ferm__dependent_rules[2].rule_state = {{ "present"
                     if ("pop3" in dovecot__features | d([]))
                     else "absent" }}
-
 dovecot__ferm__dependent_rules[3].name = dovecot_pop3s
 dovecot__ferm__dependent_rules[3].type = accept
 dovecot__ferm__dependent_rules[3].by_role = debops.dovecot
@@ -564,7 +547,6 @@ dovecot__ferm__dependent_rules[3].rule_state = {{ "present"
                     if ("pop3s" in dovecot__features | d([])
                          and dovecot__pki | d(True))
                     else "absent" }}
-
 dovecot__ferm__dependent_rules[4].name = dovecot_doveadm
 dovecot__ferm__dependent_rules[4].type = accept
 dovecot__ferm__dependent_rules[4].by_role = debops.dovecot
@@ -574,7 +556,6 @@ dovecot__ferm__dependent_rules[4].accept_any = {{ dovecot__accept_any }}
 dovecot__ferm__dependent_rules[4].rule_state = {{ "present"
                     if ("dsync" in dovecot__features | d([]))
                     else "absent" }}
-
 dovecot__ferm__dependent_rules[5].name = dovecot_sieve
 dovecot__ferm__dependent_rules[5].type = accept
 dovecot__ferm__dependent_rules[5].by_role = debops.dovecot
@@ -585,4 +566,3 @@ dovecot__ferm__dependent_rules[5].rule_state = {{ "present"
                     if ("sieve" in dovecot__features | d([])
                          and dovecot__pki | d(True))
                     else "absent" }}
-

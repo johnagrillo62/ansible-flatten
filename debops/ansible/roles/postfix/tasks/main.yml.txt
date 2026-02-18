@@ -11,7 +11,6 @@
              + postfix__group_packages
              + postfix__packages)
              | flatten }}
-
 [3]["ansible.builtin.apt"].state = present
 [3]["ansible.builtin.apt"].install_recommends = False
 [3].register = postfix__register_packages
@@ -81,7 +80,7 @@
 [13].notify[0] = Process Postfix Makefile
 [13].notify[1] = Check postfix and reload
 [13].no_log = {{ debops__no_log | d(item.no_log)
-              | d(True if (item.mode | d("0644") == "0600") else False) }} 
+              | d(True if (item.mode | d("0644") == "0600") else False) }}
 [14].name = Generate Postfix lookup tables
 [14]["ansible.builtin.template"].src = etc/postfix/lookup_table.j2
 [14]["ansible.builtin.template"].dest = /etc/postfix/{{ item.name }}
@@ -95,7 +94,6 @@
 [14].no_log = {{ debops__no_log | d(item.no_log)
               | d(True if (item.mode | d("0640") in ["0640", "0600"])
                   else False) }}
-
 [15].name = Save dependent configuration on Ansible Controller
 [15]["ansible.builtin.template"].src = {{ "secret/postfix/dependent_config/inventory_hostname/" + item + ".j2" }}
 [15]["ansible.builtin.template"].dest = {{ secret + "/postfix/dependent_config/" + inventory_hostname + "/" + item }}

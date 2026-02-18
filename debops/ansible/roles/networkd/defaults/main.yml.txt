@@ -1,11 +1,9 @@
 networkd__enabled = {{ True
                        if (ansible_service_mgr == "systemd")
                        else False }}
-
 networkd__unattended_restart = {{ True
                                   if ((ansible_local.networkd.state | d()) == "enabled")
                                   else False }}
-
 networkd__deploy_state = absent
 networkd__version = {{ ansible_local.networkd.version | d("0") }}
 networkd__default_configuration[0].name = SpeedMeter
@@ -21,7 +19,6 @@ networkd__combined_configuration = {{ networkd__default_configuration
                                      + networkd__configuration
                                      + networkd__group_configuration
                                      + networkd__host_configuration }}
-
 networkd__dhcp_default_configuration[0].name = DUIDType
 networkd__dhcp_default_configuration[0].value = vendor
 networkd__dhcp_default_configuration[0].state = init
@@ -32,7 +29,6 @@ networkd__dhcp_combined_configuration = {{ networkd__dhcp_default_configuration
                                           + networkd__dhcp_configuration
                                           + networkd__dhcp_group_configuration
                                           + networkd__dhcp_host_configuration }}
-
 networkd__default_units[0].name = wired-dhcp.network
 networkd__default_units[0].comment = Configure any wired Ethernet interface via DHCP
 networkd__default_units[0].raw = [Match]
@@ -53,4 +49,3 @@ networkd__combined_units = {{ networkd__default_units
                               + networkd__units
                               + networkd__group_units
                               + networkd__host_units }}
-

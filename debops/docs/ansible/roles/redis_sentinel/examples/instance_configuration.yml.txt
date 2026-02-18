@@ -1,9 +1,7 @@
-~d0.redis_sentinel__configuration = 
-~d1.name = 'main'
-~d2.options = 
-~d3.'deny-scripts-reconfig' = False
-~d3.name = 'syslog-ident'
-~d4.value = 'sentinel-main-instance'
-~d4.prefix = ''
-~d3.name = 'client-reconfig-script redis-ha'
-~d4.value = '/tmp/sentinel-reconfig.sh'
+redis_sentinel__configuration[0].name = main
+redis_sentinel__configuration[0].options[0].deny-scripts-reconfig = False
+redis_sentinel__configuration[0].options[1].name = syslog-ident
+redis_sentinel__configuration[0].options[1].value = sentinel-main-instance
+redis_sentinel__configuration[0].options[1].prefix = 
+redis_sentinel__configuration[0].options[2].name = client-reconfig-script redis-ha
+redis_sentinel__configuration[0].options[2].value = /tmp/sentinel-reconfig.sh

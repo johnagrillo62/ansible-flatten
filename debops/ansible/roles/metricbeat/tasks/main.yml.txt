@@ -6,7 +6,7 @@
 [2]["ansible.builtin.import_role"].name = secret
 [3].name = Install Metricbeat packages
 [3]["ansible.builtin.package"].name = {{ q("flattened", (metricbeat__base_packages
-                              + metricbeat__packages)) }} 
+                              + metricbeat__packages)) }}
 [3]["ansible.builtin.package"].state = present
 [3].notify[0] = Refresh host facts
 [3].register = metricbeat__register_packages

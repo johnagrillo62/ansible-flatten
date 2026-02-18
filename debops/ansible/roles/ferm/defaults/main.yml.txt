@@ -4,14 +4,12 @@ ferm__enabled = {{ True
                          "cap_net_admin" in ansible_system_capabilities) or
                         not (ansible_system_capabilities_enforced | d(True)) | bool))
                    else False }}
-
 ferm__flush = {{ ferm__enabled | bool }}
 ferm__iptables_backend_enabled = {{ False
                                     if ansible_distribution_release in
                                     ["stretch", "trusty", "xenial",
                                      "bionic", "focal"]
                                     else True }}
-
 ferm__iptables_backend_type = legacy
 ferm__base_packages[0] = ferm
 ferm__base_packages[1] = patch
@@ -22,7 +20,6 @@ ferm__domains = {{ lookup("flattened",
                           ((["ip"] if (ansible_all_ipv4_addresses | d()) else [])
                            + (["ip6"] if (ansible_all_ipv6_addresses | d()) else [])),
                           wantlist=True) }}
-
 ferm__ansible_controllers_ports[0] = ssh
 ferm__fast_mode = False
 ferm__use_cache = False
@@ -56,17 +53,14 @@ ferm__mdns_state = present
 ferm__fix_dependent_rules = {{ lookup("template",
                                "lookup/ferm__fix_dependent_rules.j2",
                                convert_data=False) | from_yaml }}
-
 ferm__combined_rules = {{ ferm__default_rules
                           + ferm__fix_dependent_rules
                           + ferm__rules
                           + ferm__group_rules
                           + ferm__host_rules }}
-
 ferm__parsed_rules = {{ lookup("template",
                         "lookup/ferm__parsed_rules.j2",
                         convert_data=False) | from_yaml }}
-
 ferm__default_weight_map.pre-hook = 00
 ferm__default_weight_map.function = 00
 ferm__default_weight_map.custom = 00
@@ -88,7 +82,7 @@ ferm__default_weight_map.reject = 900
 ferm__default_weight_map.any-reject = 900
 ferm__default_weight_map.post-hook = 950
 ferm__combined_weight_map = {{ ferm__default_weight_map
-                               | combine(ferm__weight_map) }} 
+                               | combine(ferm__weight_map) }}
 ferm__default_rules[0].name = policy_filter_input
 ferm__default_rules[0].type = default_policy
 ferm__default_rules[0].chain = INPUT
@@ -228,7 +222,6 @@ ferm__default_rules[16].rule_state = {{ "present"
                         (ansible_local | d(True) and ansible_local.avahi | d(True) and
                          ((ansible_local["avahi"] | d({})).enabled | d(True)) | bool))
                     else "absent" }}
-
 ferm__default_rules[17].name = jump_to_legacy_input_rules
 ferm__default_rules[17].type = accept
 ferm__default_rules[17].weight = -10

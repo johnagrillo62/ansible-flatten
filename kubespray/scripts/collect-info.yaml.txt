@@ -1,118 +1,117 @@
-~d0.name = Collect debug info
-~d1.hosts = all
-~d1.become = true
-~d1.gather_facts = false
-~d1.vars = 
-~d2.docker_bin_dir = /usr/bin
-~d2.bin_dir = /usr/local/bin
-~d2.ansible_ssh_pipelining = true
-~d2.etcd_cert_dir = /etc/ssl/etcd/ssl
-~d2.kube_network_plugin = calico
-~d2.archive_dirname = collect-info
-~d2.commands = 
-~d3.name = timedate_info
-~d4.cmd = timedatectl status
-~d3.name = kernel_info
-~d4.cmd = uname -r
-~d3.name = docker_info
-~d4.cmd = "{{ docker_bin_dir }}/docker info"
-~d3.name = ip_info
-~d4.cmd = ip -4 -o a
-~d3.name = route_info
-~d4.cmd = ip ro
-~d3.name = proc_info
-~d4.cmd = ps auxf | grep -v ]$
-~d3.name = systemctl_failed_info
-~d4.cmd = systemctl --state=failed --no-pager
-~d3.name = k8s_info
-~d4.cmd = "{{ bin_dir }}/kubectl get all --all-namespaces -o wide"
-~d3.name = errors_info
-~d4.cmd = journalctl -p err --no-pager
-~d3.name = etcd_info
-~d4.cmd = "{{ bin_dir }}/etcdctl endpoint --cluster health"
-~d3.name = calico_info
-~d4.cmd = "{{ bin_dir }}/calicoctl node status"
-~d4.when = '{{ kube_network_plugin == "calico" }}'
-~d3.name = calico_workload_info
-~d4.cmd = "{{ bin_dir }}/calicoctl get workloadEndpoint -o wide"
-~d4.when = '{{ kube_network_plugin == "calico" }}'
-~d3.name = calico_pool_info
-~d4.cmd = "{{ bin_dir }}/calicoctl get ippool -o wide"
-~d4.when = '{{ kube_network_plugin == "calico" }}'
-~d3.name = kube_describe_all
-~d4.cmd = "{{ bin_dir }}/kubectl describe all --all-namespaces"
-~d3.name = kube_describe_nodes
-~d4.cmd = "{{ bin_dir }}/kubectl describe nodes"
-~d3.name = kubelet_logs
-~d4.cmd = journalctl -u kubelet --no-pager
-~d3.name = coredns_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=coredns -o jsonpath={.items..metadata.name}`;
-~d3.name = apiserver_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath={.items..metadata.name}`;
-~d3.name = controller_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-controller-manager -o jsonpath={.items..metadata.name}`;
-~d3.name = scheduler_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-scheduler -o jsonpath={.items..metadata.name}`;
-~d3.name = proxy_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=kube-proxy -o jsonpath={.items..metadata.name}`;
-~d3.name = nginx_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=kube-nginx -o jsonpath={.items..metadata.name}`;
-~d3.name = flannel_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l app=flannel -o jsonpath={.items..metadata.name}`;
-~d4.when = '{{ kube_network_plugin == "flannel" }}'
-~d3.name = canal_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=canal-node -o jsonpath={.items..metadata.name}`;
-~d4.when = '{{ kube_network_plugin == "canal" }}'
-~d3.name = calico_policy_logs
-~d4.cmd = "for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=calico-kube-controllers -o jsonpath={.items..metadata.name}`;
-~d4.when = '{{ kube_network_plugin in ["canal", "calico"] }}'
-~d3.name = helm_show_releases_history
-~d4.cmd = "for i in `{{ bin_dir }}/helm list -q`; do {{ bin_dir }}/helm history ${i} --col-width=0; done"
-~d4.when = "{{ helm_enabled | default(true) }}"
-~d2.logs = 
-~d1.environment = 
-~d2.ETCDCTL_API = "3"
-~d2.ETCDCTL_CERT = "{{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem"
-~d2.ETCDCTL_KEY = "{{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem"
-~d2.ETCDCTL_CACERT = "{{ etcd_cert_dir }}/ca.pem"
-~d2.ETCDCTL_ENDPOINTS = "{{ etcd_access_addresses }}"
-~d1.tasks = 
-~d2.name = Set etcd_access_addresses
-~d3.set_fact = 
-~d4.etcd_access_addresses = |-
-~d6.https = //{{ item }}:2379{% if not loop.last %},{% endif %}
-~d3.when = "'etcd' in groups"
-~d2.name = Storing commands output
-~d3.shell = "{{ item.cmd }} &> {{ item.name }}"
-~d3.failed_when = false
-~d3.with_items = "{{ commands }}"
-~d3.when = item.when | default(True)
-~d3.no_log = true
-~d2.name = Fetch results
-~d3.fetch = 
-~d4.src = "{{ item.name }}"
-~d4.dest = "/tmp/{{ archive_dirname }}/commands"
-~d3.with_items = "{{ commands }}"
-~d3.when = item.when | default(True)
-~d3.failed_when = false
-~d2.name = Fetch logs
-~d3.fetch = 
-~d4.src = "{{ item }}"
-~d4.dest = "/tmp/{{ archive_dirname }}/logs"
-~d3.with_items = "{{ logs }}"
-~d3.failed_when = false
-~d2.name = Pack results and logs
-~d3.community.general.archive = 
-~d4.path = "/tmp/{{ archive_dirname }}"
-~d4.dest = "{{ dir | default('.') }}/logs.tar.gz"
-~d4.remove = true
-~d4.mode = "0640"
-~d3.delegate_to = localhost
-~d3.connection = local
-~d3.become = false
-~d3.run_once = true
-~d2.name = Clean up collected command outputs
-~d3.file = 
-~d4.path = "{{ item.name }}"
-~d4.state = absent
-~d3.with_items = "{{ commands }}"
+[0].name = Collect debug info
+[0].hosts = all
+[0].become = true
+[0].gather_facts = false
+[0].vars.docker_bin_dir = /usr/bin
+[0].vars.bin_dir = /usr/local/bin
+[0].vars.ansible_ssh_pipelining = true
+[0].vars.etcd_cert_dir = /etc/ssl/etcd/ssl
+[0].vars.kube_network_plugin = calico
+[0].vars.archive_dirname = collect-info
+[0].vars.commands[0].name = timedate_info
+[0].vars.commands[0].cmd = timedatectl status
+[0].vars.commands[1].name = kernel_info
+[0].vars.commands[1].cmd = uname -r
+[0].vars.commands[2].name = docker_info
+[0].vars.commands[2].cmd = {{ docker_bin_dir }}/docker info
+[0].vars.commands[3].name = ip_info
+[0].vars.commands[3].cmd = ip -4 -o a
+[0].vars.commands[4].name = route_info
+[0].vars.commands[4].cmd = ip ro
+[0].vars.commands[5].name = proc_info
+[0].vars.commands[5].cmd = ps auxf | grep -v ]$
+[0].vars.commands[6].name = systemctl_failed_info
+[0].vars.commands[6].cmd = systemctl --state=failed --no-pager
+[0].vars.commands[7].name = k8s_info
+[0].vars.commands[7].cmd = {{ bin_dir }}/kubectl get all --all-namespaces -o wide
+[0].vars.commands[8].name = errors_info
+[0].vars.commands[8].cmd = journalctl -p err --no-pager
+[0].vars.commands[9].name = etcd_info
+[0].vars.commands[9].cmd = {{ bin_dir }}/etcdctl endpoint --cluster health
+[0].vars.commands[10].name = calico_info
+[0].vars.commands[10].cmd = {{ bin_dir }}/calicoctl node status
+[0].vars.commands[10].when = {{ kube_network_plugin == "calico" }}
+[0].vars.commands[11].name = calico_workload_info
+[0].vars.commands[11].cmd = {{ bin_dir }}/calicoctl get workloadEndpoint -o wide
+[0].vars.commands[11].when = {{ kube_network_plugin == "calico" }}
+[0].vars.commands[12].name = calico_pool_info
+[0].vars.commands[12].cmd = {{ bin_dir }}/calicoctl get ippool -o wide
+[0].vars.commands[12].when = {{ kube_network_plugin == "calico" }}
+[0].vars.commands[13].name = kube_describe_all
+[0].vars.commands[13].cmd = {{ bin_dir }}/kubectl describe all --all-namespaces
+[0].vars.commands[14].name = kube_describe_nodes
+[0].vars.commands[14].cmd = {{ bin_dir }}/kubectl describe nodes
+[0].vars.commands[15].name = kubelet_logs
+[0].vars.commands[15].cmd = journalctl -u kubelet --no-pager
+[0].vars.commands[16].name = coredns_logs
+[0].vars.commands[16].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=coredns -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[17].name = apiserver_logs
+[0].vars.commands[17].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[18].name = controller_logs
+[0].vars.commands[18].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-controller-manager -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[19].name = scheduler_logs
+[0].vars.commands[19].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l component=kube-scheduler -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[20].name = proxy_logs
+[0].vars.commands[20].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=kube-proxy -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[21].name = nginx_logs
+[0].vars.commands[21].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=kube-nginx -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system; done
+[0].vars.commands[22].name = flannel_logs
+[0].vars.commands[22].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l app=flannel -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system flannel-container; done
+[0].vars.commands[22].when = {{ kube_network_plugin == "flannel" }}
+[0].vars.commands[23].name = canal_logs
+[0].vars.commands[23].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=canal-node -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system flannel; done
+[0].vars.commands[23].when = {{ kube_network_plugin == "canal" }}
+[0].vars.commands[24].name = calico_policy_logs
+[0].vars.commands[24].cmd = for i in `{{ bin_dir }}/kubectl get pods -n kube-system -l k8s-app=calico-kube-controllers -o jsonpath={.items..metadata.name}`; do {{ bin_dir }}/kubectl logs ${i} -n kube-system ; done
+[0].vars.commands[24].when = {{ kube_network_plugin in ["canal", "calico"] }}
+[0].vars.commands[25].name = helm_show_releases_history
+[0].vars.commands[25].cmd = for i in `{{ bin_dir }}/helm list -q`; do {{ bin_dir }}/helm history ${i} --col-width=0; done
+[0].vars.commands[25].when = {{ helm_enabled | default(true) }}
+[0].vars.logs[0] = /var/log/syslog
+[0].vars.logs[1] = /var/log/daemon.log
+[0].vars.logs[2] = /var/log/kern.log
+[0].vars.logs[3] = /var/log/dpkg.log
+[0].vars.logs[4] = /var/log/apt/history.log
+[0].vars.logs[5] = /var/log/yum.log
+[0].vars.logs[6] = /var/log/messages
+[0].vars.logs[7] = /var/log/dmesg
+[0].environment.ETCDCTL_API = 3
+[0].environment.ETCDCTL_CERT = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+[0].environment.ETCDCTL_KEY = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+[0].environment.ETCDCTL_CACERT = {{ etcd_cert_dir }}/ca.pem
+[0].environment.ETCDCTL_ENDPOINTS = {{ etcd_access_addresses }}
+[0].tasks[0].name = Set etcd_access_addresses
+[0].tasks[0].set_fact.etcd_access_addresses = {% for item in groups['etcd'] -%}
+  https://{{ item }}:2379{% if not loop.last %},{% endif %}
+{%- endfor %}
+[0].tasks[0].when = 'etcd' in groups
+[0].tasks[1].name = Storing commands output
+[0].tasks[1].shell = {{ item.cmd }} &> {{ item.name }}
+[0].tasks[1].failed_when = false
+[0].tasks[1].with_items = {{ commands }}
+[0].tasks[1].when = item.when | default(True)
+[0].tasks[1].no_log = true
+[0].tasks[2].name = Fetch results
+[0].tasks[2].fetch.src = {{ item.name }}
+[0].tasks[2].fetch.dest = /tmp/{{ archive_dirname }}/commands
+[0].tasks[2].with_items = {{ commands }}
+[0].tasks[2].when = item.when | default(True)
+[0].tasks[2].failed_when = false
+[0].tasks[3].name = Fetch logs
+[0].tasks[3].fetch.src = {{ item }}
+[0].tasks[3].fetch.dest = /tmp/{{ archive_dirname }}/logs
+[0].tasks[3].with_items = {{ logs }}
+[0].tasks[3].failed_when = false
+[0].tasks[4].name = Pack results and logs
+[0].tasks[4]["community.general.archive"].path = /tmp/{{ archive_dirname }}
+[0].tasks[4]["community.general.archive"].dest = {{ dir | default('.') }}/logs.tar.gz
+[0].tasks[4]["community.general.archive"].remove = true
+[0].tasks[4]["community.general.archive"].mode = 0640
+[0].tasks[4].delegate_to = localhost
+[0].tasks[4].connection = local
+[0].tasks[4].become = false
+[0].tasks[4].run_once = true
+[0].tasks[5].name = Clean up collected command outputs
+[0].tasks[5].file.path = {{ item.name }}
+[0].tasks[5].file.state = absent
+[0].tasks[5].with_items = {{ commands }}

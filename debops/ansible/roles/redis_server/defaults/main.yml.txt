@@ -11,20 +11,17 @@ redis_server__auth_password = {{ ansible_local.redis_server.password
                                        "/redis/clusters/" + redis_server__domain +
                                        "/password length=" + redis_server__password_length +
                                        " chars=ascii_letters,digits,-_.")) }}
-
 redis_server__password_length = 256
 redis_server__maxmemory_multiplier = 0.5
 redis_server__maxmemory_total = {{ (((ansible_memtotal_mb | int * 1024 * 1024)
-                                     * redis_server__maxmemory_multiplier | float) | round | int) }} 
+                                     * redis_server__maxmemory_multiplier | float) | round | int) }}
 redis_server__maxmemory_instances = {{ redis_server__combined_instances
                                        | debops.debops.parse_kv_items
                                        | selectattr("state", "equalto", "present")
                                        | list | count | int }}
-
 redis_server__maxmemory_shared = {{ (redis_server__maxmemory_total | int
                                      / redis_server__maxmemory_instances | int)
                                     | round | int }}
-
 redis_server__bind[0] = 127.0.0.1
 redis_server__bind[1] = ::1
 redis_server__default_base_options[0].name = masterauth
@@ -38,7 +35,6 @@ redis_server__default_base_options[2].value = False
 redis_server__default_base_options[2].state = {{ "present"
                if (redis_server__version is version_compare("4.0.0", ">="))
                else "ignore" }}
-
 redis_server__default_base_options[3].name = syslog-enabled
 redis_server__default_base_options[3].value = True
 redis_server__default_base_options[4].name = syslog-facility
@@ -85,14 +81,12 @@ redis_server__combined_instances = {{ redis_server__default_instances
                                       + redis_server__instances
                                       + redis_server__group_instances
                                       + redis_server__host_instances }}
-
 redis_server__default_configuration = {{ lookup("template", "lookup/redis_server__filtered_instances.j2")
-                                         | from_yaml }} 
+                                         | from_yaml }}
 redis_server__combined_configuration = {{ redis_server__default_configuration
                                           + redis_server__configuration
                                           + redis_server__group_configuration
                                           + redis_server__host_configuration }}
-
 redis_server__apt_preferences__dependent_list[0].packages[0] = redis
 redis_server__apt_preferences__dependent_list[0].packages[1] = redis-*
 redis_server__apt_preferences__dependent_list[0].backports[0] = stretch

@@ -1,31 +1,26 @@
-~d0.hosts = all
-~d1.vars = 
-~d2.node_apps_location = /usr/local/opt/node
-~d1.pre_tasks = 
-~d2.name = Import Remi GPG key.
-~d3.rpm_key = 
-~d4.key = "https://rpms.remirepo.net/RPM-GPG-KEY-remi2018"
-~d4.state = present
-~d2.name = Install Remi repo.
-~d3.dnf = 
-~d4.name = "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
-~d4.state = present
-~d2.name = Install EPEL repo.
-~d3.dnf = name=epel-release state=present
-~d2.name = Ensure firewalld is stopped (since this is a test server).
-~d3.service = name=firewalld state=stopped
-~d1.roles = 
-~d1.tasks = 
-~d2.name = Ensure Node.js app folder exists.
-~d3.file = "path={{ node_apps_location }} state=directory"
-~d2.name = Copy example Node.js app to server.
-~d3.copy = "src=app dest={{ node_apps_location }}"
-~d2.name = Install app dependencies defined in package.json.
-~d3.npm = "path={{ node_apps_location }}/app"
-~d2.name = Check list of running Node.js apps.
-~d3.command = /usr/local/bin/forever list
-~d3.register = forever_list
-~d3.changed_when = false
-~d2.name = Start example Node.js app.
-~d3.command = "/usr/local/bin/forever start {{ node_apps_location }}/app/app.js"
-~d3.when = "forever_list.stdout.find(node_apps_location + '/app/app.js') == -1"
+[0].hosts = all
+[0].vars.node_apps_location = /usr/local/opt/node
+[0].pre_tasks[0].name = Import Remi GPG key.
+[0].pre_tasks[0].rpm_key.key = https://rpms.remirepo.net/RPM-GPG-KEY-remi2018
+[0].pre_tasks[0].rpm_key.state = present
+[0].pre_tasks[1].name = Install Remi repo.
+[0].pre_tasks[1].dnf.name = https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+[0].pre_tasks[1].dnf.state = present
+[0].pre_tasks[2].name = Install EPEL repo.
+[0].pre_tasks[2].dnf = name=epel-release state=present
+[0].pre_tasks[3].name = Ensure firewalld is stopped (since this is a test server).
+[0].pre_tasks[3].service = name=firewalld state=stopped
+[0].roles[0] = nodejs
+[0].tasks[0].name = Ensure Node.js app folder exists.
+[0].tasks[0].file = path={{ node_apps_location }} state=directory
+[0].tasks[1].name = Copy example Node.js app to server.
+[0].tasks[1].copy = src=app dest={{ node_apps_location }}
+[0].tasks[2].name = Install app dependencies defined in package.json.
+[0].tasks[2].npm = path={{ node_apps_location }}/app
+[0].tasks[3].name = Check list of running Node.js apps.
+[0].tasks[3].command = /usr/local/bin/forever list
+[0].tasks[3].register = forever_list
+[0].tasks[3].changed_when = false
+[0].tasks[4].name = Start example Node.js app.
+[0].tasks[4].command = /usr/local/bin/forever start {{ node_apps_location }}/app/app.js
+[0].tasks[4].when = forever_list.stdout.find(node_apps_location + '/app/app.js') == -1

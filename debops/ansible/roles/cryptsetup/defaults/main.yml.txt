@@ -2,14 +2,13 @@ cryptsetup__base_packages[0] = cryptsetup
 cryptsetup__combined_devices = {{ (cryptsetup__devices | list) +
                                   (cryptsetup__group_devices | list) +
                                   (cryptsetup__host_devices | list) }}
-
 cryptsetup__devices_execution_strategy = parallel
 cryptsetup__secret_path = {{ secret + "/cryptsetup/" + ansible_fqdn }}
 cryptsetup__secret_owner = {{ omit }}
 cryptsetup__secret_group = {{ omit }}
 cryptsetup__secret_mode = u=rwX,g=,o=
 cryptsetup__keyfile_remote_location = {{ (ansible_local.fhs.var | d("/var/local"))
-                                         + "/keyfiles" }} 
+                                         + "/keyfiles" }}
 cryptsetup__keyfile_owner = root
 cryptsetup__keyfile_group = root
 cryptsetup__keyfile_mode = 0600
@@ -18,7 +17,7 @@ cryptsetup__keyfile_gen_type = binary
 cryptsetup__keyfile_gen_command = pwgen --secure 123 1
 cryptsetup__keyfile_shred_command = shred --remove --zero --iterations=42
 cryptsetup__header_backup_remote_location = {{ (ansible_local.fhs.backup | d("/var/backups"))
-                                               + "/luks_header_backup" }} 
+                                               + "/luks_header_backup" }}
 cryptsetup__header_backup = True
 cryptsetup__header_backup_shred_command = shred --remove --zero --iterations=2
 cryptsetup__use_uuid = True

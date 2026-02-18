@@ -10,17 +10,14 @@ opensearch__memory_lock = {{ True
                                     ((ansible_system_capabilities_enforced | d()) | bool and
                                      "cap_ipc_lock" in (ansible_system_capabilities | d([]))))
                                 else False }}
-
 opensearch__jvm_memory_heap_size_multiplier = {{ "0.2"
                                                     if (ansible_memtotal_mb | int / 2 <= 2048)
                                                     else "0.45" }}
-
 opensearch__jvm_memory_min_heap_size = {{ (((ansible_memtotal_mb | int
                                                * opensearch__jvm_memory_heap_size_multiplier | float)
                                                | round | int) | string + "m")
                                              if (ansible_memtotal_mb | int / 2 <= 32768)
                                              else "32600m" }}
-
 opensearch__jvm_memory_max_heap_size = {{ opensearch__jvm_memory_min_heap_size }}
 opensearch__default_configuration[0].name = cluster.name
 opensearch__default_configuration[0].comment = Use a descriptive name for your cluster
@@ -50,7 +47,6 @@ opensearch__combined_configuration = {{ opensearch__default_configuration
                                         + opensearch__configuration
                                         + opensearch__group_configuration
                                         + opensearch__host_configuration }}
-
 opensearch__etc_services__dependent_list[0].name = opensearch-http
 opensearch__etc_services__dependent_list[0].port = {{ opensearch__http_port }}
 opensearch__etc_services__dependent_list[1].name = opensearch-tcp

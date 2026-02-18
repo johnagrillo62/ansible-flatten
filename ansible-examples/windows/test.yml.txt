@@ -1,17 +1,17 @@
-~d0.name = test raw module
-~d1.hosts = all
-~d1.tasks = 
-~d2.name = run ipconfig
-~d3.raw = ipconfig
-~d3.register = ipconfig
-~d2.debug = var=ipconfig
-~d0.name = test stat module
-~d1.hosts = windows
-~d1.tasks = 
-~d2.name = test stat module on file
-~d3.win_stat = path="C:/Windows/win.ini"
-~d3.register = stat_file
-~d2.debug = var=stat_file
-~d2.name = check stat_file result
-~d3.assert = 
-~d5.that = 
+[0].name = test raw module
+[0].hosts = all
+[0].tasks[0].name = run ipconfig
+[0].tasks[0].raw = ipconfig
+[0].tasks[0].register = ipconfig
+[0].tasks[1].debug = var=ipconfig
+[1].name = test stat module
+[1].hosts = windows
+[1].tasks[0].name = test stat module on file
+[1].tasks[0].win_stat = path="C:/Windows/win.ini"
+[1].tasks[0].register = stat_file
+[1].tasks[1].debug = var=stat_file
+[1].tasks[2].name = check stat_file result
+[1].tasks[2].assert.that[0] = stat_file.stat.exists
+[1].tasks[2].assert.that[1] = not stat_file.stat.isdir
+[1].tasks[2].assert.that[2] = stat_file.stat.size > 0
+[1].tasks[2].assert.that[3] = stat_file.stat.md5

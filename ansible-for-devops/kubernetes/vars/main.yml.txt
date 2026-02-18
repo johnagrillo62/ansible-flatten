@@ -1,20 +1,18 @@
-~d0.swap_file_state = absent
-~d0.swap_file_path = /dev/mapper/packer--debian--9--amd64--vg-swap_1
-~d0.docker_packages = 
-~d1.docker-ce=5 = 18.09.0~3-0~debian-stretch
-~d0.docker_install_compose = False
-~d0.kubernetes_version = '1.23'
-~d0.kubernetes_allow_pods_on_master = False
-~d0.kubernetes_pod_network_cidr = '10.244.0.0/16'
-~d0.kubernetes_packages = 
-~d1.name = kubelet=1.23.5-00
-~d2.state = present
-~d1.name = kubectl=1.23.5-00
-~d2.state = present
-~d1.name = kubeadm=1.23.5-00
-~d2.state = present
-~d1.name = kubernetes-cni
-~d2.state = present
-~d0.kubernetes_apiserver_advertise_address = "192.168.56.2"
-~d0.kubernetes_flannel_manifest_file = "~/kube-flannel-vagrant.yml"
-~d0.kubernetes_kubelet_extra_args = '--node-ip={{ ansible_host }}'
+swap_file_state = absent
+swap_file_path = /dev/mapper/packer--debian--9--amd64--vg-swap_1
+docker_packages[0] = docker-ce=5:18.09.0~3-0~debian-stretch
+docker_install_compose = False
+kubernetes_version = 1.23
+kubernetes_allow_pods_on_master = False
+kubernetes_pod_network_cidr = 10.244.0.0/16
+kubernetes_packages[0].name = kubelet=1.23.5-00
+kubernetes_packages[0].state = present
+kubernetes_packages[1].name = kubectl=1.23.5-00
+kubernetes_packages[1].state = present
+kubernetes_packages[2].name = kubeadm=1.23.5-00
+kubernetes_packages[2].state = present
+kubernetes_packages[3].name = kubernetes-cni
+kubernetes_packages[3].state = present
+kubernetes_apiserver_advertise_address = 192.168.56.2
+kubernetes_flannel_manifest_file = ~/kube-flannel-vagrant.yml
+kubernetes_kubelet_extra_args = --node-ip={{ ansible_host }}

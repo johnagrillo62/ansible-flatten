@@ -3,7 +3,6 @@ libvirtd__kvm_support = {{ True
                                (ansible_virtualization_role == "host" or
                                 libvirtd__register_hw_virt.stdout | d()))
                            else False }}
-
 libvirtd__base_packages[0] = libvirt-daemon-system
 libvirtd__base_packages[1] = libvirt-clients
 libvirtd__base_packages[2] = libnss-libvirt
@@ -14,7 +13,6 @@ libvirtd__kvm_packages = {{ ["qemu-system-x86", "qemu-utils"]
                               if ansible_distribution_release in ["stretch",
                                    "buster", "bionic", "focal"]
                               else []) }}
-
 libvirtd__network_packages[0] = dnsmasq-base
 libvirtd__network_packages[1] = bridge-utils
 libvirtd__network_packages[2] = ebtables
@@ -24,16 +22,14 @@ libvirtd__misc_packages[2] = ovmf
 libvirtd__misc_packages[3] = pm-utils
 libvirtd__misc_packages[4] = sysfsutils
 libvirtd__misc_packages[5] = {{ [] if (ansible_distribution_release in ["bullseye"])
-           else "virt-top" }} 
+           else "virt-top" }}
 libvirtd__version = {{ ansible_local.libvirtd.version | d("0.0.0") }}
 libvirtd__deployment_mode = {{ "opennebula"
                                if ("debops_service_opennebula_node" in group_names)
                                else "libvirt" }}
-
 libvirtd__admins = {{ [ansible_user | d(lookup("env", "USER"))]
                       if ansible_user | d(lookup("env", "USER")) != "root"
                       else [] }}
-
 libvirtd__unix_sock_group = {{ ansible_local.libvirtd.unix_sock_group | d("libvirt") }}
 libvirtd__system_uri = qemu:///system
 libvirtd__uri_aliases.localhost = {{ libvirtd__system_uri }}
@@ -628,19 +624,16 @@ libvirtd__default_configuration[1].value = none
 libvirtd__default_configuration[1].state = {{ "present"
                if (libvirtd__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd__default_configuration[2].name = auth_unix_rw
 libvirtd__default_configuration[2].value = none
 libvirtd__default_configuration[2].state = {{ "present"
                if (libvirtd__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd__combined_configuration = {{ libvirtd__original_configuration
                                       + libvirtd__default_configuration
                                       + libvirtd__configuration
                                       + libvirtd__group_configuration
                                       + libvirtd__host_configuration }}
-
 libvirtd__configuration_sections[0].name = network
 libvirtd__configuration_sections[0].title = Network connectivity controls
 libvirtd__configuration_sections[1].name = unix-socket
@@ -687,7 +680,6 @@ libvirtd__ferm_post_hook = {{ True
                               if (ansible_local | d() and ansible_local.ferm | d() and
                                   (ansible_local.ferm.enabled | d()) | bool)
                               else False }}
-
 libvirtd__ferm__dependent_rules[0].type = custom
 libvirtd__ferm__dependent_rules[0].filename = bootpc_checksum
 libvirtd__ferm__dependent_rules[0].weight = 30

@@ -1,16 +1,13 @@
 dropbear_initramfs__base_packages[0] = {{ "dropbear"
         if (ansible_distribution == "Ubuntu" and ansible_distribution_release in ["trusty"])
         else "dropbear-initramfs" }}
-
 dropbear_initramfs__config_path = {{ "/etc/dropbear-initramfs"
                                      if (ansible_distribution_release in ["stretch", "buster", "bullseye"])
                                      else "/etc/dropbear/initramfs" }}
-
 dropbear_initramfs__config_file = {{ dropbear_initramfs__config_path + "/"
                                      + ("config"
                                         if (ansible_distribution_release in ["stretch", "buster", "bullseye"])
                                         else "dropbear.conf") }}
-
 dropbear_initramfs__deploy_state = present
 dropbear_initramfs__network_autoconf = dhcp
 dropbear_initramfs__network_device = {{ ansible_default_ipv6.interface
@@ -18,7 +15,6 @@ dropbear_initramfs__network_device = {{ ansible_default_ipv6.interface
                                         else (ansible_default_ipv4.interface
                                               if ansible_default_ipv4.interface | d()
                                               else "eth0") }}
-
 dropbear_initramfs__network_address = {{ ansible_default_ipv4.address }}
 dropbear_initramfs__network_netmask = {{ ansible_default_ipv4.netmask }}
 dropbear_initramfs__network_gateway = {{ ansible_default_ipv4.gateway }}
@@ -27,11 +23,9 @@ dropbear_initramfs__network_manual = {{
   (dropbear_initramfs__network_gateway | ansible.utils.ipwrap) + ":" +
   dropbear_initramfs__network_netmask + "::" +
   dropbear_initramfs__network_device + ":none" }}
-
 dropbear_initramfs__network = {{ dropbear_initramfs__network_manual
                                  if (dropbear_initramfs__network_autoconf in ["off", "none"])
                                  else dropbear_initramfs__network_autoconf }}
-
 dropbear_initramfs__combined_interfaces = {{ lookup("template", "lookup/dropbear_initramfs__combined_interfaces.j2", convert_data=False) | from_yaml }}
 dropbear_initramfs__update_options = -k all
 dropbear_initramfs__port = 22
@@ -40,7 +34,6 @@ dropbear_initramfs__disable_password_login = {{
   if dropbear_initramfs__combined_authorized_keys | d()
   else False
   }}
-
 dropbear_initramfs__disable_port_forwarding = True
 dropbear_initramfs__idle_timeout = 180
 dropbear_initramfs__max_authentication_attempts = 10
@@ -53,9 +46,7 @@ dropbear_initramfs__dropbear_options = {{
   " -T " + dropbear_initramfs__max_authentication_attempts +
   (" -c " + dropbear_initramfs__forced_command if dropbear_initramfs__forced_command | d() else "")
   }}
-
 dropbear_initramfs__combined_authorized_keys = {{ dropbear_initramfs__authorized_keys +
                                                   dropbear_initramfs__group_authorized_keys +
                                                   dropbear_initramfs__host_authorized_keys }}
-
 dropbear_initramfs__authorized_keys_key_options = {{ omit }}

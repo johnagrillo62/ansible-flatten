@@ -22,4 +22,3 @@ users__combined_accounts = {{ users__groups
                               + users__group_accounts
                               + users__host_accounts
                               + users__dependent_accounts }}
-

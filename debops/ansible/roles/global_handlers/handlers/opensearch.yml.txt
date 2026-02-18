@@ -1,4 +1,3 @@
-~d0.name = Restart opensearch
-~d1.ansible.builtin.service = 
-~d2.name = 'opensearch'
-~d2.state = 'restarted'
+[0].name = Restart opensearch
+[0]["ansible.builtin.service"].name = opensearch
+[0]["ansible.builtin.service"].state = restarted

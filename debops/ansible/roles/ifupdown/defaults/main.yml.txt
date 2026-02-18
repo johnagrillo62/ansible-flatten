@@ -4,7 +4,6 @@ ifupdown__base_packages[0][2] = rsync
 ifupdown__base_packages[1] = {{ []
         if ("/usr/sbin/NetworkManager" in ansible_local.ifupdown.known_managers | d([]))
         else "rdnssd" }}
-
 ifupdown__dynamic_packages = {{ lookup("template", "lookup/ifupdown__dynamic_packages.j2", convert_data=False) | from_yaml }}
 ifupdown__purge_packages[0] = netplan.io
 ifupdown__purge_packages[1] = nplan
@@ -21,7 +20,7 @@ ifupdown__interface_weight_map.tunnel = 80
 ifupdown__interface_weight_map.default = 80
 ifupdown__reconfigure_auto = True
 ifupdown__reconfigure_script_path = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                                       + "/ifupdown-reconfigure-interfaces" }} 
+                                       + "/ifupdown-reconfigure-interfaces" }}
 ifupdown__reconfigure_init_file = /etc/network/interfaces.d/old-interfaces
 ifupdown__default_nat_masquerade = False
 ifupdown__external_interface = {{ ansible_local.ifupdown.external_interface | d(lookup("template", "lookup/ifupdown__external_interface.j2", convert_data=False) | from_yaml) }}
@@ -30,12 +29,11 @@ ifupdown__interface_layout = {{ "dynamic"
                                 if (ansible_virtualization_type in ["lxc", "openvz"] and
                                     ansible_virtualization_role == "guest")
                                 else "bridge" }}
-
 ifupdown__default_interfaces_map.static.external.iface = {{ ansible_default_ipv4.interface | d("") }}
 ifupdown__default_interfaces_map.static.external.inet = static
 ifupdown__default_interfaces_map.static.external.inet6 = auto
 ifupdown__default_interfaces_map.static.external.address = {{ (ansible_default_ipv4.address | d("") + "/" +
-                    ansible_default_ipv4.netmask | d("")) }} 
+                    ansible_default_ipv4.netmask | d("")) }}
 ifupdown__default_interfaces_map.static.external.gateway = {{ ansible_default_ipv4.gateway | d("") }}
 ifupdown__default_interfaces_map.static.external.dns_nameservers = {{ ansible_dns.nameservers | d(False) }}
 ifupdown__default_interfaces_map.static.external.dns_search = {{ ansible_dns.search | d(False) }}
@@ -45,36 +43,30 @@ ifupdown__default_interfaces_map.dynamic.external.inet6 = auto
 ifupdown__default_interfaces_map.dynamic.external.state = {{ "present"
                  if ifupdown__external_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.dynamic.internal.iface = {{ ifupdown__internal_interface }}
 ifupdown__default_interfaces_map.dynamic.internal.inet = dhcp
 ifupdown__default_interfaces_map.dynamic.internal.inet6 = auto
 ifupdown__default_interfaces_map.dynamic.internal.state = {{ "present"
                  if ifupdown__internal_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.dynamic.br0.state = {{ "absent"
                  if (ansible_local.ifupdown.interface_layout | d() == "bridge")
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.dynamic.br1.state = {{ "absent"
                  if (ansible_local.ifupdown.interface_layout | d() == "bridge")
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.bridge.external.iface = {{ ifupdown__external_interface }}
 ifupdown__default_interfaces_map.bridge.external.inet = manual
 ifupdown__default_interfaces_map.bridge.external.inet6 = False
 ifupdown__default_interfaces_map.bridge.external.state = {{ "present"
                  if ifupdown__external_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.bridge.internal.iface = {{ ifupdown__internal_interface }}
 ifupdown__default_interfaces_map.bridge.internal.inet = manual
 ifupdown__default_interfaces_map.bridge.internal.inet6 = False
 ifupdown__default_interfaces_map.bridge.internal.state = {{ "present"
                  if ifupdown__internal_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.bridge.br0.inet = dhcp
 ifupdown__default_interfaces_map.bridge.br0.inet6 = auto
 ifupdown__default_interfaces_map.bridge.br0.type = bridge
@@ -83,7 +75,6 @@ ifupdown__default_interfaces_map.bridge.br0.bridge_ports = {{ ifupdown__external
 ifupdown__default_interfaces_map.bridge.br0.state = {{ "present"
                  if ifupdown__external_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__default_interfaces_map.bridge.br1.inet = dhcp
 ifupdown__default_interfaces_map.bridge.br1.inet6 = auto
 ifupdown__default_interfaces_map.bridge.br1.type = bridge
@@ -92,7 +83,6 @@ ifupdown__default_interfaces_map.bridge.br1.bridge_ports = {{ ifupdown__internal
 ifupdown__default_interfaces_map.bridge.br1.state = {{ "present"
                  if ifupdown__internal_interface in ansible_interfaces
                  else "ignore" }}
-
 ifupdown__ethernet_interfaces = {{ lookup("template", "lookup/ifupdown__ethernet_interfaces.j2", convert_data=False) | from_yaml }}
 ifupdown__default_interfaces = {{ ifupdown__default_interfaces_map[ifupdown__interface_layout] | d({}) }}
 ifupdown__combined_interfaces = {{ lookup("template", "lookup/ifupdown__combined_interfaces.j2", convert_data=False) | from_yaml }}
@@ -105,5 +95,4 @@ ifupdown__kmod__dependent_load = {{ lookup("template", "lookup/ifupdown__kmod__d
 ifupdown__sysctl__dependent_parameters = {{ lookup("template",
                                             "lookup/ifupdown__sysctl__dependent_parameters.j2",
                                             convert_data=False) | from_yaml }}
-
 ifupdown__role_metadata.version = 0.3.0

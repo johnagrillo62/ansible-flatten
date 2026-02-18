@@ -4,7 +4,7 @@
 [1]["ansible.builtin.import_role"].name = global_handlers
 [2].name = Install imapproxy packages
 [2]["ansible.builtin.package"].name = {{ q("flattened", (imapproxy__base_packages
-                              + imapproxy__packages)) }} 
+                              + imapproxy__packages)) }}
 [2]["ansible.builtin.package"].state = present
 [2].register = imapproxy__register_packages
 [2].until = imapproxy__register_packages is succeeded

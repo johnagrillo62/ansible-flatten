@@ -256,7 +256,7 @@ mailman__web_default_configuration[9].name = gravatar_secure_url
 mailman__web_default_configuration[9].value = https://seccdn.libravatar.org/
 mailman__web_default_configuration[10].name = gravatar_default_image
 mailman__web_default_configuration[10].value = {{ ["mm", "identicon", "monsterid", "wavatar", "retro", "robohash", "pagan"]
-               | random(seed=inventory_hostname) }} 
+               | random(seed=inventory_hostname) }}
 mailman__web_default_configuration[11].name = gravatar_default_rating
 mailman__web_default_configuration[11].value = g
 mailman__web_default_configuration[12].name = gravatar_default_secure
@@ -265,7 +265,6 @@ mailman__web_default_configuration[13].name = time_zone
 mailman__web_default_configuration[13].value = {{ "UTC"
                if ((ansible_local.tzdata.timezone | d("Etc/UTC")) == "Etc/UTC")
                else ansible_local.tzdata.timezone }}
-
 mailman__web_default_configuration[14].name = postorius_template_base_url
 mailman__web_default_configuration[14].value = {{ "https://" + mailman__fqdn + "/" }}
 mailman__web_default_configuration[15].name = mailman_archiver_from
@@ -277,7 +276,6 @@ mailman__web_default_configuration[15].value = {{ (["127.0.0.1", "::1"]
                    | difference(ansible_all_ipv6_addresses | d([])
                    | ansible.utils.ipaddr("link-local"))))
                | sort | unique }}
-
 mailman__web_ldap_configuration[0].name = ldap_import
 mailman__web_ldap_configuration[0].comment = Enable LDAP authentication support in Django
 mailman__web_ldap_configuration[0].raw = import ldap
@@ -343,4 +341,3 @@ mailman__web_combined_configuration = {{ mailman__web_original_configuration
                                          + mailman__web_configuration
                                          + mailman__web_group_configuration
                                          + mailman__web_host_configuration }}
-

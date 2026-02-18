@@ -1,8 +1,8 @@
 apt_install__enabled = True
 apt_install__distribution = {{ ansible_local.core.distribution
-                                | d(ansible_lsb.id | d(ansible_distribution)) }} 
+                                | d(ansible_lsb.id | d(ansible_distribution)) }}
 apt_install__distribution_release = {{ ansible_local.core.distribution_release
-                                        | d(ansible_lsb.codename | d(ansible_distribution_release)) }} 
+                                        | d(ansible_lsb.codename | d(ansible_distribution_release)) }}
 apt_install__archive_areas_map.Debian[0] = main
 apt_install__archive_areas_map.Debian[1] = contrib
 apt_install__archive_areas_map.Debian[2] = non-free
@@ -11,7 +11,7 @@ apt_install__archive_areas_map.Ubuntu[1] = restricted
 apt_install__archive_areas_map.Ubuntu[2] = universe
 apt_install__archive_areas_map.Ubuntu[3] = multiverse
 apt_install__archive_areas = {{ ansible_local.apt.components
-                                 | d(apt_install__archive_areas_map[apt_install__distribution] | d([])) }} 
+                                 | d(apt_install__archive_areas_map[apt_install__distribution] | d([])) }}
 apt_install__condition_map.distribution = {{ apt_install__distribution }}
 apt_install__condition_map.release = {{ apt_install__distribution_release }}
 apt_install__condition_map.areas = {{ apt_install__archive_areas }}
@@ -19,11 +19,9 @@ apt_install__state = {{ "present"
                         if (ansible_local | d() and ansible_local.apt_install | d() and
                             (ansible_local.apt_install.configured | d(True)) | bool)
                         else "latest" }}
-
 apt_install__no_kernel_hints = {{ True
                                   if ("needrestart" in apt_install__conditional_whitelist_packages)
                                   else False }}
-
 apt_install__recommends = False
 apt_install__update_cache = True
 apt_install__cache_valid_time = {{ ansible_local.core.cache_valid_time | d(60 * 60 * 24 * 7) }}
@@ -63,14 +61,12 @@ apt_install__conditional_packages[0].state = {{ "present"
                    (ansible_virtualization_role is undefined or
                     ansible_virtualization_role not in ["guest"]))
                else "absent" }}
-
 apt_install__conditional_packages[1].name = uptimed
 apt_install__conditional_packages[1].whitelist = {{ apt_install__conditional_whitelist_packages }}
 apt_install__conditional_packages[1].state = {{ "present"
                if (ansible_virtualization_role is undefined or
                    ansible_virtualization_role not in ["guest"])
                else "absent" }}
-
 apt_install__conditional_packages[2].name = libpam-systemd
 apt_install__conditional_packages[2].whitelist = {{ apt_install__conditional_whitelist_packages }}
 apt_install__conditional_packages[2].state = {{ "present" if (ansible_service_mgr == "systemd") else "absent" }}
@@ -82,14 +78,12 @@ apt_install__conditional_packages[3].state = {{ "present"
                    not (ansible_local | d() and ansible_local.apt_install | d() and
                         ansible_local.apt_install.have_virtual_rng | d(False) | bool))
                else "absent" }}
-
 apt_install__conditional_packages[4].name = gnupg-curl
 apt_install__conditional_packages[4].whitelist = {{ apt_install__conditional_whitelist_packages }}
 apt_install__conditional_packages[4].state = {{ "present"
                if ansible_distribution_release in
                   ["trusty", "xenial"]
                else "absent" }}
-
 apt_install__conditional_packages[5].name = needrestart
 apt_install__conditional_packages[5].whitelist = {{ apt_install__conditional_whitelist_packages }}
 apt_install__conditional_packages[5].state = present
@@ -99,7 +93,6 @@ apt_install__conditional_packages[6].state = {{ "present"
                if (ansible_virtualization_role | d("guest") in ["guest"] and
                    ansible_virtualization_type | d("unknown") in ["VMware"])
                else "absent" }}
-
 apt_install__firmware_packages[0].name = amd64-microcode
 apt_install__firmware_packages[0].distribution[0] = Debian
 apt_install__firmware_packages[0].distribution[1] = Devuan
@@ -107,12 +100,10 @@ apt_install__firmware_packages[0].distribution[2] = Ubuntu
 apt_install__firmware_packages[0].areas = {{ ["main"]
                if ansible_distribution in ["Ubuntu"]
                else ["non-free"] }}
-
 apt_install__firmware_packages[0].state = {{ "present"
                if ansible_virtualization_role == "host" and
                   "AuthenticAMD" in ansible_processor
                else "absent" }}
-
 apt_install__firmware_packages[1].name = firmware-linux-free
 apt_install__firmware_packages[1].distribution[0] = Debian
 apt_install__firmware_packages[1].state = {{ "present" if (ansible_form_factor in ["Rack Mount Chassis"])
@@ -120,7 +111,6 @@ apt_install__firmware_packages[1].state = {{ "present" if (ansible_form_factor i
                               ansible_virtualization_role not in ["guest"])
                          and (ansible_kernel.find("-pve") == "-1")
                          else "absent" }}
-
 apt_install__firmware_packages[2].name = firmware-linux-nonfree
 apt_install__firmware_packages[2].distribution[0] = Debian
 apt_install__firmware_packages[2].areas[0] = non-free
@@ -129,7 +119,6 @@ apt_install__firmware_packages[2].state = {{ "present" if (ansible_form_factor i
                               ansible_virtualization_role not in ["guest"])
                          and (ansible_kernel.find("-pve") == "-1")
                          else "absent" }}
-
 apt_install__firmware_packages[3].name = intel-microcode
 apt_install__firmware_packages[3].distribution[0] = Debian
 apt_install__firmware_packages[3].distribution[1] = Devuan
@@ -137,18 +126,15 @@ apt_install__firmware_packages[3].distribution[2] = Ubuntu
 apt_install__firmware_packages[3].areas = {{ ["main"]
                if ansible_distribution in ["Ubuntu"]
                else ["non-free"] }}
-
 apt_install__firmware_packages[3].state = {{ "present" if ansible_virtualization_role == "host" and
                             "GenuineIntel" in ansible_processor
                          else "absent" }}
-
 apt_install__firmware_packages[4].name = linux-firmware
 apt_install__firmware_packages[4].distribution[0] = Ubuntu
 apt_install__firmware_packages[4].state = {{ "present" if (ansible_form_factor in ["Rack Mount Chassis"])
                              and (ansible_virtualization_role is undefined or
                               ansible_virtualization_role not in ["guest"])
                          else "absent" }}
-
 apt_install__firmware_packages[5].name = linux-firmware-nonfree
 apt_install__firmware_packages[5].distribution[0] = Ubuntu
 apt_install__firmware_packages[5].release[0] = precise
@@ -159,7 +145,6 @@ apt_install__firmware_packages[5].state = {{ "present" if (ansible_form_factor i
                              and (ansible_virtualization_role is undefined or
                               ansible_virtualization_role not in ["guest"])
                          else "absent" }}
-
 apt_install__all_packages[0] = {{ apt_install__base_packages }}
 apt_install__all_packages[1] = {{ apt_install__shell_packages }}
 apt_install__all_packages[2] = {{ apt_install__editor_packages }}

@@ -1,29 +1,38 @@
-~d0.name = Install dependencies (yum)
-~d1.yum = 
-~d2.name = [sudo, make, bzip2]
-~d1.when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", "<")
-~d0.name = Install dependencies (dnf)
-~d1.dnf = 
-~d2.name = [sudo, git, make, bzip2]
-~d1.when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", ">=")
-~d0.name = Install dependencies (apt)
-~d1.apt = 
-~d2.name = 
-~d1.when = ansible_os_family == "Debian"
-~d0.name = Check whether server dir exists
-~d1.stat = 
-~d2.path = "{{ galaxy_root }}/server"
-~d1.register = __molecule_dir_check
-~d0.name = Collect current commit id
-~d1.git = 
-~d2.clone = false
-~d2.depth = "{{ galaxy_clone_depth }}"
-~d2.dest = "{{ galaxy_root }}/server"
-~d2.repo = https://github.com/galaxyproject/galaxy.git
-~d1.changed_when = false
-~d1.become = "{{ __molecule_dir_check.stat.exists }}"
-~d1.become_user = "{{ galaxy_privsep_user }}"
-~d1.register = __molecule_git_check
-~d0.name = Set galaxy_commit_id
-~d1.set_fact = 
-~d2.galaxy_commit_id = "{{ __molecule_git_check.before or ((__galaxy_version == 'dev') | ternary('dev', 'release_' ~ __galaxy_version)) }}"
+[0].name = Install dependencies (yum)
+[0].yum.name[0] = sudo
+[0].yum.name[1] = make
+[0].yum.name[2] = bzip2
+[0].when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", "<")
+[1].name = Install dependencies (dnf)
+[1].dnf.name[0] = sudo
+[1].dnf.name[1] = git
+[1].dnf.name[2] = make
+[1].dnf.name[3] = bzip2
+[1].when = ansible_os_family == "RedHat" and ansible_distribution_major_version is version("8", ">=")
+[2].name = Install dependencies (apt)
+[2].apt.name[0] = sudo
+[2].apt.name[1] = git
+[2].apt.name[2] = make
+[2].apt.name[3] = python3-venv
+[2].apt.name[4] = python3-setuptools
+[2].apt.name[5] = python3-dev
+[2].apt.name[6] = python3-psycopg2
+[2].apt.name[7] = gcc
+[2].apt.name[8] = acl
+[2].apt.name[9] = gnutls-bin
+[2].apt.name[10] = libmagic-dev
+[2].when = ansible_os_family == "Debian"
+[3].name = Check whether server dir exists
+[3].stat.path = {{ galaxy_root }}/server
+[3].register = __molecule_dir_check
+[4].name = Collect current commit id
+[4].git.clone = false
+[4].git.depth = {{ galaxy_clone_depth }}
+[4].git.dest = {{ galaxy_root }}/server
+[4].git.repo = https://github.com/galaxyproject/galaxy.git
+[4].changed_when = false
+[4].become = {{ __molecule_dir_check.stat.exists }}
+[4].become_user = {{ galaxy_privsep_user }}
+[4].register = __molecule_git_check
+[5].name = Set galaxy_commit_id
+[5].set_fact.galaxy_commit_id = {{ __molecule_git_check.before or ((__galaxy_version == 'dev') | ternary('dev', 'release_' ~ __galaxy_version)) }}

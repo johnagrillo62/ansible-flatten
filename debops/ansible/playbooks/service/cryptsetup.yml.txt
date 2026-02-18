@@ -1,4 +1,4 @@
-~d0.name = Manage regular cryptsetup installation
-~d1.import_playbook = 'cryptsetup-plain.yml'
-~d0.name = Manage cryptsetup on QbesOS
-~d1.import_playbook = 'cryptsetup-persistent_paths.yml'
+[0].name = Manage regular cryptsetup installation
+[0].import_playbook = cryptsetup-plain.yml
+[1].name = Manage cryptsetup on QbesOS
+[1].import_playbook = cryptsetup-persistent_paths.yml

@@ -1,15 +1,14 @@
-doc[0][0].hosts = all
-doc[0][0].vars.a_list[0] = a
-doc[0][0].vars.a_list[1] = b
-doc[0][0].vars.a_list[2] = c
-doc[0][0].tasks[0].debug = msg="hello {{ ansible_hostname.upper() }}"
-doc[0][0].tasks[1].shell = echo match
-doc[0][0].tasks[1].when = 2 == 2
-doc[0][0].tasks[2].shell = echo no match
-doc[0][0].tasks[2].when = 2 == 2 + 1
-doc[0][0].tasks[3].debug = msg="{{ ansible_os_family }}"
-doc[0][0].tasks[4].shell = echo {{ item }}
-doc[0][0].tasks[4].with_items = a_list
-doc[0][0].tasks[5].shell = echo 'RedHat'
-doc[0][0].tasks[5].when = ansible_os_family == 'RedHat'
-doc[1] = 
+[0].hosts = all
+[0].vars.a_list[0] = a
+[0].vars.a_list[1] = b
+[0].vars.a_list[2] = c
+[0].tasks[0].debug = msg="hello {{ ansible_hostname.upper() }}"
+[0].tasks[1].shell = echo match
+[0].tasks[1].when = 2 == 2
+[0].tasks[2].shell = echo no match
+[0].tasks[2].when = 2 == 2 + 1
+[0].tasks[3].debug = msg="{{ ansible_os_family }}"
+[0].tasks[4].shell = echo {{ item }}
+[0].tasks[4].with_items = a_list
+[0].tasks[5].shell = echo 'RedHat'
+[0].tasks[5].when = ansible_os_family == 'RedHat'

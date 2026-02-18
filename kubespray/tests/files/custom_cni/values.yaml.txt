@@ -1,5 +1,2 @@
-~d0.hubble = 
-~d1.enabled = false
-~d0.ipam = 
-~d1.operator = 
-~d2.clusterPoolIPv4PodCIDRList = ["{{ kube_pods_subnet }}"]
+hubble.enabled = false
+ipam.operator.clusterPoolIPv4PodCIDRList[0] = {{ kube_pods_subnet }}

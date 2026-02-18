@@ -1,22 +1,94 @@
-~d0.radius_pki_realm = 'domain'
-~d0.radius_cert_file = '/etc/pki/realms/{{ radius_pki_realm }}/default.crt'
-~d0.radius_key_file = '/etc/pki/realms/{{ radius_pki_realm }}/default.key'
-~d0.radius_ca_file = '/etc/pki/realms/{{ radius_pki_realm }}/CA.crt'
-~d0.config_dir = '/srv/eapol-test'
-~d0.radius_access_point_password = '{{ lookup("password", secret
-~d0.radius_test_user_identity = 'a_user@{{ ansible_domain }}'
-~d0.radius_test_user_password = '{{ lookup("password", secret
-~d0.resources__host_files = 
-~d1.content = |
-~d3.git clone --depth 1 --no-single-branch https = //github.com/FreeRADIUS/freeradius-server.git
-~d2.dest = '/usr/local/bin/install-eapol_test'
-~d2.mode = '0755'
-~d1.content = |
-~d2.dest = '{{ config_dir }}/eap-tls.conf'
-~d2.mode = '0644'
-~d1.content = |
-~d2.dest = '{{ config_dir }}/peap-mschapv2.conf'
-~d2.mode = '0644'
-~d1.content = |
-~d2.dest = '{{ config_dir }}/tls.conf'
-~d2.mode = '0644'
+radius_pki_realm = domain
+radius_cert_file = /etc/pki/realms/{{ radius_pki_realm }}/default.crt
+radius_key_file = /etc/pki/realms/{{ radius_pki_realm }}/default.key
+radius_ca_file = /etc/pki/realms/{{ radius_pki_realm }}/CA.crt
+config_dir = /srv/eapol-test
+radius_access_point_password = {{ lookup("password", secret
+                                  + "/radius/known-secret-password") }}
+radius_test_user_identity = a_user@{{ ansible_domain }}
+radius_test_user_password = {{ lookup("password", secret
+                               + "/radius/default-test-password") }}
+resources__host_files[0].content = #!/bin/bash
+
+# Install eapol_test for testing RADIUS EAP connections
+
+sudo apt-get update
+sudo apt-get -yq install git build-essential \
+                         libssl-dev devscripts \
+                         pkg-config libnl-3-dev \
+                         libnl-genl-3-dev
+
+git clone --depth 1 --no-single-branch https://github.com/FreeRADIUS/freeradius-server.git
+
+cd freeradius-server/scripts/ci/
+
+./eapol_test-build.sh
+
+sudo cp ./eapol_test/eapol_test /usr/local/bin/
+
+resources__host_files[0].dest = /usr/local/bin/install-eapol_test
+resources__host_files[0].mode = 0755
+resources__host_files[1].content = #
+#   eapol_test -c eap-tls.conf -s "{{ radius_access_point_password }}" \
+#              -a <radius-ip-server>
+#
+network={
+    key_mgmt=WPA-EAP
+    eap=TTLS
+    identity="{{ radius_test_user_identity }}"
+    anonymous_identity="anonymous@{{ ansible_domain }}"
+
+    # Uncomment to validate the server's certificate by checking
+    # it was signed by this CA.
+    ca_cert="{{ radius_ca_file }}"
+    password="{{ radius_test_user_password }}"
+    phase2="auth=PAP"
+}
+
+resources__host_files[1].dest = {{ config_dir }}/eap-tls.conf
+resources__host_files[1].mode = 0644
+resources__host_files[2].content = #
+#   eapol_test -c peap-mschapv2.conf -s "{{ radius_access_point_password }}" \
+#              -a <radius-ip-address>
+#
+network={
+    key_mgmt=WPA-EAP
+    eap=PEAP
+    identity="{{ radius_test_user_identity }}"
+    anonymous_identity="anonymous@{{ ansible_domain }}"
+
+    # Uncomment to validate the server's certificate by checking
+    # it was signed by this CA.
+    ca_cert="{{ radius_ca_file }}"
+    password="{{ radius_test_user_password }}"
+    phase2="auth=MSCHAPV2 mschapv2_retry=0"
+    phase1="peapver=0"
+}
+
+resources__host_files[2].dest = {{ config_dir }}/peap-mschapv2.conf
+resources__host_files[2].mode = 0644
+resources__host_files[3].content = #
+#   eapol_test -c tls.conf -s "{{ radius_access_point_password }}" \
+#              -a <radius-ip-address>
+#
+network={
+    key_mgmt=WPA-EAP
+    eap=TLS
+    anonymous_identity="anonymous@{{ ansible_domain }}"
+
+    # Uncomment to validate the server's certificate by checking
+    # it was signed by this CA.
+    ca_cert="{{ radius_ca_file }}"
+
+    # supplicant's public cert
+    client_cert="{{ radius_cert_file }}"
+
+    # supplicant's private key
+    private_key="{{ radius_key_file }}"
+
+    # password to decrypt private key
+    private_key_passwd=""
+}
+
+resources__host_files[3].dest = {{ config_dir }}/tls.conf
+resources__host_files[3].mode = 0644

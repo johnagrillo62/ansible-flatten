@@ -1,2 +1,2 @@
-~d0.name = Apply common configuration on hosts
-~d1.import_playbook = 'layer/common.yml'
+[0].name = Apply common configuration on hosts
+[0].import_playbook = layer/common.yml

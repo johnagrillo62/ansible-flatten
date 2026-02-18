@@ -12,12 +12,9 @@ resources__host_templates[0] = {{ resources__src + "templates/by-host/" + invent
 resources__combined_file_capabilities = {{ resources__file_capabilities
                                            + resources__group_file_capabilities
                                            + resources__host_file_capabilities }}
-
 resources__combined_commands = {{ resources__commands
                                   + resources__group_commands
                                   + resources__host_commands }}
-
 resources__combined_replacements = {{ resources__replacements
                                       + resources__group_replacements
                                       + resources__host_replacements }}
-

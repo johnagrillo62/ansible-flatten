@@ -34,7 +34,6 @@ rspamd__dkim_keygen_combined_configuration = {{
    + rspamd__dkim_keygen_configuration
    + rspamd__dkim_keygen_group_configuration
    + rspamd__dkim_keygen_host_configuration }}
-
 rspamd__dkim_update_method = email
 rspamd__dkim_update_default_configuration[0].name = method
 rspamd__dkim_update_default_configuration[0].value = {{ rspamd__dkim_update_method }}
@@ -42,7 +41,7 @@ rspamd__dkim_update_default_configuration[1].name = log_file
 rspamd__dkim_update_default_configuration[1].value = {{ rspamd__dkim_log_dir + "/rspamd-dkim-update.log" }}
 rspamd__dkim_update_default_configuration[2].name = email_to
 rspamd__dkim_update_default_configuration[2].value = {{ ansible_local.core.admin_public_email[0]
-               | d("root@" + ansible_domain) }} 
+               | d("root@" + ansible_domain) }}
 rspamd__dkim_update_default_configuration[3].name = email_from
 rspamd__dkim_update_default_configuration[3].value = {{ "noreply@" + ansible_domain }}
 rspamd__dkim_update_default_configuration[4].name = email_host
@@ -53,10 +52,10 @@ rspamd__dkim_update_default_configuration[6].name = email_subject
 rspamd__dkim_update_default_configuration[6].value = Rspamd DKIM DNS updates
 rspamd__dkim_update_default_configuration[7].name = nsupdate_keyfile
 rspamd__dkim_update_default_configuration[7].value = {{ "" if rspamd__dkim_update_method in ["email", "nsupdate"]
-               else "/etc/rspamd/dkim_dns_key" }} 
+               else "/etc/rspamd/dkim_dns_key" }}
 rspamd__dkim_update_default_configuration[8].name = nsupdate_gsstsig_princ
 rspamd__dkim_update_default_configuration[8].value = {{ "" if rspamd__dkim_update_method != "nsupdate_gsstsig"
-               else "rspamd@" + ansible_domain | upper }} 
+               else "rspamd@" + ansible_domain | upper }}
 rspamd__dkim_update_default_configuration[9].name = nsupdate_ttl
 rspamd__dkim_update_default_configuration[9].value = 3600
 rspamd__dkim_update_default_configuration[10].name = nsupdate_server
@@ -66,7 +65,6 @@ rspamd__dkim_update_combined_configuration = {{
    + rspamd__dkim_update_configuration
    + rspamd__dkim_update_group_configuration
    + rspamd__dkim_update_host_configuration }}
-
 rspamd__redis_host = {{ ansible_local.redis_server.host | d("127.0.0.1") }}
 rspamd__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
 rspamd__redis_password = {{ ansible_local.redis_server.password | d("") }}
@@ -134,12 +132,10 @@ rspamd__combined_local_configuration = {{ rspamd__default_local_configuration
                                            + rspamd__local_configuration
                                            + rspamd__group_local_configuration
                                            + rspamd__host_local_configuration }}
-
 rspamd__combined_override_configuration = {{ rspamd__default_override_configuration
                                               + rspamd__override_configuration
                                               + rspamd__group_override_configuration
                                               + rspamd__host_override_configuration }}
-
 rspamd__controller_password = {{ lookup("password",
                                         secret
                                          + "/credentials/"
@@ -147,7 +143,6 @@ rspamd__controller_password = {{ lookup("password",
                                          + "/rspamd/controller_password"
                                          + " chars=ascii_letters,digits"
                                          + " length=32") }}
-
 rspamd__controller_password_salt = {{ (lookup("password",
                                               secret
                                                + "/credentials/"
@@ -158,11 +153,9 @@ rspamd__controller_password_salt = {{ (lookup("password",
                                       + ("Oeu"
                                           | shuffle(seed=inventory_hostname)
                                           | join)[1] }}
-
 rspamd__controller_password_hash = {{ rspamd__controller_password
                                       | password_hash("bcrypt",
                                                       salt=rspamd__controller_password_salt) }}
-
 rspamd__nginx_enabled = False
 rspamd__nginx_fqdns[0] = rspamd.{{ ansible_domain }}
 rspamd__nginx_fqdns[1] = {{ ansible_hostname }}-rspamd.{{ ansible_domain }}
@@ -243,7 +236,6 @@ rspamd__postfix__dependent_maincf[2].comment = Added by the rspamd role
 rspamd__postfix__dependent_maincf[2].value = {{ "i {auth_type} {auth_authen} {auth_author} "
                + "{client_addr} {client_name} {mail_addr} "
                + "{mail_host} {mail_mailer}" }}
-
 rspamd__postfix__dependent_maincf[2].state = present
 rspamd__postfix__dependent_maincf[3].name = milter_default_action
 rspamd__postfix__dependent_maincf[3].comment = Added by the rspamd role

@@ -22,7 +22,6 @@ python__v2 = {{ ansible_local.python.installed2
                             (python__register_raw_release.stdout | d("")).strip() in
                             ["stretch", "trusty", "xenial"]))
                       else False) }}
-
 python__core_packages2[0] = python
 python__core_packages2[1] = python-apt-common
 python__base_packages2[0] = python-httplib2
@@ -31,7 +30,6 @@ python__base_packages2[1] = {{ "python-pip"
             ["stretch", "buster",
              "trusty", "xenial", "bionic"])
            else [] }}
-
 python__base_packages2[2] = python-setuptools
 python__base_packages2[3] = python-pycurl
 python__base_packages2[4] = python-virtualenv
@@ -40,7 +38,6 @@ python__core_packages = {{ (python__core_packages3
                             if (python__v3 | bool) else [])
                            + (python__core_packages2
                               if (python__v2 | bool) else []) }}
-
 python__combined_packages = {{ python__core_packages
                                + ((python__base_packages3
                                    + python__packages3
@@ -54,11 +51,9 @@ python__combined_packages = {{ python__core_packages
                                    + python__host_packages2
                                    + python__dependent_packages2)
                                   if python__v2 | bool else []) }}
-
 python__raw_purge_v2 = {{ False
                           if (python__v2 | bool)
                           else True }}
-
 python__raw_purge_packages2[0] = python
 python__raw_purge_packages2[1] = python2.7
 python__raw_purge_packages2[2] = libpython2.7-minimal

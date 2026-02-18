@@ -1,4 +1,3 @@
-~d0.name = Reload tinc
-~d1.ansible.builtin.service = 
-~d2.name = 'tinc'
-~d2.state = 'reloaded'
+[0].name = Reload tinc
+[0]["ansible.builtin.service"].name = tinc
+[0]["ansible.builtin.service"].state = reloaded

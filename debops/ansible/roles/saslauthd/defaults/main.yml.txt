@@ -17,18 +17,15 @@ saslauthd__default_instances[0].state = {{ "present"
                     (ansible_local.postfix.installed | d()) | bool) or
                    ("debops_service_postfix" in group_names))
                else "ignore" }}
-
 saslauthd__combined_instances = {{ q("flattened", (saslauthd__default_instances
                                                   + saslauthd__instances
                                                   + saslauthd__group_instances
                                                   + saslauthd__host_instances
                                                   + saslauthd__dependent_instances)) }}
-
 saslauthd__ldap_enabled = {{ ansible_local.ldap.enabled
                              if (ansible_local | d() and ansible_local.ldap | d() and
                                  ansible_local.ldap.enabled is defined)
                              else False }}
-
 saslauthd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 saslauthd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 saslauthd__ldap_self_rdn = uid=saslauthd
@@ -43,7 +40,6 @@ saslauthd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                     + saslauthd__ldap_binddn | to_uuid + ".password length=32"))
                             if saslauthd__ldap_enabled | bool
                             else "" }}
-
 saslauthd__ldap_default_profiles[0].name = global
 saslauthd__ldap_default_profiles[0].state = {{ "present" if saslauthd__ldap_device_dn | d() else "ignore" }}
 saslauthd__ldap_default_profiles[0].options[0].name = ldap_servers
@@ -71,7 +67,6 @@ saslauthd__ldap_default_profiles[1].state = {{ "present"
                      (ansible_local.slapd.installed | d()) | bool) or
                     ("debops_service_slapd" in group_names)))
                else "ignore" }}
-
 saslauthd__ldap_default_profiles[1].options[0].name = ldap_servers
 saslauthd__ldap_default_profiles[1].options[0].value = {{ ansible_local.ldap.uri | d("") }}
 saslauthd__ldap_default_profiles[1].options[1].name = ldap_bind_dn
@@ -97,7 +92,6 @@ saslauthd__ldap_default_profiles[2].state = {{ "present"
                      (ansible_local.postfix.installed | d()) | bool) or
                     ("debops_service_postfix" in group_names)))
                else "ignore" }}
-
 saslauthd__ldap_default_profiles[2].options[0].name = ldap_servers
 saslauthd__ldap_default_profiles[2].options[0].value = {{ ansible_local.ldap.uri | d("") }}
 saslauthd__ldap_default_profiles[2].options[1].name = ldap_bind_dn
@@ -120,7 +114,6 @@ saslauthd__ldap_combined_profiles = {{ saslauthd__ldap_default_profiles
                                        + saslauthd__ldap_profiles
                                        + saslauthd__ldap_group_profiles
                                        + saslauthd__ldap_host_profiles }}
-
 saslauthd__ldap__dependent_tasks[0].name = Create saslauthd account for {{ saslauthd__ldap_device_dn | join(",") }}
 saslauthd__ldap__dependent_tasks[0].dn = {{ saslauthd__ldap_binddn }}
 saslauthd__ldap__dependent_tasks[0].objectClass = {{ saslauthd__ldap_self_object_classes }}

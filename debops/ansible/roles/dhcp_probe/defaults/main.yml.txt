@@ -1,12 +1,12 @@
 dhcp_probe__base_packages[0] = dhcp-probe
 dhcp_probe__cache = {{ (ansible_local.fhs.cache | d("/var/cache"))
-                       + "/dhcp-probe" }} 
+                       + "/dhcp-probe" }}
 dhcp_probe__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                     + "/dhcp-probe" }} 
+                     + "/dhcp-probe" }}
 dhcp_probe__default_interfaces = {{ lookup("template", "lookup/dhcp_probe__default_interfaces.j2",
-                                    convert_data=False) | from_yaml }} 
+                                    convert_data=False) | from_yaml }}
 dhcp_probe__combined_interfaces = {{ dhcp_probe__default_interfaces
-                                     + dhcp_probe__interfaces }} 
+                                     + dhcp_probe__interfaces }}
 dhcp_probe__alert_program = {{ dhcp_probe__lib + "/dhcp_probe_notify2" }}
 dhcp_probe__options = 
 dhcp_probe__domain = {{ ansible_domain }}

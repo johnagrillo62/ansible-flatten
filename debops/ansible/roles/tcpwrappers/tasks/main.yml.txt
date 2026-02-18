@@ -1,87 +1,97 @@
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Install required packages
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (tcpwrappers__base_packages
-~d2.state = 'present'
-~d1.register = tcpwrappers__register_packages
-~d1.until = tcpwrappers__register_packages is succeeded
-~d1.when = tcpwrappers__enabled | bool
-~d0.name = Make sure /etc/hosts.allow.d directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/hosts.allow.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Create /etc/hosts.allow.d/00_ansible
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/hosts.allow.d/00_ansible.j2'
-~d2.dest = '/etc/hosts.allow.d/00_ansible'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d0.name = Add/remove diversion of /etc/hosts.allow
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '/etc/hosts.allow'
-~d2.divert = '{{ tcpwrappers__divert_hosts_allow }}'
-~d2.state = '{{ "present" if tcpwrappers__enabled | bool else "absent" }}'
-~d2.delete = True
-~d1.when = not ansible_check_mode | bool
-~d0.name = Allow access from Ansible Controller to sshd
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/hosts.allow.d/ansible_controller.j2'
-~d2.dest = '/etc/hosts.allow.d/10_ansible_controller'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d0.name = Remove hosts.allow entries if requested
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/hosts.allow.d/{{ item.weight | default("50") }}_{{ item.filename
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", tcpwrappers__allow
-~d1.when = ((item.daemon | d() or item.daemons | d()) and
-~d0.name = Generate hosts.allow entries
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/hosts.allow.d/allow.j2'
-~d2.dest = '/etc/hosts.allow.d/{{ item.weight | default("50") }}_{{ item.filename
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", tcpwrappers__allow
-~d1.when = ((item.daemon | d() or item.daemons | d()) and
-~d0.name = Assemble hosts.allow.d
-~d1.ansible.builtin.assemble = 
-~d2.src = '/etc/hosts.allow.d'
-~d2.dest = '/etc/hosts.allow'
-~d2.backup = False
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.when = tcpwrappers__enabled | bool
-~d0.name = Make sure that Ansible local fact directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Save tcpwrappers local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/tcpwrappers.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/tcpwrappers.fact'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Configure access in /etc/hosts.deny
-~d1.ansible.builtin.lineinfile = 
-~d2.dest = '/etc/hosts.deny'
-~d2.regexp = '^ALL: ALL'
-~d2.line = 'ALL: ALL'
-~d2.create = True
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d2.state = '{{ "present"
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Install required packages
+[1]["ansible.builtin.package"].name = {{ q("flattened", (tcpwrappers__base_packages
+                              + tcpwrappers__packages)) }}
+[1]["ansible.builtin.package"].state = present
+[1].register = tcpwrappers__register_packages
+[1].until = tcpwrappers__register_packages is succeeded
+[1].when = tcpwrappers__enabled | bool
+[2].name = Make sure /etc/hosts.allow.d directory exists
+[2]["ansible.builtin.file"].path = /etc/hosts.allow.d
+[2]["ansible.builtin.file"].state = directory
+[2]["ansible.builtin.file"].owner = root
+[2]["ansible.builtin.file"].group = root
+[2]["ansible.builtin.file"].mode = 0755
+[3].name = Create /etc/hosts.allow.d/00_ansible
+[3]["ansible.builtin.template"].src = etc/hosts.allow.d/00_ansible.j2
+[3]["ansible.builtin.template"].dest = /etc/hosts.allow.d/00_ansible
+[3]["ansible.builtin.template"].owner = root
+[3]["ansible.builtin.template"].group = root
+[3]["ansible.builtin.template"].mode = 0644
+[4].name = Add/remove diversion of /etc/hosts.allow
+[4]["debops.debops.dpkg_divert"].path = /etc/hosts.allow
+[4]["debops.debops.dpkg_divert"].divert = {{ tcpwrappers__divert_hosts_allow }}
+[4]["debops.debops.dpkg_divert"].state = {{ "present" if tcpwrappers__enabled | bool else "absent" }}
+[4]["debops.debops.dpkg_divert"].delete = True
+[4].when = not ansible_check_mode | bool
+[5].name = Allow access from Ansible Controller to sshd
+[5]["ansible.builtin.template"].src = etc/hosts.allow.d/ansible_controller.j2
+[5]["ansible.builtin.template"].dest = /etc/hosts.allow.d/10_ansible_controller
+[5]["ansible.builtin.template"].owner = root
+[5]["ansible.builtin.template"].group = root
+[5]["ansible.builtin.template"].mode = 0644
+[6].name = Remove hosts.allow entries if requested
+[6]["ansible.builtin.file"].path = /etc/hosts.allow.d/{{ item.weight | default("50") }}_{{ item.filename
+            | d((item.daemon if item.daemon is string else item.daemon[0]) + "_allow") }}
+[6]["ansible.builtin.file"].state = absent
+[6].loop = {{ q("flattened", tcpwrappers__allow
+                           + tcpwrappers__group_allow
+                           + tcpwrappers__host_allow
+                           + tcpwrappers__dependent_allow
+                           + tcpwrappers__localhost_allow
+                           + tcpwrappers_allow | d([])
+                           + tcpwrappers_group_allow | d([])
+                           + tcpwrappers_host_allow | d([])
+                           + tcpwrappers_dependent_allow | d([])) }}
+[6].when = ((item.daemon | d() or item.daemons | d()) and item.state | d() and item.state == 'absent')
+[7].name = Generate hosts.allow entries
+[7]["ansible.builtin.template"].src = etc/hosts.allow.d/allow.j2
+[7]["ansible.builtin.template"].dest = /etc/hosts.allow.d/{{ item.weight | default("50") }}_{{ item.filename
+            | d((item.daemon if item.daemon is string else item.daemon[0]) + "_allow") }}
+[7]["ansible.builtin.template"].owner = root
+[7]["ansible.builtin.template"].group = root
+[7]["ansible.builtin.template"].mode = 0644
+[7].loop = {{ q("flattened", tcpwrappers__allow
+                           + tcpwrappers__group_allow
+                           + tcpwrappers__host_allow
+                           + tcpwrappers__dependent_allow
+                           + tcpwrappers__localhost_allow
+                           + tcpwrappers_allow | d([])
+                           + tcpwrappers_group_allow | d([])
+                           + tcpwrappers_host_allow | d([])
+                           + tcpwrappers_dependent_allow | d([])) }}
+[7].when = ((item.daemon | d() or item.daemons | d()) and (item.state is undefined or item.state != 'absent'))
+[8].name = Assemble hosts.allow.d
+[8]["ansible.builtin.assemble"].src = /etc/hosts.allow.d
+[8]["ansible.builtin.assemble"].dest = /etc/hosts.allow
+[8]["ansible.builtin.assemble"].backup = False
+[8]["ansible.builtin.assemble"].owner = root
+[8]["ansible.builtin.assemble"].group = root
+[8]["ansible.builtin.assemble"].mode = 0644
+[8].when = tcpwrappers__enabled | bool
+[9].name = Make sure that Ansible local fact directory exists
+[9]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[9]["ansible.builtin.file"].state = directory
+[9]["ansible.builtin.file"].owner = root
+[9]["ansible.builtin.file"].group = root
+[9]["ansible.builtin.file"].mode = 0755
+[10].name = Save tcpwrappers local facts
+[10]["ansible.builtin.template"].src = etc/ansible/facts.d/tcpwrappers.fact.j2
+[10]["ansible.builtin.template"].dest = /etc/ansible/facts.d/tcpwrappers.fact
+[10]["ansible.builtin.template"].owner = root
+[10]["ansible.builtin.template"].group = root
+[10]["ansible.builtin.template"].mode = 0644
+[10].tags[0] = meta::facts
+[11].name = Configure access in /etc/hosts.deny
+[11]["ansible.builtin.lineinfile"].dest = /etc/hosts.deny
+[11]["ansible.builtin.lineinfile"].regexp = ^ALL: ALL
+[11]["ansible.builtin.lineinfile"].line = ALL: ALL
+[11]["ansible.builtin.lineinfile"].create = True
+[11]["ansible.builtin.lineinfile"].owner = root
+[11]["ansible.builtin.lineinfile"].group = root
+[11]["ansible.builtin.lineinfile"].mode = 0644
+[11]["ansible.builtin.lineinfile"].state = {{ "present"
+               if (tcpwrappers__enabled | bool and
+                   tcpwrappers__deny_all | bool)
+               else "absent" }}

@@ -5,7 +5,6 @@ postconf__combined_capabilities = {{ postconf__autodetect_capabilities
                                      + postconf__capabilities
                                      + postconf__group_capabilities
                                      + postconf__host_capabilities }}
-
 postconf__deploy_state = present
 postconf__fqdn = {{ ansible_fqdn }}
 postconf__sasl_auth_method = {{ "cyrus"
@@ -13,7 +12,6 @@ postconf__sasl_auth_method = {{ "cyrus"
                                     (ansible_local.saslauthd.installed | d()) | bool and
                                     "smtpd" in ansible_local.saslauthd.instances)
                                 else "dovecot" }}
-
 postconf__unauth_sender_domains[0] = {{ postconf__fqdn }}
 postconf__unauth_sender_default_action = REJECT This server requires SMTP authentication
 postconf__default_lookup_tables[0].name = auth_header_checks.pcre
@@ -32,7 +30,6 @@ postconf__default_lookup_tables[0].state = {{ "present"
                else ("absent"
                      if (postconf__deploy_state == "absent")
                      else "ignore") }}
-
 postconf__default_lookup_tables[1].name = mx_access.cidr
 postconf__default_lookup_tables[1].by_role = debops.postconf
 postconf__default_lookup_tables[1].comment = Check if sender MX server is in subnets not accessible from the public
@@ -64,7 +61,6 @@ postconf__default_lookup_tables[1].state = {{ "present"
                else ("absent"
                      if (postconf__deploy_state == "absent")
                      else "ignore") }}
-
 postconf__default_lookup_tables[2].name = unauth_sender_access.in
 postconf__default_lookup_tables[2].by_role = debops.postconf
 postconf__default_lookup_tables[2].comment = Block any unauthenticated external mail that uses our domain names. Users
@@ -82,7 +78,6 @@ postconf__default_lookup_tables[2].state = {{ "present"
                else ("absent"
                      if (postconf__deploy_state == "absent")
                      else "ignore") }}
-
 postconf__default_lookup_tables[3].name = overhead_checks.pcre
 postconf__default_lookup_tables[3].by_role = debops.postconf
 postconf__default_lookup_tables[3].comment = "A man is not dead while his name is still spoken."
@@ -98,73 +93,60 @@ postconf__default_lookup_tables[3].state = {{ "present"
                else ("absent"
                      if (postconf__deploy_state == "absent")
                      else "ignore") }}
-
 postconf__combined_lookup_tables = {{ postconf__default_lookup_tables
                                       + postconf__lookup_tables
                                       + postconf__group_lookup_tables
                                       + postconf__host_lookup_tables }}
-
 postconf__postfix__dependent_packages[0] = {{ "libsasl2-modules"
         if ("auth" in postconf__combined_capabilities)
         else [] }}
-
 postconf__postfix__dependent_lookup_tables[0] = {{ postconf__combined_lookup_tables }}
 postconf__postfix__dependent_maincf[0].name = smtpd_sasl_auth_enable
 postconf__postfix__dependent_maincf[0].value = True
 postconf__postfix__dependent_maincf[0].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[1].name = smtpd_sasl_authenticated_header
 postconf__postfix__dependent_maincf[1].value = True
 postconf__postfix__dependent_maincf[1].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[2].name = broken_sasl_auth_clients
 postconf__postfix__dependent_maincf[2].value = True
 postconf__postfix__dependent_maincf[2].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[3].name = smtpd_sasl_security_options
 postconf__postfix__dependent_maincf[3].value[0] = noanonymous
 postconf__postfix__dependent_maincf[3].value[1] = noplaintext
 postconf__postfix__dependent_maincf[3].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[4].name = smtpd_sasl_tls_security_options
 postconf__postfix__dependent_maincf[4].value[0] = noanonymous
 postconf__postfix__dependent_maincf[4].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[5].name = smtpd_sasl_type
 postconf__postfix__dependent_maincf[5].value = {{ "cyrus"
                if (postconf__sasl_auth_method == "cyrus")
                else "dovecot" }}
-
 postconf__postfix__dependent_maincf[5].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[6].name = smtpd_sasl_path
 postconf__postfix__dependent_maincf[6].value = {{ "smtpd"
                if (postconf__sasl_auth_method == "cyrus")
                else "private/auth" }}
-
 postconf__postfix__dependent_maincf[6].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[7].name = smtpd_sender_restrictions
 postconf__postfix__dependent_maincf[7].value[0].name = check_sender_mx_access cidr:${config_directory}/mx_access.cidr
 postconf__postfix__dependent_maincf[7].value[0].weight = 50
 postconf__postfix__dependent_maincf[7].state = {{ "present"
                if ("public-mx-required" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[8].name = smtpd_sender_restrictions
 postconf__postfix__dependent_maincf[8].value[0].name = permit_mynetworks
 postconf__postfix__dependent_maincf[8].value[1].name = reject_authenticated_sender_login_mismatch
@@ -180,7 +162,6 @@ postconf__postfix__dependent_maincf[8].state = {{ "present"
                if ("auth" in postconf__combined_capabilities and
                    "unauth-sender" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[9].name = smtpd_relay_restrictions
 postconf__postfix__dependent_maincf[9].value[0].name = reject_authenticated_sender_login_mismatch
 postconf__postfix__dependent_maincf[9].value[0].copy_id_from = permit_mynetworks
@@ -189,59 +170,49 @@ postconf__postfix__dependent_maincf[9].state = {{ "present"
                if ("auth" in postconf__combined_capabilities and
                    "unauth-sender" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_maincf[10].name = smtp_header_checks
 postconf__postfix__dependent_maincf[10].value[0] = pcre:${config_directory}/overhead_checks.pcre
 postconf__postfix__dependent_maincf[10].state = {{ "present"
                if ("overhead" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_mastercf[0].name = submission
 postconf__postfix__dependent_mastercf[0].options[0].name = smtpd_helo_restrictions
 postconf__postfix__dependent_mastercf[0].options[0].value = 
 postconf__postfix__dependent_mastercf[0].options[0].state = {{ "present"
                    if ("public-mx-required" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[0].options[1].name = smtpd_sender_restrictions
 postconf__postfix__dependent_mastercf[0].options[1].value = reject_authenticated_sender_login_mismatch
 postconf__postfix__dependent_mastercf[0].options[1].state = {{ "present"
                    if ("unauth-sender" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[0].options[2].name = cleanup_service_name
 postconf__postfix__dependent_mastercf[0].options[2].value = authcleanup
 postconf__postfix__dependent_mastercf[0].options[2].state = {{ "present"
                    if ("authcleanup" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[0].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_mastercf[1].name = smtps
 postconf__postfix__dependent_mastercf[1].options[0].name = smtpd_helo_restrictions
 postconf__postfix__dependent_mastercf[1].options[0].value = 
 postconf__postfix__dependent_mastercf[1].options[0].state = {{ "present"
                    if ("public-mx-required" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[1].options[1].name = smtpd_sender_restrictions
 postconf__postfix__dependent_mastercf[1].options[1].value = reject_authenticated_sender_login_mismatch
 postconf__postfix__dependent_mastercf[1].options[1].state = {{ "present"
                    if ("unauth-sender" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[1].options[2].name = cleanup_service_name
 postconf__postfix__dependent_mastercf[1].options[2].value = authcleanup
 postconf__postfix__dependent_mastercf[1].options[2].state = {{ "present"
                    if ("authcleanup" in postconf__combined_capabilities)
                    else "ignore" }}
-
 postconf__postfix__dependent_mastercf[1].state = {{ "present"
                if ("auth" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_mastercf[2].name = authcleanup
 postconf__postfix__dependent_mastercf[2].type = unix
 postconf__postfix__dependent_mastercf[2].private = False
@@ -254,6 +225,5 @@ postconf__postfix__dependent_mastercf[2].options[1].value[0] = regexp:/etc/postf
 postconf__postfix__dependent_mastercf[2].state = {{ "present"
                if ("authcleanup" in postconf__combined_capabilities)
                else "ignore" }}
-
 postconf__postfix__dependent_mastercf[2].copy_id_from = cleanup
 postconf__postfix__dependent_mastercf[2].weight = 10

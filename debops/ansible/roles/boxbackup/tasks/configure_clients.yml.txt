@@ -5,7 +5,7 @@
 [0].until = boxbackup__register_client_packages is succeeded
 [1].name = Set backup softlimit size for client hosts
 [1]["ansible.builtin.set_fact"].boxbackup_softlimit = {{ (ansible_mounts | sum(attribute="size_total") / 1024 / 1024
-                              + boxbackup_softlimit_padding) | int }} 
+                              + boxbackup_softlimit_padding) | int }}
 [1].when = (boxbackup_softlimit is undefined or not boxbackup_softlimit)
 [2].name = Set backup hardlimit size for client hosts
 [2]["ansible.builtin.set_fact"].boxbackup_hardlimit = {{ (boxbackup_softlimit | float * boxbackup_hardlimit_multiplier | float) | int }}

@@ -1,142 +1,156 @@
-~d0.name = Create sanitised list of keys
-~d1.ansible.builtin.set_fact = 
-~d2.bind__tmp_keys = '{{ bind__tmp_keys | d([])
-~d12.+ [item | combine({"state" = item.state | d("present") | lower,
-~d21."type" = item.type | mandatory | upper,
-~d21."dir" = item.dir | d("/etc/bind/keys/"),
-~d21."owner" = item.owner | d("root"),
-~d21."group" = item.group | d("bind"),
-~d21."include" = (item.include | d(True) | bool)
-~d21."download" = item.download | d(True if item.source | d("host") == "host" else False) | bool,
-~d21."source" = item.source | d("host"),
-~d21."source_path" = item.source_path | d(""),
-~d21."remove_private_key" = item.remove_private_key | d(True) | bool,
-~d21."algorithm" = (item.algorithm | mandatory)
-~d21."creates" = (item.name + ".key")
-~d21."removes" = (item.name + ".key")
-~d21."public_key" = (item.name + ".key")
-~d21."private_key" = (item.name + ".key")
-~d1.when = 
-~d1.loop = '{{ bind__combined_keys | d([]) | debops.debops.parse_kv_items(name="name") }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name | d("unknown") }}'
-~d1.tags = [ 'role::bind:config', 'role::bind:keys' ]
-~d0.name = Verify key sanity
-~d1.ansible.builtin.assert = 
-~d2.that = 
-~d2.quiet = true
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.tags = [ 'role::bind:config', 'role::bind:keys' ]
-~d0.name = Create TSIG keys
-~d1.ansible.builtin.shell = 
-~d2.chdir = '{{ item.dir }}'
-~d2.cmd = umask 027;
-~d4.chown {{ (item.owner + " = " + item.group) | quote }} {{ item.creates | quote }}
-~d2.creates = '{{ item.creates }}'
-~d1.when = 
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.notify = [ 'Test named configuration and restart' ]
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Fetch TSIG keys
-~d1.ansible.builtin.fetch = 
-~d2.src = '{{ item.dir + "/" + item.public_key }}'
-~d2.dest = '{{ secret + "/bind/" + inventory_hostname + "/" }}'
-~d2.flat = True
-~d1.when = 
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Create SIG(0) keys
-~d1.ansible.builtin.shell = 
-~d2.chdir = '{{ item.dir }}'
-~d2.cmd = umask 027;
-~d4.chown {{ (item.owner + " = " + item.group) | quote }} {{ item.creates }}
-~d2.creates = '{{ item.creates }}'
-~d1.when = 
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.notify = [ 'Test named configuration and restart' ]
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Find SIG(0) keys to fetch
-~d1.ansible.builtin.find = 
-~d2.paths = '{{ item.dir }}'
-~d2.use_regex = False
-~d2.recurse = False
-~d2.patterns = 
-~d1.when = 
-~d1.register = bind__tmp_find_sig0_keys
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Build combined list of SIG(0) keys to fetch
-~d1.ansible.builtin.set_fact = 
-~d2.bind__tmp_sig0_fetch = '{{ bind__tmp_sig0_fetch | d([]) + item.files | map(attribute="path") }}'  # noqa jinja[invalid]
-~d1.loop = '{{ bind__tmp_find_sig0_keys.results | d([]) }}'
-~d1.when = item.files is defined
-~d1.loop_control = 
-~d2.label = '{{ item.item.name }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Fetch SIG(0) keys
-~d1.ansible.builtin.fetch = 
-~d2.src = '{{ item }}'
-~d2.dest = '{{ secret + "/bind/" + inventory_hostname + "/" }}'
-~d2.flat = True
-~d1.loop = '{{ bind__tmp_sig0_fetch | d([]) }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Find SIG(0) private keys to remove
-~d1.ansible.builtin.find = 
-~d2.paths = '{{ item.dir }}'
-~d2.use_regex = False
-~d2.recurse = False
-~d2.patterns = 
-~d1.when = 
-~d1.register = bind__tmp_find_sig0_keys
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Build combined list of SIG(0) private keys to remove
-~d1.ansible.builtin.set_fact = 
-~d2.bind__tmp_sig0_remove = '{{ bind__tmp_sig0_remove | d([]) + item.files | d([]) | map(attribute="path") }}'
-~d1.loop = '{{ bind__tmp_find_sig0_keys.results | d([]) }}'
-~d1.when = item.files is defined
-~d1.loop_control = 
-~d2.label = '{{ item.item.name }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Remove SIG(0) private keys
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item }}'
-~d2.state = absent
-~d1.loop = '{{ bind__tmp_sig0_remove | d([]) }}'
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Remove TSIG/SIG(0) keys configured as absent
-~d1.ansible.builtin.shell = # noqa command-instead-of-shell no-free-form
-~d2.chdir = '{{ item.dir }}'
-~d2.cmd = rm -f {{ item.removes }}
-~d2.removes = '{{ item.removes }}'
-~d1.when = 
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.notify = [ 'Test named configuration and restart' ]
-~d1.tags = [ 'role::bind:keys' ]
-~d0.name = Upload TSIG/SIG(0) keys from the controller
-~d1.ansible.builtin.copy = 
-~d2.src = '{{ item.source_path if item.source_path.startswith("/") else secret + "/" + item.source_path }}'
-~d2.dest = '{{ item.dir + "/" + item.source_path | basename }}'
-~d2.owner = '{{ item.owner }}'
-~d2.group = '{{ item.group }}'
-~d2.mode = '0640'
-~d1.when = 
-~d1.loop = '{{ bind__tmp_keys | d([]) }}'
-~d1.loop_control = 
-~d2.label = '{{ item.name }}'
-~d1.notify = [ 'Test named configuration and restart' ]
-~d1.tags = [ 'role::bind:keys' ]
+[0].name = Create sanitised list of keys
+[0]["ansible.builtin.set_fact"].bind__tmp_keys = {{ bind__tmp_keys | d([])
+                        + [item | combine({"state": item.state | d("present") | lower,
+                                           "type": item.type | mandatory | upper,
+                                           "dir": item.dir | d("/etc/bind/keys/"),
+                                           "owner": item.owner | d("root"),
+                                           "group": item.group | d("bind"),
+                                           "include": (item.include | d(True) | bool)
+                                                      if item.type | d("") | upper == "TSIG"
+                                                      else False,
+                                           "download": item.download | d(True if item.source | d("host") == "host" else False) | bool,
+                                           "source": item.source | d("host"),
+                                           "source_path": item.source_path | d(""),
+                                           "remove_private_key": item.remove_private_key | d(True) | bool,
+                                           "algorithm": (item.algorithm | mandatory)
+                                                        if item.type | d("") | upper == "TSIG"
+                                                        else ("%03d" | format(item.algorithm | mandatory | int))
+                                                        if item.type | d("") | upper == "SIG(0)"
+                                                        else omit,
+                                           "creates": (item.name + ".key")
+                                                      if item.type | d("") | upper == "TSIG"
+                                                      else ("K" + item.name + "+" + "%03d" | format(item.algorithm | int) + "+*.key")
+                                                      if item.type | d("") | upper == "SIG(0)"
+                                                      else omit,
+                                           "removes": (item.name + ".key")
+                                                      if item.type | d("") | upper == "TSIG"
+                                                      else ("K" + item.name + "+" + "%03d" | format(item.algorithm | int) + "+*.*")
+                                                      if item.type | d("") | upper == "SIG(0)"
+                                                      else omit,
+                                           "public_key": (item.name + ".key")
+                                                         if item.type | d("") | upper == "TSIG"
+                                                         else ("K" + item.name + "+" + "%03d" | format(item.algorithm | int) + "+*.key")
+                                                         if item.type | d("") | upper == "SIG(0)"
+                                                         else omit,
+                                           "private_key": (item.name + ".key")
+                                                          if item.type | d("") | upper == "TSIG"
+                                                          else ("K" + item.name + "+" + "%03d" | format(item.algorithm | int) + "+*.private")
+                                                          if item.type | d("") | upper == "SIG(0)"
+                                                          else omit})] }}
+[0].when[0] = item.name | d("") | length > 0
+[0].when[1] = item.state | d("present") | lower in [ 'present', 'absent' ]
+[0].loop = {{ bind__combined_keys | d([]) | debops.debops.parse_kv_items(name="name") }}
+[0].loop_control.label = {{ item.name | d("unknown") }}
+[0].tags[0] = role::bind:config
+[0].tags[1] = role::bind:keys
+[1].name = Verify key sanity
+[1]["ansible.builtin.assert"].that[0] = item.name | regex_replace('([^a-zA-Z0-9-.])', '') == item.name
+[1]["ansible.builtin.assert"].that[1] = item.type in [ 'TSIG', 'SIG(0)' ]
+[1]["ansible.builtin.assert"].that[2] = item.algorithm != "000"
+[1]["ansible.builtin.assert"].that[3] = item.source in [ "host", "controller" ]
+[1]["ansible.builtin.assert"].that[4] = not (item.download and item.source == "controller")
+[1]["ansible.builtin.assert"].quiet = true
+[1].loop = {{ bind__tmp_keys | d([]) }}
+[1].loop_control.label = {{ item.name }}
+[1].tags[0] = role::bind:config
+[1].tags[1] = role::bind:keys
+[2].name = Create TSIG keys
+[2]["ansible.builtin.shell"].chdir = {{ item.dir }}
+[2]["ansible.builtin.shell"].cmd = umask 027; tsig-keygen -a {{ item.algorithm | quote }} {{ item.name | quote }} > {{ item.creates | quote }} && chown {{ (item.owner + ":" + item.group) | quote }} {{ item.creates | quote }}
+[2]["ansible.builtin.shell"].creates = {{ item.creates }}
+[2].when[0] = item.state == 'present'
+[2].when[1] = item.type == 'TSIG'
+[2].when[2] = item.source == 'host'
+[2].loop = {{ bind__tmp_keys | d([]) }}
+[2].loop_control.label = {{ item.name }}
+[2].notify[0] = Test named configuration and restart
+[2].tags[0] = role::bind:keys
+[3].name = Fetch TSIG keys
+[3]["ansible.builtin.fetch"].src = {{ item.dir + "/" + item.public_key }}
+[3]["ansible.builtin.fetch"].dest = {{ secret + "/bind/" + inventory_hostname + "/" }}
+[3]["ansible.builtin.fetch"].flat = True
+[3].when[0] = item.state == 'present'
+[3].when[1] = item.type == 'TSIG'
+[3].when[2] = item.download
+[3].loop = {{ bind__tmp_keys | d([]) }}
+[3].loop_control.label = {{ item.name }}
+[3].tags[0] = role::bind:keys
+[4].name = Create SIG(0) keys
+[4]["ansible.builtin.shell"].chdir = {{ item.dir }}
+[4]["ansible.builtin.shell"].cmd = umask 027; dnssec-keygen -C -a {{ item.algorithm | quote }} -n HOST -T KEY {{ item.name | quote }} && chown {{ (item.owner + ":" + item.group) | quote }} {{ item.creates }}
+[4]["ansible.builtin.shell"].creates = {{ item.creates }}
+[4].when[0] = item.state == 'present'
+[4].when[1] = item.type == 'SIG(0)'
+[4].loop = {{ bind__tmp_keys | d([]) }}
+[4].loop_control.label = {{ item.name }}
+[4].notify[0] = Test named configuration and restart
+[4].tags[0] = role::bind:keys
+[5].name = Find SIG(0) keys to fetch
+[5]["ansible.builtin.find"].paths = {{ item.dir }}
+[5]["ansible.builtin.find"].use_regex = False
+[5]["ansible.builtin.find"].recurse = False
+[5]["ansible.builtin.find"].patterns[0] = {{ item.public_key }}
+[5]["ansible.builtin.find"].patterns[1] = {{ item.private_key }}
+[5].when[0] = item.state == 'present'
+[5].when[1] = item.type == 'SIG(0)'
+[5].when[2] = item.download
+[5].register = bind__tmp_find_sig0_keys
+[5].loop = {{ bind__tmp_keys | d([]) }}
+[5].loop_control.label = {{ item.name }}
+[5].tags[0] = role::bind:keys
+[6].name = Build combined list of SIG(0) keys to fetch
+[6]["ansible.builtin.set_fact"].bind__tmp_sig0_fetch = {{ bind__tmp_sig0_fetch | d([]) + item.files | map(attribute="path") }}
+[6].loop = {{ bind__tmp_find_sig0_keys.results | d([]) }}
+[6].when = item.files is defined
+[6].loop_control.label = {{ item.item.name }}
+[6].tags[0] = role::bind:keys
+[7].name = Fetch SIG(0) keys
+[7]["ansible.builtin.fetch"].src = {{ item }}
+[7]["ansible.builtin.fetch"].dest = {{ secret + "/bind/" + inventory_hostname + "/" }}
+[7]["ansible.builtin.fetch"].flat = True
+[7].loop = {{ bind__tmp_sig0_fetch | d([]) }}
+[7].tags[0] = role::bind:keys
+[8].name = Find SIG(0) private keys to remove
+[8]["ansible.builtin.find"].paths = {{ item.dir }}
+[8]["ansible.builtin.find"].use_regex = False
+[8]["ansible.builtin.find"].recurse = False
+[8]["ansible.builtin.find"].patterns[0] = {{ item.private_key }}
+[8].when[0] = item.state == 'present'
+[8].when[1] = item.type == 'SIG(0)'
+[8].when[2] = item.remove_private_key
+[8].register = bind__tmp_find_sig0_keys
+[8].loop = {{ bind__tmp_keys | d([]) }}
+[8].loop_control.label = {{ item.name }}
+[8].tags[0] = role::bind:keys
+[9].name = Build combined list of SIG(0) private keys to remove
+[9]["ansible.builtin.set_fact"].bind__tmp_sig0_remove = {{ bind__tmp_sig0_remove | d([]) + item.files | d([]) | map(attribute="path") }}
+[9].loop = {{ bind__tmp_find_sig0_keys.results | d([]) }}
+[9].when = item.files is defined
+[9].loop_control.label = {{ item.item.name }}
+[9].tags[0] = role::bind:keys
+[10].name = Remove SIG(0) private keys
+[10]["ansible.builtin.file"].path = {{ item }}
+[10]["ansible.builtin.file"].state = absent
+[10].loop = {{ bind__tmp_sig0_remove | d([]) }}
+[10].tags[0] = role::bind:keys
+[11].name = Remove TSIG/SIG(0) keys configured as absent
+[11]["ansible.builtin.shell"].chdir = {{ item.dir }}
+[11]["ansible.builtin.shell"].cmd = rm -f {{ item.removes }}
+[11]["ansible.builtin.shell"].removes = {{ item.removes }}
+[11].when[0] = item.state == 'absent'
+[11].loop = {{ bind__tmp_keys | d([]) }}
+[11].loop_control.label = {{ item.name }}
+[11].notify[0] = Test named configuration and restart
+[11].tags[0] = role::bind:keys
+[12].name = Upload TSIG/SIG(0) keys from the controller
+[12]["ansible.builtin.copy"].src = {{ item.source_path if item.source_path.startswith("/") else secret + "/" + item.source_path }}
+[12]["ansible.builtin.copy"].dest = {{ item.dir + "/" + item.source_path | basename }}
+[12]["ansible.builtin.copy"].owner = {{ item.owner }}
+[12]["ansible.builtin.copy"].group = {{ item.group }}
+[12]["ansible.builtin.copy"].mode = 0640
+[12].when[0] = item.state == 'present'
+[12].when[1] = item.source == 'controller'
+[12].loop = {{ bind__tmp_keys | d([]) }}
+[12].loop_control.label = {{ item.name }}
+[12].notify[0] = Test named configuration and restart
+[12].tags[0] = role::bind:keys

@@ -171,4 +171,3 @@ libuser__combined_configuration = {{ libuser__original_configuration
                                      + libuser__configuration
                                      + libuser__group_configuration
                                      + libuser__host_configuration }}
-

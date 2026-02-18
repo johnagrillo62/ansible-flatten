@@ -3,11 +3,9 @@ dhcpd__options =
 dhcpd__interfacesv4[0] = {{ ansible_local.ifupdown.external_interface
                            if ansible_local.ifupdown.external_interface | d()
                            else ansible_default_ipv4.interface }}
-
 dhcpd__interfacesv6 = {{ dhcpd__interfacesv4
                          if ansible_default_ipv6.address | d()
                          else [] }}
-
 dhcpd__authoritative = False
 dhcpd__log_facility = daemon
 dhcpd__default_lease_time = {{ 60 * 60 * 12 }}
@@ -22,7 +20,6 @@ dhcpd__name_servers = {{ ansible_local.resolvconf.upstream_nameservers
                          else (ansible_dns.nameservers
                                if ("127.0.0.1" not in ansible_dns.nameservers)
                                else []) }}
-
 dhcpd__global_options_map.DHCPv4 = 
 dhcpd__global_options_map.DHCPv6 = 
 dhcpd__ipxe = False
@@ -35,14 +32,13 @@ dhcpd__ipxe_options =
 dhcpd__subnets = {{ dhcpd__default_subnets }}
 dhcpd__default_subnets[0].comment = Autodetected IPv4 subnet
 dhcpd__default_subnets[0].subnet = {{ ansible_default_ipv4.network
-                + "/" + ansible_default_ipv4.netmask }} 
+                + "/" + ansible_default_ipv4.netmask }}
 dhcpd__default_subnets[0].routers = {{ [ansible_default_ipv4.gateway]
                  if ansible_default_ipv4.gateway | d()
                  else [] }}
-
 dhcpd__default_subnets[1].comment = Autodetected IPv6 subnet
 dhcpd__default_subnets[1].subnet = {{ ansible_default_ipv6.address | d()
-                + "/" + ansible_default_ipv6.prefix | d() }} 
+                + "/" + ansible_default_ipv6.prefix | d() }}
 dhcpd__default_subnets[1].state = {{ "present" if ansible_default_ipv6.address | d() else "absent" }}
 dhcpd__etc_services__dependent_list[0].name = dhcp-failover
 dhcpd__etc_services__dependent_list[0].port = 647
@@ -63,7 +59,6 @@ dhcpd__ferm__dependent_rules[1].saddr = {{ (dhcpd__failovers | map(attribute="pr
                 + dhcpd__failovers | map(attribute="secondary") | list)
                if dhcpd__failovers
                else omit }}
-
 dhcpd__ferm__dependent_rules[1].protocol = tcp
 dhcpd__ferm__dependent_rules[1].dport[0] = dhcp-failover
 dhcpd__ferm__dependent_rules[1].rule_state = {{ "present" if dhcpd__failovers else "absent" }}

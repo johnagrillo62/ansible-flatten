@@ -12,7 +12,6 @@
 [1].loop[3] = {{ ((docker_gen__nginx_dest | dirname)
            if (docker_gen__nginx | d() and docker_gen__nginx)
            else []) }}
-
 [2].name = Download docker-gen sources
 [2]["ansible.builtin.get_url"].url = {{ docker_gen__release }}
 [2]["ansible.builtin.get_url"].dest = {{ docker_gen__src + "/" + docker_gen__release | basename }}

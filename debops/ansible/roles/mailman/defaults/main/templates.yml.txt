@@ -4,4 +4,3 @@ mailman__combined_templates = {{ mailman__default_templates
                                  + mailman__templates
                                  + mailman__group_templates
                                  + mailman__host_templates }}
-

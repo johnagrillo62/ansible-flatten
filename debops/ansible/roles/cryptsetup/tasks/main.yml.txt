@@ -33,7 +33,7 @@ the changelog of debops.cryptsetup for details. Exiting.
 [5].when = item.condition
 [5].loop[0].path = {{ cryptsetup__keyfile_remote_location }}
 [5].loop[0].condition = {{ (cryptsetup__combined_devices
-                      | selectattr("remote_keyfile", "undefined") | list | length) > 0 }} 
+                      | selectattr("remote_keyfile", "undefined") | list | length) > 0 }}
 [5].loop[1].path = {{ cryptsetup__header_backup_remote_location }}
 [5].loop[1].condition = {{ ((cryptsetup__combined_devices
                        | selectattr("backup_header", "defined")
@@ -41,7 +41,6 @@ the changelog of debops.cryptsetup for details. Exiting.
                      (cryptsetup__header_backup | bool and ((cryptsetup__combined_devices
                                                            | selectattr("backup_header", "undefined")
                                                            | list | length) > 0)) }}
-
 [6].name = Manage Cryptsetup devices in parallel
 [6]["ansible.builtin.include_tasks"] = manage_devices.yml
 [6].when = cryptsetup__devices_execution_strategy == 'parallel'

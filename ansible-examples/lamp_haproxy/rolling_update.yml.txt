@@ -1,25 +1,24 @@
-~d0.hosts = monitoring
-~d1.tasks = []
-~d0.hosts = webservers
-~d1.serial = 1
-~d1.pre_tasks = 
-~d1.name = disable nagios alerts for this host webserver service
-~d2.nagios = 'action=disable_alerts host={{ inventory_hostname }} services=webserver'
-~d2.delegate_to = "{{ item }}"
-~d2.with_items = "{{ groups.monitoring }}"
-~d1.name = disable the server in haproxy
-~d2.haproxy = 'state=disabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats'
-~d2.delegate_to = "{{ item }}"
-~d2.with_items = "{{ groups.lbservers }}"
-~d1.roles = 
-~d1.post_tasks = 
-~d1.name = wait for webserver to come up
-~d2.wait_for = 'host={{ inventory_hostname }} port=80 state=started timeout=80'
-~d1.name = enable the server in haproxy
-~d2.haproxy = 'state=enabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats'
-~d2.delegate_to = "{{ item }}"
-~d2.with_items = "{{ groups.lbservers }}"
-~d1.name = re-enable nagios alerts
-~d2.nagios = 'action=enable_alerts host={{ inventory_hostname }} services=webserver'
-~d2.delegate_to = "{{ item }}"
-~d2.with_items = "{{ groups.monitoring }}"
+[0].hosts = monitoring
+[1].hosts = webservers
+[1].serial = 1
+[1].pre_tasks[0].name = disable nagios alerts for this host webserver service
+[1].pre_tasks[0].nagios = action=disable_alerts host={{ inventory_hostname }} services=webserver
+[1].pre_tasks[0].delegate_to = {{ item }}
+[1].pre_tasks[0].with_items = {{ groups.monitoring }}
+[1].pre_tasks[1].name = disable the server in haproxy
+[1].pre_tasks[1].haproxy = state=disabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats
+[1].pre_tasks[1].delegate_to = {{ item }}
+[1].pre_tasks[1].with_items = {{ groups.lbservers }}
+[1].roles[0] = common
+[1].roles[1] = base-apache
+[1].roles[2] = web
+[1].post_tasks[0].name = wait for webserver to come up
+[1].post_tasks[0].wait_for = host={{ inventory_hostname }} port=80 state=started timeout=80
+[1].post_tasks[1].name = enable the server in haproxy
+[1].post_tasks[1].haproxy = state=enabled backend=myapplb host={{ inventory_hostname }} socket=/var/lib/haproxy/stats
+[1].post_tasks[1].delegate_to = {{ item }}
+[1].post_tasks[1].with_items = {{ groups.lbservers }}
+[1].post_tasks[2].name = re-enable nagios alerts
+[1].post_tasks[2].nagios = action=enable_alerts host={{ inventory_hostname }} services=webserver
+[1].post_tasks[2].delegate_to = {{ item }}
+[1].post_tasks[2].with_items = {{ groups.monitoring }}

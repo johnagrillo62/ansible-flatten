@@ -1,5 +1,6 @@
-~d0.cloud_image = ubuntu-2404
-~d0.cluster_layout = 
-~d1.node_groups = ["kube_control_plane", "etcd", "kube_node"]
-~d1.node_groups = ["kube_node"]
-~d0.kube_network_plugin = "kube-router"
+cloud_image = ubuntu-2404
+cluster_layout[0].node_groups[0] = kube_control_plane
+cluster_layout[0].node_groups[1] = etcd
+cluster_layout[0].node_groups[2] = kube_node
+cluster_layout[1].node_groups[0] = kube_node
+kube_network_plugin = kube-router

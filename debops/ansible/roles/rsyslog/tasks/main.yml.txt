@@ -1,122 +1,118 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Manage rsyslog APT packages
-~d1.ansible.builtin.apt = 
-~d2.name = '{{ (rsyslog__base_packages
-~d2.state = '{{ rsyslog__deploy_state }}'
-~d2.purge = True
-~d1.register = rsyslog__register_packages
-~d1.until = rsyslog__register_packages is succeeded
-~d1.when = rsyslog__enabled | bool and ansible_pkg_mgr == 'apt'
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
-~d0.name = Save rsyslog local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/rsyslog.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/rsyslog.fact'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update Ansible facts if they were modified
-~d1.ansible.builtin.meta = 'flush_handlers'
-~d0.name = Create required system group
-~d1.ansible.builtin.group = 
-~d2.name = '{{ rsyslog__group }}'
-~d2.state = 'present'
-~d2.system = True
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d0.name = Create required system user
-~d1.ansible.builtin.user = 
-~d2.name = '{{ rsyslog__user }}'
-~d2.group = '{{ rsyslog__group }}'
-~d2.groups = '{{ rsyslog__append_groups | join(",") | default(omit) }}'
-~d2.append = True
-~d2.home = '{{ rsyslog__home }}'
-~d2.shell = '/bin/false'
-~d2.state = 'present'
-~d2.createhome = False
-~d2.system = True
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d0.name = Fix directory permissions if needed
-~d1.ansible.builtin.file = 
-~d2.path = '/var/spool/rsyslog'
-~d2.owner = '{{ rsyslog__user }}'
-~d2.group = '{{ rsyslog__file_group }}'
-~d2.mode = '0700'
-~d1.register = rsyslog__register_unprivileged_files
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d0.name = Update directory and file permissions
-~d1.ansible.builtin.shell = |
-~d6.|| chown -v root = {{ rsyslog__group }} {{ rsyslog__home }} ; \
-~d4.|| chown -v {{ rsyslog__file_owner }} = {{ rsyslog__file_group }} ${i} )
-~d1.register = rsyslog__register_file_permissions
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d1.changed_when = rsyslog__register_file_permissions.stdout | d()
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d0.name = Create systemd-tmpfiles override
-~d1.ansible.builtin.copy = 
-~d2.dest = '/etc/tmpfiles.d/rsyslog-var-log.conf'
-~d2.mode = '0755'
-~d2.content = 'z {{ rsyslog__home }} 0775 root {{ rsyslog__group }} -'
-~d1.notify = [ 'Create temporary files' ]
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d0.name = Divert main rsyslog configuration file
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '/etc/rsyslog.conf'
-~d2.state = 'present'
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d0.name = Generate main rsyslog configuration
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/rsyslog.conf.j2'
-~d2.dest = '/etc/rsyslog.conf'
-~d2.mode = '0644'
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
-~d0.name = Manage configuration file diversions
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '{{ "/etc/rsyslog.d/" + (item.divert_to | d(item.name)) }}'
-~d2.state = '{{ "present"
-~d1.loop = '{{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items
-~d1.loop_control = 
-~d2.label = '{{ {"name": item.name, "state": (item.state | d("present"))} }}'
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
-~d0.name = Generate rsyslog configuration rules
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/rsyslog.d/template.conf.j2'
-~d2.dest = '{{ "/etc/rsyslog.d/" + item.name }}'
-~d2.owner = '{{ item.owner | d("root") }}'
-~d2.group = '{{ item.group | d("root") }}'
-~d2.mode = '{{ item.mode | d("0644") }}'
-~d1.loop = '{{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items }}'
-~d1.loop_control = 
-~d2.label = '{{ {"name": item.name, "state": (item.state | d("present"))} }}'
-~d1.when = (rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d0.name = Remove custom config files when requested
-~d1.ansible.builtin.file = 
-~d2.path = '{{ "/etc/rsyslog.d/" + item.name }}'
-~d2.state = 'absent'
-~d1.loop = '{{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items }}'
-~d1.loop_control = 
-~d2.label = '{{ {"name": item.name, "state": (item.state | d("present"))} }}'
-~d1.when = (rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and
-~d1.notify = [ 'Check and restart rsyslogd' ]
-~d0.name = Prepare cleanup during package removal
-~d1.ansible.builtin.import_role = 
-~d2.name = 'dpkg_cleanup'
-~d1.vars = 
-~d2.dpkg_cleanup__dependent_packages = 
-~d1.when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
-~d1.tags = [ 'role::dpkg_cleanup', 'skip::dpkg_cleanup',
-~d5.'role = :rsyslog:dpkg_cleanup' ]
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Manage rsyslog APT packages
+[2]["ansible.builtin.apt"].name = {{ (rsyslog__base_packages
+               + (rsyslog__tls_packages if (rsyslog__pki | bool) else [])
+               + rsyslog__packages) | flatten }}
+[2]["ansible.builtin.apt"].state = {{ rsyslog__deploy_state }}
+[2]["ansible.builtin.apt"].purge = True
+[2].register = rsyslog__register_packages
+[2].until = rsyslog__register_packages is succeeded
+[2].when = rsyslog__enabled | bool and ansible_pkg_mgr == 'apt'
+[3].name = Make sure that Ansible local facts directory exists
+[3]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].mode = 0755
+[3].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
+[4].name = Save rsyslog local facts
+[4]["ansible.builtin.template"].src = etc/ansible/facts.d/rsyslog.fact.j2
+[4]["ansible.builtin.template"].dest = /etc/ansible/facts.d/rsyslog.fact
+[4]["ansible.builtin.template"].mode = 0755
+[4].notify[0] = Refresh host facts
+[4].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
+[4].tags[0] = meta::facts
+[5].name = Update Ansible facts if they were modified
+[5]["ansible.builtin.meta"] = flush_handlers
+[6].name = Create required system group
+[6]["ansible.builtin.group"].name = {{ rsyslog__group }}
+[6]["ansible.builtin.group"].state = present
+[6]["ansible.builtin.group"].system = True
+[6].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and rsyslog__unprivileged | bool and rsyslog__group != 'root'
+[7].name = Create required system user
+[7]["ansible.builtin.user"].name = {{ rsyslog__user }}
+[7]["ansible.builtin.user"].group = {{ rsyslog__group }}
+[7]["ansible.builtin.user"].groups = {{ rsyslog__append_groups | join(",") | default(omit) }}
+[7]["ansible.builtin.user"].append = True
+[7]["ansible.builtin.user"].home = {{ rsyslog__home }}
+[7]["ansible.builtin.user"].shell = /bin/false
+[7]["ansible.builtin.user"].state = present
+[7]["ansible.builtin.user"].createhome = False
+[7]["ansible.builtin.user"].system = True
+[7].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and rsyslog__unprivileged | bool and rsyslog__user != 'root'
+[8].name = Fix directory permissions if needed
+[8]["ansible.builtin.file"].path = /var/spool/rsyslog
+[8]["ansible.builtin.file"].owner = {{ rsyslog__user }}
+[8]["ansible.builtin.file"].group = {{ rsyslog__file_group }}
+[8]["ansible.builtin.file"].mode = 0700
+[8].register = rsyslog__register_unprivileged_files
+[8].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and rsyslog__unprivileged | bool and rsyslog__user != 'root'
+[9].name = Update directory and file permissions
+[9]["ansible.builtin.shell"] = [ ! -d {{ rsyslog__home }} ] \
+  || ( [ "$(stat -c '%G' {{ rsyslog__home }})" = "{{ rsyslog__group }}" ] \
+         || chown -v root:{{ rsyslog__group }} {{ rsyslog__home }} ; \
+       [ "$(stat -c '%a' {{ rsyslog__home }})" = "775" ] \
+         || chmod -v 775 {{ rsyslog__home }} )
+for i in {{ rsyslog__default_logfiles | join(" ") }} ; do
+  [ ! -f ${i} ] || \
+    ( [ "$(stat -c '%U' ${i})" = "{{ rsyslog__file_owner }}" ] \
+    || chown -v {{ rsyslog__file_owner }}:{{ rsyslog__file_group }} ${i} )
+done
+
+[9].register = rsyslog__register_file_permissions
+[9].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and rsyslog__unprivileged | bool
+[9].changed_when = rsyslog__register_file_permissions.stdout | d()
+[9].notify[0] = Check and restart rsyslogd
+[10].name = Create systemd-tmpfiles override
+[10]["ansible.builtin.copy"].dest = /etc/tmpfiles.d/rsyslog-var-log.conf
+[10]["ansible.builtin.copy"].mode = 0755
+[10]["ansible.builtin.copy"].content = z {{ rsyslog__home }} 0775 root {{ rsyslog__group }} -
+[10].notify[0] = Create temporary files
+[10].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and ansible_service_mgr == "systemd" and rsyslog__unprivileged | bool and ansible_distribution == "Debian"
+[11].name = Divert main rsyslog configuration file
+[11]["debops.debops.dpkg_divert"].path = /etc/rsyslog.conf
+[11]["debops.debops.dpkg_divert"].state = present
+[11].notify[0] = Check and restart rsyslogd
+[11].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and ansible_pkg_mgr == 'apt'
+[12].name = Generate main rsyslog configuration
+[12]["ansible.builtin.template"].src = etc/rsyslog.conf.j2
+[12]["ansible.builtin.template"].dest = /etc/rsyslog.conf
+[12]["ansible.builtin.template"].mode = 0644
+[12].notify[0] = Check and restart rsyslogd
+[12].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
+[13].name = Manage configuration file diversions
+[13]["debops.debops.dpkg_divert"].path = {{ "/etc/rsyslog.d/" + (item.divert_to | d(item.name)) }}
+[13]["debops.debops.dpkg_divert"].state = {{ "present"
+               if (item.state | d("present") not in ["absent", "ignore", "init"])
+               else "absent" }}
+[13].loop = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items
+            | selectattr("divert", "defined") | list
+            | selectattr("divert", "equalto", True) | list }}
+[13].loop_control.label = {{ {"name": item.name, "state": (item.state | d("present"))} }}
+[13].notify[0] = Check and restart rsyslogd
+[13].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
+[14].name = Generate rsyslog configuration rules
+[14]["ansible.builtin.template"].src = etc/rsyslog.d/template.conf.j2
+[14]["ansible.builtin.template"].dest = {{ "/etc/rsyslog.d/" + item.name }}
+[14]["ansible.builtin.template"].owner = {{ item.owner | d("root") }}
+[14]["ansible.builtin.template"].group = {{ item.group | d("root") }}
+[14]["ansible.builtin.template"].mode = {{ item.mode | d("0644") }}
+[14].loop = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items }}
+[14].loop_control.label = {{ {"name": item.name, "state": (item.state | d("present"))} }}
+[14].when = (rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and item.state | d('present') not in ['absent', 'ignore', 'init'] and (item.options | d() or item.raw | d()))
+[14].notify[0] = Check and restart rsyslogd
+[15].name = Remove custom config files when requested
+[15]["ansible.builtin.file"].path = {{ "/etc/rsyslog.d/" + item.name }}
+[15]["ansible.builtin.file"].state = absent
+[15].loop = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items }}
+[15].loop_control.label = {{ {"name": item.name, "state": (item.state | d("present"))} }}
+[15].when = (rsyslog__enabled | bool and rsyslog__deploy_state != 'absent' and (item.divert is undefined or not item.divert | bool) and item.state | d('present') == 'absent')
+[15].notify[0] = Check and restart rsyslogd
+[16].name = Prepare cleanup during package removal
+[16]["ansible.builtin.import_role"].name = dpkg_cleanup
+[16].vars.dpkg_cleanup__dependent_packages[0] = {{ rsyslog__dpkg_cleanup__dependent_packages }}
+[16].when = rsyslog__enabled | bool and rsyslog__deploy_state != 'absent'
+[16].tags[0] = role::dpkg_cleanup
+[16].tags[1] = skip::dpkg_cleanup
+[16].tags[2] = role::rsyslog:dpkg_cleanup

@@ -1,6 +1,6 @@
 [0].name = Install required packages
 [0]["ansible.builtin.package"].name = {{ q("flattened", (controller__base_packages
-                              + controller__packages)) }} 
+                              + controller__packages)) }}
 [0]["ansible.builtin.package"].state = present
 [0].register = controller__register_packages
 [0].until = controller__register_packages is succeeded
@@ -10,7 +10,7 @@
 [1].register = controller__register_pip_install
 [1].until = controller__register_pip_install is succeeded
 [1].notify = {{ ["Update DebOps in the background with " + controller__update_method]
-              if not controller__update_method == "sync" else omit }} 
+              if not controller__update_method == "sync" else omit }}
 [2].name = Configure system-wide DebOps scripts
 [2]["ansible.builtin.template"].src = etc/debops.cfg.j2
 [2]["ansible.builtin.template"].dest = /etc/debops.cfg

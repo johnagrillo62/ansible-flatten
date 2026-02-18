@@ -7,7 +7,6 @@ sssd__ldap_enabled = {{ ansible_local.ldap.enabled
                         if (ansible_local | d() and ansible_local.ldap | d() and
                             ansible_local.ldap.enabled is defined)
                         else False }}
-
 sssd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 sssd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 sssd__ldap_self_rdn = uid=sssd
@@ -22,13 +21,11 @@ sssd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                + sssd__ldap_binddn | to_uuid + ".password length=32"))
                        if sssd__ldap_enabled | bool
                        else "" }}
-
 sssd__ldap_posix_urns = {{ (ansible_local.ldap.urn_patterns
                             if (ansible_local.ldap.urn_patterns | d())
                             else [])
                            | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
                            | list }}
-
 sssd__ldap_host_filter = (| (host=posix:all) (host=posix:{{ ansible_fqdn }}) (host=posix:\2a.{{ ansible_domain }}) {{ sssd__ldap_posix_urns | join(" ") }} )
 sssd__default_configuration[0].section = sssd
 sssd__default_configuration[0].title = Global directives
@@ -184,7 +181,6 @@ sssd__default_configuration[5].options[17].value = {{ True
                   if (ansible_local | d() and ansible_local.ldap | d() and
                       (ansible_local.ldap.start_tls | d()) | bool)
                   else False }}
-
 sssd__default_configuration[5].options[18].name = ldap_tls_reqcert
 sssd__default_configuration[5].options[18].value = demand
 sssd__default_configuration[5].options[19].name = ldap_tls_cacert
@@ -211,7 +207,6 @@ sssd__combined_configuration = {{ sssd__default_configuration
                                    + sssd__configuration
                                    + sssd__group_configuration
                                    + sssd__host_configuration }}
-
 sssd__ldap__dependent_tasks[0].name = Create sssd account for {{ sssd__ldap_device_dn | join(",") }}
 sssd__ldap__dependent_tasks[0].dn = {{ sssd__ldap_binddn }}
 sssd__ldap__dependent_tasks[0].objectClass = {{ sssd__ldap_self_object_classes }}
@@ -221,5 +216,4 @@ sssd__ldap__dependent_tasks[0].state = {{ "present"
                if ((ansible_local.ldap.posix_enabled | d()) | bool and
                    sssd__ldap_device_dn | d())
                else "ignore" }}
-
 sssd__nsswitch__dependent_services[0] = sss

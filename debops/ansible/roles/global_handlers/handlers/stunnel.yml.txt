@@ -1,8 +1,6 @@
-~d0.name = Restart stunnel
-~d1.ansible.builtin.service = 
-~d2.name = 'stunnel4'
-~d2.state = 'restarted'
-~d0.name = Reload stunnel
-~d1.ansible.builtin.service = 
-~d2.name = 'stunnel4'
-~d2.state = 'reloaded'
+[0].name = Restart stunnel
+[0]["ansible.builtin.service"].name = stunnel4
+[0]["ansible.builtin.service"].state = restarted
+[1].name = Reload stunnel
+[1]["ansible.builtin.service"].name = stunnel4
+[1]["ansible.builtin.service"].state = reloaded

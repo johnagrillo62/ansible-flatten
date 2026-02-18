@@ -57,7 +57,6 @@
                            + php__group_configuration
                            + php__host_configuration
                            + php__dependent_configuration) }}
-
 [8].when = item.state | d('present') != 'absent'
 [8].notify[0] = Restart php-fpm
 [8].tags[0] = role::php:config
@@ -69,7 +68,6 @@
                            + php__group_configuration
                            + php__host_configuration
                            + php__dependent_configuration) }}
-
 [9].when = item.state | d() and item.state == 'absent'
 [9].notify[0] = Restart php-fpm
 [9].tags[0] = role::php:config
@@ -109,7 +107,6 @@
                            + php__group_pools
                            + php__host_pools
                            + php__dependent_pools) }}
-
 [13].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent"
 [13].notify[0] = Restart php-fpm
 [13].tags[0] = role::php:pools
@@ -122,7 +119,6 @@
                            + php__group_pools
                            + php__host_pools
                            + php__dependent_pools) }}
-
 [14].when = "fpm" in php__server_api_packages and item.state | d() and item.state == "absent"
 [14].notify[0] = Restart php-fpm
 [14].tags[0] = role::php:pools
@@ -136,7 +132,6 @@
                            + php__group_pools
                            + php__host_pools
                            + php__dependent_pools) }}
-
 [15].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent" and item.owner | d() and item.home | d()
 [16].name = Make sure required system accounts exist
 [16]["ansible.builtin.user"].name = {{ item.owner }}
@@ -150,7 +145,6 @@
                            + php__group_pools
                            + php__host_pools
                            + php__dependent_pools) }}
-
 [16].when = "fpm" in php__server_api_packages and item.state | d("present") != "absent" and item.owner | d() and item.home | d()
 [17].name = Make sure that Ansible local facts directory is present
 [17]["ansible.builtin.file"].path = /etc/ansible/facts.d

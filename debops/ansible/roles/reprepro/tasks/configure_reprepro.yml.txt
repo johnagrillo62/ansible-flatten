@@ -78,11 +78,9 @@
 [9]["ansible.builtin.systemd"].state = {{ "started"
                if (repo.state | d("present") not in ["absent", "ignore"])
                else "stopped" }}
-
 [9]["ansible.builtin.systemd"].enabled = {{ True
                if (repo.state | d("present") not in ["absent", "ignore"])
                else False }}
-
 [9].when = repo.incoming | d()
 [10].name = Manage reprepro scripts
 [10]["ansible.builtin.template"].src = home/reprepro/repositories/instance/conf/{{ item }}.j2

@@ -34,23 +34,21 @@ influxdb_server__default_configuration[15].options[0].min-version = "tls1.2"
 influxdb_server__combined_configuration = {{ influxdb_server__default_configuration +
                                              influxdb_server__configuration +
                                              influxdb_server__pki_options }}
-
 influxdb_server__append_groups[0] = ssl-cert
 influxdb_server__pki_options[0].name = http
 influxdb_server__pki_options[0].state = {{ "present" if influxdb_server__pki | bool else "absent" }}
 influxdb_server__pki_options[0].options[0].https-certificate = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
-                                "/" + influxdb_server__pki_crt }} "
+                                "/" + influxdb_server__pki_crt }}"
 influxdb_server__pki_options[0].options[1].https-private-key = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
-                                "/" + influxdb_server__pki_key }} "
+                                "/" + influxdb_server__pki_key }}"
 influxdb_server__pki_options[1].name = subscriber
 influxdb_server__pki_options[1].state = {{ "present" if influxdb_server__pki | bool else "absent" }}
 influxdb_server__pki_options[1].options[0].ca-certs = "{{ influxdb_server__pki_path + "/" + influxdb_server__pki_realm +
-                       "/" + influxdb_server__pki_ca }} "
+                       "/" + influxdb_server__pki_ca }}"
 influxdb_server__pki = {{ True
                           if (ansible_local.pki.enabled | d() | bool and
                               influxdb_server__pki_realm in ansible_local.pki.known_realms)
                           else False }}
-
 influxdb_server__pki_path = {{ ansible_local.pki.base_path | d("/etc/pki") }}
 influxdb_server__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 influxdb_server__pki_ca = CA.crt
@@ -60,7 +58,6 @@ influxdb_server__password_length = 48
 influxdb_server__root_password = {{ lookup("password", secret + "/influxdb/" + ansible_fqdn +
                                     "/credentials/root/password " +
                                     "length=" + influxdb_server__password_length) }}
-
 influxdb_server__backup = True
 influxdb_server__backup_mailaddr = backup@{{ ansible_domain }}
 influxdb_server__backup_doweekly = 6

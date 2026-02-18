@@ -23,7 +23,6 @@ nullmailer__ldap_enabled = {{ ansible_local.ldap.enabled
                               if (ansible_local | d() and ansible_local.ldap | d() and
                                   ansible_local.ldap.enabled is defined)
                               else False }}
-
 nullmailer__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 nullmailer__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 nullmailer__ldap_self_rdn = uid=nullmailer
@@ -40,20 +39,17 @@ nullmailer__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                      + nullmailer__ldap_binddn | to_uuid + ".password length=32"))
                              if nullmailer__ldap_enabled | bool
                              else "" }}
-
 nullmailer__starttls = True
 nullmailer__smtp_srv_rr = {{ q("debops.debops.dig_srv", "_smtp._tcp." + nullmailer__domain,
                                "smtp." + nullmailer__domain, 25)
                              if nullmailer__enabled | bool
                              else [] }}
-
 nullmailer__smtp_port = {{ nullmailer__smtp_srv_rr[0]["port"] }}
 nullmailer__relayhost = {{ nullmailer__smtp_srv_rr[0]["target"] }}
 nullmailer__relayhost_options[0] = --port={{ nullmailer__smtp_port }}
 nullmailer__relayhost_options[1] = {{ "--ssl"
         if (nullmailer__smtp_port == "465")
         else "--starttls" }}
-
 nullmailer__default_remotes[0].host = {{ nullmailer__relayhost }}
 nullmailer__default_remotes[0].options = {{ nullmailer__relayhost_options }}
 nullmailer__default_remotes[0].auth = True
@@ -65,7 +61,6 @@ nullmailer__default_remotes[1] = {{ (nullmailer__relayhost_options | combine({"h
         else ({"host": nullmailer__relayhost,
                "state": ("absent" if nullmailer__ldap_enabled | bool else "present"),
                "options": nullmailer__relayhost_options}) }}
-
 nullmailer__maxpause = 86400
 nullmailer__pausetime = 60
 nullmailer__sendtimeout = 3600
@@ -75,7 +70,6 @@ nullmailer__configuration_files[1].dest = /etc/nullmailer/adminaddr
 nullmailer__configuration_files[1].content = {{ nullmailer__adminaddr
                  if nullmailer__adminaddr is string
                  else nullmailer__adminaddr | join(",") }}
-
 nullmailer__configuration_files[2].dest = /etc/nullmailer/idhost
 nullmailer__configuration_files[2].content = {{ nullmailer__idhost }}
 nullmailer__configuration_files[2].mode = 0644
@@ -110,7 +104,7 @@ nullmailer__configuration_files[9].mode = 0644
 nullmailer__configuration_files[9].state = {{ "present" if nullmailer__allmailfrom else "absent" }}
 nullmailer__private_configuration_files[0].dest = /etc/nullmailer/remotes
 nullmailer__private_configuration_files[0].content = {{ lookup('template', 'lookup/nullmailer__remotes.j2')
-                 | from_yaml | join('\n') }} 
+                 | from_yaml | join('\n') }}
 nullmailer__private_configuration_files[0].owner = mail
 nullmailer__private_configuration_files[0].group = mail
 nullmailer__private_configuration_files[0].mode = 0600
@@ -127,7 +121,6 @@ nullmailer__ldap__dependent_tasks[0].state = {{ "present"
                if (nullmailer__ldap_enabled | bool and
                    nullmailer__ldap_device_dn | d())
                else "ignore" }}
-
 nullmailer__ferm__dependent_rules[0].type = accept
 nullmailer__ferm__dependent_rules[0].dport[0] = {{ nullmailer__smtpd_port }}
 nullmailer__ferm__dependent_rules[0].saddr = {{ nullmailer__smtpd_allow }}
@@ -137,7 +130,6 @@ nullmailer__ferm__dependent_rules[0].role = debops.nullmailer
 nullmailer__ferm__dependent_rules[0].rule_state = {{ "present"
                     if (nullmailer__deploy_state | d("present") != "absent" and
                         nullmailer__smtpd | bool) else "absent" }}
-
 nullmailer__tcpwrappers__dependent_allow[0].daemon = sendmail
 nullmailer__tcpwrappers__dependent_allow[0].client = {{ nullmailer__smtpd_allow }}
 nullmailer__tcpwrappers__dependent_allow[0].accept_any = False
@@ -147,17 +139,14 @@ nullmailer__tcpwrappers__dependent_allow[0].comment = Allow remote connections t
 nullmailer__tcpwrappers__dependent_allow[0].state = {{ "present"
                if (nullmailer__deploy_state | d("present") != "absent" and
                    nullmailer__smtpd | bool) else "absent" }}
-
 nullmailer__dpkg_cleanup__dependent_packages[0].name = nullmailer
 nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[0] = {{ (nullmailer__configuration_files
              | selectattr("dest", "defined")
              | map(attribute="dest") | list)
             | difference("/etc/mailname") }}
-
 nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[1] = {{ nullmailer__private_configuration_files
             | selectattr("dest", "defined")
             | map(attribute="dest") | list }}
-
 nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[2] = /etc/ferm/ferm.d/50_debops.nullmailer_accept_25.conf
 nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[3] = /etc/hosts.allow.d/50_nullmailer_dependent_allow
 nullmailer__dpkg_cleanup__dependent_packages[0].remove_files[4] = /etc/xinetd.d/nullmailer-smtpd

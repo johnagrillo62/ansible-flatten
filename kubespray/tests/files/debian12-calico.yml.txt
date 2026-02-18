@@ -1,3 +1,3 @@
-~d0.cloud_image = debian-12
-~d0.dns_mode = coredns_dual
-~d0.kube_asymmetric_encryption_algorithm = "RSA-3072"
+cloud_image = debian-12
+dns_mode = coredns_dual
+kube_asymmetric_encryption_algorithm = RSA-3072

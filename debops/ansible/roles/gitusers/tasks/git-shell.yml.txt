@@ -13,7 +13,7 @@
 [2].name = Prepare gituser environment
 [2]["ansible.builtin.template"].src = srv/gitusers/{{ item.1 }}.j2
 [2]["ansible.builtin.template"].dest = {{ item.0.home | default(gitusers_default_home_prefix + "/"
-                                    + item.0.name + gitusers_name_suffix) }} /.{{ item.1 }}
+                                    + item.0.name + gitusers_name_suffix) }}/.{{ item.1 }}
 [2]["ansible.builtin.template"].owner = root
 [2]["ansible.builtin.template"].group = root
 [2]["ansible.builtin.template"].mode = 0644
@@ -31,11 +31,10 @@
 [3].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [3].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))
 [4].name = Create root directory for user websites
 [4]["ansible.builtin.file"].path = {{ gitusers_default_www_prefix }}/{{ item.0.group | default(item.0.name
-                                                                       + gitusers_name_suffix) }} /{{ item.1 }}
+                                                                       + gitusers_name_suffix) }}/{{ item.1 }}
 [4]["ansible.builtin.file"].state = directory
 [4]["ansible.builtin.file"].owner = root
 [4]["ansible.builtin.file"].group = {{ item.0.group | default(item.0.name + gitusers_name_suffix) }}
@@ -47,7 +46,7 @@
 [4].when = ((item.0.name is defined and item.0.name) and (item.0.state is undefined or (item.0.state is defined and item.0.state != 'absent')))
 [5].name = Symlink git-shell-commands to user directories
 [5]["ansible.builtin.file"].path = {{ item.home | default(gitusers_default_home_prefix + "/"
-                                  + item.name + gitusers_name_suffix) + "/git-shell-commands" }} 
+                                  + item.name + gitusers_name_suffix) + "/git-shell-commands" }}
 [5]["ansible.builtin.file"].src = {{ gitusers_git_scripts + "/git-shell-commands/" }}
 [5]["ansible.builtin.file"].state = link
 [5]["ansible.builtin.file"].owner = root
@@ -56,5 +55,4 @@
 [5].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [5].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))

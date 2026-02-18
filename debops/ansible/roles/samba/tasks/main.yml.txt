@@ -14,7 +14,6 @@
 [2].loop = {{ q("flattened", samba__path
                            + samba__homes_path
                            + samba__shares_path) }}
-
 [2].when = ('samba' in samba__base_packages)
 [3].name = Setup samba-homedir.sh script
 [3]["ansible.builtin.template"].src = usr/local/sbin/samba-homedir.sh.j2

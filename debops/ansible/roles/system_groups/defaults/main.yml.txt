@@ -2,11 +2,9 @@ system_groups__enabled = True
 system_groups__sudo_enabled = {{ True
                                  if (ansible_local.sudo.installed | d() | bool)
                                  else False }}
-
 system_groups__admins_sudo_nopasswd = {{ False
                                          if (system_groups__fact_ansible_connection == "local")
                                          else True }}
-
 system_groups__prefix = {{ ansible_local.system_groups.local_prefix
                            if (ansible_local | d() and ansible_local.system_groups | d() and
                                ansible_local.system_groups.local_prefix is defined)
@@ -14,7 +12,6 @@ system_groups__prefix = {{ ansible_local.system_groups.local_prefix
                                  if ("debops_service_ldap" in group_names or
                                      (ansible_local.ldap.posix_enabled | d() | bool))
                                  else "") }}
-
 system_groups__throttle = 8
 system_groups__default_list[0].name = {{ system_groups__prefix }}admins
 system_groups__default_list[0].sudoers_filename = system_groups-admins
@@ -66,4 +63,3 @@ system_groups__combined_list = {{ system_groups__default_list
                                   + system_groups__list
                                   + system_groups__group_list
                                   + system_groups__host_list }}
-

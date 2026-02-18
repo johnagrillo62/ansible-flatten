@@ -1,8 +1,4 @@
-~d0.dropbear_initramfs__interfaces = 
-~d1.'eth0' = 
-~d2.inet = False
-~d2.inet6 = 'static'
-~d2.addresses = 
-~d3.'2001 = db8::23/64'
-~d2.gateways = 
-~d3.'2001 = db8::'
+dropbear_initramfs__interfaces.eth0.inet = False
+dropbear_initramfs__interfaces.eth0.inet6 = static
+dropbear_initramfs__interfaces.eth0.addresses[0] = 2001:db8::23/64
+dropbear_initramfs__interfaces.eth0.gateways[0] = 2001:db8::

@@ -1,29 +1,23 @@
 mailman__python__dependent_packages3[0] = {{ ["python3-django-auth-ldap"]
         if mailman__ldap_enabled | bool
         else [] }}
-
 mailman__python__dependent_packages3[1] = {{ ["python3-psycopg2"]
         if (mailman__database_type == "postgresql")
         else [] }}
-
 mailman__python__dependent_packages3[2] = {{ ["python3-pymysql", "python3-mysqldb"]
         if (mailman__database_type == "mysql")
         else [] }}
-
 mailman__python__dependent_packages2[0] = {{ ["python-django-auth-ldap"]
         if mailman__ldap_enabled | bool
         else [] }}
-
 mailman__python__dependent_packages2[1] = {{ ["python-psycopg2"]
         if (mailman__database_type == "postgresql")
         else [] }}
-
 mailman__python__dependent_packages2[2] = {{ ["python-pymysql", "python-mysqldb"]
         if (mailman__database_type == "mysql")
         else [] }}
-
 mailman__ldap__dependent_tasks[0].name = {{ "Create Mailman 3 account for "
-              + mailman__ldap_device_dn | join(",") }} 
+              + mailman__ldap_device_dn | join(",") }}
 mailman__ldap__dependent_tasks[0].dn = {{ mailman__ldap_bind_dn }}
 mailman__ldap__dependent_tasks[0].objectClass = {{ mailman__ldap_self_object_classes }}
 mailman__ldap__dependent_tasks[0].attributes = {{ mailman__ldap_self_attributes }}

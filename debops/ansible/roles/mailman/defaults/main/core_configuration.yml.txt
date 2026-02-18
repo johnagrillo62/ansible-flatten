@@ -342,35 +342,29 @@ mailman__core_default_configuration[1].options[0].name = class_sqlite
 mailman__core_default_configuration[1].options[0].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("SQLiteDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[1].options[1].name = class_mysql
 mailman__core_default_configuration[1].options[1].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("MySQLDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[1].options[2].name = class_postgresql
 mailman__core_default_configuration[1].options[2].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("PostgreSQLDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[1].options[3].name = url_sqlite
 mailman__core_default_configuration[1].options[3].value = {{ ansible_local.mailman.database_url | d() }}
 mailman__core_default_configuration[1].options[3].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("SQLiteDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[1].options[4].name = url_mysql
 mailman__core_default_configuration[1].options[4].value = {{ ansible_local.mailman.database_url | d() }}
 mailman__core_default_configuration[1].options[4].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("MySQLDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[1].options[5].name = url_postgresql
 mailman__core_default_configuration[1].options[5].value = {{ ansible_local.mailman.database_url | d() }}
 mailman__core_default_configuration[1].options[5].state = {{ "present"
                    if ((ansible_local.mailman.database_class | d("")).endswith("PostgreSQLDatabase"))
                    else "ignore" }}
-
 mailman__core_default_configuration[2].name = webservice
 mailman__core_default_configuration[2].options[0].name = admin_pass
 mailman__core_default_configuration[2].options[0].value = {{ ansible_local.mailman.webservice_admin_pass | d("restpass") }}
@@ -379,4 +373,3 @@ mailman__core_combined_configuration = {{ mailman__core_original_configuration
                                           + mailman__core_configuration
                                           + mailman__core_group_configuration
                                           + mailman__core_host_configuration }}
-

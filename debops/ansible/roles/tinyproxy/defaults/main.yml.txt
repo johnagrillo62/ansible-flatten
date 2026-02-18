@@ -7,7 +7,6 @@ tinyproxy__configuration_file = {{ "/etc/tinyproxy.conf"
                                    if (ansible_distribution_release in
                                        ["trusty", "xenial"])
                                    else "/etc/tinyproxy/tinyproxy.conf" }}
-
 tinyproxy__default_configuration[0].name = tinyproxy.conf
 tinyproxy__default_configuration[0].options[0].name = User Group
 tinyproxy__default_configuration[0].options[0].comment = User/Group: This allows you to set the user and group that will be

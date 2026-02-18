@@ -1,121 +1,179 @@
-~d0.name = Create global webroot directories if allowed
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.root | d("{}/sites/{}/{}".format(nginx_www + ("/" + item.owner if item.owner | d() else ""),
-~d2.state = 'directory'
-~d2.owner = '{{ item.owner | d(nginx_webroot_owner) }}'
-~d2.group = '{{ item.group | d(item.owner | d(nginx_webroot_group)) }}'
-~d2.mode = '{{ item.mode | d(nginx_webroot_mode) }}'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.when = ((item.webroot_create | d(nginx_webroot_create) | bool) and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Create default welcome page if enabled
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", (item.welcome_template | d(nginx_welcome_template))) }}'
-~d2.dest = '{{ item.root + "/index.html"
-~d2.owner = '{{ item.owner | d(nginx_webroot_owner) }}'
-~d2.group = '{{ item.group | d(item.owner | d(nginx_webroot_group)) }}'
-~d2.mode = '0644'
-~d2.force = '{{ item.welcome_force | d() | bool }}'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.when = ((item.webroot_create | d(nginx_webroot_create) | bool) and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Copy 'normalize.css' CSS file for welcome page
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "srv/www/sites/welcome/public/normalize.css") }}'
-~d2.dest = '{{ item.root + "/normalize.css"
-~d2.owner = '{{ item.owner | d(nginx_webroot_owner) }}'
-~d2.group = '{{ item.group | d(item.owner | d(nginx_webroot_group)) }}'
-~d2.mode = '0644'
-~d2.force = '{{ item.welcome_force | d() | bool }}'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.when = ((item.webroot_create | d(nginx_webroot_create) | bool) and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Remove nginx server configuration if requested
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/nginx/sites-available/{{ item.filename | d(item.name
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.when = (item.name is defined and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get last used HTTP default_server for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_saved = '{{ ansible_local.nginx.default_server }}'
-~d1.when = (ansible_local is defined and ansible_local.nginx is defined and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get last used HTTPS default_server for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_ssl_saved = '{{ ansible_local.nginx.default_server_ssl }}'
-~d1.when = (ansible_local is defined and ansible_local.nginx is defined and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get HTTP server from nginx defaults for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_name = '{{ nginx_default_name }}'
-~d1.when = nginx_default_name is defined and nginx_default_name
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get HTTPS server from nginx defaults for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_ssl_name = '{{ nginx_default_ssl_name }}'
-~d1.when = nginx_default_ssl_name is defined and nginx_default_ssl_name
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get first server that listens on http port for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_http = '{{ item.name if item.name is string else item.name[0] | d("default") }}'
-~d1.loop = '{{ q("flattened", (nginx__servers + nginx__default_servers + nginx__internal_servers + nginx__dependent_servers
-~d14.+ nginx_internal_servers | d([]) + nginx_dependent_servers | d([]))[ = :-1]) }}'
-~d1.when = (item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Get first server that listens on https port for default_server roulette
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_https = '{{ item.name if item.name is string else item.name[0] | d("default") }}'
-~d1.loop = '{{ q("flattened", (nginx__servers + nginx__default_servers + nginx__internal_servers + nginx__dependent_servers
-~d14.+ nginx_internal_servers | d([]) + nginx_dependent_servers | d([]))[ = :-1]) }}'
-~d1.when = (item.state | d('present') != 'absent' and (item.enabled is undefined or item.enabled | bool) and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Spin the HTTP default_server roulette!
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server = '{{ nginx_register_default_server_saved |
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Spin the HTTPS default_server roulette!
-~d1.ansible.builtin.set_fact = 
-~d2.nginx_register_default_server_ssl = '{{ nginx_register_default_server_ssl_saved |
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Generate nginx server configuration
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "etc/nginx/sites-available/" + (item.type | d(nginx_default_type)) + ".conf.j2") }}'
-~d2.dest = '/etc/nginx/sites-available/{{ item.filename | d(item.name
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Disable nginx server configuration
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/nginx/sites-enabled/{{ item.filename
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.notify = [ 'Test nginx and restart' ]
-~d1.when = (item.name is defined and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Test if Ansible is running in check mode
-~d1.ansible.builtin.command = /bin/true
-~d1.changed_when = False
-~d1.register = nginx__register_check_mode
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Save fact if Ansible is running in check mode in variable
-~d1.ansible.builtin.set_fact = 
-~d2.nginx__fact_check_mode = '{{ nginx__register_check_mode is skipped }}'
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Enable nginx server configuration
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/nginx/sites-enabled/{{ item.filename
-~d2.src = '/etc/nginx/sites-available/{{ item.filename
-~d2.state = 'link'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__servers
-~d1.notify = [ 'Test nginx and restart' ]
-~d1.when = (item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
+[0].name = Create global webroot directories if allowed
+[0]["ansible.builtin.file"].path = {{ item.root | d("{}/sites/{}/{}".format(nginx_www + ("/" + item.owner if item.owner | d() else ""),
+                                                    (item.name if item.name is string else item.name[0]) | d("default"),
+                                                    item.public_dir_name | d(nginx_public_dir_name))) }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = {{ item.owner | d(nginx_webroot_owner) }}
+[0]["ansible.builtin.file"].group = {{ item.group | d(item.owner | d(nginx_webroot_group)) }}
+[0]["ansible.builtin.file"].mode = {{ item.mode | d(nginx_webroot_mode) }}
+[0].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[0].when = ((item.webroot_create | d(nginx_webroot_create) | bool) and item.state | d('present') != 'absent')
+[0].tags[0] = role::nginx:servers
+[1].name = Create default welcome page if enabled
+[1]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", (item.welcome_template | d(nginx_welcome_template))) }}
+[1]["ansible.builtin.template"].dest = {{ item.root + "/index.html"
+              if item.root | d()
+              else ("{}/sites/{}/{}/index.html".format(nginx_www + ("/" + item.owner if item.owner | d() else ""),
+                                                       (item.name if item.name is string else item.name[0]) | d("default"),
+                                                       item.public_dir_name | d(nginx_public_dir_name))) }}
+[1]["ansible.builtin.template"].owner = {{ item.owner | d(nginx_webroot_owner) }}
+[1]["ansible.builtin.template"].group = {{ item.group | d(item.owner | d(nginx_webroot_group)) }}
+[1]["ansible.builtin.template"].mode = 0644
+[1]["ansible.builtin.template"].force = {{ item.welcome_force | d() | bool }}
+[1].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[1].when = ((item.webroot_create | d(nginx_webroot_create) | bool) and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool) and (item.welcome | d() | bool))
+[1].tags[0] = role::nginx:servers
+[2].name = Copy 'normalize.css' CSS file for welcome page
+[2]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "srv/www/sites/welcome/public/normalize.css") }}
+[2]["ansible.builtin.template"].dest = {{ item.root + "/normalize.css"
+              if item.root | d()
+              else ("{}/sites/{}/{}/normalize.css".format(nginx_www + ("/" + item.owner if item.owner | d() else ""),
+                                                          (item.name if item.name is string else item.name[0]) | d("default"),
+                                                          item.public_dir_name | d(nginx_public_dir_name))) }}
+[2]["ansible.builtin.template"].owner = {{ item.owner | d(nginx_webroot_owner) }}
+[2]["ansible.builtin.template"].group = {{ item.group | d(item.owner | d(nginx_webroot_group)) }}
+[2]["ansible.builtin.template"].mode = 0644
+[2]["ansible.builtin.template"].force = {{ item.welcome_force | d() | bool }}
+[2].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[2].when = ((item.webroot_create | d(nginx_webroot_create) | bool) and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool) and (item.welcome | d() | bool))
+[2].tags[0] = role::nginx:servers
+[3].name = Remove nginx server configuration if requested
+[3]["ansible.builtin.file"].path = /etc/nginx/sites-available/{{ item.filename | d(item.name
+                                                           if item.name is string
+                                                           else item.name[0] | d("default")) }}.conf
+[3]["ansible.builtin.file"].state = absent
+[3].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[3].when = (item.name is defined and ((item.state | d("present") == 'absent') or (item.delete | d() | bool)))
+[3].tags[0] = role::nginx:servers
+[4].name = Get last used HTTP default_server for default_server roulette
+[4]["ansible.builtin.set_fact"].nginx_register_default_server_saved = {{ ansible_local.nginx.default_server }}
+[4].when = (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.default_server is defined)
+[4].tags[0] = role::nginx:servers
+[5].name = Get last used HTTPS default_server for default_server roulette
+[5]["ansible.builtin.set_fact"].nginx_register_default_server_ssl_saved = {{ ansible_local.nginx.default_server_ssl }}
+[5].when = (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.default_server_ssl is defined)
+[5].tags[0] = role::nginx:servers
+[6].name = Get HTTP server from nginx defaults for default_server roulette
+[6]["ansible.builtin.set_fact"].nginx_register_default_server_name = {{ nginx_default_name }}
+[6].when = nginx_default_name is defined and nginx_default_name
+[6].tags[0] = role::nginx:servers
+[7].name = Get HTTPS server from nginx defaults for default_server roulette
+[7]["ansible.builtin.set_fact"].nginx_register_default_server_ssl_name = {{ nginx_default_ssl_name }}
+[7].when = nginx_default_ssl_name is defined and nginx_default_ssl_name
+[7].tags[0] = role::nginx:servers
+[8].name = Get first server that listens on http port for default_server roulette
+[8]["ansible.builtin.set_fact"].nginx_register_default_server_http = {{ item.name if item.name is string else item.name[0] | d("default") }}
+[8].loop = {{ q("flattened", (nginx__servers + nginx__default_servers + nginx__internal_servers + nginx__dependent_servers
+                            + nginx_servers | d([]) + nginx_default_servers | d([])
+                            + nginx_internal_servers | d([]) + nginx_dependent_servers | d([]))[::-1]) }}
+[8].when = (item.state | d('present') != 'absent' and (item.enabled | d(True) | bool) and (item.listen | d(True)) and ((item.ssl is undefined or not item.ssl | bool) or not nginx_pki | bool))
+[8].tags[0] = role::nginx:servers
+[9].name = Get first server that listens on https port for default_server roulette
+[9]["ansible.builtin.set_fact"].nginx_register_default_server_https = {{ item.name if item.name is string else item.name[0] | d("default") }}
+[9].loop = {{ q("flattened", (nginx__servers + nginx__default_servers + nginx__internal_servers + nginx__dependent_servers
+                            + nginx_servers | d([]) + nginx_default_servers | d([])
+                            + nginx_internal_servers | d([]) + nginx_dependent_servers | d([]))[::-1]) }}
+[9].when = (item.state | d('present') != 'absent' and (item.enabled is undefined or item.enabled | bool) and (item.listen_ssl is undefined or item.listen_ssl | d()) and ((item.ssl | d() and item.ssl | bool) or (item.ssl is undefined and nginx_pki | bool)))
+[9].tags[0] = role::nginx:servers
+[10].name = Spin the HTTP default_server roulette!
+[10]["ansible.builtin.set_fact"].nginx_register_default_server = {{ nginx_register_default_server_saved |
+                                         default(nginx_register_default_server_name |
+                                           default(nginx_register_default_server_http |
+                                             default(""))) }}
+[10].tags[0] = role::nginx:servers
+[11].name = Spin the HTTPS default_server roulette!
+[11]["ansible.builtin.set_fact"].nginx_register_default_server_ssl = {{ nginx_register_default_server_ssl_saved |
+                                             default(nginx_register_default_server_ssl_name |
+                                               default(nginx_register_default_server_https |
+                                                 default(""))) }}
+[11].tags[0] = role::nginx:servers
+[12].name = Generate nginx server configuration
+[12]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "etc/nginx/sites-available/" + (item.type | d(nginx_default_type)) + ".conf.j2") }}
+[12]["ansible.builtin.template"].dest = /etc/nginx/sites-available/{{ item.filename | d(item.name
+                                                           if item.name is string
+                                                           else item.name[0] | d("default")) }}.conf
+[12]["ansible.builtin.template"].owner = root
+[12]["ansible.builtin.template"].group = root
+[12]["ansible.builtin.template"].mode = 0644
+[12].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[12].notify[0] = Test nginx and reload
+[12].when = (item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool))
+[12].tags[0] = role::nginx:servers
+[13].name = Disable nginx server configuration
+[13]["ansible.builtin.file"].path = /etc/nginx/sites-enabled/{{ item.filename
+                                       | d(item.name if item.name is string else item.name[0] | d("default")) }}.conf
+[13]["ansible.builtin.file"].state = absent
+[13].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[13].notify[0] = Test nginx and restart
+[13].when = (item.name is defined and ((item.state | d("present") == 'absent') or (item.enabled | d() and not item.enabled | bool) or (item.delete | d() | bool)))
+[13].tags[0] = role::nginx:servers
+[14].name = Test if Ansible is running in check mode
+[14]["ansible.builtin.command"] = /bin/true
+[14].changed_when = False
+[14].register = nginx__register_check_mode
+[14].tags[0] = role::nginx:servers
+[15].name = Save fact if Ansible is running in check mode in variable
+[15]["ansible.builtin.set_fact"].nginx__fact_check_mode = {{ nginx__register_check_mode is skipped }}
+[15].tags[0] = role::nginx:servers
+[16].name = Enable nginx server configuration
+[16]["ansible.builtin.file"].path = /etc/nginx/sites-enabled/{{ item.filename
+                                       | d(item.name if item.name is string else item.name[0] | d("default")) }}.conf
+[16]["ansible.builtin.file"].src = /etc/nginx/sites-available/{{ item.filename
+                                        | d(item.name if item.name is string else item.name[0] | d("default")) }}.conf
+[16]["ansible.builtin.file"].state = link
+[16]["ansible.builtin.file"].owner = root
+[16]["ansible.builtin.file"].group = root
+[16]["ansible.builtin.file"].mode = 0644
+[16].loop = {{ q("flattened", nginx__servers
+                           + nginx__default_servers
+                           + nginx__internal_servers
+                           + nginx__dependent_servers
+                           + nginx_servers | d([])
+                           + nginx_default_servers | d([])
+                           + nginx_internal_servers | d([])
+                           + nginx_dependent_servers | d([])) }}
+[16].notify[0] = Test nginx and restart
+[16].when = (item.state | d('present') != 'absent' and (item.enabled | d(True) | bool) and (item.delete is undefined or not item.delete | bool) and not nginx__fact_check_mode | bool)
+[16].tags[0] = role::nginx:servers

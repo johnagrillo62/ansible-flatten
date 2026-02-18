@@ -1,6 +1,5 @@
-~d0.name = Migrate data for upgrades and from Local Docker installs
-~d1.hosts = localhost
-~d1.gather_facts = true
-~d1.roles = 
-~d2.{role = sources}
-~d2.{role = migrate}
+[0].name = Migrate data for upgrades and from Local Docker installs
+[0].hosts = localhost
+[0].gather_facts = true
+[0].roles[0].role = sources
+[0].roles[1].role = migrate

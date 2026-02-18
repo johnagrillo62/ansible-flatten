@@ -5,4 +5,4 @@
 [1].name = Reboot after YUM upgrade
 [1].when[0] = yum_upgrade.changed or system_upgrade_reboot == 'always'
 [1].when[1] = system_upgrade_reboot != 'never'
-[1].reboot: = null
+[1].reboot = null

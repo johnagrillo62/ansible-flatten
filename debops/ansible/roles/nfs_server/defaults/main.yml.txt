@@ -9,7 +9,7 @@ nfs_server__service_ports["rpc.mountd"] = {{ (nfs_server__anchor_port | int + 2)
 nfs_server__service_ports["rpc.statd"] = {{ (nfs_server__anchor_port | int + 3) }}
 nfs_server__service_ports["rpc.statd-bc"] = {{ (nfs_server__anchor_port | int + 4) }}
 nfs_server__firewall_ports = {{ (["nfs", "sunrpc"] + (nfs_server__service_ports.keys() | list))
-                                if nfs_server__v3 | bool else ["nfs"] }} 
+                                if nfs_server__v3 | bool else ["nfs"] }}
 nfs_server__v3 = False
 nfs_server__threads = {{ ansible_processor_vcpus | int * 2 }}
 nfs_server__priority = 0
@@ -17,7 +17,7 @@ nfs_server__mountd_options = --manage-gids --port {{ nfs_server__service_ports["
 nfs_server__kerberos = False
 nfs_server__svcgssd_options = 
 nfs_server__root_path = {{ (ansible_local.fhs.data | d("/srv"))
-                           + "/nfs" }} 
+                           + "/nfs" }}
 nfs_server__root_options[0] = rw
 nfs_server__root_options[1] = fsid=root
 nfs_server__root_options[2] = sync
@@ -33,11 +33,9 @@ nfs_server__default_exports[0].options = {{ (nfs_server__root_security_options.s
                  (nfs_server__root_options.split(",")
                   if nfs_server__root_options is string
                   else nfs_server__root_options) }}
-
 nfs_server__combined_exports = {{ lookup("flattened", nfs_server__default_exports
                                   + nfs_server__exports + nfs_server__group_exports
                                   + nfs_server__host_exports) }}
-
 nfs_server__etc_services__dependent_list[0].name = rpc.nfs-cb
 nfs_server__etc_services__dependent_list[0].port = {{ nfs_server__service_ports["rpc.nfs-cb"] }}
 nfs_server__etc_services__dependent_list[0].comment = RPC NFS callback

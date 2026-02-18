@@ -1,12 +1,10 @@
 pki_enabled = {{ (True
                   if pki_default_domain
                   else False) | bool }}
-
 pki_download_extra = True
 pki_internal = {{ (True
                    if pki_default_domain
                    else False) | bool }}
-
 pki_inventory_groups[0] = debops_service_pki
 pki_vcs_ignore_patterns_role[0] = **/private/**
 pki_acme = {{ (True
@@ -15,7 +13,6 @@ pki_acme = {{ (True
                     and pki_default_domain)
                    or pki_acme_type != "acme-tiny")
                else False) | bool }}
-
 pki_acme_install = {{ pki_acme | bool }}
 pki_acme_library = openssl
 pki_acme_user = pki-acme
@@ -25,7 +22,7 @@ pki_acme_type = acme-tiny
 pki_acme_tiny_repo = https://github.com/diafygi/acme-tiny
 pki_acme_tiny_version = main
 pki_acme_tiny_src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                       + "/" + pki_acme_user }} 
+                       + "/" + pki_acme_user }}
 pki_acme_tiny_bin = /usr/local/bin/acme-tiny
 pki_acme_ca = le-live-v2
 pki_acme_ca_api_map.le-live = https://acme-v01.api.letsencrypt.org
@@ -34,9 +31,9 @@ pki_acme_ca_api_map.le-live-v2 = https://acme-v02.api.letsencrypt.org/directory
 pki_acme_ca_api_map.le-staging-v2 = https://acme-staging-v02.api.letsencrypt.org/directory
 pki_acme_contacts[0] = mailto:{{ ansible_local.core.admin_public_email[0] | d("root@" + ansible_domain) }}
 pki_acme_challenge_dir = {{ ansible_local.nginx.acme_root | d("/srv/www/sites/acme/public")
-                            + "/.well-known/acme-challenge" }} 
+                            + "/.well-known/acme-challenge" }}
 pki_create_acme_challenge_dir = {{ True if (ansible_local.nginx.acme | d() and
-                                            ansible_local.nginx.acme | bool) else False }} 
+                                            ansible_local.nginx.acme | bool) else False }}
 pki_certbot_default_configuration[0].name = key-type
 pki_certbot_default_configuration[0].comment = Define the default key signature algorithm to use for certificates.
 DebOps currently supports only RSA signature algorithm.
@@ -54,7 +51,7 @@ fixed when certificates are created.
 
 pki_certbot_default_configuration[2].value = /etc/letsencrypt/renewal-hooks/post/000-fix-permissions
 pki_certbot_combined_configuration = {{ pki_certbot_default_configuration
-                                        + pki_certbot_configuration }} 
+                                        + pki_certbot_configuration }}
 pki_base_packages[0] = ssl-cert
 pki_base_packages[1] = make
 pki_base_packages[2] = ca-certificates
@@ -66,7 +63,6 @@ pki_acme_packages[1] = {{ "git" if (pki_acme_type == "acme-tiny" and pki_acme_in
 pki_acme_packages[2] = {{ [] if (pki_acme_install | bool == false or ansible_distribution_release in
                ["stretch", "trusty", "xenial", "bionic"])
            else "acme-tiny" if (pki_acme_type == "acme-tiny") else [] }}
-
 pki_acme_packages[3] = {{ "python3-certbot-dns-cloudflare" if (pki_acme_type == "dns-cloudflare" and pki_acme_install | bool) else [] }}
 pki_acme_packages[4] = {{ "python3-certbot-dns-digitalocean" if (pki_acme_type == "dns-digitalocean" and pki_acme_install | bool) else [] }}
 pki_acme_packages[5] = {{ "python3-certbot-dns-dnsimple" if (pki_acme_type == "dns-dnsimple" and pki_acme_install | bool) else [] }}
@@ -84,7 +80,6 @@ pki_acme_packages[14] = {{ "certbot" if (pki_acme_type in
                  "dns-linode", "dns-ovh", "dns-rfc2136",
                  "dns-route53", "dns-sakuracloud", "dns-gandi", "manual"]
            and pki_acme_install | bool) else [] }}
-
 pki_root = /etc/pki
 pki_public_group = root
 pki_private_group = ssl-cert
@@ -116,7 +111,6 @@ pki_scheduler_interval = weekly
 pki_dhparam = {{ True
                  if ansible_local.dhparam.default | d()
                  else False }}
-
 pki_dhparam_file = {{ ansible_local.dhparam.default | d("") }}
 pki_ca_library = openssl
 pki_default_authority = domain

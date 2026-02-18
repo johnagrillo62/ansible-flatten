@@ -1,20 +1,18 @@
-~d0.name = Check zabbix-agent and restart
-~d1.ansible.builtin.command = '/usr/sbin/zabbix_agentd --print'
-~d1.register = global_handlers__zabbix_agent_register_config_test_c
-~d1.changed_when = global_handlers__zabbix_agent_register_config_test_c.changed | bool
-~d1.when = zabbix_agent__flavor == 'C'
-~d1.notify = [ 'Restart zabbix-agent' ]
-~d0.name = Check zabbix-agent2 and restart
-~d1.ansible.builtin.command = '/usr/sbin/zabbix_agent2 --print'
-~d1.register = global_handlers__zabbix_agent_register_config_test_go
-~d1.changed_when = global_handlers__zabbix_agent_register_config_test_go.changed | bool
-~d1.when = zabbix_agent__flavor == 'Go'
-~d1.notify = [ 'Restart zabbix-agent2' ]
-~d0.name = Restart zabbix-agent
-~d1.ansible.builtin.service = 
-~d2.name = 'zabbix-agent'
-~d2.state = 'restarted'
-~d0.name = Restart zabbix-agent2
-~d1.ansible.builtin.service = 
-~d2.name = 'zabbix-agent2'
-~d2.state = 'restarted'
+[0].name = Check zabbix-agent and restart
+[0]["ansible.builtin.command"] = /usr/sbin/zabbix_agentd --print
+[0].register = global_handlers__zabbix_agent_register_config_test_c
+[0].changed_when = global_handlers__zabbix_agent_register_config_test_c.changed | bool
+[0].when = zabbix_agent__flavor == 'C'
+[0].notify[0] = Restart zabbix-agent
+[1].name = Check zabbix-agent2 and restart
+[1]["ansible.builtin.command"] = /usr/sbin/zabbix_agent2 --print
+[1].register = global_handlers__zabbix_agent_register_config_test_go
+[1].changed_when = global_handlers__zabbix_agent_register_config_test_go.changed | bool
+[1].when = zabbix_agent__flavor == 'Go'
+[1].notify[0] = Restart zabbix-agent2
+[2].name = Restart zabbix-agent
+[2]["ansible.builtin.service"].name = zabbix-agent
+[2]["ansible.builtin.service"].state = restarted
+[3].name = Restart zabbix-agent2
+[3]["ansible.builtin.service"].name = zabbix-agent2
+[3]["ansible.builtin.service"].state = restarted

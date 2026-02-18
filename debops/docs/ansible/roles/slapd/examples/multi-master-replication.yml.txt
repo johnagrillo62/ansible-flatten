@@ -1,34 +1,106 @@
-~d0.slapd__group_allow = [ '192.0.2.0/24' ]
-~d0.slapd__cluster_tasks = 
-~d1.name = 'Configure ServerID values'
-~d2.dn = 'cn=config'
-~d2.attributes = 
-~d3.olcServerID = 
-~d4.'001 ldap = //slapd-server1.example.org/'
-~d4.'002 ldap = //slapd-server2.example.org/'
-~d4.'003 ldap = //slapd-server3.example.org/'
-~d2.state = 'exact'
-~d1.name = 'Configure replication of the cn=config database'
-~d2.dn = 'olcDatabase={0}config,cn=config'
-~d2.attributes = 
-~d3.olcSyncrepl = 
-~d6.provider="ldap = //slapd-server1.example.org/"
-~d6.provider="ldap = //slapd-server2.example.org/"
-~d6.provider="ldap = //slapd-server3.example.org/"
-~d3.olcMirrorMode = 'TRUE'
-~d2.state = 'exact'
-~d1.name = 'Configure time and size limits in the main database'
-~d2.dn = 'olcDatabase={1}mdb,cn=config'
-~d2.attributes = 
-~d3.olcLimits = 
-~d2.ordered = True
-~d2.state = 'exact'
-~d1.name = 'Configure replication of the main database'
-~d2.dn = 'olcDatabase={1}mdb,cn=config'
-~d2.attributes = 
-~d3.olcSyncrepl = 
-~d6.provider="ldap = //slapd-server1.example.org/"
-~d6.provider="ldap = //slapd-server2.example.org/"
-~d6.provider="ldap = //slapd-server3.example.org/"
-~d3.olcMirrorMode = 'TRUE'
-~d2.state = 'exact'
+slapd__group_allow[0] = 192.0.2.0/24
+slapd__cluster_tasks[0].name = Configure ServerID values
+slapd__cluster_tasks[0].dn = cn=config
+slapd__cluster_tasks[0].attributes.olcServerID[0] = 001 ldap://slapd-server1.example.org/
+slapd__cluster_tasks[0].attributes.olcServerID[1] = 002 ldap://slapd-server2.example.org/
+slapd__cluster_tasks[0].attributes.olcServerID[2] = 003 ldap://slapd-server3.example.org/
+slapd__cluster_tasks[0].state = exact
+slapd__cluster_tasks[1].name = Configure replication of the cn=config database
+slapd__cluster_tasks[1].dn = olcDatabase={0}config,cn=config
+slapd__cluster_tasks[1].attributes.olcSyncrepl[0] = {0}rid=000
+   provider="ldap://slapd-server1.example.org/"
+   binddn="{{ slapd__config_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__config_rootpw }}"
+   searchbase="cn=config"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[1].attributes.olcSyncrepl[1] = {1}rid=001
+   provider="ldap://slapd-server2.example.org/"
+   binddn="{{ slapd__config_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__config_rootpw }}"
+   searchbase="cn=config"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[1].attributes.olcSyncrepl[2] = {2}rid=002
+   provider="ldap://slapd-server3.example.org/"
+   binddn="{{ slapd__config_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__config_rootpw }}"
+   searchbase="cn=config"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[1].attributes.olcMirrorMode = TRUE
+slapd__cluster_tasks[1].state = exact
+slapd__cluster_tasks[2].name = Configure time and size limits in the main database
+slapd__cluster_tasks[2].dn = olcDatabase={1}mdb,cn=config
+slapd__cluster_tasks[2].attributes.olcLimits[0] = dn.exact="{{ slapd__data_rootdn }}"
+time="unlimited"
+size="unlimited"
+slapd__cluster_tasks[2].ordered = True
+slapd__cluster_tasks[2].state = exact
+slapd__cluster_tasks[3].name = Configure replication of the main database
+slapd__cluster_tasks[3].dn = olcDatabase={1}mdb,cn=config
+slapd__cluster_tasks[3].attributes.olcSyncrepl[0] = {0}rid=010
+   provider="ldap://slapd-server1.example.org/"
+   binddn="{{ slapd__data_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__data_rootpw }}"
+   searchbase="{{ slapd__basedn }}"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[3].attributes.olcSyncrepl[1] = {1}rid=011
+   provider="ldap://slapd-server2.example.org/"
+   binddn="{{ slapd__data_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__data_rootpw }}"
+   searchbase="{{ slapd__basedn }}"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[3].attributes.olcSyncrepl[2] = {2}rid=012
+   provider="ldap://slapd-server3.example.org/"
+   binddn="{{ slapd__data_rootdn }}"
+   bindmethod="simple"
+   credentials="{{ slapd__data_rootpw }}"
+   searchbase="{{ slapd__basedn }}"
+   type="refreshAndPersist"
+   retry="20 5 300 +"
+   timeout="4"
+   starttls="critical"
+   tls_cacert="{{ slapd__tls_ca_certificate }}"
+   tls_cert="{{ slapd__tls_certificate }}"
+   tls_key="{{ slapd__tls_private_key }}"
+   tls_cipher_suite="{{ slapd__tls_cipher_suite }}"
+slapd__cluster_tasks[3].attributes.olcMirrorMode = TRUE
+slapd__cluster_tasks[3].state = exact

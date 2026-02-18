@@ -1,18 +1,25 @@
-~d0.name = Configure Icinga database
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_service_icinga_db' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = mariadb
-~d3.tags = [ 'role::mariadb', 'skip::mariadb' ]
-~d3.mariadb__dependent_databases = '{{ icinga_db__mariadb__dependent_databases }}'
-~d3.mariadb__dependent_users = '{{ icinga_db__mariadb__dependent_users }}'
-~d3.when = icinga_db__type == 'mariadb'
-~d2.role = postgresql
-~d3.tags = [ 'role::postgresql', 'skip::postgresql' ]
-~d3.postgresql__dependent_roles = '{{ icinga_db__postgresql__dependent_roles }}'
-~d3.postgresql__dependent_databases = '{{ icinga_db__postgresql__dependent_databases }}'
-~d3.when = icinga_db__type == 'postgresql'
-~d2.role = icinga_db
-~d3.tags = [ 'role::icinga_db', 'skip::icinga_db' ]
+[0].name = Configure Icinga database
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_icinga_db
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = mariadb
+[0].roles[0].tags[0] = role::mariadb
+[0].roles[0].tags[1] = skip::mariadb
+[0].roles[0].mariadb__dependent_databases = {{ icinga_db__mariadb__dependent_databases }}
+[0].roles[0].mariadb__dependent_users = {{ icinga_db__mariadb__dependent_users }}
+[0].roles[0].when = icinga_db__type == 'mariadb'
+[0].roles[1].role = postgresql
+[0].roles[1].tags[0] = role::postgresql
+[0].roles[1].tags[1] = skip::postgresql
+[0].roles[1].postgresql__dependent_roles = {{ icinga_db__postgresql__dependent_roles }}
+[0].roles[1].postgresql__dependent_databases = {{ icinga_db__postgresql__dependent_databases }}
+[0].roles[1].when = icinga_db__type == 'postgresql'
+[0].roles[2].role = icinga_db
+[0].roles[2].tags[0] = role::icinga_db
+[0].roles[2].tags[1] = skip::icinga_db

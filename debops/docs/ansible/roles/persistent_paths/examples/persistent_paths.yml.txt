@@ -1,7 +1,7 @@
-~d0.persistent_paths__dependent_paths = 
-~d1.'50_debops_cryptsetup' = 
-~d2.by_role = 'debops.cryptsetup'
-~d2.paths = 
-~d0.persistent_paths__group_paths = 
-~d1.'70_local_mlocate' = 
-~d2.paths = 
+persistent_paths__dependent_paths.50_debops_cryptsetup.by_role = debops.cryptsetup
+persistent_paths__dependent_paths.50_debops_cryptsetup.paths[0] = /etc/fstab
+persistent_paths__dependent_paths.50_debops_cryptsetup.paths[1] = /etc/crypttab
+persistent_paths__dependent_paths.50_debops_cryptsetup.paths[2] = /var/local/keyfiles
+persistent_paths__dependent_paths.50_debops_cryptsetup.paths[3] = /var/backups/luks_header_backup
+persistent_paths__dependent_paths.50_debops_cryptsetup.paths[4] = /media
+persistent_paths__group_paths.70_local_mlocate.paths[0] = /var/lib/mlocate

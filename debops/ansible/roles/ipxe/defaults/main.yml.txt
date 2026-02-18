@@ -11,7 +11,7 @@ ipxe__bootloaders[2] = /boot/ipxe.efi
 ipxe__debian_netboot_enabled = True
 ipxe__debian_netboot_firmware = {{ ansible_local.apt.nonfree | d() | bool }}
 ipxe__debian_netboot_src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                              + "/ipxe/debian/netboot" }} 
+                              + "/ipxe/debian/netboot" }}
 ipxe__debian_netboot_pxe_root = {{ ipxe__tftp_root + "/pxe/linux/debian" }}
 ipxe__debian_netboot_mirror = https://deb.debian.org/debian
 ipxe__debian_netboot_firmware_mirror = https://cdimage.debian.org/cdimage/unofficial/non-free/firmware
@@ -67,7 +67,7 @@ ipxe__debian_netboot_default_release_map[5].netboot_checksum = sha256:ac444dfe9f
 ipxe__debian_netboot_default_release_map[5].firmware_version = 20250906
 ipxe__debian_netboot_default_release_map[5].firmware_checksum = sha256:e00d0f1c498932e0b8e86663701a96a9d3ad30c0f9200e21427b8db7ce2c900a
 ipxe__debian_netboot_combined_release_map = {{ ipxe__debian_netboot_default_release_map
-                                               + ipxe__debian_netboot_release_map }} 
+                                               + ipxe__debian_netboot_release_map }}
 ipxe__default_scripts[0].name = variables.ipxe
 ipxe__default_scripts[0].comment = iPXE global variables
 ipxe__default_scripts[0].options[0].name = main_menu_title
@@ -394,4 +394,3 @@ ipxe__combined_scripts = {{ ipxe__default_scripts
                             + ipxe__scripts
                             + ipxe__group_scripts
                             + ipxe__host_scripts }}
-

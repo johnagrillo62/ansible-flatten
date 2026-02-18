@@ -7,13 +7,11 @@ opendkim__postfix_integration = {{ ansible_local.postfix.installed
                                    if (ansible_local | d() and ansible_local.postfix | d() and
                                        ansible_local.postfix.installed is defined)
                                    else False }}
-
 opendkim__postfix_group = {{ ansible_local.postfix.system_group | d("postfix") }}
 opendkim__pidfile = /var/run/opendkim/opendkim.pid
 opendkim__socket = {{ "/var/spool/postfix/opendkim/opendkim.sock"
                       if opendkim__postfix_integration | bool
                       else "/var/run/opendkim/opendkim.sock" }}
-
 opendkim__domain = {{ ansible_domain }}
 opendkim__fqdn = {{ ansible_fqdn }}
 opendkim__dkimkeys_path = /etc/dkimkeys
@@ -23,7 +21,6 @@ opendkim__combined_keys = {{ opendkim__default_keys
                              + opendkim__keys
                              + opendkim__group_keys
                              + opendkim__host_keys }}
-
 opendkim__default_signing_table[0].name = mail
 opendkim__default_signing_table[0].from = {{ opendkim__domain }}
 opendkim__default_signing_table[0].domain = {{ opendkim__domain }}
@@ -32,7 +29,6 @@ opendkim__combined_signing_table = {{ opendkim__default_signing_table
                                       + opendkim__signing_table
                                       + opendkim__group_signing_table
                                       + opendkim__host_signing_table }}
-
 opendkim__default_trusted_hosts[0] = 127.0.0.1
 opendkim__default_trusted_hosts[1] = ::1
 opendkim__default_trusted_hosts[2] = localhost
@@ -41,7 +37,6 @@ opendkim__combined_trusted_hosts = {{ opendkim__default_trusted_hosts
                                       + opendkim__trusted_hosts
                                       + opendkim__group_trusted_hosts
                                       + opendkim__host_trusted_hosts }}
-
 opendkim__original_config[0].name = config-header
 opendkim__original_config[0].comment = This is a basic configuration that can easily be adapted to suit a standard
 installation. For more advanced options, see opendkim.conf(5) and/or
@@ -114,13 +109,11 @@ opendkim__default_config[0].state = {{ "present"
                if (ansible_local | d() and ansible_local.unbound | d() and
                    (ansible_local.unbound.installed | d()) | bool)
                else "ignore" }}
-
 opendkim__default_config[1].name = TrustAnchorFile
 opendkim__default_config[1].state = {{ "absent"
                if (ansible_local | d() and ansible_local.unbound | d() and
                    (ansible_local.unbound.installed | d()) | bool)
                else "ignore" }}
-
 opendkim__default_config[2].name = Socket
 opendkim__default_config[2].comment = Listen for connections in the Postfix chroot
 opendkim__default_config[2].value = local:{{ opendkim__socket }}
@@ -152,7 +145,6 @@ opendkim__combined_config = {{ opendkim__original_config
                                + opendkim__config
                                + opendkim__group_config
                                + opendkim__host_config }}
-
 opendkim__postfix__dependent_maincf[0].name = smtpd_milters
 opendkim__postfix__dependent_maincf[0].value[0].name = unix:/opendkim/opendkim.sock
 opendkim__postfix__dependent_maincf[0].value[0].weight = -300

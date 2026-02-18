@@ -14,7 +14,7 @@ dhparam__path = /etc/pki/dhparam
 dhparam__prefix = dh
 dhparam__suffix = .pem
 dhparam__generate_params = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                              + "/dhparam-generate-params" }} 
+                              + "/dhparam-generate-params" }}
 dhparam__generate_log = True
 dhparam__hook_path = {{ dhparam__path + "/hooks.d" }}
 dhparam__openssl_options = 

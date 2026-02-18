@@ -1,4 +1,4 @@
-~d0.name = Manage regular PowerDNS server installation
-~d1.import_playbook = 'pdns-plain.yml'
-~d0.name = Manage PowerDNS server installation with nginx frontend
-~d1.import_playbook = 'pdns-nginx.yml'
+[0].name = Manage regular PowerDNS server installation
+[0].import_playbook = pdns-plain.yml
+[1].name = Manage PowerDNS server installation with nginx frontend
+[1].import_playbook = pdns-nginx.yml

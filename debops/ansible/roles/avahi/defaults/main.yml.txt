@@ -9,7 +9,6 @@ avahi__use_ipv6 = {{ True
                          | difference(ansible_all_ipv6_addresses
                          | ansible.utils.ipv6("link-local")))
                      else False }}
-
 avahi__check_response_ttl = False
 avahi__use_iff_running = False
 avahi__enable_dbus = True
@@ -20,7 +19,6 @@ avahi__publish_workstation = False
 avahi__publish_device_info = {{ True
                                 if not avahi__publish_workstation | bool
                                 else False }}
-
 avahi__publish_ssh = True
 avahi__daemon_conf_default_server.use-ipv4 = {{ avahi__use_ipv4 }}
 avahi__daemon_conf_default_server.use-ipv6 = {{ avahi__use_ipv6 }}
@@ -49,7 +47,6 @@ avahi__alias_enabled = {{ True
                           if (ansible_local | d() and ansible_local.python | d() and
                               (ansible_local.python.installed2 | d()) | bool)
                           else False }}
-
 avahi__alias_install_path = {{ ansible_local.fhs.sbin | d("/usr/local/sbin") }}
 avahi__alias_config_file = /etc/avahi/aliases
 avahi__default_services.device-info.comment = Set server icon for this host on compatible devices
@@ -58,25 +55,21 @@ avahi__default_services.device-info.txt = model=RackMac
 avahi__default_services.device-info.state = {{ "present"
                if avahi__publish_device_info | bool
                else "absent" }}
-
 avahi__default_services.sftp-ssh.name = SFTP on %h
 avahi__default_services.sftp-ssh.type = _sftp-ssh._tcp
 avahi__default_services.sftp-ssh.port = 22
 avahi__default_services.sftp-ssh.state = {{ "present"
                if avahi__publish_ssh | bool
                else "absent" }}
-
 avahi__default_services.ssh.name = SSH on %h
 avahi__default_services.ssh.type = _ssh._tcp
 avahi__default_services.ssh.port = 22
 avahi__default_services.ssh.state = {{ "present"
                if avahi__publish_ssh | bool
                else "absent" }}
-
 avahi__combined_services = {{ lookup("template",
                               "lookup/avahi__combined_services.j2",
                               convert_data=False) | from_yaml }}
-
 avahi__python__dependent_packages2[0] = python-avahi
 avahi__ferm__dependent_rules[0].name = avahi
 avahi__ferm__dependent_rules[0].type = accept

@@ -1,5 +1,5 @@
 mosquitto__upstream = {{ True if ansible_distribution_release in ["trusty"]
-                         else False }} 
+                         else False }}
 mosquitto__upstream_key_id = 8277 CCB4 9EC5 B595 F2D2 C713 6161 1AE4 3099 3623
 mosquitto__upstream_repository.Debian = deb http://repo.mosquitto.org/debian {{ ansible_distribution_release }} main
 mosquitto__upstream_repository.Raspbian = deb http://repo.mosquitto.org/debian {{ ansible_distribution_release }} main
@@ -12,7 +12,6 @@ mosquitto__pip_packages = {{ ["paho-mqtt"]
                              if (mosquitto__distribution_release in
                                  ["trusty", "xenial"])
                              else [] }}
-
 mosquitto__user = mosquitto
 mosquitto__group = mosquitto
 mosquitto__append_groups = {{ ["ssl-cert"] if mosquitto__pki | bool else [] }}
@@ -22,7 +21,7 @@ mosquitto__websockets_packages[0] = libwebsockets8
 mosquitto__fqdn = mqtt.{{ mosquitto__domain }}
 mosquitto__domain = {{ ansible_domain }}
 mosquitto__http_dir_path = {{ (ansible_local.fhs.data | d("/srv"))
-                              + "/mosquitto/www/public" }} 
+                              + "/mosquitto/www/public" }}
 mosquitto__http_dir_owner = root
 mosquitto__http_dir_group = www-data
 mosquitto__http_dir_mode = 0755
@@ -30,7 +29,7 @@ mosquitto__default_options.password_file = {{ mosquitto__password_file if mosqui
 mosquitto__default_options.acl_file = {{ mosquitto__acl_file if mosquitto__acl | bool else "" }}
 mosquitto__default_options.allow_anonymous = {{ mosquitto__allow_anonymous }}
 mosquitto__combined_options = {{ mosquitto__default_options
-                                 | combine(mosquitto__options) }} 
+                                 | combine(mosquitto__options) }}
 mosquitto__default_listeners.1883.comment = The default listener for local clients
 mosquitto__default_listeners.1883.listener = {{ "1883" + ("" if mosquitto__allow | d() else " localhost") }}
 mosquitto__default_listeners.1883.avahi_state = {{ "present" if (mosquitto__network | bool and mosquitto__allow | d()) else "absent" }}
@@ -54,11 +53,10 @@ mosquitto__default_listeners.8883.avahi_type = _secure-mqtt._tcp
 mosquitto__default_listeners.8883.avahi_port = 8883
 mosquitto__default_listeners.8883.avahi_txt = tls-version={{ mosquitto__tls_version }}
 mosquitto__combined_listeners = {{ mosquitto__default_listeners
-                                   | combine(mosquitto__listeners) }} 
+                                   | combine(mosquitto__listeners) }}
 mosquitto__combined_bridges = {{ mosquitto__bridges
                                  | combine(mosquitto__group_bridges)
                                  | combine(mosquitto__host_bridges) }}
-
 mosquitto__pki = {{ ansible_local.pki.enabled | d(False) | bool }}
 mosquitto__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 mosquitto__pki_client_realm = domain
@@ -70,39 +68,30 @@ mosquitto__pki_key = {{ ansible_local.pki.key | d("default.key") }}
 mosquitto__client_cafile = {{ mosquitto__pki_path + "/" +
                               mosquitto__pki_client_realm + "/" +
                               mosquitto__pki_ca }}
-
 mosquitto__client_certfile = {{ mosquitto__pki_path + "/" +
                                 mosquitto__pki_client_realm + "/" +
                                 mosquitto__pki_crt }}
-
 mosquitto__client_keyfile = {{ mosquitto__pki_path + "/" +
                                mosquitto__pki_client_realm + "/" +
                                mosquitto__pki_key }}
-
 mosquitto__bridge_cafile = {{ mosquitto__pki_path + "/" +
                               mosquitto__pki_bridge_realm + "/" +
                               mosquitto__pki_ca }}
-
 mosquitto__bridge_certfile = {{ mosquitto__pki_path + "/" +
                                 mosquitto__pki_bridge_realm + "/" +
                                 mosquitto__pki_crt }}
-
 mosquitto__bridge_keyfile = {{ mosquitto__pki_path + "/" +
                                mosquitto__pki_bridge_realm + "/" +
                                mosquitto__pki_key }}
-
 mosquitto__broker_cafile = {{ mosquitto__pki_path + "/" +
                               mosquitto__pki_broker_realm + "/" +
                               mosquitto__pki_ca }}
-
 mosquitto__broker_certfile = {{ mosquitto__pki_path + "/" +
                                 mosquitto__pki_broker_realm + "/" +
                                 mosquitto__pki_crt }}
-
 mosquitto__broker_keyfile = {{ mosquitto__pki_path + "/" +
                                mosquitto__pki_broker_realm + "/" +
                                mosquitto__pki_key }}
-
 mosquitto__ciphers = DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-CAMELLIA256-SHA:DHE-RSA-AES256-SHA:DHE-RSA-CAMELLIA128-SHA:DHE-RSA-AES128-SHA:CAMELLIA256-SHA:AES256-SHA:CAMELLIA128-SHA:AES128-SHA
 mosquitto__tls_version = tlsv1.2
 mosquitto__avahi = {{ ansible_local.avahi.installed | d() | bool }}
@@ -112,7 +101,6 @@ mosquitto__password = {{ True
                              mosquitto__auth_group_users or
                              mosquitto__auth_host_users)
                          else False }}
-
 mosquitto__password_file = /etc/mosquitto/passwd
 mosquitto__password_secret_path = {{ secret + "/mosquitto/passwd" }}
 mosquitto__allow_anonymous = {{ "false" if mosquitto__password | bool else "true" }}
@@ -123,16 +111,13 @@ mosquitto__acl = {{ True
                         mosquitto__auth_host_users or
                         mosquitto__auth_patterns)
                     else False }}
-
 mosquitto__acl_file = /etc/mosquitto/acl
 mosquitto__python__dependent_packages3[0] = {{ []
         if (mosquitto__distribution_release in ["trusty", "xenial"])
         else ["python3-paho-mqtt"] }}
-
 mosquitto__python__dependent_packages2[0] = {{ []
         if (mosquitto__distribution_release in ["trusty", "xenial"])
         else ["python-paho-mqtt"] }}
-
 mosquitto__etc_services__dependent_list[0].name = mqtt
 mosquitto__etc_services__dependent_list[0].port = 1883
 mosquitto__etc_services__dependent_list[0].comment = Message Queuing Telemetry Transport Protocol
@@ -154,7 +139,6 @@ mosquitto__tcpwrappers__dependent_allow[0].comment = Allow remote connections to
 mosquitto__tcpwrappers__dependent_allow[0].state = {{ "present"
                if mosquitto__network | bool
                else "absent" }}
-
 mosquitto__tcpwrappers__dependent_allow[1].daemon = mosquitto
 mosquitto__tcpwrappers__dependent_allow[1].client = {{ mosquitto__allow_tls }}
 mosquitto__tcpwrappers__dependent_allow[1].accept_any = True
@@ -165,7 +149,6 @@ mosquitto__tcpwrappers__dependent_allow[1].state = {{ "present"
                if (mosquitto__network | bool and
                    mosquitto__pki | bool)
                else "absent" }}
-
 mosquitto__ferm__dependent_rules[0].type = accept
 mosquitto__ferm__dependent_rules[0].dport[0] = mqtt
 mosquitto__ferm__dependent_rules[0].weight = 40
@@ -175,7 +158,6 @@ mosquitto__ferm__dependent_rules[0].by_role = debops.mosquitto
 mosquitto__ferm__dependent_rules[0].rule_state = {{ "present"
                     if mosquitto__network | bool
                     else "absent" }}
-
 mosquitto__ferm__dependent_rules[1].type = accept
 mosquitto__ferm__dependent_rules[1].dport[0] = secure-mqtt
 mosquitto__ferm__dependent_rules[1].weight = 40
@@ -186,7 +168,6 @@ mosquitto__ferm__dependent_rules[1].rule_state = {{ "present"
                     if (mosquitto__network | bool and
                         mosquitto__pki | bool)
                     else "absent" }}
-
 mosquitto__nginx__dependent_servers[0].name = {{ mosquitto__fqdn }}
 mosquitto__nginx__dependent_servers[0].filename = mosquitto-websocket
 mosquitto__nginx__dependent_servers[0].by_role = debops.mosquitto

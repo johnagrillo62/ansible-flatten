@@ -1,7 +1,6 @@
 systemd__enabled = {{ True
                       if (ansible_service_mgr == "systemd")
                       else False }}
-
 systemd__deploy_state = absent
 systemd__version = {{ ansible_local.systemd.version | d("0") }}
 systemd__default_configuration[0].name = LogLevel
@@ -179,7 +178,6 @@ systemd__combined_configuration = {{ systemd__default_configuration
                                      + systemd__configuration
                                      + systemd__group_configuration
                                      + systemd__host_configuration }}
-
 systemd__user_default_configuration[0].name = LogLevel
 systemd__user_default_configuration[0].value = info
 systemd__user_default_configuration[0].state = init
@@ -286,7 +284,6 @@ systemd__user_combined_configuration = {{ systemd__user_default_configuration
                                           + systemd__user_configuration
                                           + systemd__user_group_configuration
                                           + systemd__user_host_configuration }}
-
 systemd__logind_default_configuration[0].name = NAutoVTs
 systemd__logind_default_configuration[0].value = 6
 systemd__logind_default_configuration[0].state = init
@@ -371,14 +368,11 @@ systemd__logind_combined_configuration = {{ systemd__logind_default_configuratio
                                             + systemd__logind_configuration
                                             + systemd__logind_group_configuration
                                             + systemd__logind_host_configuration }}
-
 systemd__combined_units = {{ systemd__dependent_units
                              + systemd__units
                              + systemd__group_units
                              + systemd__host_units }}
-
 systemd__user_combined_units = {{ systemd__user_dependent_units
                                   + systemd__user_units
                                   + systemd__user_group_units
                                   + systemd__user_host_units }}
-

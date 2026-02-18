@@ -5,7 +5,6 @@
                               + apache__group_packages
                               + apache__host_packages
                               + apache__dependent_packages)) }}
-
 [1]["ansible.builtin.package"].state = {{ "present" if (apache__deploy_state == "present") else "absent" }}
 [1].register = apache__register_packages
 [1].until = apache__register_packages is succeeded
@@ -20,7 +19,6 @@
                                        | map(attribute="path")
                                        | map("replace", apache__config_path + "/mods-available/", "")
                                        | map("regex_replace", "\.load$", "") | list }}
-
 [3].tags[0] = role::apache:modules
 [4].name = Configure Apache module state
 [4]["ansible.builtin.include_tasks"] = apache_module_state.yml
@@ -30,7 +28,6 @@
                  | d(apache__config_path + "/conf-available/"
                      + (item.value.divert_filename | d(item.key)) + ".conf"))
                 + item.value.divert_suffix | d(".dpkg-divert") }}
-
 [5].when = (item.value.type | d("default") in ["divert"])
 [5].with_dict = {{ apache__combined_snippets }}
 [6].name = Remove conf-available snippets
@@ -43,9 +40,7 @@
 [7]["ansible.builtin.template"].src = etc/apache2/conf-available/{{ "raw"
                                         if (item.value.type | d("default") in ["divert", "raw"] and
                                             item.value.raw | d())
-                                        else item.key }}
-
-.conf.j2
+                                        else item.key }}.conf.j2
 [7]["ansible.builtin.template"].dest = {{ apache__config_path + "/conf-available/" + item.key + ".conf" }}
 [7]["ansible.builtin.template"].owner = root
 [7]["ansible.builtin.template"].group = root
@@ -62,7 +57,6 @@
                  else False) | bool
                  | ternary("../conf-available/" + item.key + ".conf",
                            omit) }}
-
 [8]["ansible.builtin.file"].mode = 0644
 [8]["ansible.builtin.file"].force = {{ ansible_check_mode | d() | bool }}
 [8]["ansible.builtin.file"].state = {{ (((item.value.enabled | d(True)
@@ -70,7 +64,6 @@
                   else item.value | d(True)))
                  if (item.value.state | d("present") != "absent")
                  else False) | bool | ternary("link", "absent") }}
-
 [8].when = (item.value.type | d("default") not in ["divert"])
 [8].with_dict = {{ apache__combined_snippets }}
 [8].notify[0] = Test apache and reload
@@ -78,20 +71,17 @@
 [9]["debops.debops.dpkg_divert"].path = {{ apache__config_path + "/sites-available/"
               + item.filename | d([item.name] | flatten | first | d("default"))
               + ".conf" }}
-
 [9]["debops.debops.dpkg_divert"].divert = {{ (item.divert
                  | d(apache__config_path + "/sites-available/"
                      + item.divert_filename | d(item.filename | d([item.name] | flatten | first | d("default")))
                      + ".conf")
                  + item.divert_suffix | d(".dpkg-divert")) }}
-
 [9].when = (item.type | d(apache__vhost_type) in ["divert"])
 [9].loop = {{ q("flattened", apache__combined_vhosts) }}
 [10].name = Remove sites-available configuration
 [10]["ansible.builtin.file"].path = {{ apache__config_path }}/sites-available/{{ item.filename | d(item.name
                                                                           if (item.name is string)
-                                                                          else item.name[0] | d("default")) }}
-.conf
+                                                                          else item.name[0] | d("default")) }}.conf
 [10]["ansible.builtin.file"].state = absent
 [10].when = (item.state | d("present") == 'absent')
 [10].loop = {{ q("flattened", apache__combined_vhosts) }}
@@ -100,8 +90,7 @@
 [11]["ansible.builtin.template"].src = etc/apache2/sites-available/{{ item.type | d(apache__vhost_type) }}.conf.j2
 [11]["ansible.builtin.template"].dest = {{ apache__config_path }}/sites-available/{{ item.filename | d(item.name
                                                                           if (item.name is string)
-                                                                          else item.name[0] | d("default")) }}
-.conf
+                                                                          else item.name[0] | d("default")) }}.conf
 [11]["ansible.builtin.template"].owner = root
 [11]["ansible.builtin.template"].group = root
 [11]["ansible.builtin.template"].mode = 0644
@@ -112,20 +101,17 @@
 [12].name = Enable/disable Apache virtual hosts
 [12]["ansible.builtin.file"].path = {{ apache__config_path }}/sites-enabled/{{ item.filename | d(item.name
                                                                         if (item.name is string)
-                                                                        else item.name[0] | d("default")) }}
-.conf
+                                                                        else item.name[0] | d("default")) }}.conf
 [12]["ansible.builtin.file"].src = {{ ("../sites-available/" + item.filename
                                       | d(item.name
                                           if (item.name is string)
                                           else item.name[0] | d("default")) + ".conf")
              if (item.enabled | d(True) | bool and (item.state | d("present") != "absent"))
              else omit }}
-
 [12]["ansible.builtin.file"].force = {{ item.force | d(ansible_check_mode) | bool }}
 [12]["ansible.builtin.file"].state = {{ item.enabled | d(True) | bool | ternary("link", "absent")
                if (item.state | d("present") != "absent")
                else "absent" }}
-
 [12]["ansible.builtin.file"].owner = root
 [12]["ansible.builtin.file"].group = root
 [12]["ansible.builtin.file"].mode = 0644

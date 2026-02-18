@@ -1,6 +1,6 @@
 [0].name = Install required packages
 [0]["ansible.builtin.package"].name = {{ q("flattened", (nfs__base_packages
-                              + nfs__packages)) }} 
+                              + nfs__packages)) }}
 [0]["ansible.builtin.package"].state = present
 [0].register = nfs__register_packages
 [0].until = nfs__register_packages is succeeded
@@ -21,7 +21,6 @@
 [2].loop = {{ q("flattened", nfs__shares
                            + nfs__group_shares
                            + nfs__host_shares) }}
-
 [2].when = item.path | d() and item.src | d() and item.state | d('mounted') == 'present'
 [3].name = Manage NFS mount points
 [3]["ansible.posix.mount"].name = {{ item.path }}
@@ -35,7 +34,6 @@
 [3].loop = {{ q("flattened", nfs__shares
                            + nfs__group_shares
                            + nfs__host_shares) }}
-
 [3].register = nfs__register_devices
 [3].when = item.path | d() and item.src | d()
 [4].name = Restart 'remote-fs.target' systemd unit

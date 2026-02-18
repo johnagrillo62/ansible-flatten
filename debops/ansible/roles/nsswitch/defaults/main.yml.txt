@@ -8,7 +8,6 @@ nsswitch__combined_services = {{ lookup("flattened", (nsswitch__default_services
                                  + nsswitch__services + nsswitch__group_services
                                  + nsswitch__host_services + nsswitch__dependent_services)
                                  | difference(nsswitch__remove_services)).split(",") }}
-
 nsswitch__default_database_map.passwd[0] = compat
 nsswitch__default_database_map.passwd[1] = mymachines
 nsswitch__default_database_map.passwd[2] = systemd
@@ -30,7 +29,7 @@ nsswitch__default_database_map.hosts[2][0] = mdns_minimal
 nsswitch__default_database_map.hosts[2][1] = [NOTFOUND=return]
 nsswitch__default_database_map.hosts[3].replace = mdns4_minimal
 nsswitch__default_database_map.hosts[3].service = {{ "mdns_minimal" if (ansible_local | d() and ansible_local.avahi | d() and
-                                      ansible_local.avahi.ipv6 | bool) else "mdns4_minimal" }} 
+                                      ansible_local.avahi.ipv6 | bool) else "mdns4_minimal" }}
 nsswitch__default_database_map.hosts[3].action = [NOTFOUND=return]
 nsswitch__default_database_map.hosts[4][0] = resolve
 nsswitch__default_database_map.hosts[4][1] = [!UNAVAIL=return]
@@ -69,7 +68,6 @@ nsswitch__combined_database_map = {{ nsswitch__default_database_map
                                      | combine(nsswitch__database_map)
                                      | combine(nsswitch__group_database_map)
                                      | combine(nsswitch__host_database_map) }}
-
 nsswitch__database_groups[0][0] = passwd
 nsswitch__database_groups[0][1] = group
 nsswitch__database_groups[0][2] = shadow

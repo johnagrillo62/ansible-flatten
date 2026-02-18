@@ -1,84 +1,99 @@
-~d0.name = Make sure configuration directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/nginx/conf.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Remove nginx maps if requested
-~d1.ansible.builtin.file = 
-~d2.dest = '/etc/nginx/conf.d/map_{{ item.name }}.conf'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__maps
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Configure nginx maps
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "etc/nginx/conf.d/map.conf.j2") }}'
-~d2.dest = '/etc/nginx/conf.d/map_{{ item.name }}.conf'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__maps
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Remove nginx upstreams if requested
-~d1.ansible.builtin.file = 
-~d2.dest = '/etc/nginx/conf.d/upstream_{{ item.name }}.conf'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__upstreams
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Configure nginx upstreams
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "etc/nginx/conf.d/upstream_" + (item.type | d("default")) + ".conf.j2") }}'
-~d2.dest = '/etc/nginx/conf.d/upstream_{{ item.name }}.conf'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__upstreams
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Remove nginx log_format if requested
-~d1.ansible.builtin.file = 
-~d2.dest = '/etc/nginx/conf.d/log_{{ item.name }}.conf'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__log_format
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Configure nginx log_format
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "etc/nginx/conf.d/log_format.conf.j2") }}'
-~d2.dest = '/etc/nginx/conf.d/log_{{ item.name }}.conf'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__log_format
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Remove custom nginx configuration if requested
-~d1.ansible.builtin.file = 
-~d2.dest = '/etc/nginx/conf.d/{{ item.filename | d("custom_" + item.name + ".conf") }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", nginx__custom_config
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and
-~d1.tags = [ 'role::nginx:servers' ]
-~d0.name = Add custom nginx configuration
-~d1.ansible.builtin.template = 
-~d2.src = '{{ lookup("debops.debops.template_src", "etc/nginx/conf.d/custom.conf.j2") }}'
-~d2.dest = '/etc/nginx/conf.d/{{ item.filename | d("custom_" + item.name + ".conf") }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.loop = '{{ q("flattened", nginx__custom_config
-~d1.notify = [ 'Test nginx and reload' ]
-~d1.when = (item.name | d() and item.state | d('present') != 'absent' and
-~d1.tags = [ 'role::nginx:servers' ]
+[0].name = Make sure configuration directory exists
+[0]["ansible.builtin.file"].path = /etc/nginx/conf.d
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[0].tags[0] = role::nginx:servers
+[1].name = Remove nginx maps if requested
+[1]["ansible.builtin.file"].dest = /etc/nginx/conf.d/map_{{ item.name }}.conf
+[1]["ansible.builtin.file"].state = absent
+[1].loop = {{ q("flattened", nginx__maps
+                           + nginx__default_maps
+                           + nginx__dependent_maps
+                           + nginx_maps | d([])
+                           + nginx_default_maps | d([])
+                           + nginx_dependent_maps | d([])) }}
+[1].notify[0] = Test nginx and reload
+[1].when = (item.name | d() and ((item.state | d() and item.state == 'absent') or (item.delete | d() and item.delete | bool)))
+[1].tags[0] = role::nginx:servers
+[2].name = Configure nginx maps
+[2]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "etc/nginx/conf.d/map.conf.j2") }}
+[2]["ansible.builtin.template"].dest = /etc/nginx/conf.d/map_{{ item.name }}.conf
+[2]["ansible.builtin.template"].owner = root
+[2]["ansible.builtin.template"].group = root
+[2]["ansible.builtin.template"].mode = 0644
+[2].loop = {{ q("flattened", nginx__maps
+                           + nginx__default_maps
+                           + nginx__dependent_maps
+                           + nginx_maps | d([])
+                           + nginx_default_maps | d([])
+                           + nginx_dependent_maps | d([])) }}
+[2].notify[0] = Test nginx and reload
+[2].when = (item.name | d() and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool))
+[2].tags[0] = role::nginx:servers
+[3].name = Remove nginx upstreams if requested
+[3]["ansible.builtin.file"].dest = /etc/nginx/conf.d/upstream_{{ item.name }}.conf
+[3]["ansible.builtin.file"].state = absent
+[3].loop = {{ q("flattened", nginx__upstreams
+                           + nginx__default_upstreams
+                           + nginx__dependent_upstreams
+                           + nginx_upstreams | d([])
+                           + nginx_default_upstreams | d([])
+                           + nginx_dependent_upstreams | d([])) }}
+[3].notify[0] = Test nginx and reload
+[3].when = (item.name | d() and ((item.state | d('present') == 'absent') or (item.delete | d() and item.delete | bool)))
+[3].tags[0] = role::nginx:servers
+[4].name = Configure nginx upstreams
+[4]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "etc/nginx/conf.d/upstream_" + (item.type | d("default")) + ".conf.j2") }}
+[4]["ansible.builtin.template"].dest = /etc/nginx/conf.d/upstream_{{ item.name }}.conf
+[4]["ansible.builtin.template"].owner = root
+[4]["ansible.builtin.template"].group = root
+[4]["ansible.builtin.template"].mode = 0644
+[4].loop = {{ q("flattened", nginx__upstreams
+                           + nginx__default_upstreams
+                           + nginx__dependent_upstreams
+                           + nginx_upstreams | d([])
+                           + nginx_default_upstreams | d([])
+                           + nginx_dependent_upstreams | d([])) }}
+[4].notify[0] = Test nginx and reload
+[4].when = (item.name | d() and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool))
+[4].tags[0] = role::nginx:servers
+[5].name = Remove nginx log_format if requested
+[5]["ansible.builtin.file"].dest = /etc/nginx/conf.d/log_{{ item.name }}.conf
+[5]["ansible.builtin.file"].state = absent
+[5].loop = {{ q("flattened", nginx__log_format
+                           + nginx__dependent_log_format) }}
+[5].notify[0] = Test nginx and reload
+[5].when = (item.name | d() and ((item.state | d('present') == 'absent') or (item.delete | d() and item.delete | bool)))
+[5].tags[0] = role::nginx:servers
+[6].name = Configure nginx log_format
+[6]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "etc/nginx/conf.d/log_format.conf.j2") }}
+[6]["ansible.builtin.template"].dest = /etc/nginx/conf.d/log_{{ item.name }}.conf
+[6]["ansible.builtin.template"].owner = root
+[6]["ansible.builtin.template"].group = root
+[6]["ansible.builtin.template"].mode = 0644
+[6].loop = {{ q("flattened", nginx__log_format
+                           + nginx__dependent_log_format) }}
+[6].notify[0] = Test nginx and reload
+[6].when = (item.name | d() and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool))
+[6].tags[0] = role::nginx:servers
+[7].name = Remove custom nginx configuration if requested
+[7]["ansible.builtin.file"].dest = /etc/nginx/conf.d/{{ item.filename | d("custom_" + item.name + ".conf") }}
+[7]["ansible.builtin.file"].state = absent
+[7].loop = {{ q("flattened", nginx__custom_config
+                           + nginx_custom_config | d([])) }}
+[7].notify[0] = Test nginx and reload
+[7].when = (item.name | d() and ((item.state | d() and item.state == 'absent') or (item.delete | d() and item.delete | bool)))
+[7].tags[0] = role::nginx:servers
+[8].name = Add custom nginx configuration
+[8]["ansible.builtin.template"].src = {{ lookup("debops.debops.template_src", "etc/nginx/conf.d/custom.conf.j2") }}
+[8]["ansible.builtin.template"].dest = /etc/nginx/conf.d/{{ item.filename | d("custom_" + item.name + ".conf") }}
+[8]["ansible.builtin.template"].owner = root
+[8]["ansible.builtin.template"].group = root
+[8]["ansible.builtin.template"].mode = 0644
+[8].loop = {{ q("flattened", nginx__custom_config
+                           + nginx_custom_config | d([])) }}
+[8].notify[0] = Test nginx and reload
+[8].when = (item.name | d() and item.state | d('present') != 'absent' and (item.delete is undefined or not item.delete | bool))
+[8].tags[0] = role::nginx:servers

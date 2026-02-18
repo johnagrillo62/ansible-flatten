@@ -1,3 +1,9 @@
-~d0._kubectl_apply_stdin = 
-~d0.server_side_apply = false
-~d0.kubectl_apply_stdin = "{{ _kubectl_apply_stdin | join(' ') }}"
+_kubectl_apply_stdin[0] = {{ kubectl }}
+_kubectl_apply_stdin[1] = apply
+_kubectl_apply_stdin[2] = -f
+_kubectl_apply_stdin[3] = -
+_kubectl_apply_stdin[4] = -n
+_kubectl_apply_stdin[5] = {{ k8s_namespace }}
+_kubectl_apply_stdin[6] = --server-side="{{ server_side_apply | lower }}"
+server_side_apply = false
+kubectl_apply_stdin = {{ _kubectl_apply_stdin | join(' ') }}

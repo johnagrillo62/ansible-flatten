@@ -1,3 +1,2 @@
 webmail_version = 1.2.1
 webmail_domain = mail.{{ domain }}
- = null

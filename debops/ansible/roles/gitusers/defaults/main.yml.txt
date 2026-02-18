@@ -3,10 +3,10 @@ gitusers_default_shell = /usr/bin/git-shell
 gitusers_default_groups_list[0] = sshusers
 gitusers_default_groups_append = yes
 gitusers_default_home_prefix = {{ (ansible_local.fhs.data | d("/srv"))
-                                  + "/gitusers" }} 
+                                  + "/gitusers" }}
 gitusers_default_home_mode = 0750
 gitusers_git_scripts = {{ (ansible_local.fhs.home | d("/var/local"))
-                          + "/gitusers" }} 
+                          + "/gitusers" }}
 gitusers_default_www_prefix = {{ ansible_local.nginx.www if (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.www is defined) else "/srv/www" }}
 gitusers_default_www_group = {{ ansible_local.nginx.user if (ansible_local is defined and ansible_local.nginx is defined and ansible_local.nginx.user is defined) else "www-data" }}
 gitusers_default_domain = {{ ansible_domain }}

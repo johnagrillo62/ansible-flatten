@@ -1,9 +1,8 @@
-~d0.name = Test monit and reload
-~d1.ansible.builtin.command = monit -t
-~d1.register = global_handlers__monit_register_check_config
-~d1.changed_when = global_handlers__monit_register_check_config.changed | bool
-~d1.notify = [ 'Reload monit' ]
-~d0.name = Reload monit
-~d1.ansible.builtin.service = 
-~d2.name = 'monit'
-~d2.state = 'reloaded'
+[0].name = Test monit and reload
+[0]["ansible.builtin.command"] = monit -t
+[0].register = global_handlers__monit_register_check_config
+[0].changed_when = global_handlers__monit_register_check_config.changed | bool
+[0].notify[0] = Reload monit
+[1].name = Reload monit
+[1]["ansible.builtin.service"].name = monit
+[1]["ansible.builtin.service"].state = reloaded

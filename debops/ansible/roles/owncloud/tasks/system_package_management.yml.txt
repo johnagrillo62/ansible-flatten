@@ -17,7 +17,6 @@
                               + owncloud__group_packages
                               + owncloud__host_packages
                               + owncloud__dependent_packages)) }}
-
 [2]["ansible.builtin.package"].state = {{ "absent"
                if (owncloud__deploy_state in ["absent"])
                else ("latest"
@@ -25,6 +24,5 @@
                          ((ansible_local.owncloud.release | d(owncloud__release) != owncloud__release) or
                           (ansible_local.owncloud.auto_security_updates_enabled | d() | bool)))
                      else "present") }}
-
 [2].register = owncloud__register_apt_install
 [2].until = owncloud__register_apt_install is succeeded

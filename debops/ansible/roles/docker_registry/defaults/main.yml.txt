@@ -1,7 +1,6 @@
 docker_registry__base_packages = {{ ["docker-registry"]
                                     if (not docker_registry__upstream | bool)
                                     else [] }}
-
 docker_registry__version = {{ ansible_local.docker_registry.version | d("0.0.0") }}
 docker_registry__user = docker-registry
 docker_registry__group = docker-registry
@@ -14,11 +13,10 @@ docker_registry__upstream = {{ True
                                if (docker_registry__distribution_release in
                                    ["stretch", "trusty", "xenial"])
                                else False }}
-
 docker_registry__src = {{ docker_registry__home + "/src" }}
 docker_registry__gopath = {{ docker_registry__home + "/go" }}
 docker_registry__git_dest = {{ docker_registry__gopath + "/src/"
-                               + docker_registry__git_repo.split("://")[1] }} 
+                               + docker_registry__git_repo.split("://")[1] }}
 docker_registry__git_dir = {{ docker_registry__src + "/" + docker_registry__git_repo.split("://")[1] }}
 docker_registry__git_gpg_key = 8C7A 111C 2110 5794 B0E8  A27B F58C 5D0A 4405 ACDB
 docker_registry__git_repo = https://github.com/docker/distribution
@@ -26,7 +24,6 @@ docker_registry__git_version = v2.7.1
 docker_registry__binary = {{ "/usr/local/bin/docker-registry"
                              if docker_registry__upstream | bool
                              else "/usr/bin/docker-registry" }}
-
 docker_registry__fqdn = registry.{{ docker_registry__domain }}
 docker_registry__domain = {{ ansible_domain }}
 docker_registry__backend_port = 5070
@@ -34,13 +31,12 @@ docker_registry__max_upload_size = 4G
 docker_registry__basic_auth = {{ False
                                  if docker_registry__token_enabled | bool
                                  else True }}
-
 docker_registry__basic_auth_realm = Docker Registry
 docker_registry__basic_auth_name = docker-registry
 docker_registry__basic_auth_users = {{ ansible_local.core.admin_users | d([]) }}
 docker_registry__basic_auth_except_get = False
 docker_registry__storage_dir = {{ (ansible_local.fhs.data | d("/srv"))
-                                  + "/" + docker_registry__user + "/storage" }} 
+                                  + "/" + docker_registry__user + "/storage" }}
 docker_registry__storage_mode = 0755
 docker_registry__redis_enabled = {{ ansible_local.redis_server.installed | d() | bool }}
 docker_registry__redis_host = 127.0.0.1
@@ -52,38 +48,31 @@ docker_registry__token_enabled = {{ True
                                     if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                         (ansible_local[docker_registry__token_provider].registry | d()) | bool)
                                     else False }}
-
 docker_registry__token_fqdn = {{ ansible_local[docker_registry__token_provider].fqdn
                                  if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                      ansible_local[docker_registry__token_provider].fqdn | d())
                                  else ("code." + docker_registry__domain) }}
-
 docker_registry__token_realm_url = {{ ansible_local[docker_registry__token_provider].registry_token_realm_url
                                       if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                           ansible_local[docker_registry__token_provider].registry_token_realm_url | d())
                                       else "" }}
-
 docker_registry__token_issuer = {{ ansible_local[docker_registry__token_provider].registry_token_issuer
                                    if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                        ansible_local[docker_registry__token_provider].registry_token_issuer | d())
                                    else "" }}
-
 docker_registry__token_service = {{ ansible_local[docker_registry__token_provider].registry_token_service
                                     if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                         ansible_local[docker_registry__token_provider].registry_token_service | d())
                                     else "" }}
-
 docker_registry__token_pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 docker_registry__token_pki_realm = {{ ansible_local[docker_registry__token_provider].registry_pki_realm
                                       if (ansible_local | d() and ansible_local[docker_registry__token_provider] | d() and
                                           ansible_local[docker_registry__token_provider].registry_pki_realm | d())
                                       else "domain" }}
-
 docker_registry__token_pki_crt = default.crt
 docker_registry__token_certificate = {{ docker_registry__token_pki_path + "/"
                                         + docker_registry__token_pki_realm + "/"
                                         + docker_registry__token_pki_crt }}
-
 docker_registry__config_file = /etc/docker/registry/config.yml
 docker_registry__original_config[0].name = original-config
 docker_registry__original_config[0].config.version = 0.1
@@ -120,7 +109,6 @@ docker_registry__combined_config = {{ docker_registry__original_config
                                       + docker_registry__config
                                       + docker_registry__group_config
                                       + docker_registry__host_config }}
-
 docker_registry__garbage_collector_enabled = True
 docker_registry__garbage_collector_interval = daily
 docker_registry__etc_services__dependent_list[0].name = docker-registry
@@ -148,7 +136,6 @@ docker_registry__nginx__dependent_servers[0].allow = {{ docker_registry__allow }
 docker_registry__nginx__dependent_servers[0].auth_basic = {{ False
                     if (docker_registry__basic_auth_except_get | bool)
                     else (docker_registry__basic_auth | bool) }}
-
 docker_registry__nginx__dependent_servers[0].auth_basic_realm = {{ docker_registry__basic_auth_realm }}
 docker_registry__nginx__dependent_servers[0].auth_basic_name = {{ docker_registry__basic_auth_name }}
 docker_registry__nginx__dependent_servers[0].options = client_max_body_size {{ docker_registry__max_upload_size }};

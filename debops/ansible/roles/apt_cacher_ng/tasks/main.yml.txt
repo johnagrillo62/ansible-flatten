@@ -11,14 +11,14 @@
 [3].name = Add/remove configuration file diversions
 [3]["debops.debops.dpkg_divert"].path = {{ item.path }}
 [3]["debops.debops.dpkg_divert"].state = {{ "present" if apt_cacher_ng__deploy_state == "present"
-               else "absent" }} 
+               else "absent" }}
 [3]["debops.debops.dpkg_divert"].delete = True
 [3].loop = {{ apt_cacher_ng__configuration_files }}
 [3].when = item.divert | d(True)
 [4].name = Install/remove packages
 [4]["ansible.builtin.package"].name = {{ q("flattened", apt_cacher_ng__base_packages) }}
 [4]["ansible.builtin.package"].state = {{ "present" if apt_cacher_ng__deploy_state == "present"
-               else "absent" }} 
+               else "absent" }}
 [4].register = apt_cacher_ng__register_packages
 [4].until = apt_cacher_ng__register_packages is succeeded
 [5].name = Generate configuration files

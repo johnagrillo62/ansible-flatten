@@ -1,6 +1,6 @@
 [0].name = Manage RabbitMQ plugins
 [0]["community.rabbitmq.rabbitmq_plugin"].names = {{ (rabbitmq_management__default_plugins
-                + rabbitmq_management__plugins) | join(",") }} 
+                + rabbitmq_management__plugins) | join(",") }}
 [0]["community.rabbitmq.rabbitmq_plugin"].state = {{ "enabled" if rabbitmq_management__deploy_state != "absent" else "disabled" }}
 [0]["community.rabbitmq.rabbitmq_plugin"].new_only = True
 [0].when = rabbitmq_management__local | bool

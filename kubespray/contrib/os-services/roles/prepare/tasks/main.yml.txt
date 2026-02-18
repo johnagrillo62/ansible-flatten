@@ -1,17 +1,14 @@
-~d0.name = Disable firewalld and ufw
-~d1.when = 
-~d1.block = 
-~d1.name = List services
-~d2.service_facts = 
-~d1.name = Disable service firewalld
-~d2.systemd_service = 
-~d3.name = firewalld
-~d3.state = stopped
-~d3.enabled = false
-~d2.when = 
-~d1.name = Disable service ufw
-~d2.systemd_service = 
-~d3.name = ufw
-~d3.state = stopped
-~d3.enabled = false
-~d2.when = 
+[0].name = Disable firewalld and ufw
+[0].when[0] = disable_service_firewall is defined and disable_service_firewall
+[0].block[0].name = List services
+[0].block[0].service_facts = null
+[0].block[1].name = Disable service firewalld
+[0].block[1].systemd_service.name = firewalld
+[0].block[1].systemd_service.state = stopped
+[0].block[1].systemd_service.enabled = false
+[0].block[1].when = 'firewalld.service' in services and services['firewalld.service'].status != 'not-found'
+[0].block[2].name = Disable service ufw
+[0].block[2].systemd_service.name = ufw
+[0].block[2].systemd_service.state = stopped
+[0].block[2].systemd_service.enabled = false
+[0].block[2].when = 'ufw.service' in services and services['ufw.service'].status != 'not-found'

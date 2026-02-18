@@ -9,7 +9,6 @@ rabbitmq_management__app_host = {{ ansible_fqdn }}
 rabbitmq_management__app_protocol = {{ "http"
                                        if rabbitmq_management__local | bool
                                        else "https" }}
-
 rabbitmq_management__default_config[0].name = rabbitmq_management
 rabbitmq_management__default_config[0].state = {{ rabbitmq_management__deploy_state }}
 rabbitmq_management__default_config[0].options[0].name = listener

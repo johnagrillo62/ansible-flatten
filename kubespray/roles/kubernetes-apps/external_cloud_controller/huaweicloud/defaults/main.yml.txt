@@ -1,9 +1,8 @@
-~d0.external_huaweicloud_auth_url = "{{ lookup('env', 'OS_AUTH_URL') }}"
-~d0.external_huaweicloud_access_key = "{{ lookup('env', 'OS_ACCESS_KEY') }}"
-~d0.external_huaweicloud_secret_key = "{{ lookup('env', 'OS_SECRET_KEY') }}"
-~d0.external_huaweicloud_region = "{{ lookup('env', 'OS_REGION_NAME') }}"
-~d0.external_huaweicloud_project_id = "{{ lookup('env', 'OS_TENANT_ID') | default(lookup('env', 'OS_PROJECT_ID'), true) }}"
-~d0.external_huaweicloud_cloud = "{{ lookup('env', 'OS_CLOUD') }}"
-~d0.external_huawei_cloud_controller_extra_args = {}
-~d0.external_huawei_cloud_controller_image_repo = "swr.ap-southeast-1.myhuaweicloud.com"
-~d0.external_huawei_cloud_controller_image_tag = "v0.26.8"
+external_huaweicloud_auth_url = {{ lookup('env', 'OS_AUTH_URL') }}
+external_huaweicloud_access_key = {{ lookup('env', 'OS_ACCESS_KEY') }}
+external_huaweicloud_secret_key = {{ lookup('env', 'OS_SECRET_KEY') }}
+external_huaweicloud_region = {{ lookup('env', 'OS_REGION_NAME') }}
+external_huaweicloud_project_id = {{ lookup('env', 'OS_TENANT_ID') | default(lookup('env', 'OS_PROJECT_ID'), true) }}
+external_huaweicloud_cloud = {{ lookup('env', 'OS_CLOUD') }}
+external_huawei_cloud_controller_image_repo = swr.ap-southeast-1.myhuaweicloud.com
+external_huawei_cloud_controller_image_tag = v0.26.8

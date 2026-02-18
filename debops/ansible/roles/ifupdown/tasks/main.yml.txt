@@ -1,128 +1,146 @@
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d0.name = Save ifupdown local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/ifupdown.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/ifupdown.fact'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update Ansible facts if they have been modified
-~d1.ansible.builtin.meta = 'flush_handlers'
-~d0.name = Install required packages
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (ifupdown__base_packages
-~d2.state = 'present'
-~d1.register = ifupdown__register_packages
-~d1.until = ifupdown__register_packages is succeeded
-~d0.name = Purge conflicting packages
-~d1.ansible.builtin.apt = 
-~d2.name = '{{ q("flattened", ifupdown__purge_packages) }}'
-~d2.state = 'absent'
-~d2.purge = True
-~d0.name = Create custom ifupdown systemd services
-~d1.ansible.builtin.include_tasks = ifup_systemd.yml
-~d1.when = ansible_service_mgr == 'systemd'
-~d0.name = Reset network configuration on role upgrade
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/network/interfaces.config.d'
-~d2.state = 'absent'
-~d1.when = (ansible_local | d() and ansible_local.debops_fact | d() and
-~d0.name = Create configuration directories
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.with_items = 
-~d0.name = Preserve original network configuration
-~d1.ansible.builtin.include_tasks = divert_interfaces.yml
-~d0.name = Remove network interface configuration
-~d1.ansible.builtin.file = 
-~d2.dest = '/etc/network/interfaces.config.d/{{ "%03d" | format((ifupdown__interface_weight_map[item.value.weight_class
-~d2.state = 'absent'
-~d1.with_dict = '{{ ifupdown__combined_interfaces }}'
-~d1.register = ifupdown__register_interfaces_removed
-~d1.when = item.value.state | d('present') == 'absent'
-~d0.name = Generate network interface configuration
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/network/interfaces.d/iface.j2'
-~d2.dest = '/etc/network/interfaces.config.d/{{ "%03d" | format((ifupdown__interface_weight_map[item.value.weight_class
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '{{ item.value.mode | d("0644") }}'
-~d1.with_dict = '{{ ifupdown__combined_interfaces }}'
-~d1.register = ifupdown__register_interfaces_created
-~d1.when = item.value.state | d('present') not in ['absent', 'ignore']
-~d0.name = Remove unknown interface configuration
-~d1.ansible.builtin.shell = find /etc/network/interfaces.config.d -maxdepth 1 -type f
-~d1.with_items = # noqa no-handler
-~d1.register = ifupdown__register_iface_cleanup
-~d1.changed_when = ifupdown__register_iface_cleanup.changed | bool
-~d1.when = (item.item.key | d() and item is changed)
-~d0.name = Mark modified interfaces for processing
-~d1.ansible.builtin.copy = # noqa no-handler
-~d2.content = |
-~d5.if ((item.item.key | replace(' = ', '_') | replace('.', '_')) not in ansible_interfaces and
-~d2.dest = '{{ "/run/network/debops-ifupdown-reconfigure," +
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.with_items = 
-~d1.notify = [ 'Apply ifupdown configuration' ]
-~d1.when = (item.item.key | d() and item is changed)
-~d0.name = Remove custom configuration files
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.dest | d(item.path) }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", ifupdown__custom_files
-~d1.when = ((item.dest | d() or item.path | d()) and
-~d0.name = Generate custom configuration files
-~d1.ansible.builtin.copy = 
-~d2.dest = '{{ item.dest | d(item.path) }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.content = '{{ item.content | d(omit) }}'
-~d2.owner = '{{ item.owner | d("root") }}'
-~d2.group = '{{ item.group | d("root") }}'
-~d2.mode = '{{ item.mode | d("0644") }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d1.loop = '{{ q("flattened", ifupdown__custom_files
-~d1.when = ((item.dest | d() or item.path | d()) and
-~d0.name = Remove custom ifupdown hooks
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.dest | d("/" + item.hook) }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", ifupdown__custom_hooks) }}'
-~d1.when = item.name | d() and item.state | d('present') == 'absent'
-~d0.name = Install custom ifupdown hooks
-~d1.ansible.builtin.template = 
-~d2.src = '{{ item.src | d(item.hook + ".j2") }}'
-~d2.dest = '{{ item.dest | d("/" + item.hook) }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '{{ item.mode | d("0755") }}'
-~d1.loop = '{{ q("flattened", ifupdown__custom_hooks) }}'
-~d1.when = item.name | d() and item.state | d('present') != 'absent'
-~d0.name = Install reconfiguration script if needed
-~d1.ansible.builtin.copy = 
-~d2.src = 'script/ifupdown-reconfigure-interfaces'
-~d2.dest = '{{ ifupdown__reconfigure_script_path }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = not ifupdown__reconfigure_auto | bool
-~d0.name = Save role version information
-~d1.community.general.ini_file = 
-~d2.dest = '{{ ansible_local.debops_fact.public_facts | d("/etc/ansible/debops_fact.ini") }}'
-~d2.section = 'version'
-~d2.option = 'ifupdown'
-~d2.value = '{{ ifupdown__role_metadata.version }}'
-~d2.mode = '0644'
-~d1.when = ansible_local | d() and ansible_local.debops_fact | d() and
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Make sure that Ansible local facts directory exists
+[1]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[1]["ansible.builtin.file"].state = directory
+[1]["ansible.builtin.file"].mode = 0755
+[2].name = Save ifupdown local facts
+[2]["ansible.builtin.template"].src = etc/ansible/facts.d/ifupdown.fact.j2
+[2]["ansible.builtin.template"].dest = /etc/ansible/facts.d/ifupdown.fact
+[2]["ansible.builtin.template"].mode = 0755
+[2].notify[0] = Refresh host facts
+[2].tags[0] = meta::facts
+[3].name = Update Ansible facts if they have been modified
+[3]["ansible.builtin.meta"] = flush_handlers
+[4].name = Install required packages
+[4]["ansible.builtin.package"].name = {{ q("flattened", (ifupdown__base_packages
+                              + ifupdown__dynamic_packages
+                              + ifupdown__packages)) }}
+[4]["ansible.builtin.package"].state = present
+[4].register = ifupdown__register_packages
+[4].until = ifupdown__register_packages is succeeded
+[5].name = Purge conflicting packages
+[5]["ansible.builtin.apt"].name = {{ q("flattened", ifupdown__purge_packages) }}
+[5]["ansible.builtin.apt"].state = absent
+[5]["ansible.builtin.apt"].purge = True
+[6].name = Create custom ifupdown systemd services
+[6]["ansible.builtin.include_tasks"] = ifup_systemd.yml
+[6].when = ansible_service_mgr == 'systemd'
+[7].name = Reset network configuration on role upgrade
+[7]["ansible.builtin.file"].path = /etc/network/interfaces.config.d
+[7]["ansible.builtin.file"].state = absent
+[7].when = (ansible_local | d() and ansible_local.debops_fact | d() and ansible_local.debops_fact.enabled | bool and (ansible_local.debops_fact.version is undefined or (ansible_local.debops_fact.version.ifupdown | d("0.0.0") is version_compare("0.3.0", "<"))))
+[8].name = Create configuration directories
+[8]["ansible.builtin.file"].path = {{ item }}
+[8]["ansible.builtin.file"].state = directory
+[8]["ansible.builtin.file"].owner = root
+[8]["ansible.builtin.file"].group = root
+[8]["ansible.builtin.file"].mode = 0755
+[8].with_items[0] = /etc/network/interfaces.d
+[8].with_items[1] = /etc/network/interfaces.config.d
+[9].name = Preserve original network configuration
+[9]["ansible.builtin.include_tasks"] = divert_interfaces.yml
+[10].name = Remove network interface configuration
+[10]["ansible.builtin.file"].dest = /etc/network/interfaces.config.d/{{ "%03d" | format((ifupdown__interface_weight_map[item.value.weight_class
+                                                                | d(item.value.type | d("default"))] | d("90")) | int
+                                               + (item.value.weight | d("0")) | int) }}_iface_{{ item.value.iface
+                                                                                               | d(item.key) }}
+[10]["ansible.builtin.file"].state = absent
+[10].with_dict = {{ ifupdown__combined_interfaces }}
+[10].register = ifupdown__register_interfaces_removed
+[10].when = item.value.state | d('present') == 'absent'
+[11].name = Generate network interface configuration
+[11]["ansible.builtin.template"].src = etc/network/interfaces.d/iface.j2
+[11]["ansible.builtin.template"].dest = /etc/network/interfaces.config.d/{{ "%03d" | format((ifupdown__interface_weight_map[item.value.weight_class
+                                                                | d(item.value.type | d("default"))] | d("90")) | int
+                                               + (item.value.weight | d("0")) | int) }}_iface_{{ item.value.iface
+                                                                                               | d(item.key) }}
+[11]["ansible.builtin.template"].owner = root
+[11]["ansible.builtin.template"].group = root
+[11]["ansible.builtin.template"].mode = {{ item.value.mode | d("0644") }}
+[11].with_dict = {{ ifupdown__combined_interfaces }}
+[11].register = ifupdown__register_interfaces_created
+[11].when = item.value.state | d('present') not in ['absent', 'ignore']
+[12].name = Remove unknown interface configuration
+[12]["ansible.builtin.shell"] = find /etc/network/interfaces.config.d -maxdepth 1 -type f -name '*_iface_{{ item.item.value.iface | d(item.item.key) }}' ! -name '{{ "%03d" | format((ifupdown__interface_weight_map[item.item.value.weight_class
+                                      | d(item.item.value.type | d("default"))] | d("90")) | int
+                     + (item.item.value.weight | d("0")) | int) }}_iface_{{ item.item.value.iface | d(item.item.key) }}' -exec rm -vf {} +
+[12].with_items[0] = {{ ifupdown__register_interfaces_removed.results }}
+[12].with_items[1] = {{ ifupdown__register_interfaces_created.results }}
+[12].register = ifupdown__register_iface_cleanup
+[12].changed_when = ifupdown__register_iface_cleanup.changed | bool
+[12].when = (item.item.key | d() and item is changed)
+[13].name = Mark modified interfaces for processing
+[13]["ansible.builtin.copy"].content = {{ ("created"
+    if ((item.item.key | replace(':', '_') | replace('.', '_')) not in ansible_interfaces and
+        (item.diff is undefined or
+         (item.diff | d() and item.diff.after | d() and
+          item.diff.after_header | d() and
+          item.diff.after_header == "dynamically generated")))
+    else ("removed"
+          if (item.diff | d() and item.diff.after | d() and
+              item.diff.after.state | d() and
+              item.diff.after.state == "absent")
+          else "changed")) }}
+
+[13]["ansible.builtin.copy"].dest = {{ "/run/network/debops-ifupdown-reconfigure," +
+              ("%03d" | format(((ifupdown__interface_weight_map[item.item.value.weight_class
+                                 | d(item.item.value.type | d("default"))]
+                                 | d(ifupdown__interface_weight_map["default"] | d("90"))) | int
+               + (item.item.value.weight | d("0")) | int))) | string + ","
+               + (item.item.value.iface | d(item.item.key)) }}
+[13]["ansible.builtin.copy"].owner = root
+[13]["ansible.builtin.copy"].group = root
+[13]["ansible.builtin.copy"].mode = 0644
+[13].with_items[0] = {{ ifupdown__register_interfaces_removed.results }}
+[13].with_items[1] = {{ ifupdown__register_interfaces_created.results }}
+[13].notify[0] = Apply ifupdown configuration
+[13].when = (item.item.key | d() and item is changed)
+[14].name = Remove custom configuration files
+[14]["ansible.builtin.file"].path = {{ item.dest | d(item.path) }}
+[14]["ansible.builtin.file"].state = absent
+[14].loop = {{ q("flattened", ifupdown__custom_files
+                           + ifupdown__custom_group_files
+                           + ifupdown__custom_host_files
+                           + ifupdown__custom_dependent_files) }}
+[14].when = ((item.dest | d() or item.path | d()) and item.state | d('present') == 'absent')
+[15].name = Generate custom configuration files
+[15]["ansible.builtin.copy"].dest = {{ item.dest | d(item.path) }}
+[15]["ansible.builtin.copy"].src = {{ item.src | d(omit) }}
+[15]["ansible.builtin.copy"].content = {{ item.content | d(omit) }}
+[15]["ansible.builtin.copy"].owner = {{ item.owner | d("root") }}
+[15]["ansible.builtin.copy"].group = {{ item.group | d("root") }}
+[15]["ansible.builtin.copy"].mode = {{ item.mode | d("0644") }}
+[15]["ansible.builtin.copy"].force = {{ item.force | d(omit) }}
+[15].loop = {{ q("flattened", ifupdown__custom_files
+                           + ifupdown__custom_group_files
+                           + ifupdown__custom_host_files
+                           + ifupdown__custom_dependent_files) }}
+[15].when = ((item.dest | d() or item.path | d()) and (item.src | d() or item.content | d()) and item.state | d('present') != 'absent')
+[16].name = Remove custom ifupdown hooks
+[16]["ansible.builtin.file"].path = {{ item.dest | d("/" + item.hook) }}
+[16]["ansible.builtin.file"].state = absent
+[16].loop = {{ q("flattened", ifupdown__custom_hooks) }}
+[16].when = item.name | d() and item.state | d('present') == 'absent'
+[17].name = Install custom ifupdown hooks
+[17]["ansible.builtin.template"].src = {{ item.src | d(item.hook + ".j2") }}
+[17]["ansible.builtin.template"].dest = {{ item.dest | d("/" + item.hook) }}
+[17]["ansible.builtin.template"].owner = root
+[17]["ansible.builtin.template"].group = root
+[17]["ansible.builtin.template"].mode = {{ item.mode | d("0755") }}
+[17].loop = {{ q("flattened", ifupdown__custom_hooks) }}
+[17].when = item.name | d() and item.state | d('present') != 'absent'
+[18].name = Install reconfiguration script if needed
+[18]["ansible.builtin.copy"].src = script/ifupdown-reconfigure-interfaces
+[18]["ansible.builtin.copy"].dest = {{ ifupdown__reconfigure_script_path }}
+[18]["ansible.builtin.copy"].owner = root
+[18]["ansible.builtin.copy"].group = root
+[18]["ansible.builtin.copy"].mode = 0755
+[18].when = not ifupdown__reconfigure_auto | bool
+[19].name = Save role version information
+[19]["community.general.ini_file"].dest = {{ ansible_local.debops_fact.public_facts | d("/etc/ansible/debops_fact.ini") }}
+[19]["community.general.ini_file"].section = version
+[19]["community.general.ini_file"].option = ifupdown
+[19]["community.general.ini_file"].value = {{ ifupdown__role_metadata.version }}
+[19]["community.general.ini_file"].mode = 0644
+[19].when = ansible_local | d() and ansible_local.debops_fact | d() and ansible_local.debops_fact.enabled | bool

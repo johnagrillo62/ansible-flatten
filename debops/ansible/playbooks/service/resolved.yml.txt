@@ -1,11 +1,18 @@
-~d0.name = Manage systemd-resolved service
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_all_hosts', 'debops_service_resolved' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = etc_services
-~d3.tags = [ 'role::etc_services', 'skip::etc_services' ]
-~d3.etc_services__dependent_list = 
-~d2.role = resolved
-~d3.tags = [ 'role::resolved', 'skip::resolved' ]
+[0].name = Manage systemd-resolved service
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_all_hosts
+[0].hosts[1] = debops_service_resolved
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = etc_services
+[0].roles[0].tags[0] = role::etc_services
+[0].roles[0].tags[1] = skip::etc_services
+[0].roles[0].etc_services__dependent_list[0] = {{ resolved__etc_services__dependent_list }}
+[0].roles[1].role = resolved
+[0].roles[1].tags[0] = role::resolved
+[0].roles[1].tags[1] = skip::resolved

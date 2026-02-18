@@ -1,5 +1,10 @@
-~d0.networkd__units = 
-~d1.name = '50-static.network'
-~d2.comment = 'Configure specific interface with static IP address'
-~d2.raw = |
-~d2.state = 'present'
+networkd__units[0].name = 50-static.network
+networkd__units[0].comment = Configure specific interface with static IP address
+networkd__units[0].raw = [Match]
+Name=enp2s0
+
+[Network]
+Address=192.0.2.15/24
+Gateway=192.0.2.1
+
+networkd__units[0].state = present

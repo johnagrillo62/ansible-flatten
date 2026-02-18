@@ -1,34 +1,40 @@
-~d0.name = '{{ item.name }}'  # noqa name[casing]
-~d1.community.general.ldap_entry = 
-~d2.dn = '{{ item.dn if (item.dn is string) else item.dn | join(",") }}'
-~d2.objectClass = '{{ item.objectClass | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(omit) }}'
-~d2.state = '{{ item.entry_state | d(item.state) }}'
-~d2.server_uri = '{{ ldap__admin_server_uri }}'
-~d2.start_tls = '{{ ldap__start_tls }}'
-~d2.bind_dn = '{{ ldap__admin_binddn }}'
-~d2.bind_pw = '{{ ldap__fact_admin_bindpw }}'
-~d1.become = '{{ ldap__admin_become }}'
-~d1.become_user = '{{ ldap__admin_become_user if ldap__admin_become_user | d() else omit }}'
-~d1.delegate_to = '{{ ldap__admin_delegate_to if ldap__admin_delegate_to | d() else omit }}'
-~d1.run_once = '{{ item.run_once | d(False) }}'
-~d1.when = (item.objectClass | d() or item.entry_state | d()) and item.state not in ['init', 'ignore']
-~d1.tags = [ 'role::ldap:tasks', 'skip::ldap:tasks' ]
-~d1.no_log = '{{ debops__no_log | d(item.no_log | d(True
-~d0.name = '{{ item.name }}'  # noqa name[casing]
-~d1.debops.debops.ldap_attrs = 
-~d2.dn = '{{ item.dn if (item.dn is string) else item.dn | join(",") }}'
-~d2.attributes = '{{ item.attributes | d({}) }}'
-~d2.ordered = '{{ item.ordered | d(False) }}'
-~d2.state = '{{ item.state }}'
-~d2.server_uri = '{{ ldap__admin_server_uri }}'
-~d2.start_tls = '{{ ldap__start_tls }}'
-~d2.bind_dn = '{{ ldap__admin_binddn }}'
-~d2.bind_pw = '{{ ldap__fact_admin_bindpw }}'
-~d1.become = '{{ ldap__admin_become }}'
-~d1.become_user = '{{ ldap__admin_become_user if ldap__admin_become_user | d() else omit }}'
-~d1.delegate_to = '{{ ldap__admin_delegate_to if ldap__admin_delegate_to | d() else omit }}'
-~d1.run_once = '{{ item.run_once | d(False) }}'
-~d1.when = not item.objectClass | d() and not item.entry_state | d() and item.state not in ['init', 'ignore']
-~d1.tags = [ 'role::ldap:tasks', 'skip::ldap:tasks' ]
-~d1.no_log = '{{ debops__no_log | d(item.no_log | d(True
+[0].name = {{ item.name }}
+[0]["community.general.ldap_entry"].dn = {{ item.dn if (item.dn is string) else item.dn | join(",") }}
+[0]["community.general.ldap_entry"].objectClass = {{ item.objectClass | d(omit) }}
+[0]["community.general.ldap_entry"].attributes = {{ item.attributes | d(omit) }}
+[0]["community.general.ldap_entry"].state = {{ item.entry_state | d(item.state) }}
+[0]["community.general.ldap_entry"].server_uri = {{ ldap__admin_server_uri }}
+[0]["community.general.ldap_entry"].start_tls = {{ ldap__start_tls }}
+[0]["community.general.ldap_entry"].bind_dn = {{ ldap__admin_binddn }}
+[0]["community.general.ldap_entry"].bind_pw = {{ ldap__fact_admin_bindpw }}
+[0].become = {{ ldap__admin_become }}
+[0].become_user = {{ ldap__admin_become_user if ldap__admin_become_user | d() else omit }}
+[0].delegate_to = {{ ldap__admin_delegate_to if ldap__admin_delegate_to | d() else omit }}
+[0].run_once = {{ item.run_once | d(False) }}
+[0].when = (item.objectClass | d() or item.entry_state | d()) and item.state not in ['init', 'ignore']
+[0].tags[0] = role::ldap:tasks
+[0].tags[1] = skip::ldap:tasks
+[0].no_log = {{ debops__no_log | d(item.no_log | d(True
+                                 if ("userPassword" in (item.attributes | d({})).keys() or
+                                     "olcRootPW" in (item.attributes | d({})).keys())
+                                 else False)) }}
+[1].name = {{ item.name }}
+[1]["debops.debops.ldap_attrs"].dn = {{ item.dn if (item.dn is string) else item.dn | join(",") }}
+[1]["debops.debops.ldap_attrs"].attributes = {{ item.attributes | d({}) }}
+[1]["debops.debops.ldap_attrs"].ordered = {{ item.ordered | d(False) }}
+[1]["debops.debops.ldap_attrs"].state = {{ item.state }}
+[1]["debops.debops.ldap_attrs"].server_uri = {{ ldap__admin_server_uri }}
+[1]["debops.debops.ldap_attrs"].start_tls = {{ ldap__start_tls }}
+[1]["debops.debops.ldap_attrs"].bind_dn = {{ ldap__admin_binddn }}
+[1]["debops.debops.ldap_attrs"].bind_pw = {{ ldap__fact_admin_bindpw }}
+[1].become = {{ ldap__admin_become }}
+[1].become_user = {{ ldap__admin_become_user if ldap__admin_become_user | d() else omit }}
+[1].delegate_to = {{ ldap__admin_delegate_to if ldap__admin_delegate_to | d() else omit }}
+[1].run_once = {{ item.run_once | d(False) }}
+[1].when = not item.objectClass | d() and not item.entry_state | d() and item.state not in ['init', 'ignore']
+[1].tags[0] = role::ldap:tasks
+[1].tags[1] = skip::ldap:tasks
+[1].no_log = {{ debops__no_log | d(item.no_log | d(True
+                                 if ("userPassword" in (item.attributes | d({})).keys() or
+                                     "olcRootPW" in (item.attributes | d({})).keys())
+                                 else False)) }}

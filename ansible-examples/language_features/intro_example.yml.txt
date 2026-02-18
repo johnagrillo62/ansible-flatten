@@ -1,19 +1,18 @@
-doc[0][0].name = example play
-doc[0][0].hosts = all
-doc[0][0].remote_user = root
-doc[0][0].vars.http_port = 80
-doc[0][0].vars.max_clients = 200
-doc[0][0].tasks[0].name = longrunner
-doc[0][0].tasks[0].command = /bin/sleep 15
-doc[0][0].tasks[0].async = 45
-doc[0][0].tasks[0].poll = 5
-doc[0][0].tasks[1].name = write some_random_foo configuration
-doc[0][0].tasks[1].template = src=templates/foo.j2 dest=/etc/some_random_foo.conf
-doc[0][0].tasks[1].notify[0] = restart apache
-doc[0][0].tasks[2].name = install httpd
-doc[0][0].tasks[2].yum = pkg=httpd state=latest
-doc[0][0].tasks[3].name = httpd start
-doc[0][0].tasks[3].service = name=httpd state=running
-doc[0][0].handlers[0].name = restart apache
-doc[0][0].handlers[0].service = name=httpd state=restarted
-doc[1] = 
+[0].name = example play
+[0].hosts = all
+[0].remote_user = root
+[0].vars.http_port = 80
+[0].vars.max_clients = 200
+[0].tasks[0].name = longrunner
+[0].tasks[0].command = /bin/sleep 15
+[0].tasks[0].async = 45
+[0].tasks[0].poll = 5
+[0].tasks[1].name = write some_random_foo configuration
+[0].tasks[1].template = src=templates/foo.j2 dest=/etc/some_random_foo.conf
+[0].tasks[1].notify[0] = restart apache
+[0].tasks[2].name = install httpd
+[0].tasks[2].yum = pkg=httpd state=latest
+[0].tasks[3].name = httpd start
+[0].tasks[3].service = name=httpd state=running
+[0].handlers[0].name = restart apache
+[0].handlers[0].service = name=httpd state=restarted

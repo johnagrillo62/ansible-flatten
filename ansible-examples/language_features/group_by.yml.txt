@@ -1,10 +1,9 @@
-doc[0][0].hosts = all
-doc[0][0].tasks[0].name = Create a group of all hosts by operating system
-doc[0][0].tasks[0].group_by = key={{ansible_distribution}}-{{ansible_distribution_version}}
-doc[0][1].hosts = CentOS-6.2
-doc[0][1].tasks[0].name = ping all CentOS 6.2 hosts
-doc[0][1].tasks[0].ping = null
-doc[0][2].hosts = CentOS-6.3
-doc[0][2].tasks[0].name = ping all CentOS 6.3 hosts
-doc[0][2].tasks[0].ping = null
-doc[1] = 
+[0].hosts = all
+[0].tasks[0].name = Create a group of all hosts by operating system
+[0].tasks[0].group_by = key={{ansible_distribution}}-{{ansible_distribution_version}}
+[1].hosts = CentOS-6.2
+[1].tasks[0].name = ping all CentOS 6.2 hosts
+[1].tasks[0].ping = null
+[2].hosts = CentOS-6.3
+[2].tasks[0].name = ping all CentOS 6.3 hosts
+[2].tasks[0].ping = null

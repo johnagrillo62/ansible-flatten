@@ -2,7 +2,6 @@ timesyncd__enabled = {{ True
                        if (ansible_service_mgr == "systemd" and
                            timesyncd__fact_service_state == "present")
                        else False }}
-
 timesyncd__deploy_state = absent
 timesyncd__base_packages[0] = systemd-timesyncd
 timesyncd__skip_packages[0] = openntpd
@@ -31,6 +30,5 @@ timesyncd__combined_configuration = {{ timesyncd__default_configuration
                                        + timesyncd__configuration
                                        + timesyncd__group_configuration
                                        + timesyncd__host_configuration }}
-
 timesyncd__dpkg_cleanup__dependent_packages[0].name = systemd-timesyncd
 timesyncd__dpkg_cleanup__dependent_packages[0].ansible_fact = timesyncd

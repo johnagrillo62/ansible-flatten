@@ -4,24 +4,19 @@ sysctl__shared_memory_base = {{ ((ansible_memtotal_mb | int * 1024 * 1024) - 819
 sysctl__shared_memory_shmall_limiter = {{ 0.8
                                           if (ansible_memtotal_mb | int >= 4096)
                                           else 0.5 }}
-
 sysctl__shared_memory_shmall = {{ ((sysctl__shared_memory_base | int *
                                     sysctl__shared_memory_shmall_limiter | float) / 4096)
                                   | round | int }}
-
 sysctl__shared_memory_max_limiter = {{ 0.5
                                        if (ansible_memtotal_mb | int >= 4096)
                                        else 0.2 }}
-
 sysctl__shared_memory_shmmax = {{ (sysctl__shared_memory_base | int *
                                    sysctl__shared_memory_max_limiter | float)
                                    | round | int }}
-
 sysctl__hardening_enabled = True
 sysctl__system_ip_forwarding_enabled = {{ True
                                           if ansible_local.docker_server.installed | d(False)
                                           else False }}
-
 sysctl__hardening_ipv6_disabled = False
 sysctl__hardening_experimental_enabled = False
 sysctl__tcp_performance_enabled = False
@@ -104,7 +99,6 @@ sysctl__default_parameters[1].options[11].comment = Protect against wrapping seq
 sysctl__default_parameters[1].options[11].state = {{ (sysctl__hardening_enabled | bool and
                     not (ansible_virtualization_role == "guest" and ansible_virtualization_type == "openvz"))
                   | ternary("present", "absent") }}
-
 sysctl__default_parameters[1].options[12].name = net.ipv4.conf.all.arp_ignore
 sysctl__default_parameters[1].options[12].value = 1
 sysctl__default_parameters[1].options[12].comment = Define restriction level for announcing the local source IP.
@@ -122,7 +116,6 @@ sysctl__default_parameters[1].options[14].state = {{ (sysctl__hardening_enabled 
                     not (ansible_virtualization_role == "guest" and
                          ansible_virtualization_type == "openvz"))
                   | ternary("present", "absent") }}
-
 sysctl__default_parameters[1].options[15].name = net.ipv4.tcp_slow_start_after_idle
 sysctl__default_parameters[1].options[15].value = {{ sysctl__tcp_performance_enabled | bool | ternary(0, 1) }}
 sysctl__default_parameters[1].options[15].comment = If set, provide RFC2861 behavior and time out the congestion window
@@ -135,7 +128,6 @@ sysctl__default_parameters[2].name = protect-links
 sysctl__default_parameters[2].filename = {{ "protect-links.conf"
                   if (ansible_distribution_release in ["stretch", "buster", "bullseye"])
                   else "99-protect-links.conf" }}
-
 sysctl__default_parameters[2].divert = True
 sysctl__default_parameters[2].comment = Protected links
 
@@ -169,7 +161,6 @@ there.
 sysctl__default_parameters[3].state = {{ "present"
                if ((ansible_local.core.is_64bits | d(True)) | bool)
                else "absent" }}
-
 sysctl__default_parameters[3].options[0].name = kernel.pid_max
 sysctl__default_parameters[3].options[0].comment = Bump the numeric PID range to its maximum of 2^22 (from the in-kernel default
 of 2^16), to make PID collisions less likely.
@@ -180,4 +171,3 @@ sysctl__combined_parameters = {{ sysctl__default_parameters
                                  + sysctl__parameters
                                  + sysctl__group_parameters
                                  + sysctl__host_parameters }}
-

@@ -1,13 +1,13 @@
 backup2l__base_packages[0] = backup2l
 backup2l__backup_dev = 
 backup2l__backup_dir = {{ (ansible_local.fhs.backup | d("/var/backups"))
-                          + "/backup2l" }} 
+                          + "/backup2l" }}
 backup2l__pre_hook_dir = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
-                            + "/backup/pre-hook.d" }} 
+                            + "/backup/pre-hook.d" }}
 backup2l__post_hook_dir = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
-                             + "/backup/post-hook.d" }} 
+                             + "/backup/post-hook.d" }}
 backup2l__include_file = {{ (ansible_local.fhs.etc | d("/usr/local/etc"))
-                            + "/backup/include" }} 
+                            + "/backup/include" }}
 backup2l__default_include[0] = /etc
 backup2l__default_include[1] = /home
 backup2l__default_include[2] = /opt
@@ -24,7 +24,6 @@ backup2l__srclist = {{ (backup2l__default_include
                         + backup2l__group_include
                         + backup2l__host_include)
                        | join(" ") }}
-
 backup2l__default_exclude[0] = -wholename "{{ backup2l__backup_dir }}" -prune
 backup2l__default_exclude[1] = -path "*.ansible/tmp*"
 backup2l__default_exclude[2] = -path "*.cache*"
@@ -36,7 +35,6 @@ backup2l__skipcond = {{ (backup2l__default_exclude
                          + backup2l__group_exclude
                          + backup2l__host_exclude)
                         | join(" -o ") }}
-
 backup2l__volname = all
 backup2l__max_level = 3
 backup2l__max_per_level = 8

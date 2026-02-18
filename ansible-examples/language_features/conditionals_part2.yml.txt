@@ -1,25 +1,24 @@
-doc[0][0].hosts = all
-doc[0][0].remote_user = root
-doc[0][0].vars.favcolor = red
-doc[0][0].vars.dog = fido
-doc[0][0].vars.cat = whiskers
-doc[0][0].vars.ssn = 8675309
-doc[0][0].tasks[0].name = do this if my favcolor is blue, and my dog is named fido
-doc[0][0].tasks[0].shell = /bin/false
-doc[0][0].tasks[0].when = favcolor == 'blue' and dog == 'fido'
-doc[0][0].tasks[1].name = do this if my favcolor is not blue, and my dog is named fido
-doc[0][0].tasks[1].shell = /bin/true
-doc[0][0].tasks[1].when = favcolor != 'blue' and dog == 'fido'
-doc[0][0].tasks[2].name = do this if my SSN is over 9000
-doc[0][0].tasks[2].shell = /bin/true
-doc[0][0].tasks[2].when = ssn > 9000
-doc[0][0].tasks[3].name = do this if I have one of these SSNs
-doc[0][0].tasks[3].shell = /bin/true
-doc[0][0].tasks[3].when = ssn in [ 8675309, 8675310, 8675311 ]
-doc[0][0].tasks[4].name = do this if a variable named hippo is NOT defined
-doc[0][0].tasks[4].shell = /bin/true
-doc[0][0].tasks[4].when = hippo is not defined
-doc[0][0].tasks[5].name = do this if a variable named hippo is defined
-doc[0][0].tasks[5].shell = /bin/true
-doc[0][0].tasks[5].when = hippo is defined
-doc[1] = 
+[0].hosts = all
+[0].remote_user = root
+[0].vars.favcolor = red
+[0].vars.dog = fido
+[0].vars.cat = whiskers
+[0].vars.ssn = 8675309
+[0].tasks[0].name = do this if my favcolor is blue, and my dog is named fido
+[0].tasks[0].shell = /bin/false
+[0].tasks[0].when = favcolor == 'blue' and dog == 'fido'
+[0].tasks[1].name = do this if my favcolor is not blue, and my dog is named fido
+[0].tasks[1].shell = /bin/true
+[0].tasks[1].when = favcolor != 'blue' and dog == 'fido'
+[0].tasks[2].name = do this if my SSN is over 9000
+[0].tasks[2].shell = /bin/true
+[0].tasks[2].when = ssn > 9000
+[0].tasks[3].name = do this if I have one of these SSNs
+[0].tasks[3].shell = /bin/true
+[0].tasks[3].when = ssn in [ 8675309, 8675310, 8675311 ]
+[0].tasks[4].name = do this if a variable named hippo is NOT defined
+[0].tasks[4].shell = /bin/true
+[0].tasks[4].when = hippo is not defined
+[0].tasks[5].name = do this if a variable named hippo is defined
+[0].tasks[5].shell = /bin/true
+[0].tasks[5].when = hippo is defined

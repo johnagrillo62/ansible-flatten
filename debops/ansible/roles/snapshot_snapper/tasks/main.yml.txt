@@ -1,107 +1,105 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Combine snapper inventory variables
-~d1.ansible.builtin.set_fact = 
-~d2.snapshot_snapper__templates_combined = '{{
-~d2.snapshot_snapper__volumes_combined = '{{
-~d2.snapshot_snapper__combined_packages = '{{
-~d1.tags = 
-~d2.'role = :snapshot_snapper:reinit'
-~d0.name = Ensure specified packages are in there desired state
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", snapshot_snapper__combined_packages) }}'
-~d2.state = 'present'
-~d1.register = snapshot_snapper__register_packages
-~d1.until = snapshot_snapper__register_packages is succeeded
-~d0.name = 'Divert original configuration under /etc'
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '{{ item }}'
-~d1.register = snapshot_snapper__updatedb_diverted_register
-~d1.when = ansible_os_family in ["Debian"]
-~d1.loop = '{{ snapshot_snapper__divert_files | flatten }}'
-~d0.name = Copy diverted configuration file to original location
-~d1.ansible.builtin.copy = # noqa no-handler
-~d2.src = '{{ item }}.dpkg-divert'
-~d2.dest = '{{ item }}'
-~d2.remote_src = True
-~d2.force = False
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.when = snapshot_snapper__updatedb_diverted_register is changed
-~d1.loop = '{{ q("flattened", snapshot_snapper__divert_files) }}'
-~d0.name = Check if snapshots are already excluded from updatedb
-~d1.ansible.builtin.command = grep PRUNENAMES=.*{{ snapshot_snapper__directory }}.* /etc/updatedb.conf
-~d1.failed_when = False
-~d1.changed_when = False
-~d1.check_mode = False
-~d1.when = snapshot_snapper__directory | d() and "mlocate" in snapshot_snapper__combined_packages
-~d1.register = snapshot_snapper__register_updatedb_configured
-~d0.name = Configure updatedb to exclude snapshots
-~d1.ansible.builtin.lineinfile = 
-~d2.dest = '/etc/updatedb.conf'
-~d2.backrefs = yes
-~d2.regexp = '^(# )?PRUNENAMES=(".*)"$'
-~d2.line = 'PRUNENAMES=\2 {{ snapshot_snapper__directory }}"'
-~d2.mode = '0644'
-~d1.when = snapshot_snapper__register_updatedb_configured.rc != 0
-~d0.name = Check which snapper /etc/snapper/configs/ exist
-~d1.ansible.builtin.stat = 
-~d2.path = '/etc/snapper/configs/{{ item.name }}'
-~d1.when = (snapshot_snapper__auto_reinit | bool and item.path | d() and item.name | d() and
-~d1.register = snapshot_snapper__register_snapper_configs
-~d1.tags = [ 'role::snapshot_snapper:reinit' ]
-~d1.with_items = '{{ snapshot_snapper__volumes_combined }}'
-~d0.name = Check which snapper snapshot directories exist
-~d1.ansible.builtin.stat = 
-~d2.path = '{{ item.path + "/" + snapshot_snapper__directory }}'
-~d1.when = (snapshot_snapper__auto_reinit | bool and item.path | d() and item.name | d() and
-~d1.tags = [ 'role::snapshot_snapper:reinit' ]
-~d1.register = snapshot_snapper__register_snapshot_directory
-~d1.with_items = '{{ snapshot_snapper__volumes_combined }}'
-~d0.name = Delete snapper configuration to automatically reinit
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/snapper/configs/{{ item.0.item.name }}'
-~d2.state = 'absent'
-~d1.tags = [ 'role::snapshot_snapper:reinit' ]
-~d1.when = (item.0 is not skipped and item.1 is not skipped and
-~d1.register = snapshot_snapper__register_snapper_configs_delete
-~d1.with_together = 
-~d0.name = Get list of active snapper volumes
-~d1.ansible.builtin.find = 
-~d2.file_type = 'file'
-~d2.paths = [ '/etc/snapper/configs/' ]
-~d2.hidden = False
-~d2.recurse = False
-~d1.register = snapshot_snapper__register_snapper_configs_current
-~d1.when = (snapshot_snapper__auto_reinit | bool)
-~d1.tags = [ 'role::snapshot_snapper:reinit' ]
-~d0.name = Update active snapper volumes in /etc/default/snapper
-~d1.ansible.builtin.lineinfile = 
-~d2.dest = '/etc/default/snapper'
-~d2.state = 'present'
-~d2.regexp = '^SNAPPER_CONFIGS="[^"]*"$'
-~d2.line = 'SNAPPER_CONFIGS="{{
-~d2.mode = '0644'
-~d1.when = (snapshot_snapper__auto_reinit | bool)
-~d1.tags = [ 'role::snapshot_snapper:reinit' ]
-~d0.name = Configure snapper templates
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/snapper/config-templates/item.j2'
-~d2.dest = '/etc/snapper/config-templates/{{ item.key }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.with_dict = '{{ snapshot_snapper__templates_combined }}'
-~d0.name = Create initial configuration per volume
-~d1.ansible.builtin.command = snapper --config '{{ item.name | default("root") }}'
-~d1.args = 
-~d2.creates = '/etc/snapper/configs/{{ item.name }}'
-~d1.when = (item.path | d() and item.name | d() and (item.state | d("present") == "present"))
-~d1.with_items = '{{ snapshot_snapper__volumes_combined }}'
-~d0.name = Adjust configuration per volume
-~d1.ansible.builtin.include_tasks = configure_snapper_volume.yml
-~d1.loop_control = 
-~d2.loop_var = 'snapshot_snapper__volume'
-~d1.with_items = '{{ snapshot_snapper__volumes_combined }}'
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Combine snapper inventory variables
+[1]["ansible.builtin.set_fact"].snapshot_snapper__templates_combined = {{
+                snapshot_snapper__templates
+      | combine(snapshot_snapper__host_group_templates, recursive=True)
+      | combine(snapshot_snapper__host_templates, recursive=True) }}
+[1]["ansible.builtin.set_fact"].snapshot_snapper__volumes_combined = {{
+      (snapshot_snapper__volumes | list) +
+      (snapshot_snapper__host_group_volumes | list) +
+      (snapshot_snapper__host_volumes | list) }}
+[1]["ansible.builtin.set_fact"].snapshot_snapper__combined_packages = {{
+      (snapshot_snapper__base_packages | list) +
+      (snapshot_snapper__packages | list) }}
+[1].tags[0] = role::snapshot_snapper:reinit
+[2].name = Ensure specified packages are in there desired state
+[2]["ansible.builtin.package"].name = {{ q("flattened", snapshot_snapper__combined_packages) }}
+[2]["ansible.builtin.package"].state = present
+[2].register = snapshot_snapper__register_packages
+[2].until = snapshot_snapper__register_packages is succeeded
+[3].name = Divert original configuration under /etc
+[3]["debops.debops.dpkg_divert"].path = {{ item }}
+[3].register = snapshot_snapper__updatedb_diverted_register
+[3].when = ansible_os_family in ["Debian"]
+[3].loop = {{ snapshot_snapper__divert_files | flatten }}
+[4].name = Copy diverted configuration file to original location
+[4]["ansible.builtin.copy"].src = {{ item }}.dpkg-divert
+[4]["ansible.builtin.copy"].dest = {{ item }}
+[4]["ansible.builtin.copy"].remote_src = True
+[4]["ansible.builtin.copy"].force = False
+[4]["ansible.builtin.copy"].owner = root
+[4]["ansible.builtin.copy"].group = root
+[4]["ansible.builtin.copy"].mode = 0644
+[4].when = snapshot_snapper__updatedb_diverted_register is changed
+[4].loop = {{ q("flattened", snapshot_snapper__divert_files) }}
+[5].name = Check if snapshots are already excluded from updatedb
+[5]["ansible.builtin.command"] = grep PRUNENAMES=.*{{ snapshot_snapper__directory }}.* /etc/updatedb.conf
+[5].failed_when = False
+[5].changed_when = False
+[5].check_mode = False
+[5].when = snapshot_snapper__directory | d() and "mlocate" in snapshot_snapper__combined_packages
+[5].register = snapshot_snapper__register_updatedb_configured
+[6].name = Configure updatedb to exclude snapshots
+[6]["ansible.builtin.lineinfile"].dest = /etc/updatedb.conf
+[6]["ansible.builtin.lineinfile"].backrefs = yes
+[6]["ansible.builtin.lineinfile"].regexp = ^(# )?PRUNENAMES=(".*)"$
+[6]["ansible.builtin.lineinfile"].line = PRUNENAMES=\2 {{ snapshot_snapper__directory }}"
+[6]["ansible.builtin.lineinfile"].mode = 0644
+[6].when = snapshot_snapper__register_updatedb_configured.rc != 0
+[7].name = Check which snapper /etc/snapper/configs/ exist
+[7]["ansible.builtin.stat"].path = /etc/snapper/configs/{{ item.name }}
+[7].when = (snapshot_snapper__auto_reinit | bool and item.path | d() and item.name | d() and (item.state | d("present") == "present"))
+[7].register = snapshot_snapper__register_snapper_configs
+[7].tags[0] = role::snapshot_snapper:reinit
+[7].with_items = {{ snapshot_snapper__volumes_combined }}
+[8].name = Check which snapper snapshot directories exist
+[8]["ansible.builtin.stat"].path = {{ item.path + "/" + snapshot_snapper__directory }}
+[8].when = (snapshot_snapper__auto_reinit | bool and item.path | d() and item.name | d() and (item.state | d("present") == "present"))
+[8].tags[0] = role::snapshot_snapper:reinit
+[8].register = snapshot_snapper__register_snapshot_directory
+[8].with_items = {{ snapshot_snapper__volumes_combined }}
+[9].name = Delete snapper configuration to automatically reinit
+[9]["ansible.builtin.file"].path = /etc/snapper/configs/{{ item.0.item.name }}
+[9]["ansible.builtin.file"].state = absent
+[9].tags[0] = role::snapshot_snapper:reinit
+[9].when = (item.0 is not skipped and item.1 is not skipped and item.0.stat.exists | d(item.0.stat.isreg) and not item.1.stat.exists)
+[9].register = snapshot_snapper__register_snapper_configs_delete
+[9].with_together[0] = {{ snapshot_snapper__register_snapper_configs.results }}
+[9].with_together[1] = {{ snapshot_snapper__register_snapshot_directory.results }}
+[10].name = Get list of active snapper volumes
+[10]["ansible.builtin.find"].file_type = file
+[10]["ansible.builtin.find"].paths[0] = /etc/snapper/configs/
+[10]["ansible.builtin.find"].hidden = False
+[10]["ansible.builtin.find"].recurse = False
+[10].register = snapshot_snapper__register_snapper_configs_current
+[10].when = (snapshot_snapper__auto_reinit | bool)
+[10].tags[0] = role::snapshot_snapper:reinit
+[11].name = Update active snapper volumes in /etc/default/snapper
+[11]["ansible.builtin.lineinfile"].dest = /etc/default/snapper
+[11]["ansible.builtin.lineinfile"].state = present
+[11]["ansible.builtin.lineinfile"].regexp = ^SNAPPER_CONFIGS="[^"]*"$
+[11]["ansible.builtin.lineinfile"].line = SNAPPER_CONFIGS="{{
+           snapshot_snapper__register_snapper_configs_current.files
+           | map(attribute="path")
+           | map("replace", "/etc/snapper/configs/", "")
+           | join(" ") }}"
+[11]["ansible.builtin.lineinfile"].mode = 0644
+[11].when = (snapshot_snapper__auto_reinit | bool)
+[11].tags[0] = role::snapshot_snapper:reinit
+[12].name = Configure snapper templates
+[12]["ansible.builtin.template"].src = etc/snapper/config-templates/item.j2
+[12]["ansible.builtin.template"].dest = /etc/snapper/config-templates/{{ item.key }}
+[12]["ansible.builtin.template"].owner = root
+[12]["ansible.builtin.template"].group = root
+[12]["ansible.builtin.template"].mode = 0644
+[12].with_dict = {{ snapshot_snapper__templates_combined }}
+[13].name = Create initial configuration per volume
+[13]["ansible.builtin.command"] = snapper --config '{{ item.name | default("root") }}' create-config {{ ("'--template' '" + item.template + "'") if (item.template | d()) else '' }} '{{ item.path }}'
+[13].args.creates = /etc/snapper/configs/{{ item.name }}
+[13].when = (item.path | d() and item.name | d() and (item.state | d("present") == "present"))
+[13].with_items = {{ snapshot_snapper__volumes_combined }}
+[14].name = Adjust configuration per volume
+[14]["ansible.builtin.include_tasks"] = configure_snapper_volume.yml
+[14].loop_control.loop_var = snapshot_snapper__volume
+[14].with_items = {{ snapshot_snapper__volumes_combined }}

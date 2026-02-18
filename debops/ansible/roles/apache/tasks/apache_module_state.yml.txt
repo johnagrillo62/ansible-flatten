@@ -1,9 +1,10 @@
-~d0.name = Enable/disable Apache modules
-~d1.debops.debops.apache2_module = 
-~d2.name = '{{ item.key }}'
-~d2.state = '{{ (item.value.enabled
-~d2.force = '{{ item.value.force | d(False) | bool }}'
-~d1.notify = [ 'Test apache and reload' ]
-~d1.when = (item.key in apache__tpl_available_modules
-~d1.with_dict = '{{ apache__combined_modules }}'
-~d1.tags = [ 'role::apache:modules' ]
+[0].name = Enable/disable Apache modules
+[0]["debops.debops.apache2_module"].name = {{ item.key }}
+[0]["debops.debops.apache2_module"].state = {{ (item.value.enabled
+                if (item.value is mapping)
+                else item.value) | bool | ternary("present", "absent") }}
+[0]["debops.debops.apache2_module"].force = {{ item.value.force | d(False) | bool }}
+[0].notify[0] = Test apache and reload
+[0].when = (item.key in apache__tpl_available_modules and item.value.enabled | d(True) != omit and apache__deploy_state == "present")
+[0].with_dict = {{ apache__combined_modules }}
+[0].tags[0] = role::apache:modules

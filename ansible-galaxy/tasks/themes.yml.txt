@@ -1,27 +1,23 @@
-~d0.name = Themes setup
-~d1.block = 
-~d2.name = Default themes block
-~d3.when = galaxy_themes is not defined
-~d3.block = 
-~d4.name = Load default themes if unset
-~d5.ansible.builtin.slurp = 
-~d6.src = "{{ (galaxy_server_dir, 'lib/galaxy/config/sample/themes_conf.yml.sample') | path_join }}"
-~d5.register = __galaxy_themes_config_slurp
-~d4.name = Set galaxy_themes
-~d5.ansible.builtin.set_fact = 
-~d6.galaxy_themes = "{{ __galaxy_themes_config_slurp.content | b64decode | from_yaml }}"
-~d2.name = Write base themes config
-~d3.ansible.builtin.copy = 
-~d4.content = "{{ galaxy_themes | to_yaml(sort_keys=False) }}"
-~d4.dest = "{{ galaxy_config_merged.galaxy.themes_config_file | default((galaxy_config_dir, 'themes_conf.yml') | path_join) }}"
-~d4.mode = "0644"
-~d2.name = Write subdomain themes configs
-~d3.ansible.builtin.copy = 
-~d4.content = |
-~d4.dest = "{{ galaxy_config_dir }}/themes_conf-{{ item.name }}.yml"
-~d4.mode = "0644"
-~d3.when = item.theme is defined
-~d3.loop = "{{ galaxy_themes_subdomains }}"
-~d1.remote_user = "{{ galaxy_remote_users.privsep | default(__galaxy_remote_user) }}"
-~d1.become = "{{ true if galaxy_become_users.privsep is defined else __galaxy_become }}"
-~d1.become_user = "{{ galaxy_become_users.privsep | default(__galaxy_become_user) }}"
+[0].name = Themes setup
+[0].block[0].name = Default themes block
+[0].block[0].when = galaxy_themes is not defined
+[0].block[0].block[0].name = Load default themes if unset
+[0].block[0].block[0]["ansible.builtin.slurp"].src = {{ (galaxy_server_dir, 'lib/galaxy/config/sample/themes_conf.yml.sample') | path_join }}
+[0].block[0].block[0].register = __galaxy_themes_config_slurp
+[0].block[0].block[1].name = Set galaxy_themes
+[0].block[0].block[1]["ansible.builtin.set_fact"].galaxy_themes = {{ __galaxy_themes_config_slurp.content | b64decode | from_yaml }}
+[0].block[1].name = Write base themes config
+[0].block[1]["ansible.builtin.copy"].content = {{ galaxy_themes | to_yaml(sort_keys=False) }}
+[0].block[1]["ansible.builtin.copy"].dest = {{ galaxy_config_merged.galaxy.themes_config_file | default((galaxy_config_dir, 'themes_conf.yml') | path_join) }}
+[0].block[1]["ansible.builtin.copy"].mode = 0644
+[0].block[2].name = Write subdomain themes configs
+[0].block[2]["ansible.builtin.copy"].content = {{ item.theme | to_yaml(sort_keys=False) }}
+{{ galaxy_themes | to_yaml(sort_keys=False) }}
+
+[0].block[2]["ansible.builtin.copy"].dest = {{ galaxy_config_dir }}/themes_conf-{{ item.name }}.yml
+[0].block[2]["ansible.builtin.copy"].mode = 0644
+[0].block[2].when = item.theme is defined
+[0].block[2].loop = {{ galaxy_themes_subdomains }}
+[0].remote_user = {{ galaxy_remote_users.privsep | default(__galaxy_remote_user) }}
+[0].become = {{ true if galaxy_become_users.privsep is defined else __galaxy_become }}
+[0].become_user = {{ galaxy_become_users.privsep | default(__galaxy_become_user) }}

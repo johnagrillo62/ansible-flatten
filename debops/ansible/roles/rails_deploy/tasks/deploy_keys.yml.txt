@@ -12,13 +12,13 @@
 [2].when = rails_deploy_git_access_token and 'file://' not in rails_deploy_git_location and rails_deploy_register_deploy_key is defined and 'github' in rails_deploy_git_host
 [3].name = Get the Gitlab repo id
 [3]["ansible.builtin.uri"].url = https://{{ rails_deploy_git_host }}/api/v3/projects/{{
-                     rails_deploy_git_account }} %2F{{ rails_deploy_git_repo }}
+                     rails_deploy_git_account }}%2F{{ rails_deploy_git_repo }}
 [3]["ansible.builtin.uri"].headers.PRIVATE-TOKEN = {{ rails_deploy_git_access_token }}
 [3].register = rails_deploy_register_gitlab_response
 [3].when = rails_deploy_git_access_token and 'file://' not in rails_deploy_git_location and rails_deploy_register_deploy_key is defined and not 'github' in rails_deploy_git_host
 [4].name = Transfer the deploy key to Gitlab
 [4]["ansible.builtin.command"] = curl --insecure --header 'PRIVATE-TOKEN: {{ rails_deploy_git_access_token }}' --data '{{ rails_deploy_key_data | to_nice_json }}' https://{{ rails_deploy_git_host }}/api/v3/projects/{{
-                   rails_deploy_register_gitlab_response.json.id }} /keys
+                   rails_deploy_register_gitlab_response.json.id }}/keys
 [4].changed_when = False
 [4].register = rails_deploy_register_gitlab_access_token
 [4].when = rails_deploy_git_access_token and 'file://' not in rails_deploy_git_location and rails_deploy_register_deploy_key is defined and not 'github' in rails_deploy_git_host

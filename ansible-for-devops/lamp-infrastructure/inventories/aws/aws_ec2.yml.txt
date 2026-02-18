@@ -1,8 +1,7 @@
-~d0.plugin = aws_ec2
-~d0.regions = 
-~d0.hostnames = 
-~d0.keyed_groups = 
-~d1.key = tags.inventory_group
-~d2.separator = ''
-~d1.key = tags.Application
-~d2.separator = ''
+plugin = aws_ec2
+regions[0] = us-east-1
+hostnames[0] = ip-address
+keyed_groups[0].key = tags.inventory_group
+keyed_groups[0].separator = 
+keyed_groups[1].key = tags.Application
+keyed_groups[1].separator = 

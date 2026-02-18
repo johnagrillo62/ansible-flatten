@@ -2,7 +2,6 @@ sysfs__enabled = {{ False
                     if (ansible_virtualization_type in ["lxc", "openvz"] and
                         ansible_virtualization_role == "guest")
                     else True }}
-
 sysfs__base_packages[0] = sysfsutils
 sysfs__default_attributes[0].name = ksm
 sysfs__default_attributes[0].comment = Kernel Same-page Merging (KSM) configuration.
@@ -40,10 +39,8 @@ sysfs__default_attributes[1].options[2].value = 0
 sysfs__dependent_attributes_filter = {{ lookup("template",
                                                "lookup/sysfs__dependent_attributes_filter.j2")
                                                | from_yaml }}
-
 sysfs__combined_attributes = {{ sysfs__default_attributes
                                 + sysfs__dependent_attributes_filter
                                 + sysfs__attributes
                                 + sysfs__group_attributes
                                 + sysfs__host_attributes }}
-

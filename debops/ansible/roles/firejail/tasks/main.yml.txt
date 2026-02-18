@@ -5,7 +5,6 @@
                               + firejail__packages
                               + firejail__group_packages
                               + firejail__host_packages)) }}
-
 [1]["ansible.builtin.package"].state = present
 [1].when = firejail__deploy_state in ["present"]
 [1].register = firejail__register_packages
@@ -20,7 +19,7 @@
 [2].when = (firejail__program_file_path == "auto")
 [3].name = Set program file path of firejail for later use in the role
 [3]["ansible.builtin.set_fact"].firejail__program_file_path = {{ (firejail__register_program_file_path.stdout_lines
-                                      + ["/usr/bin/firejail"]) | first }} 
+                                      + ["/usr/bin/firejail"]) | first }}
 [3].when = (firejail__program_file_path == "auto")
 [4].name = Get list of system wide profiles
 [4]["ansible.builtin.find"].file_type = file
@@ -36,7 +35,6 @@
         | map(attribute="path")
         | map("basename")
         | map("regex_replace", "\.profile$", "") | list }}
-
 [6].name = Check if programs which should be sandboxed are installed
 [6]["ansible.builtin.command"] = which -a {{ item | quote }}
 [6].check_mode = False
@@ -52,7 +50,6 @@
       | selectattr("rc", "equalto", 0)
       | map(attribute="stdout_lines")
       | map("first") | map("basename") | list }}
-
 [8].name = Ensure that the local bin path exists
 [8]["ansible.builtin.file"].path = {{ firejail__system_local_bin_path }}
 [8]["ansible.builtin.file"].state = directory
@@ -73,7 +70,6 @@
                      (firejail__global_profiles_system_wide_sandboxed == "if_installed" and
                       item in firejail__fact_installed_programs)))))
                else "absent" }}
-
 [9]["ansible.builtin.file"].owner = root
 [9]["ansible.builtin.file"].group = root
 [9]["ansible.builtin.file"].mode = 0755
@@ -149,5 +145,4 @@
                            + firejail__packages
                            + firejail__group_packages
                            + firejail__host_packages) }}
-
 [17].tags[0] = role::firejail:pkgs

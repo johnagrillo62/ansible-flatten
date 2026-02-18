@@ -54,7 +54,6 @@ apt_mirror__combined_configuration = {{ apt_mirror__default_configuration
                                         + apt_mirror__configuration
                                         + apt_mirror__group_configuration
                                         + apt_mirror__host_configuration }}
-
 apt_mirror__nginx__dependent_servers[0].by_role = debops.apt_mirror
 apt_mirror__nginx__dependent_servers[0].enabled = True
 apt_mirror__nginx__dependent_servers[0].ssl = False

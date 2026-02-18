@@ -22,7 +22,6 @@ foodsoft__database = {{ ansible_local.foodsoft.database
                               else ("postgresql"
                                     if (ansible_local | d() and ansible_local.postgresql is defined)
                                     else "no-database-detected")) }}
-
 foodsoft__database_server = {{ ansible_local[foodsoft__database].server }}
 foodsoft__database_port = {{ ansible_local[foodsoft__database].port }}
 foodsoft__database_name = foodsoft
@@ -33,7 +32,6 @@ foodsoft__database_password_path = {{ secret + "/" + foodsoft__database + "/"
                                          if (foodsoft__database == "postgresql")
                                          else "")
                                       + "/credentials/" + foodsoft__database_user + "/password" }}
-
 foodsoft__database_password = {{ lookup("password", foodsoft__database_password_path + " length=48 chars=ascii_letters,digits,.:-_") }}
 foodsoft__database_name_map.mariadb = mysql2
 foodsoft__database_name_map.sqlite = sqlite3
@@ -53,7 +51,6 @@ foodsoft__webserver = {{ ansible_local.foodsoft.webserver
                                else ("apache"
                                      if (ansible_local.apache.enabled | d() | bool)
                                      else "no-webserver-detected")) }}
-
 foodsoft__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
 foodsoft__home_path = {{ ansible_local.nginx.www | d("/srv/www") + "/" + foodsoft__user }}
 foodsoft__www_path = {{ foodsoft__git_dest + "/public" }}
@@ -96,7 +93,6 @@ foodsoft__combined_config = {{ foodsoft__upstream_config.default
                                | combine(foodsoft__config)
                                | combine(foodsoft__group_config)
                                | combine(foodsoft__host_config) }}
-
 foodsoft__mariadb__dependent_databases[0].database = {{ foodsoft__database_name }}
 foodsoft__mariadb__dependent_databases[0].state = {{ "present" if (foodsoft__deploy_state != "purged") else "absent" }}
 foodsoft__mariadb__dependent_users[0].database = {{ foodsoft__database_name }}

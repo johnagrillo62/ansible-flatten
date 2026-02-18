@@ -3,25 +3,20 @@ zabbix_agent__deploy_state = present
 zabbix_agent__base_packages = {{ ["zabbix-agent"]
                                  if (zabbix_agent__flavor == "C")
                                  else ["zabbix-agent2"] }}
-
 zabbix_agent__user = zabbix
 zabbix_agent__group = zabbix
 zabbix_agent__additional_groups[0] = {{ (ansible_local.proc_hidepid.group | d("procadmins"))
         if (ansible_local.proc_hidepid.enabled | d()) | bool
         else [] }}
-
 zabbix_agent__conf_file_path = {{ "/etc/zabbix/zabbix_agentd.conf"
                                   if (zabbix_agent__flavor == "C")
                                   else "/etc/zabbix/zabbix_agent2.conf" }}
-
 zabbix_agent__tls_psk_identity = {{ lookup("password", secret
                                     + "/zabbix/identities/" + inventory_hostname
                                     + "/identity.key length=32 chars=ascii_letters,digits") }}
-
 zabbix_agent__tls_psk_secret = {{ lookup("password", secret
                                   + "/zabbix/identities/" + inventory_hostname
                                   + "/secret.key length=64 chars=abcdef,digits") }}
-
 zabbix_agent__original_configuration[0].name = PidFile
 zabbix_agent__original_configuration[0].comment = Name of PID file.
 
@@ -216,7 +211,6 @@ Installing Zabbix will create include directory in /etc/zabbix, unless modified 
 zabbix_agent__original_configuration[25].value = {{ "/etc/zabbix/zabbix_agentd.conf.d/*.conf"
                if (zabbix_agent__flavor == "C")
                else "/etc/zabbix/zabbix_agent2.d/*.conf" }}
-
 zabbix_agent__original_configuration[25].state = present
 zabbix_agent__original_configuration[26].name = UnsafeUserParameters
 zabbix_agent__original_configuration[26].comment = Allow all characters to be passed in arguments to user-defined parameters.
@@ -336,7 +330,6 @@ zabbix_agent__combined_configuration = {{ zabbix_agent__original_configuration
                                       + zabbix_agent__configuration
                                       + zabbix_agent__group_configuration
                                       + zabbix_agent__host_configuration }}
-
 zabbix_agent__ferm__dependent_rules[0].name = zabbix_agent_allow_http
 zabbix_agent__ferm__dependent_rules[0].type = accept
 zabbix_agent__ferm__dependent_rules[0].dport[0] = zabbix-agent

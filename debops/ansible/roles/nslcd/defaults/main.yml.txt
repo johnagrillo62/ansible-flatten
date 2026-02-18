@@ -7,7 +7,6 @@ nslcd__base_packages[1] = {{ "nslcd-utils"
         if (ansible_local | d() and ansible_local.python | d() and
             (ansible_local.python.installed2 | d()) | bool)
         else [] }}
-
 nslcd__user = nslcd
 nslcd__group = nslcd
 nslcd__mkhomedir_umask = {{ ansible_local.core.homedir_umask | d("0027") }}
@@ -15,7 +14,6 @@ nslcd__ldap_enabled = {{ ansible_local.ldap.enabled
                          if (ansible_local | d() and ansible_local.ldap | d() and
                              ansible_local.ldap.enabled is defined)
                          else False }}
-
 nslcd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 nslcd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 nslcd__ldap_self_rdn = {{ "uid=" + nslcd__user }}
@@ -30,13 +28,11 @@ nslcd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                 + nslcd__ldap_binddn | to_uuid + ".password length=32"))
                         if nslcd__ldap_enabled | bool
                         else "" }}
-
 nslcd__ldap_posix_urns = {{ (ansible_local.ldap.urn_patterns
                              if (ansible_local.ldap.urn_patterns | d())
                              else [])
                             | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
                             | list }}
-
 nslcd__ldap_host_filter = (| (host=posix:all) (host=posix:{{ ansible_fqdn }}) (host=posix:\2a.{{ ansible_domain }}) {{ nslcd__ldap_posix_urns | join(" ") }} )
 nslcd__idle_timelimit = 600
 nslcd__default_configuration[0].name = uid
@@ -72,7 +68,6 @@ nslcd__default_configuration[9].value = {{ "start_tls"
                if (ansible_local | d() and ansible_local.ldap | d() and
                    (ansible_local.ldap.start_tls | d()) | bool)
                else "on" }}
-
 nslcd__default_configuration[10].name = tls_reqcert
 nslcd__default_configuration[10].value = demand
 nslcd__default_configuration[11].name = tls_cacertfile
@@ -102,7 +97,6 @@ nslcd__combined_configuration = {{ nslcd__default_configuration
                                    + nslcd__configuration
                                    + nslcd__group_configuration
                                    + nslcd__host_configuration }}
-
 nslcd__ldap__dependent_tasks[0].name = Create nslcd account for {{ nslcd__ldap_device_dn | join(",") }}
 nslcd__ldap__dependent_tasks[0].dn = {{ nslcd__ldap_binddn }}
 nslcd__ldap__dependent_tasks[0].objectClass = {{ nslcd__ldap_self_object_classes }}
@@ -112,5 +106,4 @@ nslcd__ldap__dependent_tasks[0].state = {{ "present"
                if ((ansible_local.ldap.posix_enabled | d()) | bool and
                    nslcd__ldap_device_dn | d())
                else "ignore" }}
-
 nslcd__nsswitch__dependent_services[0] = ldap

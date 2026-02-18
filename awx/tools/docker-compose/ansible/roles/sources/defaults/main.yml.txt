@@ -1,41 +1,42 @@
-~d0.compose_name = 'docker-compose.yml'
-~d0.awx_image = 'ghcr.io/ansible/awx_devel'
-~d0.pg_port = 5432
-~d0.pg_username = 'awx'
-~d0.pg_database = 'awx'
-~d0.pg_tls = false
-~d0.control_plane_node_count = 1
-~d0.minikube_container_group = false
-~d0.receptor_socket_file = /var/run/awx-receptor/receptor.sock
-~d0.receptor_image = quay.io/ansible/receptor:devel
-~d0.ingress_path = /
-~d0.api_urlpattern_prefix = ''
-~d0.receptor_rsa_bits = 4096
-~d0.receptor_work_sign_reconfigure = false
-~d0.sign_work = no  # currently defaults to no because openssl version mismatch causes "unknown block type PRIVATE KEY"
-~d0.work_sign_key_dir = '../_sources/receptor'
-~d0.work_sign_private_keyfile = "{{ work_sign_key_dir }}/work_private_key.pem"
-~d0.work_sign_public_keyfile = "{{ work_sign_key_dir }}/work_public_key.pem"
-~d0.enable_vault = false
-~d0.vault_tls = false
-~d0.hashivault_cert_dir = '{{ sources_dest }}/vault_certs'
-~d0.hashivault_vars_file = '../vault/defaults/main.yml'
-~d0.hashivault_server_cert_subject = "/C=US/ST=NC/L=Durham/O=awx/CN=tools-vault-1"
-~d0.hashivault_server_cert_extensions = 
-~d1."subjectAltName = DNS = tools_vault_1, DNS:localhost"
-~d0.hashivault_client_cert_extensions = 
-~d1."subjectAltName = DNS = awx-vault-client"
-~d0.hashivault_client_cert_subject = "/C=US/ST=NC/L=Durham/O=awx/CN=awx-vault-client"
-~d0.hashivault_server_public_keyfile = '{{ hashivault_cert_dir }}/server.crt'
-~d0.hashivault_server_private_keyfile = '{{ hashivault_cert_dir }}/server.key'
-~d0.hashivault_client_public_keyfile = '{{ hashivault_cert_dir }}/client.crt'
-~d0.hashivault_client_private_keyfile = '{{ hashivault_cert_dir }}/client.key'
-~d0.enable_splunk = false
-~d0.enable_grafana = false
-~d0.enable_prometheus = false
-~d0.scrape_interval = '5s'
-~d0.enable_pgbouncer = false
-~d0.pgbouncer_port = 6432
-~d0.pgbouncer_max_pool_size = 70
-~d0.install_editable_dependencies = false
-~d0.editable_dependencies = []
+compose_name = docker-compose.yml
+awx_image = ghcr.io/ansible/awx_devel
+pg_port = 5432
+pg_username = awx
+pg_database = awx
+pg_tls = false
+control_plane_node_count = 1
+minikube_container_group = false
+receptor_socket_file = /var/run/awx-receptor/receptor.sock
+receptor_image = quay.io/ansible/receptor:devel
+ingress_path = /
+api_urlpattern_prefix = 
+receptor_rsa_bits = 4096
+receptor_work_sign_reconfigure = false
+sign_work = no
+work_sign_key_dir = ../_sources/receptor
+work_sign_private_keyfile = {{ work_sign_key_dir }}/work_private_key.pem
+work_sign_public_keyfile = {{ work_sign_key_dir }}/work_public_key.pem
+enable_vault = false
+vault_tls = false
+hashivault_cert_dir = {{ sources_dest }}/vault_certs
+hashivault_vars_file = ../vault/defaults/main.yml
+hashivault_server_cert_subject = /C=US/ST=NC/L=Durham/O=awx/CN=tools-vault-1
+hashivault_server_cert_extensions[0] = subjectAltName = DNS:tools_vault_1, DNS:localhost
+hashivault_server_cert_extensions[1] = keyUsage = digitalSignature, nonRepudiation
+hashivault_server_cert_extensions[2] = extendedKeyUsage = serverAuth
+hashivault_client_cert_extensions[0] = subjectAltName = DNS:awx-vault-client
+hashivault_client_cert_extensions[1] = keyUsage = digitalSignature, nonRepudiation
+hashivault_client_cert_extensions[2] = extendedKeyUsage = serverAuth, clientAuth
+hashivault_client_cert_subject = /C=US/ST=NC/L=Durham/O=awx/CN=awx-vault-client
+hashivault_server_public_keyfile = {{ hashivault_cert_dir }}/server.crt
+hashivault_server_private_keyfile = {{ hashivault_cert_dir }}/server.key
+hashivault_client_public_keyfile = {{ hashivault_cert_dir }}/client.crt
+hashivault_client_private_keyfile = {{ hashivault_cert_dir }}/client.key
+enable_splunk = false
+enable_grafana = false
+enable_prometheus = false
+scrape_interval = 5s
+enable_pgbouncer = false
+pgbouncer_port = 6432
+pgbouncer_max_pool_size = 70
+install_editable_dependencies = false

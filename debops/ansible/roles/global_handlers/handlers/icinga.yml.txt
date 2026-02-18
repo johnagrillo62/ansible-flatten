@@ -1,9 +1,8 @@
-~d0.name = Check icinga2 configuration and restart
-~d1.ansible.builtin.command = icinga2 daemon -C
-~d1.register = global_handlers__icinga_register_config_test
-~d1.changed_when = global_handlers__icinga_register_config_test.changed | bool
-~d1.notify = [ 'Restart icinga2' ]
-~d0.name = Restart icinga2
-~d1.ansible.builtin.service = 
-~d2.name = 'icinga2'
-~d2.state = 'restarted'
+[0].name = Check icinga2 configuration and restart
+[0]["ansible.builtin.command"] = icinga2 daemon -C
+[0].register = global_handlers__icinga_register_config_test
+[0].changed_when = global_handlers__icinga_register_config_test.changed | bool
+[0].notify[0] = Restart icinga2
+[1].name = Restart icinga2
+[1]["ansible.builtin.service"].name = icinga2
+[1]["ansible.builtin.service"].state = restarted

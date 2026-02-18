@@ -1,32 +1,33 @@
-~d0.phpmyadmin_control_user = 'phpmyadmin'
-~d0.phpmyadmin_control_database = 'phpmyadmin'
-~d0.phpmyadmin_nginx_server = 
-~d1.by_role = 'debops.phpmyadmin'
-~d1.enabled = True
-~d1.default = False
-~d1.type = 'php5'
-~d1.name = '{{ phpmyadmin_domain }}'
-~d1.root = '/usr/share/phpmyadmin'
-~d1.webroot_create = False
-~d1.options = |
-~d1.location = 
-~d2.'/' = 'try_files $uri $uri/ =404;'
-~d2.'~ ^/(setup|libraries)' = 'deny all;'
-~d1.location_allow = 
-~d2.'/' = '{{ phpmyadmin_allow }}'
-~d1.php5 = 'php5_phpmyadmin'
-~d1.php5_options = |
-~d0.phpmyadmin_nginx_upstream_php5 = 
-~d1.enabled = True
-~d1.name = 'php5_phpmyadmin'
-~d1.type = 'php5'
-~d1.php5 = 'phpmyadmin'
-~d0.phpmyadmin_php5_pool = 
-~d1.enabled = True
-~d1.name = 'phpmyadmin'
-~d1.user = 'www-data'
-~d1.group = 'www-data'
-~d1.pm_max_children = '{{ phpmyadmin_php5_max_children }}'
-~d1.php_value = 
-~d2.post_max_size = '{{ phpmyadmin_upload_size }}'
-~d2.upload_max_filesize = '{{ phpmyadmin_upload_size }}'
+phpmyadmin_control_user = phpmyadmin
+phpmyadmin_control_database = phpmyadmin
+phpmyadmin_nginx_server.by_role = debops.phpmyadmin
+phpmyadmin_nginx_server.enabled = True
+phpmyadmin_nginx_server.default = False
+phpmyadmin_nginx_server.type = php5
+phpmyadmin_nginx_server.name = {{ phpmyadmin_domain }}
+phpmyadmin_nginx_server.root = /usr/share/phpmyadmin
+phpmyadmin_nginx_server.webroot_create = False
+phpmyadmin_nginx_server.options = client_max_body_size  {{ phpmyadmin_upload_size }};
+
+phpmyadmin_nginx_server.location./ = try_files $uri $uri/ =404;
+phpmyadmin_nginx_server.location["~ ^/(setup|libraries)"] = deny all;
+phpmyadmin_nginx_server.location_allow./ = {{ phpmyadmin_allow }}
+phpmyadmin_nginx_server.php5 = php5_phpmyadmin
+phpmyadmin_nginx_server.php5_options = {% if phpmyadmin_allow is defined and phpmyadmin_allow %}
+{% for address in phpmyadmin_allow %}
+allow {{ address }};
+{% endfor %}
+deny all;
+{% endif %}
+
+phpmyadmin_nginx_upstream_php5.enabled = True
+phpmyadmin_nginx_upstream_php5.name = php5_phpmyadmin
+phpmyadmin_nginx_upstream_php5.type = php5
+phpmyadmin_nginx_upstream_php5.php5 = phpmyadmin
+phpmyadmin_php5_pool.enabled = True
+phpmyadmin_php5_pool.name = phpmyadmin
+phpmyadmin_php5_pool.user = www-data
+phpmyadmin_php5_pool.group = www-data
+phpmyadmin_php5_pool.pm_max_children = {{ phpmyadmin_php5_max_children }}
+phpmyadmin_php5_pool.php_value.post_max_size = {{ phpmyadmin_upload_size }}
+phpmyadmin_php5_pool.php_value.upload_max_filesize = {{ phpmyadmin_upload_size }}

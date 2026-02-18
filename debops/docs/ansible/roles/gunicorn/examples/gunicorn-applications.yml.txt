@@ -1,17 +1,22 @@
-~d0.gunicorn__applications = 
-~d1.name = 'system-app'
-~d2.working_dir = '/path/to/deploy/dir'
-~d2.binary = 'gunicorn3'
-~d2.user = 'worker-user'
-~d2.group = 'worker-group'
-~d2.args = [ '--bind=0.0.0.0:8000',
-~d1.name = 'virtualenv-app'
-~d2.comment = 'This application is deployed in a virtualenv'
-~d2.working_dir = '/path/to/virtualenv/app/src'
-~d2.python = '/path/to/virtualenv/bin/python'
-~d2.mode = 'wsgi'
-~d2.user = 'custom-user'
-~d2.group = 'custom-group'
-~d2.args = [ '--bind=unix:/run/gunicorn/virtualenv-app.sock',
-~d1.name = 'old-app'
-~d2.state = 'absent'
+gunicorn__applications[0].name = system-app
+gunicorn__applications[0].working_dir = /path/to/deploy/dir
+gunicorn__applications[0].binary = gunicorn3
+gunicorn__applications[0].user = worker-user
+gunicorn__applications[0].group = worker-group
+gunicorn__applications[0].args[0] = --bind=0.0.0.0:8000
+gunicorn__applications[0].args[1] = --workers={{ ansible_processor_vcpus | int + 1 }}
+gunicorn__applications[0].args[2] = --timeout=10
+gunicorn__applications[0].args[3] = system-app.wsgi
+gunicorn__applications[1].name = virtualenv-app
+gunicorn__applications[1].comment = This application is deployed in a virtualenv
+gunicorn__applications[1].working_dir = /path/to/virtualenv/app/src
+gunicorn__applications[1].python = /path/to/virtualenv/bin/python
+gunicorn__applications[1].mode = wsgi
+gunicorn__applications[1].user = custom-user
+gunicorn__applications[1].group = custom-group
+gunicorn__applications[1].args[0] = --bind=unix:/run/gunicorn/virtualenv-app.sock
+gunicorn__applications[1].args[1] = --workers={{ ansible_processor_vcpus | int + 1 }}
+gunicorn__applications[1].args[2] = --timeout=10
+gunicorn__applications[1].args[3] = virtualenv-app.wsgi
+gunicorn__applications[2].name = old-app
+gunicorn__applications[2].state = absent

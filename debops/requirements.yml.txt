@@ -1,1 +1,9 @@
-~d0.collections = 
+collections[0] = ansible.posix
+collections[1] = ansible.utils
+collections[2] = community.crypto
+collections[3] = community.docker
+collections[4] = community.general
+collections[5] = community.libvirt
+collections[6] = community.mysql
+collections[7] = community.postgresql
+collections[8] = community.rabbitmq

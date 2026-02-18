@@ -1,264 +1,297 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Import DebOps secret role
-~d1.ansible.builtin.import_role = 
-~d2.name = 'secret'
-~d0.name = Pre hooks
-~d1.ansible.builtin.include_tasks = '{{ lookup("debops.debops.task_src", "resources/pre_main.yml") }}'
-~d0.name = Manage git repositories
-~d1.ansible.builtin.git = 
-~d2.repo = '{{ item.repo | d(item.url | d(item.src)) }}'
-~d2.dest = '{{ item.dest | d(item.name | d(item.path)) }}'
-~d2.accept_hostkey = '{{ item.accept_hostkey | d(omit) }}'
-~d2.bare = '{{ item.bare | d(omit) }}'
-~d2.clone = '{{ item.clone | d(omit) }}'
-~d2.depth = '{{ item.depth | d(omit) }}'
-~d2.executable = '{{ item.executable | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.key_file = '{{ item.key_file | d(omit) }}'
-~d2.recursive = '{{ item.recursive | d(omit) }}'
-~d2.reference = '{{ item.reference | d(omit) }}'
-~d2.refspec = '{{ item.refspec | d(omit) }}'
-~d2.remote = '{{ item.remote | d(omit) }}'
-~d2.ssh_opts = '{{ item.ssh_opts | d(omit) }}'
-~d2.track_submodules = '{{ item.track_submodules | d(omit) }}'
-~d2.umask = '{{ item.umask | d(omit) }}'
-~d2.update = '{{ item["_update"] | d(omit) }}'
-~d2.verify_commit = '{{ item.verify_commit | d(omit) }}'
-~d2.version = '{{ item.version | d(omit) }}'
-~d1.become = True
-~d1.become_user = '{{ item.owner | d("root") }}'
-~d1.loop = '{{ q("flattened", resources__repositories
-~d1.when = (resources__enabled | bool and (item.repo | d() or item.url | d() or item.src | d()) and
-~d1.tags = [ 'role::resources:repositories' ]
-~d0.name = Ensure that template directories exist
-~d1.ansible.builtin.file = 
-~d2.path = '/{{ item.path }}'
-~d2.mode = '{{ item.mode }}'
-~d2.state = 'directory'
-~d1.with_community.general.filetree = '{{ (resources__host_templates
-~d1.when = item.state == 'directory'
-~d0.name = Generate custom templates
-~d1.ansible.builtin.template = 
-~d2.src = '{{ item.src }}'
-~d2.dest = '/{{ item.path }}'
-~d2.mode = '{{ item.mode }}'
-~d1.with_community.general.filetree = '{{ (resources__host_templates
-~d1.when = item.state == 'file'
-~d0.name = Recreate custom symlinks
-~d1.ansible.builtin.file = 
-~d2.src = '{{ item.src }}'
-~d2.dest = '/{{ item.path }}'
-~d2.mode = '{{ item.mode }}'
-~d2.state = 'link'
-~d2.force = True
-~d1.with_community.general.filetree = '{{ (resources__host_templates
-~d1.when = item.state == 'link'
-~d0.name = Manage paths on remote hosts
-~d1.ansible.builtin.file = 
-~d2.path = '{{ (item.path | d(item.dest | d(item.name))) | d(item) }}'
-~d2.state = '{{ item.state | d("directory") }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.recurse = '{{ item.recurse | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(omit) }}'
-~d2.access_time = '{{ item.access_time | d(omit) }}'
-~d2.access_time_format = '{{ item.access_time_format | d(resources__time_format) }}'
-~d2.modification_time = '{{ item.modification_time | d(omit) }}'
-~d2.modification_time_format = '{{ item.modification_time_format | d(resources__time_format) }}'
-~d1.loop = '{{ q("flattened", resources__paths
-~d1.when = (resources__enabled | bool and
-~d1.tags = [ 'role::resources:paths' ]
-~d0.name = Ensure that parent directories exist
-~d1.ansible.builtin.file = 
-~d2.path = '{{ (item.dest | d(item.name | d(item.path))) | dirname }}'
-~d2.state = 'directory'
-~d2.recurse = '{{ item.parent_dirs_recurse | d(resources__parent_dirs_recurse) }}'
-~d2.owner = '{{ item.parent_dirs_owner | d(resources__parent_dirs_owner) }}'
-~d2.group = '{{ item.parent_dirs_group | d(resources__parent_dirs_group) }}'
-~d2.mode = '{{ item.parent_dirs_mode | d(resources__parent_dirs_mode) }}'
-~d1.when = (resources__enabled | bool and
-~d1.loop = '{{ q("flattened", resources__urls
-~d1.tags = [ 'role::resources:urls', 'role::resources:archives', 'role::resources:files' ]
-~d0.name = Download online resources to remote hosts
-~d1.ansible.builtin.get_url = # noqa args[module]
-~d2.url = '{{ item.url | d(item.src) }}'
-~d2.dest = '{{ item.dest | d(item.name | d(item.path)) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.checksum = '{{ item.checksum | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.force_basic_auth = '{{ item.force_basic_auth | d(omit) }}'
-~d2.headers = '{{ item.headers | d(omit) }}'
-~d2.sha256sum = '{{ item.sha256sum | d(omit) }}'
-~d2.timeout = '{{ item.timeout | d(omit) }}'
-~d2.url_password = '{{ item.url_password | d(omit) }}'
-~d2.url_username = '{{ item.url_username | d(omit) }}'
-~d2.use_proxy = '{{ item.use_proxy | d(omit) }}'
-~d2.validate_certs = '{{ item.validate_certs | d(omit) }}'
-~d1.loop = '{{ q("flattened", resources__urls
-~d1.when = (resources__enabled | bool and (item.url | d() or item.src | d()) and
-~d1.no_log = '{{ debops__no_log | d(True if item.url_password | d() else omit) }}'
-~d1.tags = [ 'role::resources:urls' ]
-~d0.name = Unpack archives to remote hosts
-~d1.ansible.builtin.unarchive = 
-~d2.src = '{{ item.src }}'
-~d2.dest = '{{ item.dest | d(item.name | d(item.path)) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.creates = '{{ item.creates | d(omit) }}'
-~d2.exclude = '{{ item.exclude | d(omit) }}'
-~d2.keep_newer = '{{ item.keep_newer | d(omit) }}'
-~d2.extra_opts = '{{ item.extra_opts | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(omit) }}'
-~d2.list_files = '{{ item.list_files | d(omit) }}'
-~d2.remote_src = '{{ item.remote_src | d(omit) }}'
-~d2.unsafe_writes = '{{ item.unsafe_writes | d(omit) }}'
-~d2.validate_certs = '{{ item.validate_certs | d(omit) }}'
-~d1.loop = '{{ q("flattened", resources__archives
-~d1.when = (resources__enabled | bool and item.src | d() and
-~d1.tags = [ 'role::resources:archives' ]
-~d0.name = Delete files on remote hosts
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.dest | d(item.path | d(item.name)) }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", resources__files
-~d1.when = (resources__enabled | bool and
-~d1.tags = [ 'role::resources:files' ]
-~d0.name = Copy files to remote hosts
-~d1.ansible.builtin.copy = 
-~d2.dest = '{{ item.dest | d(item.path | d(item.name)) }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.content = '{{ item.content | d(omit) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.backup = '{{ item.backup | d(omit) }}'
-~d2.validate = '{{ item.validate | d(omit) }}'
-~d2.remote_src = '{{ item.remote_src | d(omit) }}'
-~d2.directory_mode = '{{ item.directory_mode | d(omit) }}'
-~d1.loop = '{{ q("flattened", resources__files
-~d1.when = (resources__enabled | bool and
-~d1.tags = [ 'role::resources:files' ]
-~d0.name = Manage virtual environments
-~d1.ansible.builtin.pip = 
-~d2.chdir = '{{ item.chdir | d(omit) }}'
-~d2.editable = '{{ item.editable | d(omit) }}'
-~d2.executable = '{{ item.executable | d(omit) }}'
-~d2.extra_args = '{{ item.extra_args | d(omit) }}'
-~d2.name = '{{ item.name | d(omit) }}'
-~d2.requirements = '{{ item.requirements | d(omit) }}'
-~d2.state = '{{ item.state | d(omit) }}'
-~d2.umask = '{{ item.umask | d(omit) }}'
-~d2.version = '{{ item.version | d(omit) }}'
-~d2.virtualenv = '{{ item.virtualenv | d(omit) }}'
-~d2.virtualenv_command = '{{ item.virtualenv_command | d(omit) }}'
-~d2.virtualenv_python = '{{ item.virtualenv_python | d(omit) }}'
-~d2.virtualenv_site_packages = '{{ item.virtualenv_site_packages | d(omit) }}'
-~d1.loop = '{{ q("flattened", resources__pip
-~d1.become = True
-~d1.become_user = '{{ item.owner | d("root") }}'
-~d1.when = (resources__enabled | bool and
-~d1.tags = [ 'role::resources:pip' ]
-~d0.name = Manage replacements inside files
-~d1.ansible.builtin.replace = 
-~d2.dest = '{{ item.dest | d(item.name | d(item.path)) }}'
-~d2.after = '{{ item.after | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(item.attr | d(omit)) }}'
-~d2.backup = '{{ item.backup | d(omit) }}'
-~d2.before = '{{ item.before | d(omit) }}'
-~d2.encoding = '{{ item.encoding | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.others = '{{ item.others | d(omit) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.regexp = '{{ item.regexp | d(omit) }}'
-~d2.replace = '{{ item.replace | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.unsafe_writes = '{{ item.unsafe_writes | d(omit) }}'
-~d2.validate = '{{ item.validate | d(omit) }}'
-~d1.loop = '{{ q("flattened", resources__replacements
-~d1.when = (resources__enabled | bool and item.regexp | d() and
-~d1.tags = [ 'role::resources:lineinfile' ]
-~d0.name = Set ACLs on remote hosts
-~d1.ansible.posix.acl = 
-~d2.path = '{{ item.1.path | d(item.0.name) | d(item.0.dest) | d(item.0.path) }}'
-~d2.default = '{{ item.1.default | d(omit) }}'
-~d2.entity = '{{ item.1.entity | d(omit) }}'
-~d2.entry = '{{ item.1.entry | d(omit) }}'
-~d2.etype = '{{ item.1.etype | d(omit) }}'
-~d2.permissions = '{{ item.1.permissions | d(omit) }}'
-~d2.follow = '{{ item.1.follow | d(omit) }}'
-~d2.recursive = '{{ item.1.recursive | d(omit) }}'
-~d2.state = '{{ item.1.state | d("present") }}'
-~d1.loop = '{{ (lookup("flattened",
-~d1.loop_control = 
-~d2.label = '{{ {"name": (item.0.name | d(item.0.dest) | d(item.0.path)),
-~d8."acl" = item.1} }}'
-~d1.when = item.0.state | d('present') != 'absent'
-~d1.tags = [ 'role::resources:acl' ]
-~d0.name = Manage delayed paths on remote hosts
-~d1.ansible.builtin.file = 
-~d2.path = '{{ (item.path | d(item.dest | d(item.name))) | d(item) }}'
-~d2.state = '{{ item.state | d("directory") }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.recurse = '{{ item.recurse | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(omit) }}'
-~d2.access_time = '{{ item.access_time | d(omit) }}'
-~d2.access_time_format = '{{ item.access_time_format | d(resources__time_format) }}'
-~d2.modification_time = '{{ item.modification_time | d(omit) }}'
-~d2.modification_time_format = '{{ item.modification_time_format | d(resources__time_format) }}'
-~d1.loop = '{{ q("flattened", resources__delayed_paths
-~d1.when = (resources__enabled | bool and
-~d1.tags = [ 'role::resources:paths' ]
-~d0.name = Set custom file capabilities
-~d1.community.general.capabilities = 
-~d2.path = '{{ item.path | d(item.name) }}'
-~d2.capability = '{{ item.capability }}'
-~d2.state = '{{ item.state | d("present") }}'
-~d1.loop = '{{ q("flattened", resources__combined_file_capabilities) }}'
-~d1.when = resources__enabled | bool
-~d1.tags = [ 'role::resources:capabilities' ]
-~d0.name = Execute shell commands
-~d1.ansible.builtin.include_tasks = 'shell_commands.yml'
-~d1.loop = '{{ q("flattened", resources__combined_commands) | debops.debops.parse_kv_items }}'
-~d1.loop_control = 
-~d2.label = '{{ {"name": item.name} }}'
-~d1.when = resources__enabled | bool and
-~d1.no_log = '{{ debops__no_log | d(item.no_log) | d(False) }}'
-~d1.tags = [ 'role::resources:commands' ]
-~d0.name = Post hooks
-~d1.ansible.builtin.include_tasks = '{{ lookup("debops.debops.task_src", "resources/post_main.yml") }}'
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = secret
+[2].name = Pre hooks
+[2]["ansible.builtin.include_tasks"] = {{ lookup("debops.debops.task_src", "resources/pre_main.yml") }}
+[3].name = Manage git repositories
+[3]["ansible.builtin.git"].repo = {{ item.repo | d(item.url | d(item.src)) }}
+[3]["ansible.builtin.git"].dest = {{ item.dest | d(item.name | d(item.path)) }}
+[3]["ansible.builtin.git"].accept_hostkey = {{ item.accept_hostkey | d(omit) }}
+[3]["ansible.builtin.git"].bare = {{ item.bare | d(omit) }}
+[3]["ansible.builtin.git"].clone = {{ item.clone | d(omit) }}
+[3]["ansible.builtin.git"].depth = {{ item.depth | d(omit) }}
+[3]["ansible.builtin.git"].executable = {{ item.executable | d(omit) }}
+[3]["ansible.builtin.git"].force = {{ item.force | d(omit) }}
+[3]["ansible.builtin.git"].key_file = {{ item.key_file | d(omit) }}
+[3]["ansible.builtin.git"].recursive = {{ item.recursive | d(omit) }}
+[3]["ansible.builtin.git"].reference = {{ item.reference | d(omit) }}
+[3]["ansible.builtin.git"].refspec = {{ item.refspec | d(omit) }}
+[3]["ansible.builtin.git"].remote = {{ item.remote | d(omit) }}
+[3]["ansible.builtin.git"].ssh_opts = {{ item.ssh_opts | d(omit) }}
+[3]["ansible.builtin.git"].track_submodules = {{ item.track_submodules | d(omit) }}
+[3]["ansible.builtin.git"].umask = {{ item.umask | d(omit) }}
+[3]["ansible.builtin.git"].update = {{ item["_update"] | d(omit) }}
+[3]["ansible.builtin.git"].verify_commit = {{ item.verify_commit | d(omit) }}
+[3]["ansible.builtin.git"].version = {{ item.version | d(omit) }}
+[3].become = True
+[3].become_user = {{ item.owner | d("root") }}
+[3].loop = {{ q("flattened", resources__repositories
+                           + resources__group_repositories
+                           + resources__host_repositories) }}
+[3].when = (resources__enabled | bool and (item.repo | d() or item.url | d() or item.src | d()) and (item.dest | d() or item.name | d() or item.path | d()))
+[3].tags[0] = role::resources:repositories
+[4].name = Ensure that template directories exist
+[4]["ansible.builtin.file"].path = /{{ item.path }}
+[4]["ansible.builtin.file"].mode = {{ item.mode }}
+[4]["ansible.builtin.file"].state = directory
+[4]["with_community.general.filetree"] = {{ (resources__host_templates
+                                        + resources__group_templates
+                                        + resources__templates) | flatten }}
+[4].when = item.state == 'directory'
+[5].name = Generate custom templates
+[5]["ansible.builtin.template"].src = {{ item.src }}
+[5]["ansible.builtin.template"].dest = /{{ item.path }}
+[5]["ansible.builtin.template"].mode = {{ item.mode }}
+[5]["with_community.general.filetree"] = {{ (resources__host_templates
+                                        + resources__group_templates
+                                        + resources__templates) | flatten }}
+[5].when = item.state == 'file'
+[6].name = Recreate custom symlinks
+[6]["ansible.builtin.file"].src = {{ item.src }}
+[6]["ansible.builtin.file"].dest = /{{ item.path }}
+[6]["ansible.builtin.file"].mode = {{ item.mode }}
+[6]["ansible.builtin.file"].state = link
+[6]["ansible.builtin.file"].force = True
+[6]["with_community.general.filetree"] = {{ (resources__host_templates
+                                        + resources__group_templates
+                                        + resources__templates) | flatten }}
+[6].when = item.state == 'link'
+[7].name = Manage paths on remote hosts
+[7]["ansible.builtin.file"].path = {{ (item.path | d(item.dest | d(item.name))) | d(item) }}
+[7]["ansible.builtin.file"].state = {{ item.state | d("directory") }}
+[7]["ansible.builtin.file"].owner = {{ item.owner | d(omit) }}
+[7]["ansible.builtin.file"].group = {{ item.group | d(omit) }}
+[7]["ansible.builtin.file"].mode = {{ item.mode | d(omit) }}
+[7]["ansible.builtin.file"].selevel = {{ item.selevel | d(omit) }}
+[7]["ansible.builtin.file"].serole = {{ item.serole | d(omit) }}
+[7]["ansible.builtin.file"].setype = {{ item.setype | d(omit) }}
+[7]["ansible.builtin.file"].seuser = {{ item.seuser | d(omit) }}
+[7]["ansible.builtin.file"].follow = {{ item.follow | d(omit) }}
+[7]["ansible.builtin.file"].force = {{ item.force | d(omit) }}
+[7]["ansible.builtin.file"].src = {{ item.src | d(omit) }}
+[7]["ansible.builtin.file"].recurse = {{ item.recurse | d(omit) }}
+[7]["ansible.builtin.file"].attributes = {{ item.attributes | d(omit) }}
+[7]["ansible.builtin.file"].access_time = {{ item.access_time | d(omit) }}
+[7]["ansible.builtin.file"].access_time_format = {{ item.access_time_format | d(resources__time_format) }}
+[7]["ansible.builtin.file"].modification_time = {{ item.modification_time | d(omit) }}
+[7]["ansible.builtin.file"].modification_time_format = {{ item.modification_time_format | d(resources__time_format) }}
+[7].loop = {{ q("flattened", resources__paths
+                           + resources__group_paths
+                           + resources__host_paths) }}
+[7].when = (resources__enabled | bool and ((item.path | d() or item.dest | d() or item.name | d()) or item))
+[7].tags[0] = role::resources:paths
+[8].name = Ensure that parent directories exist
+[8]["ansible.builtin.file"].path = {{ (item.dest | d(item.name | d(item.path))) | dirname }}
+[8]["ansible.builtin.file"].state = directory
+[8]["ansible.builtin.file"].recurse = {{ item.parent_dirs_recurse | d(resources__parent_dirs_recurse) }}
+[8]["ansible.builtin.file"].owner = {{ item.parent_dirs_owner | d(resources__parent_dirs_owner) }}
+[8]["ansible.builtin.file"].group = {{ item.parent_dirs_group | d(resources__parent_dirs_group) }}
+[8]["ansible.builtin.file"].mode = {{ item.parent_dirs_mode | d(resources__parent_dirs_mode) }}
+[8].when = (resources__enabled | bool and (item.parent_dirs_create | d(resources__parent_dirs_create) | bool) and item.state | d("present") != 'absent')
+[8].loop = {{ q("flattened", resources__urls
+                           + resources__group_urls
+                           + resources__host_urls
+                           + resources__archives
+                           + resources__group_archives
+                           + resources__host_archives
+                           + resources__files
+                           + resources__group_files
+                           + resources__host_files) }}
+[8].tags[0] = role::resources:urls
+[8].tags[1] = role::resources:archives
+[8].tags[2] = role::resources:files
+[9].name = Download online resources to remote hosts
+[9]["ansible.builtin.get_url"].url = {{ item.url | d(item.src) }}
+[9]["ansible.builtin.get_url"].dest = {{ item.dest | d(item.name | d(item.path)) }}
+[9]["ansible.builtin.get_url"].owner = {{ item.owner | d(omit) }}
+[9]["ansible.builtin.get_url"].group = {{ item.group | d(omit) }}
+[9]["ansible.builtin.get_url"].mode = {{ item.mode | d(omit) }}
+[9]["ansible.builtin.get_url"].checksum = {{ item.checksum | d(omit) }}
+[9]["ansible.builtin.get_url"].force = {{ item.force | d(omit) }}
+[9]["ansible.builtin.get_url"].force_basic_auth = {{ item.force_basic_auth | d(omit) }}
+[9]["ansible.builtin.get_url"].headers = {{ item.headers | d(omit) }}
+[9]["ansible.builtin.get_url"].sha256sum = {{ item.sha256sum | d(omit) }}
+[9]["ansible.builtin.get_url"].timeout = {{ item.timeout | d(omit) }}
+[9]["ansible.builtin.get_url"].url_password = {{ item.url_password | d(omit) }}
+[9]["ansible.builtin.get_url"].url_username = {{ item.url_username | d(omit) }}
+[9]["ansible.builtin.get_url"].use_proxy = {{ item.use_proxy | d(omit) }}
+[9]["ansible.builtin.get_url"].validate_certs = {{ item.validate_certs | d(omit) }}
+[9].loop = {{ q("flattened", resources__urls
+                           + resources__group_urls
+                           + resources__host_urls) }}
+[9].when = (resources__enabled | bool and (item.url | d() or item.src | d()) and (item.dest | d() or item.name | d() or item.path | d()))
+[9].no_log = {{ debops__no_log | d(True if item.url_password | d() else omit) }}
+[9].tags[0] = role::resources:urls
+[10].name = Unpack archives to remote hosts
+[10]["ansible.builtin.unarchive"].src = {{ item.src }}
+[10]["ansible.builtin.unarchive"].dest = {{ item.dest | d(item.name | d(item.path)) }}
+[10]["ansible.builtin.unarchive"].owner = {{ item.owner | d(omit) }}
+[10]["ansible.builtin.unarchive"].group = {{ item.group | d(omit) }}
+[10]["ansible.builtin.unarchive"].mode = {{ item.mode | d(omit) }}
+[10]["ansible.builtin.unarchive"].selevel = {{ item.selevel | d(omit) }}
+[10]["ansible.builtin.unarchive"].serole = {{ item.serole | d(omit) }}
+[10]["ansible.builtin.unarchive"].setype = {{ item.setype | d(omit) }}
+[10]["ansible.builtin.unarchive"].seuser = {{ item.seuser | d(omit) }}
+[10]["ansible.builtin.unarchive"].creates = {{ item.creates | d(omit) }}
+[10]["ansible.builtin.unarchive"].exclude = {{ item.exclude | d(omit) }}
+[10]["ansible.builtin.unarchive"].keep_newer = {{ item.keep_newer | d(omit) }}
+[10]["ansible.builtin.unarchive"].extra_opts = {{ item.extra_opts | d(omit) }}
+[10]["ansible.builtin.unarchive"].attributes = {{ item.attributes | d(omit) }}
+[10]["ansible.builtin.unarchive"].list_files = {{ item.list_files | d(omit) }}
+[10]["ansible.builtin.unarchive"].remote_src = {{ item.remote_src | d(omit) }}
+[10]["ansible.builtin.unarchive"].unsafe_writes = {{ item.unsafe_writes | d(omit) }}
+[10]["ansible.builtin.unarchive"].validate_certs = {{ item.validate_certs | d(omit) }}
+[10].loop = {{ q("flattened", resources__archives
+                           + resources__group_archives
+                           + resources__host_archives) }}
+[10].when = (resources__enabled | bool and item.src | d() and (item.dest | d() or item.name | d() or item.path | d()))
+[10].tags[0] = role::resources:archives
+[11].name = Delete files on remote hosts
+[11]["ansible.builtin.file"].path = {{ item.dest | d(item.path | d(item.name)) }}
+[11]["ansible.builtin.file"].state = absent
+[11].loop = {{ q("flattened", resources__files
+                           + resources__group_files
+                           + resources__host_files) }}
+[11].when = (resources__enabled | bool and (item.dest | d() or item.path | d() or item.name | d()) and (item.state | d('present') == 'absent'))
+[11].tags[0] = role::resources:files
+[12].name = Copy files to remote hosts
+[12]["ansible.builtin.copy"].dest = {{ item.dest | d(item.path | d(item.name)) }}
+[12]["ansible.builtin.copy"].src = {{ item.src | d(omit) }}
+[12]["ansible.builtin.copy"].content = {{ item.content | d(omit) }}
+[12]["ansible.builtin.copy"].owner = {{ item.owner | d(omit) }}
+[12]["ansible.builtin.copy"].group = {{ item.group | d(omit) }}
+[12]["ansible.builtin.copy"].mode = {{ item.mode | d(omit) }}
+[12]["ansible.builtin.copy"].selevel = {{ item.selevel | d(omit) }}
+[12]["ansible.builtin.copy"].serole = {{ item.serole | d(omit) }}
+[12]["ansible.builtin.copy"].setype = {{ item.setype | d(omit) }}
+[12]["ansible.builtin.copy"].seuser = {{ item.seuser | d(omit) }}
+[12]["ansible.builtin.copy"].follow = {{ item.follow | d(omit) }}
+[12]["ansible.builtin.copy"].force = {{ item.force | d(omit) }}
+[12]["ansible.builtin.copy"].backup = {{ item.backup | d(omit) }}
+[12]["ansible.builtin.copy"].validate = {{ item.validate | d(omit) }}
+[12]["ansible.builtin.copy"].remote_src = {{ item.remote_src | d(omit) }}
+[12]["ansible.builtin.copy"].directory_mode = {{ item.directory_mode | d(omit) }}
+[12].loop = {{ q("flattened", resources__files
+                           + resources__group_files
+                           + resources__host_files) }}
+[12].when = (resources__enabled | bool and (item.src | d() or item.content is defined) and (item.dest | d() or item.path | d() or item.name | d()) and (item.state | d('present') != 'absent'))
+[12].tags[0] = role::resources:files
+[13].name = Manage virtual environments
+[13]["ansible.builtin.pip"].chdir = {{ item.chdir | d(omit) }}
+[13]["ansible.builtin.pip"].editable = {{ item.editable | d(omit) }}
+[13]["ansible.builtin.pip"].executable = {{ item.executable | d(omit) }}
+[13]["ansible.builtin.pip"].extra_args = {{ item.extra_args | d(omit) }}
+[13]["ansible.builtin.pip"].name = {{ item.name | d(omit) }}
+[13]["ansible.builtin.pip"].requirements = {{ item.requirements | d(omit) }}
+[13]["ansible.builtin.pip"].state = {{ item.state | d(omit) }}
+[13]["ansible.builtin.pip"].umask = {{ item.umask | d(omit) }}
+[13]["ansible.builtin.pip"].version = {{ item.version | d(omit) }}
+[13]["ansible.builtin.pip"].virtualenv = {{ item.virtualenv | d(omit) }}
+[13]["ansible.builtin.pip"].virtualenv_command = {{ item.virtualenv_command | d(omit) }}
+[13]["ansible.builtin.pip"].virtualenv_python = {{ item.virtualenv_python | d(omit) }}
+[13]["ansible.builtin.pip"].virtualenv_site_packages = {{ item.virtualenv_site_packages | d(omit) }}
+[13].loop = {{ q("flattened", resources__pip
+                           + resources__group_pip
+                           + resources__host_pip) }}
+[13].become = True
+[13].become_user = {{ item.owner | d("root") }}
+[13].when = (resources__enabled | bool and (item.name | d() or item.requirements is defined) and (item.state | d('present') != 'absent'))
+[13].tags[0] = role::resources:pip
+[14].name = Manage replacements inside files
+[14]["ansible.builtin.replace"].dest = {{ item.dest | d(item.name | d(item.path)) }}
+[14]["ansible.builtin.replace"].after = {{ item.after | d(omit) }}
+[14]["ansible.builtin.replace"].attributes = {{ item.attributes | d(item.attr | d(omit)) }}
+[14]["ansible.builtin.replace"].backup = {{ item.backup | d(omit) }}
+[14]["ansible.builtin.replace"].before = {{ item.before | d(omit) }}
+[14]["ansible.builtin.replace"].encoding = {{ item.encoding | d(omit) }}
+[14]["ansible.builtin.replace"].group = {{ item.group | d(omit) }}
+[14]["ansible.builtin.replace"].mode = {{ item.mode | d(omit) }}
+[14]["ansible.builtin.replace"].others = {{ item.others | d(omit) }}
+[14]["ansible.builtin.replace"].owner = {{ item.owner | d(omit) }}
+[14]["ansible.builtin.replace"].regexp = {{ item.regexp | d(omit) }}
+[14]["ansible.builtin.replace"].replace = {{ item.replace | d(omit) }}
+[14]["ansible.builtin.replace"].selevel = {{ item.selevel | d(omit) }}
+[14]["ansible.builtin.replace"].serole = {{ item.serole | d(omit) }}
+[14]["ansible.builtin.replace"].setype = {{ item.setype | d(omit) }}
+[14]["ansible.builtin.replace"].seuser = {{ item.seuser | d(omit) }}
+[14]["ansible.builtin.replace"].unsafe_writes = {{ item.unsafe_writes | d(omit) }}
+[14]["ansible.builtin.replace"].validate = {{ item.validate | d(omit) }}
+[14].loop = {{ q("flattened", resources__replacements
+                           + resources__group_replacements
+                           + resources__host_replacements) }}
+[14].when = (resources__enabled | bool and item.regexp | d() and (item.dest | d() or item.path | d() or item.name | d()))
+[14].tags[0] = role::resources:lineinfile
+[15].name = Set ACLs on remote hosts
+[15]["ansible.posix.acl"].path = {{ item.1.path | d(item.0.name) | d(item.0.dest) | d(item.0.path) }}
+[15]["ansible.posix.acl"].default = {{ item.1.default | d(omit) }}
+[15]["ansible.posix.acl"].entity = {{ item.1.entity | d(omit) }}
+[15]["ansible.posix.acl"].entry = {{ item.1.entry | d(omit) }}
+[15]["ansible.posix.acl"].etype = {{ item.1.etype | d(omit) }}
+[15]["ansible.posix.acl"].permissions = {{ item.1.permissions | d(omit) }}
+[15]["ansible.posix.acl"].follow = {{ item.1.follow | d(omit) }}
+[15]["ansible.posix.acl"].recursive = {{ item.1.recursive | d(omit) }}
+[15]["ansible.posix.acl"].state = {{ item.1.state | d("present") }}
+[15].loop = {{ (lookup("flattened",
+                    resources__paths
+                    + resources__group_paths
+                    + resources__host_paths
+                    + resources__repositories
+                    + resources__group_repositories
+                    + resources__host_repositories
+                    + resources__urls
+                    + resources__group_urls
+                    + resources__host_urls
+                    + resources__archives
+                    + resources__group_archives
+                    + resources__host_archives
+                    + resources__files
+                    + resources__group_files
+                    + resources__host_files,
+                    wantlist=True))
+             | selectattr("acl", "defined") | list
+             | subelements("acl") }}
+[15].loop_control.label = {{ {"name": (item.0.name | d(item.0.dest) | d(item.0.path)),
+                "acl": item.1} }}
+[15].when = item.0.state | d('present') != 'absent'
+[15].tags[0] = role::resources:acl
+[16].name = Manage delayed paths on remote hosts
+[16]["ansible.builtin.file"].path = {{ (item.path | d(item.dest | d(item.name))) | d(item) }}
+[16]["ansible.builtin.file"].state = {{ item.state | d("directory") }}
+[16]["ansible.builtin.file"].owner = {{ item.owner | d(omit) }}
+[16]["ansible.builtin.file"].group = {{ item.group | d(omit) }}
+[16]["ansible.builtin.file"].mode = {{ item.mode | d(omit) }}
+[16]["ansible.builtin.file"].selevel = {{ item.selevel | d(omit) }}
+[16]["ansible.builtin.file"].serole = {{ item.serole | d(omit) }}
+[16]["ansible.builtin.file"].setype = {{ item.setype | d(omit) }}
+[16]["ansible.builtin.file"].seuser = {{ item.seuser | d(omit) }}
+[16]["ansible.builtin.file"].follow = {{ item.follow | d(omit) }}
+[16]["ansible.builtin.file"].force = {{ item.force | d(omit) }}
+[16]["ansible.builtin.file"].src = {{ item.src | d(omit) }}
+[16]["ansible.builtin.file"].recurse = {{ item.recurse | d(omit) }}
+[16]["ansible.builtin.file"].attributes = {{ item.attributes | d(omit) }}
+[16]["ansible.builtin.file"].access_time = {{ item.access_time | d(omit) }}
+[16]["ansible.builtin.file"].access_time_format = {{ item.access_time_format | d(resources__time_format) }}
+[16]["ansible.builtin.file"].modification_time = {{ item.modification_time | d(omit) }}
+[16]["ansible.builtin.file"].modification_time_format = {{ item.modification_time_format | d(resources__time_format) }}
+[16].loop = {{ q("flattened", resources__delayed_paths
+                           + resources__group_delayed_paths
+                           + resources__host_delayed_paths) }}
+[16].when = (resources__enabled | bool and ((item.path | d() or item.dest | d() or item.name | d()) or item))
+[16].tags[0] = role::resources:paths
+[17].name = Set custom file capabilities
+[17]["community.general.capabilities"].path = {{ item.path | d(item.name) }}
+[17]["community.general.capabilities"].capability = {{ item.capability }}
+[17]["community.general.capabilities"].state = {{ item.state | d("present") }}
+[17].loop = {{ q("flattened", resources__combined_file_capabilities) }}
+[17].when = resources__enabled | bool
+[17].tags[0] = role::resources:capabilities
+[18].name = Execute shell commands
+[18]["ansible.builtin.include_tasks"] = shell_commands.yml
+[18].loop = {{ q("flattened", resources__combined_commands) | debops.debops.parse_kv_items }}
+[18].loop_control.label = {{ {"name": item.name} }}
+[18].when = resources__enabled | bool and item.name | d() and item.state | d('present') not in [ 'absent', 'ignore' ]
+[18].no_log = {{ debops__no_log | d(item.no_log) | d(False) }}
+[18].tags[0] = role::resources:commands
+[19].name = Post hooks
+[19]["ansible.builtin.include_tasks"] = {{ lookup("debops.debops.task_src", "resources/post_main.yml") }}

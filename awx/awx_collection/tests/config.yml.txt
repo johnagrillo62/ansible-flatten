@@ -1,2 +1,1 @@
-~d0.modules = 
-~d1.python_requires = '>3'
+modules.python_requires = >3

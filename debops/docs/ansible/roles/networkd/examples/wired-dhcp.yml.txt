@@ -1,5 +1,12 @@
-~d0.networkd__units = 
-~d1.name = 'wired-dhcp.network'
-~d2.comment = 'Configure any wired Ethernet interface via DHCP'
-~d2.raw = |
-~d2.state = 'present'
+networkd__units[0].name = wired-dhcp.network
+networkd__units[0].comment = Configure any wired Ethernet interface via DHCP
+networkd__units[0].raw = [Match]
+Name=en*
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+UseDomains=true
+
+networkd__units[0].state = present

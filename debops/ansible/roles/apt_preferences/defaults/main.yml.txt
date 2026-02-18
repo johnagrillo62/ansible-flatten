@@ -58,7 +58,6 @@ Pin-Priority: -1
 apt_preferences__preset_list = {{
     ((apt_preferences__debian_stable_default_preset_list | list) if (ansible_distribution == "Debian") else [])
   }}
-
 apt_preferences__priority_default = 500
 apt_preferences__priority_version = 1001
 apt_preferences__next_release.stretch = buster

@@ -22,15 +22,12 @@
 [3]["ansible.builtin.lineinfile"].regexp = {{ "^" + (item.value.cname
                        if item.value.cname.endswith("." + avahi__domain)
                        else (item.value.cname + "." + avahi__domain)) + "$" }}
-
 [3]["ansible.builtin.lineinfile"].line = {{ (item.value.cname
                if item.value.cname.endswith("." + avahi__domain)
                else (item.value.cname + "." + avahi__domain)) }}
-
 [3]["ansible.builtin.lineinfile"].state = {{ "present"
                if item.value.cname_state | d(item.value.state | d("present")) != "absent"
                else "absent" }}
-
 [3]["ansible.builtin.lineinfile"].mode = 0644
 [3].with_dict = {{ avahi__combined_services }}
 [3].register = avahi__register_aliases
@@ -39,9 +36,8 @@
 [4]["ansible.builtin.systemd"].name = avahi-alias.service
 [4]["ansible.builtin.systemd"].enabled = {{ True if avahi__register_alias_script is changed else omit }}
 [4]["ansible.builtin.systemd"].daemon_reload = {{ True if (avahi__register_alias_script is changed or
-                                avahi__register_alias_service is changed) else omit }} 
+                                avahi__register_alias_service is changed) else omit }}
 [4]["ansible.builtin.systemd"].state = {{ "restarted" if (avahi__register_alias_script is changed or
                                avahi__register_alias_service is changed or
                                avahi__register_aliases is changed) else omit }}
-
 [4].when = ansible_service_mgr == 'systemd'

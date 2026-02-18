@@ -18,7 +18,6 @@ kodi__base_packages[16] = speex
 kodi__base_packages[17] = {{ ["policykit-1"]
         if (kodi__polkit_action | d())
         else [] }}
-
 kodi__deploy_state = present
 kodi__user = kodi
 kodi__group = kodi
@@ -28,7 +27,7 @@ kodi__groups[2] = audio
 kodi__groups[3] = video
 kodi__groups[4] = plugdev
 kodi__home_path = {{ (ansible_local.fhs.home | d("/var/local"))
-                     + "/" + kodi__user }} 
+                     + "/" + kodi__user }}
 kodi__gecos = kodi.org
 kodi__shell = /usr/sbin/nologin
 kodi__polkit_action = org.freedesktop.login1.*

@@ -173,7 +173,6 @@ minidlna__combined_configuration = {{ minidlna__original_configuration
                                       + minidlna__configuration
                                       + minidlna__group_configuration
                                       + minidlna__host_configuration }}
-
 minidlna__ferm__dependent_rules[0].name = minidlna_allow_http
 minidlna__ferm__dependent_rules[0].type = accept
 minidlna__ferm__dependent_rules[0].dport[0] = minidlna

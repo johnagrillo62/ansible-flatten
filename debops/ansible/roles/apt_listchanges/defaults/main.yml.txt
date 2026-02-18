@@ -8,7 +8,6 @@ apt_listchanges__apt_frontend = {{ "none"
                                          if (ansible_local.apt_listchanges.apt | d() and
                                              ansible_local.apt_listchanges.apt.frontend | d())
                                          else "mail") }}
-
 apt_listchanges__apt_which = news
 apt_listchanges__apticron_frontend = mail
 apt_listchanges__apticron_which = both

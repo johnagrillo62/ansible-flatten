@@ -4,7 +4,7 @@ tftpd__directory = /srv/tftp
 tftpd__username = tftp
 tftpd__options[0] = --secure
 tftpd__options[1] = {{ ["--permissive", "--create", ("--umask " + tftpd__upload_umask)]
-        if tftpd__upload_enabled | bool else [] }} 
+        if tftpd__upload_enabled | bool else [] }}
 tftpd__upload_enabled = {{ True if tftpd__allow | d() else False }}
 tftpd__upload_directory = upload
 tftpd__upload_group = tftp

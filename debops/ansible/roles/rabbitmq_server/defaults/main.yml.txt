@@ -8,11 +8,9 @@ rabbitmq_server__erlang_cookie_path = {{ rabbitmq_server__home + "/.erlang.cooki
 rabbitmq_server__erlang_cookie_password = {{ lookup("password", secret
                                              + "/rabbitmq_server/cluster/erlang_cookie "
                                              + "length=64") }}
-
 rabbitmq_server__combined_environment = {{ rabbitmq_server__environment
                                            | combine(rabbitmq_server__group_environment,
                                                      rabbitmq_server__host_environment) }}
-
 rabbitmq_server__default_config[0].name = ssl
 rabbitmq_server__default_config[0].state = {{ "present" if rabbitmq_server__pki | bool else "ignore" }}
 rabbitmq_server__default_config[0].options[0].name = versions
@@ -28,7 +26,6 @@ rabbitmq_server__default_config[0].options[1].type = raw
 rabbitmq_server__default_config[0].options[1].state = {{ "present"
                    if rabbitmq_server__ssl_ciphers
                    else "ignore" }}
-
 rabbitmq_server__default_config[0].options[2].client_renegotiation = False
 rabbitmq_server__default_config[0].options[3].secure_renegotiate = True
 rabbitmq_server__default_config[0].options[4].reuse_sessions = True
@@ -78,46 +75,39 @@ rabbitmq_server__dependent_state = present
 rabbitmq_server__dependent_config_filter = {{ lookup("template",
                                               "lookup/rabbitmq_server__dependent_config_filter.j2")
                                               | from_yaml }}
-
 rabbitmq_server__combined_config = {{ rabbitmq_server__default_config
                                       + rabbitmq_server__dependent_config_filter
                                       + rabbitmq_server__config
                                       + rabbitmq_server__group_config
                                       + rabbitmq_server__host_config }}
-
 rabbitmq_server__default_plugins[0].name = rabbitmq_management_agent
 rabbitmq_server__combined_plugins = {{ rabbitmq_server__default_plugins
                                        + rabbitmq_server__plugins
                                        + rabbitmq_server__group_plugins
                                        + rabbitmq_server__host_plugins }}
-
 rabbitmq_server__parameters_vhosts = {{ lookup("template",
-                                        "lookup/rabbitmq_server__parameters_vhosts.j2") }} 
+                                        "lookup/rabbitmq_server__parameters_vhosts.j2") }}
 rabbitmq_server__policies_vhosts = {{ lookup("template",
-                                      "lookup/rabbitmq_server__policies_vhosts.j2") }} 
+                                      "lookup/rabbitmq_server__policies_vhosts.j2") }}
 rabbitmq_server__accounts_vhosts = {{ lookup("template",
-                                      "lookup/rabbitmq_server__accounts_vhosts.j2") }} 
+                                      "lookup/rabbitmq_server__accounts_vhosts.j2") }}
 rabbitmq_server__combined_vhosts = {{ rabbitmq_server__vhosts
                                       + rabbitmq_server__group_vhosts
                                       + rabbitmq_server__host_vhosts
                                       + rabbitmq_server__parameters_vhosts
                                       + rabbitmq_server__policies_vhosts
                                       + rabbitmq_server__accounts_vhosts }}
-
 rabbitmq_server__combined_vhost_limits = {{ rabbitmq_server__vhost_limits
                                           + rabbitmq_server__group_vhost_limits
                                           + rabbitmq_server__host_vhost_limits }}
-
 rabbitmq_server__combined_parameters = {{ rabbitmq_server__parameters
                                           + rabbitmq_server__group_parameters
                                           + rabbitmq_server__host_parameters }}
-
 rabbitmq_server__combined_policies = {{ rabbitmq_server__policies
                                         + rabbitmq_server__group_policies
                                         + rabbitmq_server__host_policies }}
-
 rabbitmq_server__admin_accounts = {{ lookup("template",
-                                     "lookup/rabbitmq_server__admin_accounts.j2") }} 
+                                     "lookup/rabbitmq_server__admin_accounts.j2") }}
 rabbitmq_server__default_accounts[0].name = guest
 rabbitmq_server__default_accounts[0].state = absent
 rabbitmq_server__combined_accounts = {{ rabbitmq_server__admin_accounts
@@ -125,37 +115,29 @@ rabbitmq_server__combined_accounts = {{ rabbitmq_server__admin_accounts
                                         + rabbitmq_server__accounts
                                         + rabbitmq_server__group_accounts
                                         + rabbitmq_server__host_accounts }}
-
 rabbitmq_server__admin_default_vhost = /
 rabbitmq_server__account_password_length = 32
 rabbitmq_server__combined_user_limits = {{ rabbitmq_server__user_limits
                                            + rabbitmq_server__group_user_limits
                                            + rabbitmq_server__host_user_limits }}
-
 rabbitmq_server__combined_exchanges = {{ rabbitmq_server__exchanges
                                          + rabbitmq_server__group_exchanges
                                          + rabbitmq_server__host_exchanges }}
-
 rabbitmq_server__combined_queues = {{ rabbitmq_server__queues
                                       + rabbitmq_server__group_queues
                                       + rabbitmq_server__host_queues }}
-
 rabbitmq_server__combined_bindings = {{ rabbitmq_server__bindings
                                         + rabbitmq_server__group_bindings
                                         + rabbitmq_server__host_bindings }}
-
 rabbitmq_server__combined_feature_flags = {{ rabbitmq_server__feature_flags
                                              + rabbitmq_server__group_feature_flags
                                              + rabbitmq_server__host_feature_flags }}
-
 rabbitmq_server__combined_global_parameters = {{ rabbitmq_server__global_parameters
                                                  + rabbitmq_server__group_global_parameters
                                                  + rabbitmq_server__host_global_parameters }}
-
 rabbitmq_server__pki = {{ True
                           if (ansible_local.pki.enabled | d() and
                               ansible_local.pki.enabled | bool) else False }}
-
 rabbitmq_server__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 rabbitmq_server__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 rabbitmq_server__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
@@ -164,15 +146,12 @@ rabbitmq_server__pki_key = {{ ansible_local.pki.key | d("default.key") }}
 rabbitmq_server__cacertfile = {{ rabbitmq_server__pki_path
                                  + "/" + rabbitmq_server__pki_realm
                                  + "/" + rabbitmq_server__pki_ca }}
-
 rabbitmq_server__certfile = {{ rabbitmq_server__pki_path
                                + "/" + rabbitmq_server__pki_realm
                                + "/" + rabbitmq_server__pki_crt }}
-
 rabbitmq_server__keyfile = {{ rabbitmq_server__pki_path
                               + "/" + rabbitmq_server__pki_realm
                               + "/" + rabbitmq_server__pki_key }}
-
 rabbitmq_server__ssl_versions[0] = tlsv1.2
 rabbitmq_server__ssl_versions[1] = tlsv1.1
 rabbitmq_server__ssl_ciphers = {{ ansible_local.rabbitmq_server.raw_erlang_ssl_ciphers | d("") }}
@@ -180,7 +159,6 @@ rabbitmq_server__ssl_dhparam = {{ (ansible_local.dhparam[rabbitmq_server__ssl_dh
                                    if (ansible_local | d() and ansible_local.dhparam | d() and
                                        ansible_local.dhparam[rabbitmq_server__ssl_dhparam_set] | d())
                                    else "") }}
-
 rabbitmq_server__ssl_dhparam_set = default
 rabbitmq_server__etc_services__dependent_list[0].name = einc
 rabbitmq_server__etc_services__dependent_list[0].port = 25672

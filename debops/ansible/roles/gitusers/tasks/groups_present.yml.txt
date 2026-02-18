@@ -5,7 +5,6 @@
 [0].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [0].when = (((item.name is defined and item.name) and (item.gid is undefined or (item.gid is defined and not item.gid))) and (item.state is undefined or (item.state is defined and item.state != 'absent')))
 [1].name = Create user groups with GIDs
 [1]["ansible.builtin.group"].name = {{ item.group | default(item.name + gitusers_name_suffix) }}
@@ -15,5 +14,4 @@
 [1].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [1].when = ((item.name is defined and item.name) and (item.gid is defined and item.gid) and (item.state is undefined or (item.state is defined and item.state != 'absent')))

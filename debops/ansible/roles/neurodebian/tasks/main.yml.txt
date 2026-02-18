@@ -1,57 +1,51 @@
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Configure NeuroDebian APT repository
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/apt/sources.list.d/neurodebian.sources.list.j2'
-~d2.dest = '/etc/apt/sources.list.d/neurodebian.sources.list'
-~d2.mode = '0644'
-~d1.register = neurodebian__register_apt_repository
-~d1.when = (neurodebian__deploy_state == "present" and
-~d0.name = Ensure the NeuroDebian APT repository is disabled
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/apt/sources.list.d/neurodebian.sources.list'
-~d2.state = 'absent'
-~d1.register = neurodebian__register_apt_repository_absent
-~d1.when = (neurodebian__deploy_state == "absent" and
-~d0.name = Configure NeuroDebian support in debconf
-~d1.ansible.builtin.debconf = 
-~d2.name = 'neurodebian'
-~d2.question = 'neurodebian/enable'
-~d2.vtype = 'boolean'
-~d2.value = '{{ "true" if (neurodebian__deploy_state == "present") else "false" }}'
-~d1.when = not neurodebian__upstream | bool
-~d0.name = Install packages required for NeuroDebian support
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", neurodebian__support_packages) }}'
-~d2.state = 'present'
-~d1.register = neurodebian__register_support_packages
-~d1.until = neurodebian__register_support_packages is succeeded
-~d1.when = (neurodebian__deploy_state == "present" and
-~d0.name = Update APT repository cache
-~d1.ansible.builtin.apt = # noqa no-handler
-~d2.update_cache = True
-~d1.register = neurodebian__register_apt_update
-~d1.until = neurodebian__register_apt_update is succeeded
-~d1.when = neurodebian__register_apt_repository is changed or
-~d0.name = Ensure specified packages are in their desired state
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (neurodebian__packages
-~d2.state = '{{ "present" if (neurodebian__deploy_state == "present") else "absent" }}'
-~d1.register = neurodebian__register_packages
-~d1.until = neurodebian__register_packages is succeeded
-~d1.tags = [ 'role::neurodebian:package' ]
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d0.name = Save NeuroDebian local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/neurodebian.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/neurodebian.fact'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update Ansible facts if they were modified
-~d1.ansible.builtin.meta = 'flush_handlers'
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Configure NeuroDebian APT repository
+[1]["ansible.builtin.template"].src = etc/apt/sources.list.d/neurodebian.sources.list.j2
+[1]["ansible.builtin.template"].dest = /etc/apt/sources.list.d/neurodebian.sources.list
+[1]["ansible.builtin.template"].mode = 0644
+[1].register = neurodebian__register_apt_repository
+[1].when = (neurodebian__deploy_state == "present" and neurodebian__upstream | bool)
+[2].name = Ensure the NeuroDebian APT repository is disabled
+[2]["ansible.builtin.file"].path = /etc/apt/sources.list.d/neurodebian.sources.list
+[2]["ansible.builtin.file"].state = absent
+[2].register = neurodebian__register_apt_repository_absent
+[2].when = (neurodebian__deploy_state == "absent" and neurodebian__upstream | bool)
+[3].name = Configure NeuroDebian support in debconf
+[3]["ansible.builtin.debconf"].name = neurodebian
+[3]["ansible.builtin.debconf"].question = neurodebian/enable
+[3]["ansible.builtin.debconf"].vtype = boolean
+[3]["ansible.builtin.debconf"].value = {{ "true" if (neurodebian__deploy_state == "present") else "false" }}
+[3].when = not neurodebian__upstream | bool
+[4].name = Install packages required for NeuroDebian support
+[4]["ansible.builtin.package"].name = {{ q("flattened", neurodebian__support_packages) }}
+[4]["ansible.builtin.package"].state = present
+[4].register = neurodebian__register_support_packages
+[4].until = neurodebian__register_support_packages is succeeded
+[4].when = (neurodebian__deploy_state == "present" and not neurodebian__upstream | bool)
+[5].name = Update APT repository cache
+[5]["ansible.builtin.apt"].update_cache = True
+[5].register = neurodebian__register_apt_update
+[5].until = neurodebian__register_apt_update is succeeded
+[5].when = neurodebian__register_apt_repository is changed or neurodebian__register_apt_repository_absent is changed or neurodebian__register_support_packages is changed
+[6].name = Ensure specified packages are in their desired state
+[6]["ansible.builtin.package"].name = {{ q("flattened", (neurodebian__packages
+                              + neurodebian__group_packages
+                              + neurodebian__host_packages
+                              + neurodebian__dependent_packages)) }}
+[6]["ansible.builtin.package"].state = {{ "present" if (neurodebian__deploy_state == "present") else "absent" }}
+[6].register = neurodebian__register_packages
+[6].until = neurodebian__register_packages is succeeded
+[6].tags[0] = role::neurodebian:package
+[7].name = Make sure that Ansible local facts directory exists
+[7]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[7]["ansible.builtin.file"].state = directory
+[7]["ansible.builtin.file"].mode = 0755
+[8].name = Save NeuroDebian local facts
+[8]["ansible.builtin.template"].src = etc/ansible/facts.d/neurodebian.fact.j2
+[8]["ansible.builtin.template"].dest = /etc/ansible/facts.d/neurodebian.fact
+[8]["ansible.builtin.template"].mode = 0755
+[8].notify[0] = Refresh host facts
+[8].tags[0] = meta::facts
+[9].name = Update Ansible facts if they were modified
+[9]["ansible.builtin.meta"] = flush_handlers

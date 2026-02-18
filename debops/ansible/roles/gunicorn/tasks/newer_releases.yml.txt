@@ -9,7 +9,7 @@
 [1]["ansible.builtin.group"].system = {{ (item.system | d(True)) | bool }}
 [1]["ansible.builtin.group"].state = present
 [1].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [1].when = item.name | d() and item.state | d('present') != 'absent' and item.group | d()
 [2].name = Ensure that required users exist
 [2]["ansible.builtin.user"].name = {{ item.user }}
@@ -18,7 +18,7 @@
 [2]["ansible.builtin.user"].system = {{ (item.system | d(True)) | bool }}
 [2]["ansible.builtin.user"].state = present
 [2].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [2].when = item.name | d() and item.state | d('present') != 'absent' and item.user | d() and item.home | d()
 [3].name = Create log directories
 [3]["ansible.builtin.file"].path = /var/log/gunicorn/{{ item.name }}
@@ -27,7 +27,7 @@
 [3]["ansible.builtin.file"].group = {{ item.group | d(gunicorn__group) }}
 [3]["ansible.builtin.file"].mode = 0775
 [3].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [3].when = item.name | d() and item.state | d('present') != 'absent'
 [4].name = Create logrotate configs
 [4]["ansible.builtin.template"].src = etc/logrotate.d/gunicorn.j2
@@ -36,7 +36,7 @@
 [4]["ansible.builtin.template"].group = root
 [4]["ansible.builtin.template"].mode = 0644
 [4].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [4].when = item.name | d() and item.state | d('present') != 'absent'
 [5].name = Check if systemd instances for Green Unicorn are configured
 [5]["ansible.builtin.stat"].path = /etc/systemd/system/gunicorn@.service
@@ -46,7 +46,7 @@
 [6]["ansible.builtin.systemd"].state = stopped
 [6]["ansible.builtin.systemd"].enabled = False
 [6].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [6].notify[0] = Reload systemd daemon (gunicorn)
 [6].when = ansible_service_mgr == 'systemd' and gunicorn__register_systemd_templated.stat | d() and gunicorn__register_systemd_templated.stat.exists | bool and item.name | d() and item.state | d('present') == 'absent'
 [7].name = Generate systemd configuration files
@@ -63,7 +63,7 @@
 [8]["ansible.builtin.file"].path = /etc/systemd/system/gunicorn@{{ item.name }}.service.d
 [8]["ansible.builtin.file"].state = absent
 [8].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [8].notify[0] = Reload systemd daemon (gunicorn)
 [8].when = ansible_service_mgr == 'systemd' and item.name | d() and item.state | d('present') == 'absent'
 [9].name = Create per-instance systemd directory
@@ -73,7 +73,7 @@
 [9]["ansible.builtin.file"].group = root
 [9]["ansible.builtin.file"].mode = 0755
 [9].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [9].when = ansible_service_mgr == 'systemd' and item.name | d() and item.state | d('present') != 'absent'
 [10].name = Generate per-instance systemd configuration
 [10]["ansible.builtin.template"].src = etc/systemd/system/gunicorn@application.service.d/instance.conf.j2
@@ -82,7 +82,7 @@
 [10]["ansible.builtin.template"].group = root
 [10]["ansible.builtin.template"].mode = 0644
 [10].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [10].notify[0] = Reload systemd daemon (gunicorn)
 [10].notify[1] = Start Green Unicorn instances
 [10].when = ansible_service_mgr == 'systemd' and item.name | d() and item.state | d('present') != 'absent'
@@ -90,7 +90,7 @@
 [11]["ansible.builtin.file"].path = /etc/gunicorn/{{ item.name }}.conf.py
 [11]["ansible.builtin.file"].state = absent
 [11].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [11].when = item.name | d() and item.state | d('present') == 'absent'
 [12].name = Generate Unicorn instance configuration
 [12]["ansible.builtin.template"].src = etc/gunicorn/application.conf.py.j2
@@ -100,7 +100,7 @@
 [12]["ansible.builtin.template"].mode = 0644
 [12].notify[0] = Start Green Unicorn instances
 [12].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [12].when = item.name | d() and item.state | d('present') != 'absent'
 [13].name = Reload systemd configuration
 [13]["ansible.builtin.meta"] = flush_handlers
@@ -109,5 +109,5 @@
 [14]["ansible.builtin.systemd"].enabled = True
 [14].notify[0] = Start Green Unicorn instances
 [14].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [14].when = ansible_service_mgr == 'systemd' and item.name | d() and item.state | d('present') != 'absent'

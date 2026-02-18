@@ -36,4 +36,4 @@
 [1].remote_user = root
 [1].gather_facts = false
 [1].tasks[0].name = Wait for hosts to become reachable.
-[1].tasks[0].wait_for_connection: = null
+[1].tasks[0].wait_for_connection = null

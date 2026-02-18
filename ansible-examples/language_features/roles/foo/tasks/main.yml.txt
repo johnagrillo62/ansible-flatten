@@ -1,8 +1,7 @@
-doc[0][0].name = copy operation
-doc[0][0].copy = src=foo.txt dest=/tmp/roles_test1.txt
-doc[0][1].name = template operation
-doc[0][1].template = src=foo.j2 dest=/tmp/roles_test2.txt
-doc[0][1].notify[0] = blippy
-doc[0][2].name = demo that parameterized roles work
-doc[0][2].shell = echo just FYI, param1={{ param1 }}, param2 ={{ param2 }}
-doc[1] = 
+[0].name = copy operation
+[0].copy = src=foo.txt dest=/tmp/roles_test1.txt
+[1].name = template operation
+[1].template = src=foo.j2 dest=/tmp/roles_test2.txt
+[1].notify[0] = blippy
+[2].name = demo that parameterized roles work
+[2].shell = echo just FYI, param1={{ param1 }}, param2 ={{ param2 }}

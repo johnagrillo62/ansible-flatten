@@ -1,37 +1,33 @@
-~d0.hosts = nodejs-api
-~d1.gather_facts = no
-~d1.become = yes
-~d1.vars_files = 
-~d1.tasks = 
-~d2.name = Ensure Node.js API app is present.
-~d3.git = 
-~d4.repo = "{{ app_repository }}"
-~d4.version = "{{ app_version }}"
-~d4.dest = "{{ app_directory }}"
-~d4.accept_hostkey = true
-~d3.register = app_updated
-~d3.notify = restart forever apps
-~d2.name = Stop all running instances of the app.
-~d3.command = "forever stopall"
-~d3.when = app_updated.changed
-~d2.name = Ensure Node.js API app dependencies are present.
-~d3.npm = "path={{ app_directory }}"
-~d3.when = app_updated.changed
-~d2.name = Run Node.js API app tests.
-~d3.command = "npm test chdir={{ app_directory }}"
-~d3.when = app_updated.changed
-~d2.name = Get list of all running Node.js apps.
-~d3.command = forever list
-~d3.register = forever_list
-~d3.changed_when = false
-~d2.name = Ensure Node.js API app is started.
-~d3.command = "forever start {{ app_directory }}/app.js"
-~d3.when = "forever_list.stdout.find('app.js') == -1"
-~d2.name = Add cron entry to start Node.js API app on reboot.
-~d3.cron = 
-~d4.name = "Start Node.js API app"
-~d4.special_time = reboot
-~d4.job = "forever start {{ app_directory }}/app.js"
-~d1.handlers = 
-~d2.name = restart forever apps
-~d3.command = "forever restartall"
+[0].hosts = nodejs-api
+[0].gather_facts = no
+[0].become = yes
+[0].vars_files[0] = vars.yml
+[0].tasks[0].name = Ensure Node.js API app is present.
+[0].tasks[0].git.repo = {{ app_repository }}
+[0].tasks[0].git.version = {{ app_version }}
+[0].tasks[0].git.dest = {{ app_directory }}
+[0].tasks[0].git.accept_hostkey = true
+[0].tasks[0].register = app_updated
+[0].tasks[0].notify = restart forever apps
+[0].tasks[1].name = Stop all running instances of the app.
+[0].tasks[1].command = forever stopall
+[0].tasks[1].when = app_updated.changed
+[0].tasks[2].name = Ensure Node.js API app dependencies are present.
+[0].tasks[2].npm = path={{ app_directory }}
+[0].tasks[2].when = app_updated.changed
+[0].tasks[3].name = Run Node.js API app tests.
+[0].tasks[3].command = npm test chdir={{ app_directory }}
+[0].tasks[3].when = app_updated.changed
+[0].tasks[4].name = Get list of all running Node.js apps.
+[0].tasks[4].command = forever list
+[0].tasks[4].register = forever_list
+[0].tasks[4].changed_when = false
+[0].tasks[5].name = Ensure Node.js API app is started.
+[0].tasks[5].command = forever start {{ app_directory }}/app.js
+[0].tasks[5].when = forever_list.stdout.find('app.js') == -1
+[0].tasks[6].name = Add cron entry to start Node.js API app on reboot.
+[0].tasks[6].cron.name = Start Node.js API app
+[0].tasks[6].cron.special_time = reboot
+[0].tasks[6].cron.job = forever start {{ app_directory }}/app.js
+[0].handlers[0].name = restart forever apps
+[0].handlers[0].command = forever restartall

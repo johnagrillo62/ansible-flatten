@@ -1,3 +1,2 @@
-~d0.name = debug variable
-~d1.debug = 
-~d2.msg = "1234567890"
+[0].name = debug variable
+[0].debug.msg = 1234567890

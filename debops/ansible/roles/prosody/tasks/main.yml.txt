@@ -2,7 +2,7 @@
 [0]["ansible.builtin.import_role"].name = global_handlers
 [1].name = Install required packages
 [1]["ansible.builtin.package"].name = {{ q("flattened", (prosody__base_packages
-                              + prosody__packages)) }} 
+                              + prosody__packages)) }}
 [1]["ansible.builtin.package"].state = present
 [1].register = prosody__register_packages
 [1].until = prosody__register_packages is succeeded

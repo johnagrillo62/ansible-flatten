@@ -26,12 +26,10 @@ pgbadger__default_instances[0].host = localhost
 pgbadger__default_instances[0].state = {{ "present"
                if (inventory_hostname in (groups[pgbadger__ssh_inventory_group] | d([])))
                else "absent" }}
-
 pgbadger__combined_instances = {{ pgbadger__default_instances
                                   + pgbadger__instances
                                   + pgbadger__group_instances
                                   + pgbadger__host_instances }}
-
 pgbadger__nginx__dependent_servers[0].name = {{ pgbadger__fqdn }}
 pgbadger__nginx__dependent_servers[0].filename = debops.pgbadger
 pgbadger__nginx__dependent_servers[0].root = {{ pgbadger__www_root }}

@@ -18,7 +18,6 @@
                                      else (postgresql_server__preferred_version
                                            if postgresql_server__preferred_version | d()
                                            else postgresql_server__register_version.stdout)) }}
-
 [3].tags[0] = role::postgresql_server:packages
 [3].tags[1] = role::postgresql_server:config
 [3].tags[2] = role::postgresql_server:auto_backup

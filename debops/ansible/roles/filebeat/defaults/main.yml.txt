@@ -34,12 +34,10 @@ filebeat__combined_configuration = {{ filebeat__original_configuration
                                       + filebeat__configuration
                                       + filebeat__group_configuration
                                       + filebeat__host_configuration }}
-
 filebeat__default_snippets[0].name = inputs.d/ceph.yml
 filebeat__default_snippets[0].state = {{ "present"
                if ansible_local.ceph.installed | d() | bool
                else "absent" }}
-
 filebeat__default_snippets[0].config[0].type = log
 filebeat__default_snippets[0].config[0].enabled = True
 filebeat__default_snippets[0].config[0].paths[0] = /var/log/ceph/ceph-osd.*.log
@@ -74,7 +72,6 @@ filebeat__default_snippets[1].name = inputs.d/libvirt.yml
 filebeat__default_snippets[1].state = {{ "present"
                if ansible_local.libvirtd.installed | d() | bool
                else "absent" }}
-
 filebeat__default_snippets[1].config.type = log
 filebeat__default_snippets[1].config.enabled = True
 filebeat__default_snippets[1].config.paths[0] = /var/log/libvirt/*.log
@@ -86,7 +83,6 @@ filebeat__default_snippets[2].name = inputs.d/named.yml
 filebeat__default_snippets[2].state = {{ "present"
                if ansible_local.bind.installed | d() | bool
                else "absent" }}
-
 filebeat__default_snippets[2].config[0].type = log
 filebeat__default_snippets[2].config[0].enabled = True
 filebeat__default_snippets[2].config[0].paths[0] = /var/log/named/named.log
@@ -115,7 +111,6 @@ filebeat__default_snippets[3].name = inputs.d/openstack.yml
 filebeat__default_snippets[3].state = {{ "present"
                if ansible_local.openstack.installed | d() | bool
                else "absent" }}
-
 filebeat__default_snippets[3].config[0].type = log
 filebeat__default_snippets[3].config[0].enabled = True
 filebeat__default_snippets[3].config[0].paths[0] = /var/log/nova/*.log
@@ -178,14 +173,12 @@ filebeat__default_snippets[4].config.error.enabled = True
 filebeat__default_snippets[4].state = {{ "present"
                if (ansible_local.apache.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[5].name = modules.d/auditd.yml
 filebeat__default_snippets[5].config.module = auditd
 filebeat__default_snippets[5].config.log.enabled = True
 filebeat__default_snippets[5].state = {{ "present"
                if (ansible_local.auditd.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[6].name = modules.d/icinga.yml
 filebeat__default_snippets[6].config.module = icinga
 filebeat__default_snippets[6].config.main.enabled = True
@@ -194,7 +187,6 @@ filebeat__default_snippets[6].config.startup.enabled = True
 filebeat__default_snippets[6].state = {{ "present"
                if (ansible_local.icinga.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[7].name = modules.d/mysql.yml
 filebeat__default_snippets[7].config.module = mysql
 filebeat__default_snippets[7].config.error.enabled = True
@@ -202,7 +194,6 @@ filebeat__default_snippets[7].config.slowlog.enabled = True
 filebeat__default_snippets[7].state = {{ "present"
                if (ansible_local.mariadb.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[8].name = modules.d/nginx.yml
 filebeat__default_snippets[8].config.module = nginx
 filebeat__default_snippets[8].config.access.enabled = True
@@ -210,14 +201,12 @@ filebeat__default_snippets[8].config.error.enabled = True
 filebeat__default_snippets[8].state = {{ "present"
                if (ansible_local.nginx.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[9].name = modules.d/postgresql.yml
 filebeat__default_snippets[9].config.module = postgresql
 filebeat__default_snippets[9].config.log.enabled = True
 filebeat__default_snippets[9].state = {{ "present"
                if (ansible_local.postgresql.installed | d() | bool)
                else "ignore" }}
-
 filebeat__default_snippets[10].name = modules.d/system.yml
 filebeat__default_snippets[10].config.module = system
 filebeat__default_snippets[10].config.syslog.enabled = True
@@ -226,9 +215,7 @@ filebeat__combined_snippets = {{ filebeat__default_snippets
                                  + filebeat__snippets
                                  + filebeat__group_snippets
                                  + filebeat__host_snippets }}
-
 filebeat__combined_keys = {{ filebeat__keys
                              + filebeat__group_keys
                              + filebeat__host_keys }}
-
 filebeat__extrepo__dependent_sources[0] = elastic

@@ -1,3 +1,2 @@
-doc[0][0].name = restart mysql
-doc[0][0].service = name=mysqld state=restarted
-doc[1] = 
+[0].name = restart mysql
+[0].service = name=mysqld state=restarted

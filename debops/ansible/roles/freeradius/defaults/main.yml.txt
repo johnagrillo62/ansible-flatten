@@ -14,17 +14,14 @@ freeradius__combined_configuration = {{ freeradius__default_configuration
                                         + freeradius__configuration
                                         + freeradius__group_configuration
                                         + freeradius__host_configuration }}
-
 freeradius__ferm__dependent_rules[0].type = accept
 freeradius__ferm__dependent_rules[0].dport = {{ freeradius__default_ports
                + freeradius__ports
                + freeradius__group_ports
                + freeradius__host_ports }}
-
 freeradius__ferm__dependent_rules[0].saddr = {{ freeradius__allow
                + freeradius__group_allow
                + freeradius__host_allow }}
-
 freeradius__ferm__dependent_rules[0].protocols[0] = tcp
 freeradius__ferm__dependent_rules[0].protocols[1] = udp
 freeradius__ferm__dependent_rules[0].accept_any = {{ freeradius__accept_any }}
@@ -36,11 +33,9 @@ freeradius__ferm__dependent_rules[1].type = accept
 freeradius__ferm__dependent_rules[1].dport = {{ freeradius__public_ports
                + freeradius__public_group_ports
                + freeradius__public_host_ports }}
-
 freeradius__ferm__dependent_rules[1].saddr = {{ freeradius__public_allow
                + freeradius__public_group_allow
                + freeradius__public_host_allow }}
-
 freeradius__ferm__dependent_rules[1].protocols[0] = tcp
 freeradius__ferm__dependent_rules[1].protocols[1] = udp
 freeradius__ferm__dependent_rules[1].accept_any = {{ freeradius__public_accept_any }}
@@ -53,7 +48,6 @@ freeradius__ferm__dependent_rules[1].rule_state = {{ "present"
                         + freeradius__public_group_ports
                         + freeradius__public_host_ports)
                     else "absent" }}
-
 freeradius__logrotate__dependent_config[0].filename = freeradius
 freeradius__logrotate__dependent_config[0].divert = True
 freeradius__logrotate__dependent_config[0].log = /var/log/freeradius/radius.log

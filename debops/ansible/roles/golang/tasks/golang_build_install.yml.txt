@@ -73,12 +73,10 @@
               if ((binary_item.src | d(binary_item)).startswith("/"))
               else (golang__gosrc + "/"))
              + (binary_item.src | d(binary_item)) }}
-
 [5]["ansible.builtin.copy"].dest = {{ ((binary_item.dest | dirname)
                if (binary_item.dest | d() and "/" in binary_item.dest)
                else "/usr/local/bin") + "/"
               + ((binary_item.dest | d(binary_item.src | d(binary_item))) | basename) }}
-
 [5]["ansible.builtin.copy"].remote_src = True
 [5]["ansible.builtin.copy"].mode = {{ binary_item.mode | d("0755") }}
 [5].register = golang__register_download_install
@@ -122,12 +120,10 @@
               if ((binary_item.src | d(binary_item)).startswith("/"))
               else (golang__gosrc + "/"))
              + (binary_item.src | d(binary_item)) }}
-
 [8]["ansible.builtin.copy"].dest = {{ ((binary_item.dest | dirname)
                if (binary_item.dest | d() and "/" in binary_item.dest)
                else "/usr/local/bin") + "/"
               + ((binary_item.dest | d(binary_item.src | d(binary_item))) | basename) }}
-
 [8]["ansible.builtin.copy"].remote_src = True
 [8]["ansible.builtin.copy"].mode = {{ binary_item.mode | d("0755") }}
 [8].register = golang__register_build_install
@@ -149,7 +145,6 @@
 [10]["ansible.builtin.lineinfile"].regexp = {{ '^' + (((binary_item.dest | d(binary_item.src | d(binary_item))) | basename)
                        | regex_replace('-', '\\-')
                        | regex_replace('\\.', '\\\\.')) + '$' }}
-
 [10]["ansible.builtin.lineinfile"].line = {{ (binary_item.dest | d(binary_item.src | d(binary_item))) | basename }}
 [10]["ansible.builtin.lineinfile"].state = present
 [10]["ansible.builtin.lineinfile"].mode = 0644

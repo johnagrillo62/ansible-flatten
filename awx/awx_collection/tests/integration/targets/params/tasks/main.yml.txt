@@ -1,9 +1,7 @@
-~d0.name = Perform an action with a different hostname via aap_hostname
-~d1.inventory = 
-~d2.name = "Demo Inventory"
-~d2.organization = Default
-~d2.aap_hostname = https://foohostbar.invalid
-~d1.ignore_errors = true
-~d1.register = result
-~d0.assert = 
-~d2.that = 
+[0].name = Perform an action with a different hostname via aap_hostname
+[0].inventory.name = Demo Inventory
+[0].inventory.organization = Default
+[0].inventory.aap_hostname = https://foohostbar.invalid
+[0].ignore_errors = true
+[0].register = result
+[1].assert.that[0] = 'foohostbar' in result.msg

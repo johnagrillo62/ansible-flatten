@@ -1,8 +1,14 @@
-~d0.name = Manage PAM Access Control Lists
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_all_hosts', 'debops_service_pam_access' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = pam_access
-~d3.tags = [ 'role::pam_access', 'skip::pam_access' ]
+[0].name = Manage PAM Access Control Lists
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_all_hosts
+[0].hosts[1] = debops_service_pam_access
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = pam_access
+[0].roles[0].tags[0] = role::pam_access
+[0].roles[0].tags[1] = skip::pam_access

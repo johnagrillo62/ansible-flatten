@@ -11,13 +11,11 @@
                       else (ansible_domain.split(".")
                             | map("regex_replace", "^(.*)$", "dc=\1")
                             | list) }}
-
 [0].vars.ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
 [0].vars.person_rdn = uid={{ person_uid.user_input }}
 [0].vars.object_dn = {{ (([ person_rdn, ldap_people_rdn ] + ldap_base_dn) | join(","))
                    if person_uid.user_input | d()
                    else object_dn_string.user_input }}
-
 [0].tasks[0].name = Get the UUID of an user account based on uid
 [0].tasks[0]["ansible.builtin.pause"].prompt = uid (case-sensitive)
 [0].tasks[0].register = person_uid
@@ -27,5 +25,5 @@
 [0].tasks[1].when = not person_uid.user_input | d()
 [0].tasks[2].name = LDAP object information
 [0].tasks[2]["ansible.builtin.debug"].msg = {{ {"DN:": object_dn,
-                  "UUID:": (object_dn | to_uuid)} }} 
+                  "UUID:": (object_dn | to_uuid)} }}
 [0].tasks[2].when = object_dn | d()

@@ -1,39 +1,39 @@
-~d0.name = GCP PD CSI Driver | Check if cloud-sa.json exists
-~d1.fail = 
-~d2.msg = "Credentials file cloud-sa.json is mandatory"
-~d1.when = gcp_pd_csi_sa_cred_file is not defined or not gcp_pd_csi_sa_cred_file
-~d0.name = GCP PD CSI Driver | Copy GCP credentials file
-~d1.copy = 
-~d2.src = "{{ gcp_pd_csi_sa_cred_file }}"
-~d2.dest = "{{ kube_config_dir }}/cloud-sa.json"
-~d2.group = "{{ kube_cert_group }}"
-~d2.mode = "0640"
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = GCP PD CSI Driver | Get base64 cloud-sa.json
-~d1.slurp = 
-~d2.src = "{{ kube_config_dir }}/cloud-sa.json"
-~d1.register = gcp_cred_secret
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = GCP PD CSI Driver | Generate Manifests
-~d1.template = 
-~d2.src = "{{ item.file }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.mode = "0644"
-~d1.with_items = 
-~d2.{name = gcp-pd-csi-cred-secret, file: gcp-pd-csi-cred-secret.yml}
-~d2.{name = gcp-pd-csi-setup, file: gcp-pd-csi-setup.yml}
-~d2.{name = gcp-pd-csi-controller, file: gcp-pd-csi-controller.yml}
-~d2.{name = gcp-pd-csi-node, file: gcp-pd-csi-node.yml}
-~d2.{name = gcp-pd-csi-sc-regional, file: gcp-pd-csi-sc-regional.yml}
-~d2.{name = gcp-pd-csi-sc-zonal, file: gcp-pd-csi-sc-zonal.yml}
-~d1.register = gcp_pd_csi_manifests
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = GCP PD CSI Driver | Apply Manifests
-~d1.kube = 
-~d2.kubectl = "{{ bin_dir }}/kubectl"
-~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
-~d2.state = "latest"
-~d1.with_items = 
-~d1.when = 
-~d1.loop_control = 
-~d2.label = "{{ item.item.file }}"
+[0].name = GCP PD CSI Driver | Check if cloud-sa.json exists
+[0].fail.msg = Credentials file cloud-sa.json is mandatory
+[0].when = gcp_pd_csi_sa_cred_file is not defined or not gcp_pd_csi_sa_cred_file
+[1].name = GCP PD CSI Driver | Copy GCP credentials file
+[1].copy.src = {{ gcp_pd_csi_sa_cred_file }}
+[1].copy.dest = {{ kube_config_dir }}/cloud-sa.json
+[1].copy.group = {{ kube_cert_group }}
+[1].copy.mode = 0640
+[1].when = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = GCP PD CSI Driver | Get base64 cloud-sa.json
+[2].slurp.src = {{ kube_config_dir }}/cloud-sa.json
+[2].register = gcp_cred_secret
+[2].when = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = GCP PD CSI Driver | Generate Manifests
+[3].template.src = {{ item.file }}.j2
+[3].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[3].template.mode = 0644
+[3].with_items[0].name = gcp-pd-csi-cred-secret
+[3].with_items[0].file = gcp-pd-csi-cred-secret.yml
+[3].with_items[1].name = gcp-pd-csi-setup
+[3].with_items[1].file = gcp-pd-csi-setup.yml
+[3].with_items[2].name = gcp-pd-csi-controller
+[3].with_items[2].file = gcp-pd-csi-controller.yml
+[3].with_items[3].name = gcp-pd-csi-node
+[3].with_items[3].file = gcp-pd-csi-node.yml
+[3].with_items[4].name = gcp-pd-csi-sc-regional
+[3].with_items[4].file = gcp-pd-csi-sc-regional.yml
+[3].with_items[5].name = gcp-pd-csi-sc-zonal
+[3].with_items[5].file = gcp-pd-csi-sc-zonal.yml
+[3].register = gcp_pd_csi_manifests
+[3].when = inventory_hostname == groups['kube_control_plane'][0]
+[4].name = GCP PD CSI Driver | Apply Manifests
+[4].kube.kubectl = {{ bin_dir }}/kubectl
+[4].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[4].kube.state = latest
+[4].with_items[0] = {{ gcp_pd_csi_manifests.results }}
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[4].when[1] = not item is skipped
+[4].loop_control.label = {{ item.item.file }}

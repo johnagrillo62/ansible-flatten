@@ -3,13 +3,11 @@ sshd__base_packages[1] = openssh-client
 sshd__recommended_packages = {{ ["openssh-blacklist", "openssh-blacklist-extra"]
                                 if (ansible_distribution_release in
                                     ["trusty", "xenial"]) else [] }}
-
 sshd__optional_packages[0] = molly-guard
 sshd__ldap_packages = {{ ["ldap-utils"]
                          if (sshd__authorized_keys_lookup | bool and
                              ("ldap" in sshd__authorized_keys_lookup_type))
                          else [] }}
-
 sshd__version = {{ ansible_local.sshd.version | d("0.0") }}
 sshd__tcpwrappers_default = ALL
 sshd__ferm_weight = 30
@@ -21,7 +19,6 @@ sshd__ferm_limit_target = REJECT
 sshd__ferm_ports = {{ sshd__ports
                       if ((ansible_local.sshd.socket_activation | d("disabled")) == "disabled")
                       else ["22"] }}
-
 sshd__ports[0] = 22
 sshd__host_keys[0] = ed25519
 sshd__host_keys[1] = rsa
@@ -265,7 +262,6 @@ sshd__default_configuration[0].state = {{ "ignore"
                else ("ignore"
                      if ((ansible_local.sshd.socket_activation | d("disabled")) == "enabled")
                      else "present") }}
-
 sshd__default_configuration[1].name = HostKey
 sshd__default_configuration[1].raw = {% for hostkey in sshd__host_keys %}
 {% if ('ssh_host_' + hostkey + '_key') in sshd__register_host_keys.stdout_lines %}
@@ -290,7 +286,6 @@ sshd__default_configuration[2].state = {{ "present"
                if (sshd__register_host_certs is defined and
                    "stdout_lines" in sshd__register_host_certs)
                else "ignore" }}
-
 sshd__default_configuration[2].copy_id_from = HostKey
 sshd__default_configuration[3].name = AuthorizedKeysFile
 sshd__default_configuration[3].value[0].name = /etc/ssh/authorized_keys/%u
@@ -301,7 +296,6 @@ sshd__default_configuration[4].value = {{ sshd__trusted_user_ca_keys_file }}
 sshd__default_configuration[4].state = {{ "present"
                if (sshd__trusted_user_ca_keys | d() | length > 0)
                else "ignore" }}
-
 sshd__default_configuration[4].copy_id_from = AuthorizedKeysFile
 sshd__default_configuration[5].name = Match_group_sftponly
 sshd__default_configuration[5].option = Match
@@ -322,14 +316,12 @@ sshd__default_configuration[6].value = {{ "prohibit-password"
                if (ansible_local.root_account.ssh_authorized_keys | d() | bool or
                    ansible_local.system_users.configured | d() | bool)
                else True }}
-
 sshd__default_configuration[6].state = present
 sshd__default_configuration[7].name = PasswordAuthentication
 sshd__default_configuration[7].value = {{ False
                if (ansible_local.root_account.ssh_authorized_keys | d() | bool or
                    ansible_local.system_users.configured | d() | bool)
                else True }}
-
 sshd__default_configuration[7].state = present
 sshd__default_configuration[8].name = ChallengeResponseAuthentication
 sshd__default_configuration[8].value = False
@@ -399,20 +391,17 @@ sshd__default_configuration[17].state = {{ "present"
                if (sshd__authorized_keys_lookup | bool and
                    sshd__version is version("6.2", ">="))
                else "ignore" }}
-
 sshd__default_configuration[18].name = AuthorizedKeysCommandUser
 sshd__default_configuration[18].value = {{ sshd__authorized_keys_lookup_user }}
 sshd__default_configuration[18].state = {{ "present"
                if (sshd__authorized_keys_lookup | bool and
                    sshd__version is version("6.2", ">="))
                else "ignore" }}
-
 sshd__combined_configuration = {{ sshd__original_configuration
                                   + sshd__default_configuration
                                   + sshd__configuration
                                   + sshd__group_configuration
                                   + sshd__host_configuration }}
-
 sshd__known_hosts_file = /etc/ssh/ssh_known_hosts
 sshd__known_hosts_command = ssh-keyscan -H -T 10
 sshd__ciphers_map["6.5"][0] = chacha20-poly1305@openssh.com
@@ -449,7 +438,6 @@ sshd__ldap_enabled = {{ ansible_local.ldap.enabled
                         if (ansible_local | d() and ansible_local.ldap | d() and
                             ansible_local.ldap.enabled is defined)
                         else False }}
-
 sshd__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 sshd__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 sshd__ldap_device_object_classes[0] = ldapPublicKey
@@ -466,12 +454,10 @@ sshd__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                + sshd__ldap_binddn | to_uuid + ".password length=32"))
                        if sshd__ldap_enabled | bool
                        else "" }}
-
 sshd__ldap_filter = {{ sshd__ldap_filter_map["service+host"] }}
 sshd__ldap_posix_urns = {{ ansible_local.ldap.urn_patterns | d([])
                            | map("regex_replace", "^(.*)$", "(host=posix:urn:\1)")
                            | list }}
-
 sshd__ldap_filter_map.service = (& (objectClass=posixAccount) (uid=$username) (| (authorizedService=all) (authorizedService=$service) (authorizedService=shell) ) )
 sshd__ldap_filter_map.host = (& (objectClass=posixAccount) (uid=$username) (| (host=posix:all) (host=posix:$fqdn) (host=posix:\2a.$domain) {{ sshd__ldap_posix_urns | join(" ") }} ) )
 sshd__ldap_filter_map.service+host = (& (objectClass=posixAccount) (uid=$username) (| (authorizedService=all) (authorizedService=$service) (authorizedService=shell) ) (| (host=posix:all) (host=posix:$fqdn) (host=posix:\2a.$domain) {{ sshd__ldap_posix_urns | join(" ") }} ) )
@@ -479,7 +465,6 @@ sshd__pam_deploy_state = present
 sshd__pam_access_file = {{ "/etc/security/access-sshd.conf"
                            if ("sshd" in ansible_local.pam_access.rules | d([]))
                            else "/etc/security/access.conf" }}
-
 sshd__ferm__dependent_rules[0].type = accept
 sshd__ferm__dependent_rules[0].dport = {{ sshd__ferm_ports }}
 sshd__ferm__dependent_rules[0].interface = {{ sshd__ferm_interface }}
@@ -572,7 +557,6 @@ sshd__ldap__dependent_tasks[0].state = {{ "present"
                if ((ansible_local.ldap.posix_enabled | d()) | bool and
                    sshd__ldap_device_dn | d())
                else "ignore" }}
-
 sshd__ldap__dependent_tasks[1].name = Update SSH host public keys in {{ sshd__ldap_device_dn | join(",") }}
 sshd__ldap__dependent_tasks[1].dn = {{ sshd__ldap_device_dn }}
 sshd__ldap__dependent_tasks[1].attributes = {{ sshd__ldap_device_attributes }}
@@ -580,7 +564,6 @@ sshd__ldap__dependent_tasks[1].state = {{ "exact"
                if ((ansible_local.ldap.posix_enabled | d()) | bool and
                    sshd__ldap_device_dn | d())
                else "ignore" }}
-
 sshd__ldap__dependent_tasks[2].name = Create sshd account for {{ sshd__ldap_device_dn | join(",") }}
 sshd__ldap__dependent_tasks[2].dn = {{ sshd__ldap_binddn }}
 sshd__ldap__dependent_tasks[2].objectClass = {{ sshd__ldap_self_object_classes }}
@@ -590,7 +573,6 @@ sshd__ldap__dependent_tasks[2].state = {{ "present"
                if (sshd__authorized_keys_lookup | bool and
                    ("ldap" in sshd__authorized_keys_lookup_type))
                else "ignore" }}
-
 sshd__pam_access__dependent_rules[0].name = sshd
 sshd__pam_access__dependent_rules[0].options[0].name = allow-root-ansible-controllers
 sshd__pam_access__dependent_rules[0].options[0].comment = Grant access via SSH to root account from the Ansible Controller hosts
@@ -612,7 +594,7 @@ sshd__pam_access__dependent_rules[0].options[3].comment = Grant access via SSH t
 
 sshd__pam_access__dependent_rules[0].options[3].permission = allow
 sshd__pam_access__dependent_rules[0].options[3].groups = {{ ansible_local.system_groups.access.sshd
-                    | d(["admins", "sshusers", "sftponly"]) }} 
+                    | d(["admins", "sshusers", "sftponly"]) }}
 sshd__pam_access__dependent_rules[0].options[3].origins = ALL
 sshd__pam_access__dependent_rules[0].options[4].name = allow-ldap-groups
 sshd__pam_access__dependent_rules[0].options[4].comment = Grant access via SSH to members of UNIX groups defined in LDAP
@@ -625,7 +607,6 @@ sshd__pam_access__dependent_rules[0].options[4].origins = ALL
 sshd__pam_access__dependent_rules[0].options[4].state = {{ "present"
                    if (ansible_local.ldap.posix_enabled | d() | bool)
                    else "absent" }}
-
 sshd__pam_access__dependent_rules[0].options[5].name = allow-domain
 sshd__pam_access__dependent_rules[0].options[5].comment = Grant access via SSH to users on the same DNS domain. The SSH server
 needs to have UseDNS option enabled for this rule to work correctly.

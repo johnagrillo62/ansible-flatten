@@ -2,7 +2,6 @@ neurodebian__deploy_state = present
 neurodebian__upstream = {{ True
                            if (ansible_distribution_release in ["trusty"])
                            else False }}
-
 neurodebian__support_packages[0] = neurodebian
 neurodebian__support_packages[1] = netselect
 neurodebian__apt_key_fingerprint = DD95 CC43 0502 E37E F840  ACEE A5D3 2F01 2649 A5A9
@@ -10,7 +9,6 @@ neurodebian__apt_components[0] = main
 neurodebian__apt_components[1] = {{ ["contrib", "non-free"]
         if (ansible_local.apt.nonfree | d() | bool)
         else [] }}
-
 neurodebian__apt_source_types[0] = deb
 neurodebian__region = {{ ansible_local.locales.system_region | d("US") }}
 neurodebian__region_mirror_map.AU = au
@@ -39,7 +37,7 @@ neurodebian__apt_mirror_map.us-ca = http://neurodeb.pirsquared.org/
 neurodebian__apt_mirror_map.us-nh = http://neuro.debian.net/debian
 neurodebian__apt_mirror_map.us-tn = http://masi.vuse.vanderbilt.edu/neurodebian
 neurodebian__apt_mirror = {{ neurodebian__region_mirror_map[neurodebian__region]
-                             | d("us-nh") }} 
+                             | d("us-nh") }}
 neurodebian__apt_mirror_uri = {{ neurodebian__apt_mirror_map[neurodebian__apt_mirror] }}
 neurodebian__apt_preferences__dependent_list[0].package = *
 neurodebian__apt_preferences__dependent_list[0].reason = Pin NeuroDebian with priority 80 which is lower then the official Debian backports (100).
@@ -54,4 +52,3 @@ neurodebian__keyring__dependent_apt_keys[0].state = {{ "present"
                if (neurodebian__deploy_state == "present" and
                    neurodebian__upstream | bool)
                else "absent" }}
-

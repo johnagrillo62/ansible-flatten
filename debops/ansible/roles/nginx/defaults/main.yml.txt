@@ -1,7 +1,7 @@
 nginx__deploy_state = present
 nginx_flavor = full
 nginx__flavor_distribution_release = {{ ansible_local.core.distribution_release
-                                         | d(ansible_distribution_release) }} 
+                                         | d(ansible_distribution_release) }}
 nginx__flavor_apt_key_id = {{ nginx__flavor_apt_key_id_map[nginx_flavor] | d() }}
 nginx__flavor_apt_repository = {{ nginx__flavor_apt_repository_map[nginx_flavor] | d() }}
 nginx__flavor_apt_key_id_map["nginx.org"] = 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
@@ -18,7 +18,6 @@ nginx_flavor_package_map.passenger[2] = {{ "passenger"
           if (nginx__flavor_distribution_release in
               ["trusty", "xenial"])
           else "libnginx-mod-http-passenger" }}
-
 nginx_flavor_package_map["nginx.org"][0] = nginx
 nginx_user = www-data
 nginx_www = /srv/www
@@ -87,7 +86,7 @@ nginx_real_ip_recursive = False
 nginx_default_keepalive_timeout = 60
 nginx_multi_accept = off
 nginx_pki = {{ ansible_local | d() and ansible_local.pki | d() and
-               (ansible_local.pki.enabled | d() | bool) }} 
+               (ansible_local.pki.enabled | d() | bool) }}
 nginx_pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 nginx_pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 nginx_pki_ca_realm = {{ ansible_local.pki.ca_realm | d("domain") }}
@@ -106,17 +105,14 @@ nginx_ssl_dhparam = {{ (""
                             if (ansible_local | d() and ansible_local.dhparam | d() and
                                 ansible_local.dhparam[nginx_ssl_dhparam_set] | d())
                             else "")) }}
-
 nginx_ssl_dhparam_set = default
 nginx_default_ssl_ciphers = {{ "mozilla_modern"
                                if nginx_default_tls_protocols | length == 1 and
                                   nginx_default_tls_protocols[0] == "TLSv1.3"
                                else "mozilla_intermediate" }}
-
 nginx_default_tls_protocols = {{ ["TLSv1.2", "TLSv1.3"]
                                  if ansible_local.nginx.version | d("0.0.0") is version("1.13.0", ">=")
                                  else ["TLSv1.2"] }}
-
 nginx_default_ssl_curve = secp384r1
 nginx_default_ssl_verify_client = False
 nginx_default_ssl_client_certificate = 
@@ -146,7 +142,6 @@ nginx_status_localhost = {{ ["127.0.0.1/32", "::1/128"] + ansible_all_ipv4_addre
                             (ansible_all_ipv6_addresses | d([])
                              | difference(ansible_all_ipv6_addresses | d([])
                              | ansible.utils.ipaddr("link-local"))) }}
-
 nginx_status_name = /nginx_status
 nginx_default_satisfy = any
 nginx_default_auth_basic_realm = Access to this website is restricted
@@ -242,6 +237,5 @@ nginx__keyring__dependent_apt_keys[0].state = {{ "present"
                if (nginx_flavor in ["nginx.org", "passenger"] and
                    nginx__deploy_state == "present")
                else "absent" }}
-
 nginx__python__dependent_packages3[0] = python3-passlib
 nginx__python__dependent_packages2[0] = python-passlib

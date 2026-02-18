@@ -1,15 +1,14 @@
-~d0.coredns_server_by_mode = 
-~d1.coredns = "{{ [skydns_server] }}"
-~d1.coredns_dual = "{{ [skydns_server, skydns_server_secondary] }}"
-~d1.manual = "{{ manual_dns_server.split(',') }}"
-~d1.none = []
-~d0.coredns_server = "{{ upstream_dns_servers if dns_early else coredns_server_by_mode[dns_mode] }}"
-~d0._nameserverentries = 
-~d1.late = 
-~d1.early = 
-~d0.nameserverentries = "{{ ((_nameserverentries['late'] if not dns_early else []) + _nameserverentries['early']) | flatten | unique }}"
-~d0.dhclient_supersede = 
-~d1.domain-name-servers = "{{ ([nameservers, cloud_resolver] | flatten | unique) if dns_early else nameserverentries }}"
-~d1.domain-name = "{{ [dns_domain] }}"
-~d1.domain-search = "{{ default_searchdomains + searchdomains }}"
-~d0.configured_nameservers = "{{ (resolvconf_slurp.content | b64decode | regex_findall('^nameserver\\s*(\\S*)', multiline=True) | ansible.utils.ipaddr)
+coredns_server_by_mode.coredns = {{ [skydns_server] }}
+coredns_server_by_mode.coredns_dual = {{ [skydns_server, skydns_server_secondary] }}
+coredns_server_by_mode.manual = {{ manual_dns_server.split(',') }}
+coredns_server = {{ upstream_dns_servers if dns_early else coredns_server_by_mode[dns_mode] }}
+_nameserverentries.late[0] = {{ nodelocaldns_ip if enable_nodelocaldns else coredns_server }}
+_nameserverentries.early[0] = {{ nameservers }}
+_nameserverentries.early[1] = {{ cloud_resolver }}
+_nameserverentries.early[2] = {{ configured_nameservers if not disable_host_nameservers else [] }}
+nameserverentries = {{ ((_nameserverentries['late'] if not dns_early else []) + _nameserverentries['early']) | flatten | unique }}
+dhclient_supersede.domain-name-servers = {{ ([nameservers, cloud_resolver] | flatten | unique) if dns_early else nameserverentries }}
+dhclient_supersede.domain-name = {{ [dns_domain] }}
+dhclient_supersede.domain-search = {{ default_searchdomains + searchdomains }}
+configured_nameservers = {{ (resolvconf_slurp.content | b64decode | regex_findall('^nameserver\\s*(\\S*)', multiline=True) | ansible.utils.ipaddr)
+                            if resolvconf_stat.stat.exists else [] }}

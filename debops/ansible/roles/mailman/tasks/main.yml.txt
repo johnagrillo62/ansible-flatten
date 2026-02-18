@@ -6,7 +6,7 @@
 [2]["ansible.builtin.import_role"].name = secret
 [3].name = Install required APT packages
 [3]["ansible.builtin.package"].name = {{ q("flattened", mailman__base_packages
-                             + mailman__packages) }} 
+                             + mailman__packages) }}
 [3]["ansible.builtin.package"].state = present
 [3].register = mailman__register_packages
 [3].until = mailman__register_packages is succeeded

@@ -1,14 +1,33 @@
-~d0.bridge_if = 'bridge0'
-~d0.networkd__group_units = 
-~d1.name = 'bridge0.netdev'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = '25-bridge-static.network'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = '25-bridge-slave-interface-1.network'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = '25-bridge-slave-interface-2.network'
-~d2.raw = |
-~d2.state = 'present'
+bridge_if = bridge0
+networkd__group_units[0].name = bridge0.netdev
+networkd__group_units[0].raw = [NetDev]
+Name={{ bridge_if }}
+Kind=bridge
+
+networkd__group_units[0].state = present
+networkd__group_units[1].name = 25-bridge-static.network
+networkd__group_units[1].raw = [Match]
+Name={{ bridge_if }}
+
+[Network]
+Address=192.0.2.15/24
+Gateway=192.0.2.1
+DNS=192.0.2.1
+
+networkd__group_units[1].state = present
+networkd__group_units[2].name = 25-bridge-slave-interface-1.network
+networkd__group_units[2].raw = [Match]
+Name=enp2s0
+
+[Network]
+Bridge={{ bridge_if }}
+
+networkd__group_units[2].state = present
+networkd__group_units[3].name = 25-bridge-slave-interface-2.network
+networkd__group_units[3].raw = [Match]
+Name=wlp3s0
+
+[Network]
+Bridge={{ bridge_if }}
+
+networkd__group_units[3].state = present

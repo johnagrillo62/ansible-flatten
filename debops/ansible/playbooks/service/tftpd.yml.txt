@@ -1,14 +1,21 @@
-~d0.name = Manage TFTP service
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_service_tftpd' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = ferm
-~d3.tags = [ 'role::ferm', 'skip::ferm' ]
-~d3.ferm__dependent_rules = 
-~d2.role = tcpwrappers
-~d3.tags = [ 'role::tcpwrappers', 'skip::tcpwrappers' ]
-~d3.tcpwrappers__dependent_allow = 
-~d2.role = tftpd
-~d3.tags = [ 'role::tftpd', 'skip::tftpd' ]
+[0].name = Manage TFTP service
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_tftpd
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = ferm
+[0].roles[0].tags[0] = role::ferm
+[0].roles[0].tags[1] = skip::ferm
+[0].roles[0].ferm__dependent_rules[0] = {{ tftpd__ferm__dependent_rules }}
+[0].roles[1].role = tcpwrappers
+[0].roles[1].tags[0] = role::tcpwrappers
+[0].roles[1].tags[1] = skip::tcpwrappers
+[0].roles[1].tcpwrappers__dependent_allow[0] = {{ tftpd__tcpwrappers__dependent_allow }}
+[0].roles[2].role = tftpd
+[0].roles[2].tags[0] = role::tftpd
+[0].roles[2].tags[1] = skip::tftpd

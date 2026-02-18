@@ -1,3 +1,2 @@
-~d0.name = Prepare OpenDKIM environment
-~d1.ansible.builtin.set_fact = 
-~d2.opendkim__secret__directories = '{{ lookup("template", "lookup/opendkim__secret__directories.j2") | from_yaml }}'
+[0].name = Prepare OpenDKIM environment
+[0]["ansible.builtin.set_fact"].opendkim__secret__directories = {{ lookup("template", "lookup/opendkim__secret__directories.j2") | from_yaml }}

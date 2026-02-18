@@ -3,7 +3,7 @@ php__version_preference[1] = php7.3
 php__version_preference[2] = php
 php__version_preference[3] = php5.6
 php__sury = {{ ansible_local.php.sury
-                | d(ansible_distribution_release in ["stretch", "trusty", "xenial"]) | bool }} 
+                | d(ansible_distribution_release in ["stretch", "trusty", "xenial"]) | bool }}
 php__sury_apt_key_id = {{ php__sury_apt_key_id_map[ansible_distribution] }}
 php__sury_apt_repo = {{ php__sury_apt_repo_map[ansible_distribution] }}
 php__sury_apt_key_id_map.Debian[0].id = 1505 8500 A023 5D97 F5D1  0063 B188 E2B6 95BD 4743
@@ -25,7 +25,6 @@ php__base_packages[3] = {{ [] if php__composer_upstream_enabled | bool else "com
 php__base_packages[4] = {{ "mcrypt"
         if (php__version is version_compare("7.2", "<"))
         else [] }}
-
 php__combined_packages = {{ (lookup("flattened",
                              php__server_api_packages
                              + php__base_packages
@@ -35,13 +34,11 @@ php__combined_packages = {{ (lookup("flattened",
                              + php__dependent_packages).split(",")
                             | difference(php__included_packages))
                             | join(" ") }}
-
 php__reset = False
 php__included_packages = {{ php__php_included_packages
                             if php__sury
                             else (php__release_included_map[ansible_distribution_release]
                                   | d(php__php_included_packages)) }}
-
 php__release_included_map.stretch = {{ php__php_included_packages }}
 php__release_included_map.buster = {{ php__php_included_packages }}
 php__release_included_map.bullseye = {{ php__php_included_packages }}
@@ -57,9 +54,8 @@ php__php5_included_packages = {{ php__common_included_packages
                                     "mbstring", "mhash", "SimpleXML", "soap",
                                     "wddx", "xml", "xmlreader", "xmlwriter",
                                     "zip"] }}
-
 php__php_included_packages = {{ php__common_included_packages
-                                + ["sysvsem", "sysvshm"] }} 
+                                + ["sysvsem", "sysvshm"] }}
 php__common_included_packages[0] = calendar
 php__common_included_packages[1] = ctype
 php__common_included_packages[2] = date
@@ -91,11 +87,10 @@ php__composer_upstream_enabled = {{ True
                                         ["stretch", "trusty", "xenial",
                                          "bionic", "focal"])
                                     else False }}
-
 php__composer_upstream_version = 1.8.5
 php__composer_upstream_checksum = sha256:23b29b1a921b56db3c12ba531752dffcfaa3de0fcece3e54974e06990e46bbf9
 php__composer_upstream_url = {{ "https://github.com/composer/composer/releases/download/"
-                                + php__composer_upstream_version + "/composer.phar" }} 
+                                + php__composer_upstream_version + "/composer.phar" }}
 php__composer_upstream_dest = /usr/local/bin/composer
 php__production = True
 php__ini_cgi_fix_pathinfo = False
@@ -141,7 +136,7 @@ memory_limit = -1
 php__fpm_privileged_group = webadmins
 php__fpm_syslog = False
 php__fpm_error_log = {{ ("/var/log/php" + php__version + "-fpm.log")
-                        if not php__fpm_syslog | bool else "syslog" }} 
+                        if not php__fpm_syslog | bool else "syslog" }}
 php__fpm_syslog_ident = php-fpm
 php__fpm_syslog_facility = daemon
 php__fpm_log_level = notice

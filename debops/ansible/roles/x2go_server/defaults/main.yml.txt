@@ -11,5 +11,5 @@ x2go_server__upstream_repository_map.default = deb {{ x2go_server__upstream_mirr
 x2go_server__ppa_release_channel_map.main = stable
 x2go_server__keyring__dependent_apt_keys[0].id = {{ x2go_server__apt_repo_key_fingerprint }}
 x2go_server__keyring__dependent_apt_keys[0].repo = {{ x2go_server__upstream_repository_map[ansible_distribution]
-              | d(x2go_server__upstream_repository_map["default"]) }} 
+              | d(x2go_server__upstream_repository_map["default"]) }}
 x2go_server__keyring__dependent_apt_keys[0].state = {{ "present" if (x2go_server__deploy_state == "present") else "absent" }}

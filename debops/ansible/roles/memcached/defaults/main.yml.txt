@@ -2,7 +2,7 @@ memcached__base_packages[0] = memcached
 memcached__version = {{ ansible_local.memcached.version | d("0.0.0") }}
 memcached__bind = 127.0.0.1
 memcached__memory = {{ (memcached__memory_available | float *
-                        memcached__memory_multiplier | float) | int }} 
+                        memcached__memory_multiplier | float) | int }}
 memcached__memory_available = {{ ansible_memtotal_mb }}
 memcached__memory_multiplier = 0.3
 memcached__connections = 1024

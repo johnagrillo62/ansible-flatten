@@ -1,32 +1,31 @@
-~d0.name = Clone dotfiles repo {{ dotfile.name }}
-~d1.ansible.builtin.git = 
-~d2.repo = '{{ item_git.repo | d(item_git) }}'
-~d2.dest = '{{ yadm__dotfiles_root + "/"
-~d7.+ (item_git.repo | d(item_git)).split(" = //")[1] | regex_replace("\.git$", "")
-~d2.version = '{{ item_git.version | d("master") }}'
-~d2.verify_commit = '{{ True if dotfile.gpg | d() else omit }}'
-~d2.bare = True
-~d1.loop = '{{ q("flattened", dotfile.git) }}'
-~d1.loop_control = 
-~d2.loop_var = 'item_git'
-~d1.when = dotfile.git | d() and dotfile.state | d('present') not in ['absent', 'ignore'] and
-~d0.name = Remove dotfiles repo {{ dotfile.name }}
-~d1.ansible.builtin.file = 
-~d2.dest = '{{ (yadm__dotfiles_root + "/"
-~d7.+ (item_git.repo | d(item_git)).split(" = //")[1] | regex_replace("\.git$", "")
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", dotfile.git) }}'
-~d1.loop_control = 
-~d2.loop_var = 'item_git'
-~d1.when = dotfile.git | d() and dotfile.state | d('present') == 'absent'
-~d0.name = Manage the cloned dotfiles repo in system-wide /etc/gitconfig
-~d1.community.general.git_config = 
-~d2.scope = 'system'
-~d2.name = 'safe.directory'
-~d2.value = '{{ yadm__dotfiles_root + "/"
-~d7.+ (item_git.repo | d(item_git)).split(" = //")[1] | regex_replace("\.git$", "")
-~d2.add_mode = 'add'
-~d2.state = '{{ "present"
-~d1.loop = '{{ q("flattened", dotfile.git) }}'
-~d1.loop_control = 
-~d2.loop_var = 'item_git'
+[0].name = Clone dotfiles repo {{ dotfile.name }}
+[0]["ansible.builtin.git"].repo = {{ item_git.repo | d(item_git) }}
+[0]["ansible.builtin.git"].dest = {{ yadm__dotfiles_root + "/"
+              + (item_git.repo | d(item_git)).split("://")[1] | regex_replace("\.git$", "")
+              + ".git" }}
+[0]["ansible.builtin.git"].version = {{ item_git.version | d("master") }}
+[0]["ansible.builtin.git"].verify_commit = {{ True if dotfile.gpg | d() else omit }}
+[0]["ansible.builtin.git"].bare = True
+[0].loop = {{ q("flattened", dotfile.git) }}
+[0].loop_control.loop_var = item_git
+[0].when = dotfile.git | d() and dotfile.state | d('present') not in ['absent', 'ignore'] and not ansible_check_mode
+[1].name = Remove dotfiles repo {{ dotfile.name }}
+[1]["ansible.builtin.file"].dest = {{ (yadm__dotfiles_root + "/"
+               + (item_git.repo | d(item_git)).split("://")[1] | regex_replace("\.git$", "")
+               + ".git") | dirname }}
+[1]["ansible.builtin.file"].state = absent
+[1].loop = {{ q("flattened", dotfile.git) }}
+[1].loop_control.loop_var = item_git
+[1].when = dotfile.git | d() and dotfile.state | d('present') == 'absent'
+[2].name = Manage the cloned dotfiles repo in system-wide /etc/gitconfig
+[2]["community.general.git_config"].scope = system
+[2]["community.general.git_config"].name = safe.directory
+[2]["community.general.git_config"].value = {{ yadm__dotfiles_root + "/"
+              + (item_git.repo | d(item_git)).split("://")[1] | regex_replace("\.git$", "")
+              + ".git" }}
+[2]["community.general.git_config"].add_mode = add
+[2]["community.general.git_config"].state = {{ "present"
+               if (dotfile.git | d() and (dotfile.state | d("present")) == "present")
+               else "absent" }}
+[2].loop = {{ q("flattened", dotfile.git) }}
+[2].loop_control.loop_var = item_git

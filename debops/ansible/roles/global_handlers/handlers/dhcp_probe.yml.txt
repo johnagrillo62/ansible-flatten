@@ -1,4 +1,3 @@
-~d0.name = Restart dhcp-probe
-~d1.ansible.builtin.service = 
-~d2.name = 'dhcp-probe'
-~d2.state = 'restarted'
+[0].name = Restart dhcp-probe
+[0]["ansible.builtin.service"].name = dhcp-probe
+[0]["ansible.builtin.service"].state = restarted

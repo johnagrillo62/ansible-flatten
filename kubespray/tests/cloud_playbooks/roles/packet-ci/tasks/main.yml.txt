@@ -1,38 +1,37 @@
-~d0.name = Generate SSH keypair
-~d1.community.crypto.openssh_keypair = 
-~d2.size = 2048
-~d2.path = "{{ lookup('env', 'ANSIBLE_PRIVATE_KEY_FILE') }}"
-~d2.mode = '400'
-~d1.register = ssh_key
-~d0.name = Start vms for CI job
-~d1.kubernetes.core.k8s = 
-~d2.definition = "{{ lookup('template', 'vm.yml.j2', template_vars=item) }}"
-~d1.loop = "{{ cluster_layout }}"
-~d1.loop_control = 
-~d2.index_var = index
-~d0.name = Wait for vms to have IP addresses
-~d1.kubernetes.core.k8s_info = 
-~d2.api_version = kubevirt.io/v1
-~d2.kind = VirtualMachineInstance
-~d2.label_selectors = 
-~d2.namespace = "{{ pod_namespace }}"
-~d1.register = vmis
-~d1.until = vmis.resources
-~d1.retries = 30
-~d1.delay = 10
-~d0.name = Massage VirtualMachineInstance data into an Ansible inventory structure
-~d1.vars = 
-~d2.ips = "{{ vmis.resources | map(attribute='status.interfaces.0.ipAddress') }}"
-~d2.names = "{{ vmis.resources | map(attribute='metadata.annotations.inventory_name') }}"
-~d2._groups = "{{ (vmis.resources | map(attribute='metadata.annotations.ansible_groups') | map('split', ','))}}"
-~d2.vm_hosts = "{{ ips | zip(_groups, names)
-~d1.loop = "{{ vm_hosts | map(attribute='ansible_groups') | flatten | unique }}"
-~d1.set_fact = 
-~d2.ci_inventory = "{{ ci_inventory|d({}) | combine({
-~d10.item = {
-~d11.'hosts' = vm_hosts | selectattr('ansible_groups', 'contains', item)
-~d0.name = Create inventory for CI tests
-~d1.copy = 
-~d2.content = "{{ ci_inventory | to_yaml }}"
-~d2.dest = "{{ ansible_inventory_sources[0] }}/ci_inventory.yml"
-~d2.mode = "0644"
+[0].name = Generate SSH keypair
+[0]["community.crypto.openssh_keypair"].size = 2048
+[0]["community.crypto.openssh_keypair"].path = {{ lookup('env', 'ANSIBLE_PRIVATE_KEY_FILE') }}
+[0]["community.crypto.openssh_keypair"].mode = 400
+[0].register = ssh_key
+[1].name = Start vms for CI job
+[1]["kubernetes.core.k8s"].definition = {{ lookup('template', 'vm.yml.j2', template_vars=item) }}
+[1].loop = {{ cluster_layout }}
+[1].loop_control.index_var = index
+[2].name = Wait for vms to have IP addresses
+[2]["kubernetes.core.k8s_info"].api_version = kubevirt.io/v1
+[2]["kubernetes.core.k8s_info"].kind = VirtualMachineInstance
+[2]["kubernetes.core.k8s_info"].label_selectors[0] = ci_job_id={{ ci_job_id }}
+[2]["kubernetes.core.k8s_info"].namespace = {{ pod_namespace }}
+[2].register = vmis
+[2].until = vmis.resources | map(attribute='status.interfaces.0') | rejectattr('ipAddress', 'defined') == []
+[2].retries = 30
+[2].delay = 10
+[3].name = Massage VirtualMachineInstance data into an Ansible inventory structure
+[3].vars.ips = {{ vmis.resources | map(attribute='status.interfaces.0.ipAddress') }}
+[3].vars.names = {{ vmis.resources | map(attribute='metadata.annotations.inventory_name') }}
+[3].vars._groups = {{ (vmis.resources | map(attribute='metadata.annotations.ansible_groups') | map('split', ','))}}
+[3].vars.vm_hosts = {{ ips | zip(_groups, names)
+                | map('zip', ['ansible_host', 'ansible_groups', 'inventory_name'])
+                | map('map', 'reverse') | map('community.general.dict') }}
+[3].loop = {{ vm_hosts | map(attribute='ansible_groups') | flatten | unique }}
+[3].set_fact.ci_inventory = {{ ci_inventory|d({}) | combine({
+                    item: {
+                      'hosts': vm_hosts | selectattr('ansible_groups', 'contains', item)
+                                     | rekey_on_member('inventory_name')
+                      }
+                    })
+                  }}
+[4].name = Create inventory for CI tests
+[4].copy.content = {{ ci_inventory | to_yaml }}
+[4].copy.dest = {{ ansible_inventory_sources[0] }}/ci_inventory.yml
+[4].copy.mode = 0644

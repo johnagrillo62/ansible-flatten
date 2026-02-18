@@ -1,14 +1,21 @@
-~d0.authors = 
-~d0.dependencies = {}
-~d0.description = Ansible content that interacts with the AWX or Automation Platform Controller API.
-~d0.documentation = https://github.com/ansible/awx/blob/devel/awx_collection/README.md
-~d0.homepage = https://www.ansible.com/
-~d0.issues = https://github.com/ansible/awx/issues?q=is%3Aissue+label%3Acomponent%3Aawx_collection
-~d0.license = 
-~d0.name = awx
-~d0.namespace = awx
-~d0.readme = README.md
-~d0.repository = https://github.com/ansible/awx
-~d0.tags = 
-~d0.version = 0.0.1-devel
-~d0.build_ignore = 
+authors[0] = AWX Project Contributors <awx-project@googlegroups.com>
+description = Ansible content that interacts with the AWX or Automation Platform Controller API.
+documentation = https://github.com/ansible/awx/blob/devel/awx_collection/README.md
+homepage = https://www.ansible.com/
+issues = https://github.com/ansible/awx/issues?q=is%3Aissue+label%3Acomponent%3Aawx_collection
+license[0] = GPL-3.0-or-later
+name = awx
+namespace = awx
+readme = README.md
+repository = https://github.com/ansible/awx
+tags[0] = cloud
+tags[1] = infrastructure
+tags[2] = awx
+tags[3] = ansible
+tags[4] = automation
+version = 0.0.1-devel
+build_ignore[0] = tools
+build_ignore[1] = setup.cfg
+build_ignore[2] = galaxy.yml.j2
+build_ignore[3] = template_galaxy.yml
+build_ignore[4] = *.tar.gz

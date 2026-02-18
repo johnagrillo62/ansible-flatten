@@ -2,12 +2,11 @@ libvirt__base_packages[0][0] = gawk
 libvirt__base_packages[0][1] = netcat-openbsd
 libvirt__base_packages[0][2] = virtinst
 libvirt__base_packages[1] = {{ [] if (ansible_distribution_release in ["bullseye"])
-           else "virt-top" }} 
+           else "virt-top" }}
 libvirt__base_packages[2] = {{ "virt-goodies"
         if (ansible_local | d() and ansible_local.python | d() and
             (ansible_local.python.installed2 | d()) | bool)
         else [] }}
-
 libvirt__packages[0] = libvirt-clients
 libvirt__packages_map.trusty[0] = libvirt-bin
 libvirt__packages_map.xenial[0] = libvirt-bin

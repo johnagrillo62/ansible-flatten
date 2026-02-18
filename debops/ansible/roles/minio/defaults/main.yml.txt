@@ -2,7 +2,7 @@ minio__user = minio
 minio__group = minio
 minio__additional_groups = {{ ["ssl-cert"] if minio__pki_enabled | bool else [] }}
 minio__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                 + "/" + minio__user }} 
+                 + "/" + minio__user }}
 minio__shell = /usr/sbin/nologin
 minio__comment = MinIO
 minio__upstream_gpg_key = 4405 F3F0 DDBA 1B9E 68A3  1D25 12C7 4390 F9AA C728
@@ -20,12 +20,10 @@ minio__upstream_git_release = {{ "RELEASE.2019-03-27T22-35-21Z"
                                        if (ansible_distribution_release in
                                            ["bullseye"])
                                        else minio__upstream_url_release) }}
-
 minio__binary = {{ ansible_local.golang.binaries["minio"]
                    if (ansible_local.golang.binaries | d() and
                        ansible_local.golang.binaries.minio | d())
                    else "" }}
-
 minio__config_dir = /etc/minio
 minio__volumes_dir = /srv/minio
 minio__fqdn = {{ ansible_fqdn }}
@@ -34,7 +32,6 @@ minio__pki_enabled = {{ ansible_local.pki.enabled
                         if (ansible_local | d() and ansible_local.pki | d() and
                             ansible_local.pki.enabled is defined)
                         else False }}
-
 minio__pki_base_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
 minio__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 minio__pki_key = {{ ansible_local.pki.key | d("default.key") }}
@@ -51,7 +48,6 @@ minio__combined_instances = {{ minio__default_instances
                                + minio__instances
                                + minio__group_instances
                                + minio__host_instances }}
-
 minio__golang__dependent_packages[0].name = minio
 minio__golang__dependent_packages[0].upstream_type = {{ minio__upstream_type }}
 minio__golang__dependent_packages[0].gpg = {{ minio__upstream_gpg_key }}

@@ -1,24 +1,29 @@
-~d0.name = Setup and manage Foodsoft with Nginx as webserver
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_service_foodsoft_nginx' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = apt_preferences
-~d3.tags = [ 'role::apt_preferences' ]
-~d3.apt_preferences__dependent_list = 
-~d2.role = ferm
-~d3.tags = [ 'role::ferm', 'skip::ferm' ]
-~d3.ferm__dependent_rules = 
-~d2.role = mariadb
-~d3.tags = [ 'role::mariadb' ]
-~d3.mariadb__dependent_databases = '{{ foodsoft__mariadb__dependent_databases }}'
-~d3.mariadb__dependent_users = '{{ foodsoft__mariadb__dependent_users }}'
-~d3.when = (foodsoft__database == 'mariadb')
-~d2.role = ruby
-~d3.tags = [ 'role::ruby' ]
-~d2.role = nginx
-~d3.tags = [ 'role::nginx' ]
-~d3.nginx__dependent_servers = 
-~d2.role = foodsoft
-~d3.tags = [ 'role::foodsoft' ]
+[0].name = Setup and manage Foodsoft with Nginx as webserver
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_foodsoft_nginx
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = apt_preferences
+[0].roles[0].tags[0] = role::apt_preferences
+[0].roles[0].apt_preferences__dependent_list[0] = {{ nginx__apt_preferences__dependent_list }}
+[0].roles[1].role = ferm
+[0].roles[1].tags[0] = role::ferm
+[0].roles[1].tags[1] = skip::ferm
+[0].roles[1].ferm__dependent_rules[0] = {{ nginx__ferm__dependent_rules }}
+[0].roles[2].role = mariadb
+[0].roles[2].tags[0] = role::mariadb
+[0].roles[2].mariadb__dependent_databases = {{ foodsoft__mariadb__dependent_databases }}
+[0].roles[2].mariadb__dependent_users = {{ foodsoft__mariadb__dependent_users }}
+[0].roles[2].when = (foodsoft__database == 'mariadb')
+[0].roles[3].role = ruby
+[0].roles[3].tags[0] = role::ruby
+[0].roles[4].role = nginx
+[0].roles[4].tags[0] = role::nginx
+[0].roles[4].nginx__dependent_servers[0] = {{ foodsoft__nginx__dependent_servers }}
+[0].roles[5].role = foodsoft
+[0].roles[5].tags[0] = role::foodsoft

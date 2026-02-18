@@ -1,4 +1,19 @@
-~d0.networkd__host_units = 
-~d1.name = '20-bridge-slave-interface-vlan.network'
-~d2.raw = |
-~d2.state = 'present'
+networkd__host_units[0].name = 20-bridge-slave-interface-vlan.network
+networkd__host_units[0].raw = [Match]
+Name=enp2s0
+
+[Network]
+Bridge=bridge0
+
+[BridgeVLAN]
+VLAN=1-32
+PVID=42
+EgressUntagged=42
+
+[BridgeVLAN]
+VLAN=100-200
+
+[BridgeVLAN]
+EgressUntagged=300-400
+
+networkd__host_units[0].state = present

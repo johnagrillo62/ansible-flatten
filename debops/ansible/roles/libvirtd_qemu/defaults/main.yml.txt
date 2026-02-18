@@ -3,7 +3,6 @@ libvirtd_qemu__kvm_support = {{ True
                                     (ansible_virtualization_role == "host" or
                                      libvirtd_qemu__register_hw_virt.stdout | d()))
                                 else False }}
-
 libvirtd_qemu__base_packages[0] = libvirt-daemon-system
 libvirtd_qemu__base_packages_map.trusty[0] = libvirt-bin
 libvirtd_qemu__base_packages_map.xenial[0] = libvirt-bin
@@ -12,37 +11,31 @@ libvirtd_qemu__kvm_packages = {{ ["qemu-system-x86", "qemu-utils"]
                                    if ansible_distribution_release in
                                         ["stretch", "buster", "bionic", "focal"]
                                    else [] }}
-
 libvirtd_qemu__deployment_mode = {{ ansible_local.libvirtd.deployment_mode
                                     if (ansible_local.libvirtd.deployment_mode | d())
                                     else ("opennebula"
                                           if ("debops_service_opennebula_node" in group_names)
                                           else "libvirt") }}
-
 libvirtd_qemu__user = {{ (ansible_local.opennebula.user
                           if (ansible_local.opennebula.user | d())
                           else "oneadmin")
                          if (libvirtd_qemu__deployment_mode == "opennebula")
                          else "libvirt-qemu" }}
-
 libvirtd_qemu__group = {{ (ansible_local.opennebula.group
                            if (ansible_local.opennebula.group | d())
                            else "oneadmin")
                           if (libvirtd_qemu__deployment_mode == "opennebula")
                           else "libvirt-qemu" }}
-
 libvirtd_qemu__remote_display_ports = {{ libvirtd_qemu__remote_display_port_min | string + ":"
-                                         + libvirtd_qemu__remote_display_port_max | string }} 
+                                         + libvirtd_qemu__remote_display_port_max | string }}
 libvirtd_qemu__remote_display_port_min = 5900
 libvirtd_qemu__remote_display_port_max = 65535
 libvirtd_qemu__spice_listen = {{ "0.0.0.0"
                                  if libvirtd_qemu__remote_display_allow | d()
                                  else "127.0.0.1" }}
-
 libvirtd_qemu__vnc_listen = {{ "0.0.0.0"
                                if libvirtd_qemu__remote_display_allow | d()
                                else "127.0.0.1" }}
-
 libvirtd_qemu__original_configuration[0].name = default_tls_x509_cert_dir
 libvirtd_qemu__original_configuration[0].comment = Use of TLS requires that x509 certificates be issued. The default is
 to keep them in /etc/pki/qemu. This directory must contain
@@ -902,49 +895,41 @@ libvirtd_qemu__default_configuration[0].value = {{ libvirtd_qemu__spice_listen }
 libvirtd_qemu__default_configuration[0].state = {{ "present"
                if (libvirtd_qemu__remote_display_allow | d())
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[1].name = vnc_listen
 libvirtd_qemu__default_configuration[1].value = {{ libvirtd_qemu__vnc_listen }}
 libvirtd_qemu__default_configuration[1].state = {{ "present"
                if (libvirtd_qemu__remote_display_allow | d())
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[2].name = remote_display_port_min
 libvirtd_qemu__default_configuration[2].value = {{ libvirtd_qemu__remote_display_port_min }}
 libvirtd_qemu__default_configuration[2].state = {{ "present"
                if (libvirtd_qemu__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[3].name = remote_display_port_max
 libvirtd_qemu__default_configuration[3].value = {{ libvirtd_qemu__remote_display_port_max }}
 libvirtd_qemu__default_configuration[3].state = {{ "present"
                if (libvirtd_qemu__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[4].name = user
 libvirtd_qemu__default_configuration[4].value = {{ libvirtd_qemu__user }}
 libvirtd_qemu__default_configuration[4].state = {{ "present"
                if (libvirtd_qemu__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[5].name = group
 libvirtd_qemu__default_configuration[5].value = {{ libvirtd_qemu__group }}
 libvirtd_qemu__default_configuration[5].state = {{ "present"
                if (libvirtd_qemu__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd_qemu__default_configuration[6].name = dynamic_ownership
 libvirtd_qemu__default_configuration[6].value = False
 libvirtd_qemu__default_configuration[6].state = {{ "present"
                if (libvirtd_qemu__deployment_mode == "opennebula")
                else "ignore" }}
-
 libvirtd_qemu__combined_configuration = {{ libvirtd_qemu__original_configuration
                                            + libvirtd_qemu__default_configuration
                                            + libvirtd_qemu__configuration
                                            + libvirtd_qemu__group_configuration
                                            + libvirtd_qemu__host_configuration }}
-
 libvirtd_qemu__configuration_sections[0].name = tls
 libvirtd_qemu__configuration_sections[0].title = TLS configuration
 libvirtd_qemu__configuration_sections[0].state = hidden
@@ -1011,4 +996,3 @@ libvirtd_qemu__ferm__dependent_rules[0].accept_any = False
 libvirtd_qemu__ferm__dependent_rules[0].rule_state = {{ "present"
                     if (libvirtd_qemu__deployment_mode == "opennebula")
                     else "absent" }}
-

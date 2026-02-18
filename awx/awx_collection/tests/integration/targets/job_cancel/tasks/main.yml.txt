@@ -1,30 +1,22 @@
-~d0.name = Launch a Job Template
-~d1.job_launch = 
-~d2.job_template = "Demo Job Template"
-~d1.register = job
-~d0.assert = 
-~d2.that = 
-~d0.name = Cancel the job
-~d1.job_cancel = 
-~d2.job_id = "{{ job.id }}"
-~d2.request_timeout = 60
-~d1.register = results
-~d0.assert = 
-~d2.that = 
-~d0.name = Cancel an already canceled job (assert failure)
-~d1.job_cancel = 
-~d2.job_id = "{{ job.id }}"
-~d2.fail_if_not_running = true
-~d1.register = results
-~d1.ignore_errors = yes
-~d1.until = results is failed and results.msg == 'Job is not running'
-~d1.retries = 6
-~d1.delay = 5
-~d0.name = Check module fails with correct msg
-~d1.job_cancel = 
-~d2.job_id = 9999999999
-~d1.register = result
-~d1.ignore_errors = yes
-~d0.assert = 
-~d2.that = 
-~d3."result.msg =='Unable to cancel job_id/9999999999 = The requested object could not be found.'
+[0].name = Launch a Job Template
+[0].job_launch.job_template = Demo Job Template
+[0].register = job
+[1].assert.that[0] = job is changed
+[2].name = Cancel the job
+[2].job_cancel.job_id = {{ job.id }}
+[2].job_cancel.request_timeout = 60
+[2].register = results
+[3].assert.that[0] = results is changed
+[4].name = Cancel an already canceled job (assert failure)
+[4].job_cancel.job_id = {{ job.id }}
+[4].job_cancel.fail_if_not_running = true
+[4].register = results
+[4].ignore_errors = yes
+[4].until = results is failed and results.msg == 'Job is not running'
+[4].retries = 6
+[4].delay = 5
+[5].name = Check module fails with correct msg
+[5].job_cancel.job_id = 9999999999
+[5].register = result
+[5].ignore_errors = yes
+[6].assert.that[0] = result.msg =='Unable to cancel job_id/9999999999: The requested object could not be found.' or result.msg =='Unable to find job with id 9999999999'

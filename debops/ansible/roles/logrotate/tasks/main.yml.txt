@@ -39,7 +39,6 @@ dpkg-divert --list /etc/cron.daily/logrotate | awk '{ print $NF }'
                if
                (logrotate__enabled | bool and item.state | d("present") != "absent")
                else "absent" }}
-
 [6]["debops.debops.dpkg_divert"].delete = True
 [6].loop = {{ logrotate__combined_config | flatten }}
 [6].when = item.filename | d() and item.divert | d(False) | bool

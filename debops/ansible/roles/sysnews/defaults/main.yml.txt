@@ -37,4 +37,3 @@ sysnews__combined_entries = {{ sysnews__default_entries
                                + sysnews__entries
                                + sysnews__group_entries
                                + sysnews__host_entries }}
-

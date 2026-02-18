@@ -1,73 +1,90 @@
-~d0.name = Initialize new LDAP directory
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_service_slapd' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.vars_prompt = 
-~d2.name = 'admin_input_plaintext_password'
-~d3.prompt = 'New password for your LDAP user account (enter=random)'
-~d3.default = ''
-~d3.private = True
-~d2.name = 'admin_use_password_store'
-~d3.default = 'yes'
-~d3.prompt = 'Use Password Store? (default=yes)'
-~d1.vars = 
-~d2.admin_user = '{{ lookup("env", "USER") }}'
-~d2.admin_gecos = '{{ getent_passwd[admin_user][3] | d() }}'
-~d2.admin_sshkeys = '{{ lookup("pipe", "ssh-add -L | grep ^\\\(sk-\\\)\\\?ssh || cat ~/.ssh/*.pub || true").split("\n") }}'
-~d2.admin_plaintext_password = '{{ admin_input_plaintext_password
-~d2.admin_saved_password = '{{ lookup("passwordstore",
-~d2.admin_rdn = 'uid={{ admin_user }}'
-~d2.admin_dn = '{{ ([ admin_rdn, ldap__people_rdn ] + ldap__base_dn) | join(",") }}'
-~d2.ldap__enabled = True
-~d2.ldap__configured = True
-~d2.ldap__dependent_play = True
-~d2.ldap__servers = [ '{{ ansible_fqdn }}' ]
-~d2.ldap__admin_binddn = '{{ ([ "cn=admin" ] + ldap__base_dn) | join(",") }}'
-~d2.ldap__admin_bindpw = '{{ lookup("password", secret + "/slapd/credentials/"
-~d2.ldap__dependent_tasks = 
-~d3.name = 'Create personal account for {{ admin_user }}'
-~d4.dn = '{{ [ admin_rdn, ldap__people_rdn ] + ldap__base_dn }}'
-~d4.objectClass = [ 'inetOrgPerson', 'posixAccount', 'shadowAccount',
-~d4.attributes = 
-~d5.commonName = '{{ admin_gecos.split(",")[0] if admin_gecos | d() else (admin_user | capitalize) }}'
-~d5.givenName = '{{ (admin_gecos.split(",")[0].split()[0]) if (admin_gecos | d() and " " in admin_gecos) else (admin_user | capitalize) }}'
-~d5.surname = '{{ (admin_gecos.split(",")[0].split()[1]) if (admin_gecos | d() and " " in admin_gecos) else "AdminUser" }}'
-~d5.userPassword = '{{ admin_plaintext_password }}'
-~d5.uid = '{{ admin_rdn.split("=")[1] }}'
-~d5.gid = '{{ admin_rdn.split("=")[1] }}'
-~d5.uidNumber = '{{ ldap__groupid_max | int + 1 }}'
-~d5.gidNumber = '{{ ldap__groupid_max | int + 1 }}'
-~d5.homeDirectory = '{{ ldap__home + "/" + admin_user }}'
-~d5.loginShell = '{{ ldap__shell }}'
-~d5.authorizedService = 'all'
-~d5.host = 'posix:all'
-~d5.sshPublicKey = '{{ admin_sshkeys }}'
-~d3.name = 'Add admin account to cn=LDAP Administrator role'
-~d4.dn = '{{ [ "cn=LDAP Administrator", ldap__roles_rdn ] + ldap__base_dn }}'
-~d4.attributes = 
-~d5.roleOccupant = '{{ admin_dn }}'
-~d3.name = 'Add admin account to cn=UNIX Administrators group'
-~d4.dn = '{{ [ "cn=UNIX Administrators", ldap__groups_rdn ] + ldap__base_dn }}'
-~d4.attributes = 
-~d5.member = '{{ admin_dn }}'
-~d5.owner = '{{ admin_dn }}'
-~d1.pre_tasks = 
-~d2.name = Check local user information
-~d3.ansible.builtin.getent = 
-~d4.database = 'passwd'
-~d4.key = '{{ admin_user }}'
-~d3.delegate_to = 'localhost'
-~d3.become = False
-~d3.failed_when = False
-~d2.name = Save admin credential in the password store
-~d3.ansible.builtin.set_fact = 
-~d4.admin_stored_password = '{{ admin_saved_password }}'
-~d3.when = admin_use_password_store | d(True) | bool
-~d3.no_log = '{{ debops__no_log | d(True) }}'
-~d3.delegate_to = 'localhost'
-~d3.become = False
-~d3.run_once = True
-~d1.roles = 
-~d2.role = 'ldap'
-~d3.tags = [ 'role::ldap', 'skip::ldap' ]
+[0].name = Initialize new LDAP directory
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_slapd
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].vars_prompt[0].name = admin_input_plaintext_password
+[0].vars_prompt[0].prompt = New password for your LDAP user account (enter=random)
+[0].vars_prompt[0].default = 
+[0].vars_prompt[0].private = True
+[0].vars_prompt[1].name = admin_use_password_store
+[0].vars_prompt[1].default = yes
+[0].vars_prompt[1].prompt = Use Password Store? (default=yes)
+[0].vars.admin_user = {{ lookup("env", "USER") }}
+[0].vars.admin_gecos = {{ getent_passwd[admin_user][3] | d() }}
+[0].vars.admin_sshkeys = {{ lookup("pipe", "ssh-add -L | grep ^\\\(sk-\\\)\\\?ssh || cat ~/.ssh/*.pub || true").split("\n") }}
+[0].vars.admin_plaintext_password = {{ admin_input_plaintext_password
+                                  if admin_input_plaintext_password | d()
+                                  else (lookup("password", "/dev/null length=32")
+                                        if admin_use_password_store | d(True) | bool
+                                        else
+                                        lookup("password",
+                                               secret + "/ldap/credentials/"
+                                               + admin_dn | to_uuid
+                                               + ".password length=32")) }}
+[0].vars.admin_saved_password = {{ lookup("passwordstore",
+                                     ldap__admin_passwordstore_path
+                                     + "/" + admin_dn | to_uuid
+                                     + " create=true overwrite=true userpass="
+                                     + admin_plaintext_password) }}
+[0].vars.admin_rdn = uid={{ admin_user }}
+[0].vars.admin_dn = {{ ([ admin_rdn, ldap__people_rdn ] + ldap__base_dn) | join(",") }}
+[0].vars.ldap__enabled = True
+[0].vars.ldap__configured = True
+[0].vars.ldap__dependent_play = True
+[0].vars.ldap__servers[0] = {{ ansible_fqdn }}
+[0].vars.ldap__admin_binddn = {{ ([ "cn=admin" ] + ldap__base_dn) | join(",") }}
+[0].vars.ldap__admin_bindpw = {{ lookup("password", secret + "/slapd/credentials/"
+                                   + ldap__admin_binddn | to_uuid
+                                   + ".password").split()[0] }}
+[0].vars.ldap__dependent_tasks[0].name = Create personal account for {{ admin_user }}
+[0].vars.ldap__dependent_tasks[0].dn = {{ [ admin_rdn, ldap__people_rdn ] + ldap__base_dn }}
+[0].vars.ldap__dependent_tasks[0].objectClass[0] = inetOrgPerson
+[0].vars.ldap__dependent_tasks[0].objectClass[1] = posixAccount
+[0].vars.ldap__dependent_tasks[0].objectClass[2] = shadowAccount
+[0].vars.ldap__dependent_tasks[0].objectClass[3] = posixGroup
+[0].vars.ldap__dependent_tasks[0].objectClass[4] = posixGroupId
+[0].vars.ldap__dependent_tasks[0].objectClass[5] = ldapPublicKey
+[0].vars.ldap__dependent_tasks[0].objectClass[6] = authorizedServiceObject
+[0].vars.ldap__dependent_tasks[0].objectClass[7] = hostObject
+[0].vars.ldap__dependent_tasks[0].attributes.commonName = {{ admin_gecos.split(",")[0] if admin_gecos | d() else (admin_user | capitalize) }}
+[0].vars.ldap__dependent_tasks[0].attributes.givenName = {{ (admin_gecos.split(",")[0].split()[0]) if (admin_gecos | d() and " " in admin_gecos) else (admin_user | capitalize) }}
+[0].vars.ldap__dependent_tasks[0].attributes.surname = {{ (admin_gecos.split(",")[0].split()[1]) if (admin_gecos | d() and " " in admin_gecos) else "AdminUser" }}
+[0].vars.ldap__dependent_tasks[0].attributes.userPassword = {{ admin_plaintext_password }}
+[0].vars.ldap__dependent_tasks[0].attributes.uid = {{ admin_rdn.split("=")[1] }}
+[0].vars.ldap__dependent_tasks[0].attributes.gid = {{ admin_rdn.split("=")[1] }}
+[0].vars.ldap__dependent_tasks[0].attributes.uidNumber = {{ ldap__groupid_max | int + 1 }}
+[0].vars.ldap__dependent_tasks[0].attributes.gidNumber = {{ ldap__groupid_max | int + 1 }}
+[0].vars.ldap__dependent_tasks[0].attributes.homeDirectory = {{ ldap__home + "/" + admin_user }}
+[0].vars.ldap__dependent_tasks[0].attributes.loginShell = {{ ldap__shell }}
+[0].vars.ldap__dependent_tasks[0].attributes.authorizedService = all
+[0].vars.ldap__dependent_tasks[0].attributes.host = posix:all
+[0].vars.ldap__dependent_tasks[0].attributes.sshPublicKey = {{ admin_sshkeys }}
+[0].vars.ldap__dependent_tasks[1].name = Add admin account to cn=LDAP Administrator role
+[0].vars.ldap__dependent_tasks[1].dn = {{ [ "cn=LDAP Administrator", ldap__roles_rdn ] + ldap__base_dn }}
+[0].vars.ldap__dependent_tasks[1].attributes.roleOccupant = {{ admin_dn }}
+[0].vars.ldap__dependent_tasks[2].name = Add admin account to cn=UNIX Administrators group
+[0].vars.ldap__dependent_tasks[2].dn = {{ [ "cn=UNIX Administrators", ldap__groups_rdn ] + ldap__base_dn }}
+[0].vars.ldap__dependent_tasks[2].attributes.member = {{ admin_dn }}
+[0].vars.ldap__dependent_tasks[2].attributes.owner = {{ admin_dn }}
+[0].pre_tasks[0].name = Check local user information
+[0].pre_tasks[0]["ansible.builtin.getent"].database = passwd
+[0].pre_tasks[0]["ansible.builtin.getent"].key = {{ admin_user }}
+[0].pre_tasks[0].delegate_to = localhost
+[0].pre_tasks[0].become = False
+[0].pre_tasks[0].failed_when = False
+[0].pre_tasks[1].name = Save admin credential in the password store
+[0].pre_tasks[1]["ansible.builtin.set_fact"].admin_stored_password = {{ admin_saved_password }}
+[0].pre_tasks[1].when = admin_use_password_store | d(True) | bool
+[0].pre_tasks[1].no_log = {{ debops__no_log | d(True) }}
+[0].pre_tasks[1].delegate_to = localhost
+[0].pre_tasks[1].become = False
+[0].pre_tasks[1].run_once = True
+[0].roles[0].role = ldap
+[0].roles[0].tags[0] = role::ldap
+[0].roles[0].tags[1] = skip::ldap

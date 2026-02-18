@@ -5,7 +5,6 @@ gitlab__base_packages[0] = {{ "gitlab-ce"
         else ("gitlab-ee"
               if (gitlab__edition == "enterprise")
               else []) }}
-
 gitlab__user = git
 gitlab__group = git
 gitlab__additional_groups[0] = {{ (ansible_local.system_groups.local_prefix | d("")) + "sshusers" }}
@@ -19,7 +18,7 @@ gitlab__firewall_ports[0] = http
 gitlab__firewall_ports[1] = https
 gitlab__firewall_ports[2] = container-registry
 gitlab__initial_root_password = {{ lookup("password", secret + "/gitlab/credentials/"
-                                                      + "root/initial_password") }} 
+                                                      + "root/initial_password") }}
 gitlab__pki_enabled = {{ (ansible_local.pki.enabled | d(False)) | bool }}
 gitlab__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 gitlab__pki_hook_path = {{ ansible_local.pki.hooks | d("/etc/pki/hooks") }}
@@ -34,7 +33,6 @@ gitlab__ldap_enabled = {{ True
                           if (ansible_local | d() and ansible_local.ldap | d() and
                               (ansible_local.ldap.enabled | d()) | bool)
                           else False }}
-
 gitlab__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 gitlab__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 gitlab__ldap_self_rdn = uid=gitlab
@@ -49,26 +47,22 @@ gitlab__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                  + gitlab__ldap_binddn | to_uuid + ".password length=32"))
                          if gitlab__ldap_enabled | bool
                          else "" }}
-
 gitlab__ldap_label = LDAP
 gitlab__ldap_host = {{ ansible_local.ldap.hosts | d([""]) | first }}
 gitlab__ldap_port = {{ ansible_local.ldap.port | d("389") }}
 gitlab__ldap_encryption = {{ "start_tls"
                              if ((ansible_local.ldap.start_tls | d()) | bool)
                              else "simple_tls" }}
-
 gitlab__ldap_timeout = 10
 gitlab__ldap_activedirectory = False
 gitlab__ldap_account_attribute = {{ "sAMAccountName"
                                     if (gitlab__ldap_activedirectory | bool)
                                     else "uid" }}
-
 gitlab__ldap_user_filter = (& (objectClass=inetOrgPerson) (| (authorizedService=all) (authorizedService=gitlab) (authorizedService=web:public) ) )
 gitlab__ldap_username_or_email_login = {{ True
                                           if (gitlab__ldap_account_attribute in
                                               ["uid", "sAMAccountName"])
                                           else False }}
-
 gitlab__ldap_block_auto_created_users = False
 gitlab__ldap_lowercase_usernames = True
 gitlab__backup_enabled = True
@@ -102,7 +96,7 @@ For more details on configuring external_url see:
 https://docs.gitlab.com/omnibus/settings/configuration.html#configuring-the-external-url-for-gitlab
 
 gitlab__default_configuration[1].value = {{ (("https://") if gitlab__pki_enabled | bool else ("http://"))
-               + gitlab__fqdn }} 
+               + gitlab__fqdn }}
 gitlab__default_configuration[2].name = registry_external_url
 gitlab__default_configuration[2].title = GitLab Container Registry URL
 gitlab__default_configuration[2].comment = URL on which GitLab Container Registry will be reachable. By default we
@@ -111,7 +105,7 @@ port; see the documentation to find out how to publish the Registry on
 a separate FQDN.
 
 gitlab__default_configuration[2].value = {{ (("https://") if gitlab__pki_enabled | bool else ("http://"))
-               + gitlab__fqdn + ":" + gitlab__registry_port }} 
+               + gitlab__fqdn + ":" + gitlab__registry_port }}
 gitlab__default_configuration[3].name = roles
 gitlab__default_configuration[3].title = Roles for multi-instance GitLab
 gitlab__default_configuration[3].comment = The default is to have no roles enabled, which results in GitLab running as an all-in-one instance.
@@ -162,14 +156,12 @@ gitlab__default_configuration[6].options[1].value = {{ gitlab__backup_path }}
 gitlab__default_configuration[6].options[1].state = {{ "present"
                    if (gitlab__backup_path != "/var/opt/gitlab/backups")
                    else "comment" }}
-
 gitlab__default_configuration[6].options[2].name = backup_keep_time
 gitlab__default_configuration[6].options[2].title = The duration in seconds to keep backups before they are allowed to be deleted
 gitlab__default_configuration[6].options[2].value = {{ gitlab__backup_keep_time }}
 gitlab__default_configuration[6].options[2].state = {{ "present"
                    if (gitlab__backup_keep_time | string != "604800")
                    else "comment" }}
-
 gitlab__default_configuration[6].options[3].name = ldap_enabled
 gitlab__default_configuration[6].options[3].title = LDAP Settings
 gitlab__default_configuration[6].options[3].comment = Docs: https://docs.gitlab.com/omnibus/settings/ldap.html
@@ -220,23 +212,19 @@ the relevant file system is read-only, set the value to false.
 gitlab__default_configuration[8].options[0].value = {{ False
                    if ("container" in (ansible_virtualization_tech_guest | d([])))
                    else True }}
-
 gitlab__default_configuration[8].options[0].state = {{ "present"
                    if ("container" in (ansible_virtualization_tech_guest | d([])))
                    else "comment" }}
-
 gitlab__combined_configuration = {{ gitlab__default_configuration
                                     + gitlab__configuration
                                     + gitlab__group_configuration
                                     + gitlab__host_configuration }}
-
 gitlab__apt_preferences__dependent_list[0].filename = gitlab.pref
 gitlab__apt_preferences__dependent_list[0].package = {{ "gitlab-ce"
                  if (gitlab__edition == "community")
                  else ("gitlab-ee"
                        if (gitlab__edition == "enterprise")
                        else "") }}
-
 gitlab__apt_preferences__dependent_list[0].version = {{ gitlab__preferred_version }}
 gitlab__apt_preferences__dependent_list[0].state = present
 gitlab__etc_services__dependent_list[0].name = container-registry
@@ -249,12 +237,10 @@ gitlab__keyring__dependent_apt_keys[0].filename = gitlab_ee
 gitlab__keyring__dependent_apt_keys[0].state = {{ "present"
                if (gitlab__edition == "enterprise")
                else "absent" }}
-
 gitlab__extrepo__dependent_sources[0].name = gitlab_ce
 gitlab__extrepo__dependent_sources[0].state = {{ "present"
                if (gitlab__edition == "community")
                else "absent" }}
-
 gitlab__ferm__dependent_rules[0].name = gitlab_services
 gitlab__ferm__dependent_rules[0].type = accept
 gitlab__ferm__dependent_rules[0].by_role = debops.gitlab

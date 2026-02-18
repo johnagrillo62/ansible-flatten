@@ -1,9 +1,7 @@
-~d0.name = Restart nullmailer
-~d1.ansible.builtin.service = 
-~d2.name = 'nullmailer'
-~d2.state = 'restarted'
-~d1.when = not ansible_check_mode
-~d0.name = Reload xinetd
-~d1.ansible.builtin.service = 
-~d2.name = 'xinetd'
-~d2.state = 'reloaded'
+[0].name = Restart nullmailer
+[0]["ansible.builtin.service"].name = nullmailer
+[0]["ansible.builtin.service"].state = restarted
+[0].when = not ansible_check_mode
+[1].name = Reload xinetd
+[1]["ansible.builtin.service"].name = xinetd
+[1]["ansible.builtin.service"].state = reloaded

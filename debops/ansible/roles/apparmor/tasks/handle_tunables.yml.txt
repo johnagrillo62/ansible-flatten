@@ -1,39 +1,35 @@
-~d0.name = Remove tunable {{ item.name }}
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '{{ "/etc/apparmor.d/tunables/" + item.name }}'
-~d2.state = 'absent'
-~d2.delete = True
-~d1.when = item.state | d("present") == "absent"
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:tunables' ]
-~d0.name = Divert tunable {{ item.name }}
-~d1.debops.debops.dpkg_divert = 
-~d2.path = '{{ "/etc/apparmor.d/tunables/" + item.name }}'
-~d2.state = 'present'
-~d2.delete = True
-~d1.when = item.state | d("present") == "present"
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:tunables' ]
-~d0.name = Create base directory for tunable {{ item.name }}
-~d1.ansible.builtin.file = 
-~d2.path = '{{ "/etc/apparmor.d/tunables/" + item.name | dirname }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = 
-~d1.tags = [ 'role::apparmor:tunables' ]
-~d0.name = Create tunable {{ item.name }}
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/apparmor.d/snippet.j2'
-~d2.dest = '{{ "/etc/apparmor.d/tunables/" + item.name }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.vars = 
-~d2.apparmor__var_template_title = 'AppArmor tunable'
-~d2.apparmor__var_template_suffix = ''
-~d2.apparmor__var_template_operator = '='
-~d1.when = item.state | d("present") == "present"
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:tunables' ]
+[0].name = Remove tunable {{ item.name }}
+[0]["debops.debops.dpkg_divert"].path = {{ "/etc/apparmor.d/tunables/" + item.name }}
+[0]["debops.debops.dpkg_divert"].state = absent
+[0]["debops.debops.dpkg_divert"].delete = True
+[0].when = item.state | d("present") == "absent"
+[0].notify[0] = Reload all AppArmor profiles
+[0].tags[0] = role::apparmor:tunables
+[1].name = Divert tunable {{ item.name }}
+[1]["debops.debops.dpkg_divert"].path = {{ "/etc/apparmor.d/tunables/" + item.name }}
+[1]["debops.debops.dpkg_divert"].state = present
+[1]["debops.debops.dpkg_divert"].delete = True
+[1].when = item.state | d("present") == "present"
+[1].notify[0] = Reload all AppArmor profiles
+[1].tags[0] = role::apparmor:tunables
+[2].name = Create base directory for tunable {{ item.name }}
+[2]["ansible.builtin.file"].path = {{ "/etc/apparmor.d/tunables/" + item.name | dirname }}
+[2]["ansible.builtin.file"].state = directory
+[2]["ansible.builtin.file"].owner = root
+[2]["ansible.builtin.file"].group = root
+[2]["ansible.builtin.file"].mode = 0755
+[2].when[0] = item.state | d("present") == "present"
+[2].when[1] = item.name | dirname != ""
+[2].tags[0] = role::apparmor:tunables
+[3].name = Create tunable {{ item.name }}
+[3]["ansible.builtin.template"].src = etc/apparmor.d/snippet.j2
+[3]["ansible.builtin.template"].dest = {{ "/etc/apparmor.d/tunables/" + item.name }}
+[3]["ansible.builtin.template"].owner = root
+[3]["ansible.builtin.template"].group = root
+[3]["ansible.builtin.template"].mode = 0644
+[3].vars.apparmor__var_template_title = AppArmor tunable
+[3].vars.apparmor__var_template_suffix = 
+[3].vars.apparmor__var_template_operator = =
+[3].when = item.state | d("present") == "present"
+[3].notify[0] = Reload all AppArmor profiles
+[3].tags[0] = role::apparmor:tunables

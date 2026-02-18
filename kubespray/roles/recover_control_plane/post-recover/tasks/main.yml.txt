@@ -1,10 +1,13 @@
-~d0.name = Set etcd-servers fact
-~d1.set_fact = 
-~d2.etcd_servers = >-
-~d4.https = //{{ hostvars[host]['main_access_ip'] | ansible.utils.ipwrap }}:2379,
-~d4.https = //{{ hostvars[host]['main_access_ip'] | ansible.utils.ipwrap }}:2379
-~d0.name = Update apiserver etcd-servers list
-~d1.replace = 
-~d2.path = /etc/kubernetes/manifests/kube-apiserver.yaml
-~d2.regexp = "(etcd-servers=).*"
-~d2.replace = "\\1{{ etcd_servers }}"
+[0].name = Set etcd-servers fact
+[0].set_fact.etcd_servers = {% for host in groups['etcd'] -%}
+  {% if not loop.last -%}
+  https://{{ hostvars[host]['main_access_ip'] | ansible.utils.ipwrap }}:2379,
+  {%- endif -%}
+  {%- if loop.last -%}
+  https://{{ hostvars[host]['main_access_ip'] | ansible.utils.ipwrap }}:2379
+  {%- endif -%}
+{%- endfor -%}
+[1].name = Update apiserver etcd-servers list
+[1].replace.path = /etc/kubernetes/manifests/kube-apiserver.yaml
+[1].replace.regexp = (etcd-servers=).*
+[1].replace.replace = \1{{ etcd_servers }}

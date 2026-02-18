@@ -1,98 +1,107 @@
-~d0.name = Create Nextcloud group
-~d1.ansible.builtin.group = 
-~d2.name = '{{ owncloud__system_group }}'
-~d2.state = 'present'
-~d2.system = True
-~d1.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d0.name = Create Nextcloud user
-~d1.ansible.builtin.user = 
-~d2.name = '{{ owncloud__system_user }}'
-~d2.group = '{{ owncloud__system_group }}'
-~d2.home = '{{ owncloud__system_home }}'
-~d2.comment = '{{ owncloud__comment }}'
-~d2.shell = '{{ owncloud__shell }}'
-~d2.system = True
-~d2.state = 'present'
-~d1.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d0.name = Create source directory
-~d1.ansible.builtin.file = 
-~d2.path = '{{ owncloud__src }}'
-~d2.state = 'directory'
-~d2.owner = '{{ owncloud__system_user }}'
-~d2.group = '{{ owncloud__system_group }}'
-~d2.mode = '0755'
-~d0.name = Create deployment directory
-~d1.ansible.builtin.file = 
-~d2.path = '{{ owncloud__deploy_path }}'
-~d2.state = 'directory'
-~d2.owner = '{{ owncloud__app_user }}'
-~d2.group = '{{ owncloud__app_group }}'
-~d2.mode = '{{ owncloud__deploy_path_mode }}'
-~d0.name = Download and validate the tarball
-~d1.become = True
-~d1.become_user = '{{ owncloud__system_user }}'
-~d1.block = 
-~d2.name = Query for the full version string of the current release  # noqa command-instead-of-module
-~d3.ansible.builtin.shell = set -o nounset -o pipefail -o errexit &&
-~d3.args = 
-~d4.executable = 'bash'
-~d3.register = owncloud__register_full_version
-~d3.changed_when = False
-~d3.check_mode = False
-~d3.tags = [ 'role::nextcloud:verify' ]
-~d2.name = Create source directories
-~d3.ansible.builtin.file = 
-~d4.path = '{{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}'
-~d4.state = 'directory'
-~d4.owner = '{{ owncloud__system_user }}'
-~d4.group = '{{ owncloud__system_group }}'
-~d4.mode = '0755'
-~d3.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d2.name = Download application files needed for verification
-~d3.ansible.builtin.get_url = 
-~d4.url = '{{ owncloud__variant_download_url_map[owncloud__variant] + "/" +
-~d4.dest = '{{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}'
-~d4.mode = '0644'
-~d3.with_items = 
-~d3.register = owncloud__register_download_assurance
-~d3.until = owncloud__register_download_assurance is succeeded
-~d3.when = not ansible_check_mode
-~d3.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d2.name = Read checksum from file
-~d3.ansible.builtin.shell = set -o nounset -o pipefail -o errexit &&
-~d3.args = 
-~d4.executable = 'bash'
-~d3.changed_when = False
-~d3.register = owncloud__register_checksum
-~d3.when = not ansible_check_mode  # Latest checksum file may not be available
-~d3.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d2.name = Download application archive
-~d3.ansible.builtin.get_url = # noqa no-handler
-~d4.url = '{{ owncloud__variant_download_url_map[owncloud__variant] + "/" +
-~d4.dest = '{{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}'
-~d4.checksum = 'sha512:{{ (owncloud__register_checksum.stdout_lines[0]).split(" ") | first }}'
-~d4.mode = '0644'
-~d3.register = owncloud__register_download_application
-~d3.until = owncloud__register_download_application is succeeded
-~d3.when = owncloud__register_download_assurance is changed
-~d3.tags = [ 'role::nextcloud:download', 'role::nextcloud:verify' ]
-~d2.name = Verify OpenPGP signature
-~d3.environment = 
-~d4.LC_MESSAGES = 'C'
-~d3.ansible.builtin.shell = |
-~d6.| sed --silent 's/^Primary key fingerprint = \(.*\)$/\1/p;'
-~d3.args = 
-~d4.executable = 'bash'
-~d3.changed_when = False
-~d3.register = owncloud__register_verify_authenticity
-~d3.failed_when = (owncloud__register_verify_authenticity.rc != 0 or
-~d3.tags = [ 'role::nextcloud:verify' ]
-~d0.name = Unpack the application archive
-~d1.ansible.builtin.unarchive = 
-~d2.remote_src = True
-~d2.src = '{{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] + "/" +
-~d2.dest = '{{ owncloud__deploy_path + "/.." }}'
-~d2.owner = '{{ owncloud__app_user }}'
-~d2.group = '{{ owncloud__app_group }}'
-~d2.mode = 'u=rwX,g=rX,o=rX'
-~d2.creates = '{{ owncloud__deploy_path + "/index.php" }}'
+[0].name = Create Nextcloud group
+[0]["ansible.builtin.group"].name = {{ owncloud__system_group }}
+[0]["ansible.builtin.group"].state = present
+[0]["ansible.builtin.group"].system = True
+[0].tags[0] = role::nextcloud:download
+[0].tags[1] = role::nextcloud:verify
+[1].name = Create Nextcloud user
+[1]["ansible.builtin.user"].name = {{ owncloud__system_user }}
+[1]["ansible.builtin.user"].group = {{ owncloud__system_group }}
+[1]["ansible.builtin.user"].home = {{ owncloud__system_home }}
+[1]["ansible.builtin.user"].comment = {{ owncloud__comment }}
+[1]["ansible.builtin.user"].shell = {{ owncloud__shell }}
+[1]["ansible.builtin.user"].system = True
+[1]["ansible.builtin.user"].state = present
+[1].tags[0] = role::nextcloud:download
+[1].tags[1] = role::nextcloud:verify
+[2].name = Create source directory
+[2]["ansible.builtin.file"].path = {{ owncloud__src }}
+[2]["ansible.builtin.file"].state = directory
+[2]["ansible.builtin.file"].owner = {{ owncloud__system_user }}
+[2]["ansible.builtin.file"].group = {{ owncloud__system_group }}
+[2]["ansible.builtin.file"].mode = 0755
+[3].name = Create deployment directory
+[3]["ansible.builtin.file"].path = {{ owncloud__deploy_path }}
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = {{ owncloud__app_user }}
+[3]["ansible.builtin.file"].group = {{ owncloud__app_group }}
+[3]["ansible.builtin.file"].mode = {{ owncloud__deploy_path_mode }}
+[4].name = Download and validate the tarball
+[4].become = True
+[4].become_user = {{ owncloud__system_user }}
+[4].block[0].name = Query for the full version string of the current release
+[4].block[0]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && curl -s -m 900 {{ (owncloud__variant_download_url_map[owncloud__variant] + "/") | quote }} | sed --silent 's/.*href="nextcloud-\({{ owncloud__release | regex_escape() }}[^"]\+\).zip.asc".*/\1/p' | sort --version-sort --reverse
+[4].block[0].args.executable = bash
+[4].block[0].register = owncloud__register_full_version
+[4].block[0].changed_when = False
+[4].block[0].check_mode = False
+[4].block[0].tags[0] = role::nextcloud:verify
+[4].block[1].name = Create source directories
+[4].block[1]["ansible.builtin.file"].path = {{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}
+[4].block[1]["ansible.builtin.file"].state = directory
+[4].block[1]["ansible.builtin.file"].owner = {{ owncloud__system_user }}
+[4].block[1]["ansible.builtin.file"].group = {{ owncloud__system_group }}
+[4].block[1]["ansible.builtin.file"].mode = 0755
+[4].block[1].tags[0] = role::nextcloud:download
+[4].block[1].tags[1] = role::nextcloud:verify
+[4].block[2].name = Download application files needed for verification
+[4].block[2]["ansible.builtin.get_url"].url = {{ owncloud__variant_download_url_map[owncloud__variant] + "/" +
+                 owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0] + "." + item }}
+[4].block[2]["ansible.builtin.get_url"].dest = {{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}
+[4].block[2]["ansible.builtin.get_url"].mode = 0644
+[4].block[2].with_items[0] = zip.asc
+[4].block[2].with_items[1] = zip.sha512
+[4].block[2].register = owncloud__register_download_assurance
+[4].block[2].until = owncloud__register_download_assurance is succeeded
+[4].block[2].when = not ansible_check_mode
+[4].block[2].tags[0] = role::nextcloud:download
+[4].block[2].tags[1] = role::nextcloud:verify
+[4].block[3].name = Read checksum from file
+[4].block[3]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && cat {{ owncloud__src + "/" + owncloud__variant + "/"
+                    + owncloud__register_full_version.stdout_lines[0] + "/"
+                    + owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0]
+                    + ".zip.sha512" }} | grep '.zip$'
+[4].block[3].args.executable = bash
+[4].block[3].changed_when = False
+[4].block[3].register = owncloud__register_checksum
+[4].block[3].when = not ansible_check_mode
+[4].block[3].tags[0] = role::nextcloud:download
+[4].block[3].tags[1] = role::nextcloud:verify
+[4].block[4].name = Download application archive
+[4].block[4]["ansible.builtin.get_url"].url = {{ owncloud__variant_download_url_map[owncloud__variant] + "/" +
+                 owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0] + ".zip" }}
+[4].block[4]["ansible.builtin.get_url"].dest = {{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] }}
+[4].block[4]["ansible.builtin.get_url"].checksum = sha512:{{ (owncloud__register_checksum.stdout_lines[0]).split(" ") | first }}
+[4].block[4]["ansible.builtin.get_url"].mode = 0644
+[4].block[4].register = owncloud__register_download_application
+[4].block[4].until = owncloud__register_download_application is succeeded
+[4].block[4].when = owncloud__register_download_assurance is changed
+[4].block[4].tags[0] = role::nextcloud:download
+[4].block[4].tags[1] = role::nextcloud:verify
+[4].block[5].name = Verify OpenPGP signature
+[4].block[5].environment.LC_MESSAGES = C
+[4].block[5]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit
+gpg --verify {{ owncloud__src + "/" + owncloud__variant + "/"
+                + owncloud__register_full_version.stdout_lines[0] + "/"
+                + owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0]
+                + ".zip.asc" }} \
+             {{ owncloud__src + "/" + owncloud__variant + "/"
+                + owncloud__register_full_version.stdout_lines[0] + "/"
+                + owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0]
+                + ".zip" }} 2>&1 \
+  | sed --silent 's/^Primary key fingerprint: \(.*\)$/\1/p;'
+
+[4].block[5].args.executable = bash
+[4].block[5].changed_when = False
+[4].block[5].register = owncloud__register_verify_authenticity
+[4].block[5].failed_when = (owncloud__register_verify_authenticity.rc != 0 or (owncloud__register_verify_authenticity.stdout | replace(" ", "")) != (owncloud__upstream_key_fingerprint | replace(" ", "")))
+[4].block[5].tags[0] = role::nextcloud:verify
+[5].name = Unpack the application archive
+[5]["ansible.builtin.unarchive"].remote_src = True
+[5]["ansible.builtin.unarchive"].src = {{ owncloud__src + "/" + owncloud__variant + "/" + owncloud__register_full_version.stdout_lines[0] + "/" +
+             owncloud__variant + "-" + owncloud__register_full_version.stdout_lines[0] + ".zip" }}
+[5]["ansible.builtin.unarchive"].dest = {{ owncloud__deploy_path + "/.." }}
+[5]["ansible.builtin.unarchive"].owner = {{ owncloud__app_user }}
+[5]["ansible.builtin.unarchive"].group = {{ owncloud__app_group }}
+[5]["ansible.builtin.unarchive"].mode = u=rwX,g=rX,o=rX
+[5]["ansible.builtin.unarchive"].creates = {{ owncloud__deploy_path + "/index.php" }}

@@ -7,7 +7,7 @@ preseed__domains[3] = {{ "~^(?<preseed>.+)\." + ansible_domain | replace(".", "\
 preseed__domains[4] = {{ "~^(?<preseed>.+)\." + preseed__subdomain | replace(".", "\.") + "$" }}
 preseed__domains[5] = {{ "~^(?<preseed>.+)$" }}
 preseed__www = {{ (ansible_local.fhs.www | d("/srv/www"))
-                  + "/sites/debian-preseed/public" }} 
+                  + "/sites/debian-preseed/public" }}
 preseed__root_sshkeys[0] = {{ lookup("pipe", "ssh-add -L | grep ^\\\(sk-\\\)\\\?ssh || cat ~/.ssh/*.pub || cat ~/.ssh/authorized_keys || true") }}
 preseed__admin_name = ansible
 preseed__admin_fullname = Ansible Control User
@@ -26,43 +26,40 @@ preseed__debian_password_length = 32
 preseed__debian_root_password = {{ lookup('password', secret + '/credentials/' + inventory_hostname
                                           + '/preseed/debian/root/password '
                                           + 'encrypt=sha512_crypt length=' + preseed__debian_password_length) }}
-
 preseed__debian_admin_password = {{ lookup('password', secret + '/credentials/' + inventory_hostname
                                            + '/preseed/debian/' + preseed__admin_name + '/password '
                                            + 'encrypt=sha512_crypt length=' + preseed__debian_password_length) }}
-
 preseed__default_definitions[0].name = debian-stretch
 preseed__default_definitions[0].flavor = debian
 preseed__default_definitions[0].release = stretch
 preseed__default_definitions[0].options = {{ preseed__options_interactive_partman
-                 + preseed__options_enable_nonfree }} 
+                 + preseed__options_enable_nonfree }}
 preseed__default_definitions[1].name = debian-buster
 preseed__default_definitions[1].flavor = debian
 preseed__default_definitions[1].release = buster
 preseed__default_definitions[1].options = {{ preseed__options_interactive_partman
-                 + preseed__options_enable_nonfree }} 
+                 + preseed__options_enable_nonfree }}
 preseed__default_definitions[2].name = debian-bullseye
 preseed__default_definitions[2].flavor = debian
 preseed__default_definitions[2].release = bullseye
 preseed__default_definitions[2].options = {{ preseed__options_interactive_partman
-                 + preseed__options_enable_nonfree }} 
+                 + preseed__options_enable_nonfree }}
 preseed__default_definitions[3].name = debian-bookworm
 preseed__default_definitions[3].flavor = debian
 preseed__default_definitions[3].release = bookworm
 preseed__default_definitions[3].options = {{ preseed__options_interactive_partman
-                 + preseed__options_enable_nonfree }} 
+                 + preseed__options_enable_nonfree }}
 preseed__default_definitions[4].name = debian-trixie
 preseed__default_definitions[4].flavor = debian
 preseed__default_definitions[4].release = trixie
 preseed__default_definitions[4].options = {{ preseed__options_interactive_partman
-                 + preseed__options_enable_nonfree }} 
+                 + preseed__options_enable_nonfree }}
 preseed__default_definitions[5].name = debian-stretch-user
 preseed__default_definitions[5].flavor = debian-user
 preseed__default_definitions[5].release = stretch
 preseed__default_definitions[5].options = {{ preseed__options_interactive_partman
                  + preseed__options_ansible_user
                  + preseed__options_enable_nonfree }}
-
 preseed__default_definitions[5].admin_username = {{ preseed__admin_name }}
 preseed__default_definitions[6].name = debian-buster-user
 preseed__default_definitions[6].flavor = debian-user
@@ -70,7 +67,6 @@ preseed__default_definitions[6].release = buster
 preseed__default_definitions[6].options = {{ preseed__options_interactive_partman
                  + preseed__options_ansible_user
                  + preseed__options_enable_nonfree }}
-
 preseed__default_definitions[6].admin_username = {{ preseed__admin_name }}
 preseed__default_definitions[7].name = debian-bullseye-user
 preseed__default_definitions[7].flavor = debian-user
@@ -78,7 +74,6 @@ preseed__default_definitions[7].release = bullseye
 preseed__default_definitions[7].options = {{ preseed__options_interactive_partman
                  + preseed__options_ansible_user
                  + preseed__options_enable_nonfree }}
-
 preseed__default_definitions[7].admin_username = {{ preseed__admin_name }}
 preseed__default_definitions[8].name = debian-bookworm-user
 preseed__default_definitions[8].flavor = debian-user
@@ -86,7 +81,6 @@ preseed__default_definitions[8].release = bookworm
 preseed__default_definitions[8].options = {{ preseed__options_interactive_partman
                  + preseed__options_ansible_user
                  + preseed__options_enable_nonfree }}
-
 preseed__default_definitions[8].admin_username = {{ preseed__admin_name }}
 preseed__default_definitions[9].name = debian-trixie-user
 preseed__default_definitions[9].flavor = debian-user
@@ -94,7 +88,6 @@ preseed__default_definitions[9].release = trixie
 preseed__default_definitions[9].options = {{ preseed__options_interactive_partman
                  + preseed__options_ansible_user
                  + preseed__options_enable_nonfree }}
-
 preseed__default_definitions[9].admin_username = {{ preseed__admin_name }}
 preseed__default_definitions[10].name = debian-stretch-vm
 preseed__default_definitions[10].flavor = debian-vm
@@ -140,7 +133,6 @@ preseed__combined_definitions = {{ preseed__default_definitions
                                    + preseed__definitions
                                    + preseed__group_definitions
                                    + preseed__host_definitions }}
-
 preseed__original_configuration[0].name = comment_contents
 preseed__original_configuration[0].comment = Contents of the preconfiguration file (for ${flavor} on ${release})
 preseed__original_configuration[0].state = hidden
@@ -931,7 +923,6 @@ preseed__combined_configuration = {{ preseed__original_configuration
                                      + preseed__configuration
                                      + preseed__group_configuration
                                      + preseed__host_configuration }}
-
 preseed__options_interactive_partman[0].name = partman-auto/method
 preseed__options_interactive_partman[0].state = comment
 preseed__options_interactive_partman[1].name = partman-auto-lvm/guided_size

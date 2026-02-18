@@ -13,12 +13,10 @@ mcli__upstream_git_release = {{ "RELEASE.2019-03-20T21-29-03Z"
                                       if (ansible_distribution_release in
                                           ["bullseye"])
                                       else mcli__upstream_url_release) }}
-
 mcli__binary = {{ ansible_local.golang.binaries["mcli"]
                    if (ansible_local.golang.binaries | d() and
                        ansible_local.golang.binaries.mcli | d())
                    else "" }}
-
 mcli__golang__dependent_packages[0].name = mcli
 mcli__golang__dependent_packages[0].upstream_type = {{ mcli__upstream_type }}
 mcli__golang__dependent_packages[0].gpg = {{ mcli__upstream_gpg_key }}

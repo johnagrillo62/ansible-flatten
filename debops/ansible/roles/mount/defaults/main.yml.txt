@@ -3,7 +3,6 @@ mount__enabled = {{ True
                          "cap_sys_admin" in ansible_system_capabilities) or
                         not (ansible_system_capabilities_enforced | d(True)) | bool)
                     else False }}
-
 mount__base_packages = {{ ["acl"]
                           if (((mount__directories
                                 + mount__group_directories
@@ -11,4 +10,3 @@ mount__base_packages = {{ ["acl"]
                                | flatten) | selectattr("acl", "defined") | list
                                | subelements("acl"))
                           else [] }}
-

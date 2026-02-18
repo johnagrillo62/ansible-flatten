@@ -10,7 +10,6 @@
 [0].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [0].when = ((item.name is defined and item.name) and (item.uid is undefined or (item.uid is defined and not item.uid)))
 [1].name = Manage user accounts with UIDs
 [1]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
@@ -25,7 +24,6 @@
 [1].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [1].when = ((item.name is defined and item.name) and (item.uid is defined and item.uid))
 [2].name = Manage user default groups
 [2]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
@@ -35,7 +33,6 @@
 [2].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [2].when = ((item.name is defined and item.name) and (gitusers_default_groups_list is defined and gitusers_default_groups_list))
 [3].name = Manage user custom groups
 [3]["ansible.builtin.user"].name = {{ item.name + gitusers_name_suffix }}
@@ -45,7 +42,6 @@
 [3].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [3].when = ((item.name is defined and item.name) and (item.groups is defined and item.groups))
 [4].name = Enforce home directories permissions
 [4]["ansible.builtin.file"].state = directory
@@ -56,5 +52,4 @@
 [4].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [4].when = ((item.name is defined and item.name) and (item.state is undefined or (item.state is defined and item.state != 'absent')))

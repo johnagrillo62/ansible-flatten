@@ -1,1 +1,2 @@
-~d0.firewall_allowed_tcp_ports = 
+firewall_allowed_tcp_ports[0] = 22
+firewall_allowed_tcp_ports[1] = 80

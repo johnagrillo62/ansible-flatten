@@ -1,4 +1,3 @@
-~d0.name = Restart slapd
-~d1.ansible.builtin.service = 
-~d2.name = 'slapd'
-~d2.state = 'restarted'
+[0].name = Restart slapd
+[0]["ansible.builtin.service"].name = slapd
+[0]["ansible.builtin.service"].state = restarted

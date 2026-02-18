@@ -21,7 +21,6 @@ roundcube__base_php_packages[5] = {{ ["sqlite3"] if (roundcube__database_map[rou
 roundcube__apt_php_packages = {{ ["mail-mime", "net-smtp", "pear"]
                                  if ansible_distribution_release in ["stretch", "buster", "sid", "xenial", "yakkety", "zesty", "artful"]
                                  else [] }}
-
 roundcube__base_packages[0] = curl
 roundcube__base_packages[1] = file
 roundcube__base_packages[2] = unzip
@@ -30,7 +29,7 @@ roundcube__base_packages[4] = aspell-en
 roundcube__user = roundcube
 roundcube__group = roundcube
 roundcube__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                     + "/" + roundcube__user }} 
+                     + "/" + roundcube__user }}
 roundcube__comment = Roundcube Webmail
 roundcube__shell = /usr/sbin/nologin
 roundcube__git_gpg_key = 4295 5C9D 6F2A CA9D 3E96  D55F 3E54 28D0 262C 54F8
@@ -39,27 +38,23 @@ roundcube__git_dir = {{ roundcube__src + "/"
                         + roundcube__git_repo.split("@"
                                                     if ("@" in roundcube__git_repo)
                                                     else "://")[1] }}
-
 roundcube__git_version = 1.6.0
 roundcube__git_dest = {{ roundcube__www + "/sites/" + roundcube__user + "/public" }}
 roundcube__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                    + "/" + roundcube__user }} 
+                    + "/" + roundcube__user }}
 roundcube__www = {{ ansible_local.nginx.www
                     if (ansible_local | d() and ansible_local.nginx | d())
                     else "/srv/www" }}
-
 roundcube__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
 roundcube__database = sqlite-default
 roundcube__database_user = roundcube
 roundcube__database_password_path = {{ secret + "/credentials/" + inventory_hostname
                                        + "/roundcube/" + roundcube__database
                                        + "/" + roundcube__database_user + "/password" }}
-
 roundcube__database_password = {{ lookup("password", roundcube__database_password_path + " length=30") }}
 roundcube__database_name = {{ roundcube__database_user
                               if roundcube__database == "postgresql-default"
                               else "roundcubemail" }}
-
 roundcube__database_map.sqlite-default.dbtype = sqlite
 roundcube__database_map.sqlite-default.dbname = db/roundcube.db
 roundcube__database_map.mysql-default.dbtype = mysql
@@ -79,18 +74,15 @@ roundcube__database_schema_map.postgresql = {{ roundcube__git_dest + "/SQL/postg
 roundcube__database_schema = {{ roundcube__database_schema_map[roundcube__database_map[roundcube__database].dbtype]
                                 if roundcube__database_schema_map[roundcube__database_map[roundcube__database].dbtype] | d()
                                 else "" }}
-
 roundcube__memcached_enabled = {{ True
                                   if (ansible_local | d() and ansible_local.memcached | d() and
                                       (ansible_local.memcached.installed | d()) | bool)
                                   else False }}
-
 roundcube__memcached_hosts[0] = localhost:11211
 roundcube__redis_enabled = {{ True
                               if (ansible_local | d() and ansible_local.redis_server | d() and
                                   (ansible_local.redis_server.installed | d()) | bool)
                               else False }}
-
 roundcube__redis_server = localhost
 roundcube__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
 roundcube__redis_database = 1
@@ -100,18 +92,15 @@ roundcube__redis_hosts[0] = {{ ([roundcube__redis_server,
                                 roundcube__redis_database,
                                 roundcube__redis_password])
                               | join(":") }}
-
 roundcube__session_storage = {{ "redis"
                                 if roundcube__redis_enabled | bool
                                 else ("memcached"
                                       if roundcube__memcached_enabled | bool
                                       else "") }}
-
 roundcube__ldap_enabled = {{ ansible_local.ldap.enabled
                              if (ansible_local | d() and ansible_local.ldap | d() and
                                  ansible_local.ldap.enabled is defined)
                              else False }}
-
 roundcube__ldap_password_enabled = {{ roundcube__ldap_enabled }}
 roundcube__ldap_addressbook_name = LDAP Address Book
 roundcube__ldap_hosts = {{ ansible_local.ldap.hosts | d([]) }}
@@ -131,13 +120,12 @@ roundcube__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                     + roundcube__ldap_binddn | to_uuid + ".password length=32"))
                             if roundcube__ldap_enabled | bool
                             else "" }}
-
 roundcube__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d([]) }}
 roundcube__ldap_people_dn = {{ [roundcube__ldap_people_rdn]
-                               + roundcube__ldap_base_dn }} 
+                               + roundcube__ldap_base_dn }}
 roundcube__ldap_groups_rdn = {{ ansible_local.ldap.groups_rdn | d([]) }}
 roundcube__ldap_groups_dn = {{ [roundcube__ldap_groups_rdn]
-                               + roundcube__ldap_base_dn }} 
+                               + roundcube__ldap_base_dn }}
 roundcube__ldap_hidden = True
 roundcube__ldap_field_map.name = cn
 roundcube__ldap_field_map.firstname = givenName
@@ -162,7 +150,6 @@ roundcube__imap_srv_rr = {{ q("debops.debops.dig_srv", "_imaps._tcp." + roundcub
                               if (ansible_local | d() and ansible_local.dovecot | d() and
                                   (ansible_local.dovecot.installed | d()) | bool)
                               else "imap." + roundcube__domain, 993) }}
-
 roundcube__imap_fqdn = {{ roundcube__imap_srv_rr[0]["target"] }}
 roundcube__imap_port = {{ roundcube__imap_srv_rr[0]["port"] }}
 roundcube__imap_server = {{ ("ssl://"
@@ -172,13 +159,11 @@ roundcube__imap_server = {{ ("ssl://"
                                    else "tls://"))
                              + roundcube__imap_fqdn
                              + ":" + roundcube__imap_port }}
-
 roundcube__smtp_srv_rr = {{ q("debops.debops.dig_srv", "_submissions._tcp." + roundcube__domain,
                               ansible_fqdn
                               if (ansible_local | d() and ansible_local.postfix | d() and
                                   (ansible_local.postfix.installed | d()) | bool)
                               else ("smtp." + roundcube__domain), 465) }}
-
 roundcube__smtp_fqdn = {{ roundcube__smtp_srv_rr[0]["target"] }}
 roundcube__smtp_port = {{ roundcube__smtp_srv_rr[0]["port"] }}
 roundcube__smtp_server = {{ ("ssl://"
@@ -188,7 +173,6 @@ roundcube__smtp_server = {{ ("ssl://"
                                    else "tls://"))
                              + roundcube__smtp_fqdn
                              + ":" + roundcube__smtp_port }}
-
 roundcube__smtp_user = %u
 roundcube__smtp_pass = %p
 roundcube__sieve_srv_rr = {{ q("debops.debops.dig_srv", "_sieve._tcp." + roundcube__domain,
@@ -196,7 +180,6 @@ roundcube__sieve_srv_rr = {{ q("debops.debops.dig_srv", "_sieve._tcp." + roundcu
                                if (ansible_local | d() and ansible_local.dovecot | d() and
                                    (ansible_local.dovecot.installed | d()) | bool)
                                else ("sieve." + roundcube__domain), 4190) }}
-
 roundcube__sieve_fqdn = {{ roundcube__sieve_srv_rr[0]["target"] }}
 roundcube__sieve_port = {{ roundcube__sieve_srv_rr[0]["port"] }}
 roundcube__sieve_server = {{ "tls://" + roundcube__sieve_fqdn }}
@@ -1948,31 +1931,25 @@ roundcube__default_configuration[0].name = db_dsnw
 roundcube__default_configuration[0].value = {{ "sqlite:///" + roundcube__git_dest + "/"
                             + roundcube__database_map[roundcube__database].dbname | d()
                             + "?mode=640" }}
-
 roundcube__default_configuration[0].state = {{ "present"
                if (roundcube__database_map[roundcube__database].dbtype == "sqlite")
                else "ignore" }}
-
 roundcube__default_configuration[1].name = db_dsnw
 roundcube__default_configuration[1].value = {{ "mysql://" + roundcube__database_map[roundcube__database].dbuser | d() + ":"
                           + roundcube__database_map[roundcube__database].dbpass | d() + "@"
                           + roundcube__database_map[roundcube__database].dbhost | d() + "/"
                           + roundcube__database_map[roundcube__database].dbname | d() }}
-
 roundcube__default_configuration[1].state = {{ "present"
                if (roundcube__database_map[roundcube__database].dbtype == "mysql")
                else "ignore" }}
-
 roundcube__default_configuration[2].name = db_dsnw
 roundcube__default_configuration[2].value = {{ "pgsql://" + roundcube__database_map[roundcube__database].dbuser | d() + ":"
                           + roundcube__database_map[roundcube__database].dbpass | d() + "@"
                           + roundcube__database_map[roundcube__database].dbhost | d() + "/"
                           + roundcube__database_map[roundcube__database].dbname | d() }}
-
 roundcube__default_configuration[2].state = {{ "present"
                if (roundcube__database_map[roundcube__database].dbtype == "postgresql")
                else "ignore" }}
-
 roundcube__default_configuration[3].name = log_driver
 roundcube__default_configuration[3].comment = Log driver: "syslog", "stdout" or "file"
 
@@ -1988,7 +1965,6 @@ roundcube__default_configuration[6].state = {{ "ignore"
                if (ansible_local | d() and ansible_local.dovecot | d() and
                    (ansible_local.dovecot.installed | d()) | bool)
                else "present" }}
-
 roundcube__default_configuration[7].name = smtp_host
 roundcube__default_configuration[7].value = {{ roundcube__smtp_server }}
 roundcube__default_configuration[8].name = smtp_user
@@ -2029,14 +2005,13 @@ roundcube__default_configuration[23].name = plugins
 roundcube__default_configuration[23].value = {{ roundcube__combined_plugins | debops.debops.parse_kv_items
                | selectattr("state", "equalto", "enabled")
                | map(attribute="name") | list | unique }}
-
 roundcube__default_configuration[24].name = create_default_folders
 roundcube__default_configuration[24].value = True
 roundcube__default_configuration[25].name = min_refresh_interval
 roundcube__default_configuration[25].value = 300
 roundcube__default_configuration[26].name = autocomplete_addressbooks
 roundcube__default_configuration[26].value = {{ (["sql"] + (["People"] if roundcube__ldap_enabled | bool else []))
-               | flatten }} 
+               | flatten }}
 roundcube__default_configuration[26].state = {{ "present" if roundcube__ldap_enabled | bool else "ignore" }}
 roundcube__default_configuration[27].name = autocomplete_min_length
 roundcube__default_configuration[27].value = 3
@@ -2051,7 +2026,6 @@ roundcube__default_configuration[29].array[0].name = {{ roundcube__ldap_addressb
 roundcube__default_configuration[29].array[0].hosts = {{ (["tls://"] if roundcube__ldap_use_tls else [""])
                    | product(roundcube__ldap_hosts) | map("join")
                    | product([roundcube__ldap_port]) | map("join") }}
-
 roundcube__default_configuration[29].array[0].ldap_version = 3
 roundcube__default_configuration[29].array[0].user_specific = True
 roundcube__default_configuration[29].array[0].base_dn = {{ roundcube__ldap_people_dn | join(",") }}
@@ -2121,7 +2095,6 @@ roundcube__combined_configuration = {{ roundcube__original_configuration
                                        + roundcube__configuration
                                        + roundcube__group_configuration
                                        + roundcube__host_configuration }}
-
 roundcube__default_configuration_sections[0].name = init
 roundcube__default_configuration_sections[0].state = hidden
 roundcube__default_configuration_sections[1].name = sql
@@ -2144,7 +2117,7 @@ roundcube__default_configuration_sections[11].title = USER PREFERENCES
 roundcube__default_configuration_sections[12].name = unknown
 roundcube__default_configuration_sections[12].title = OTHER OPTIONS
 roundcube__combined_configuration_sections = {{ roundcube__default_configuration_sections
-                                                + roundcube__configuration_sections }} 
+                                                + roundcube__configuration_sections }}
 roundcube__default_plugins[0].name = archive
 roundcube__default_plugins[0].state = enabled
 roundcube__default_plugins[1].name = filesystem_attachments
@@ -2175,7 +2148,7 @@ roundcube__default_plugins[4].package = kolab/net_ldap3
 roundcube__default_plugins[4].state = {{ "present" if roundcube__ldap_enabled | bool else "ignore" }}
 roundcube__default_plugins[5].name = contextmenu
 roundcube__default_plugins[5].package = johndoh/contextmenu{{ ":3.2.1"
-              if roundcube__git_version is version("1.5", "<") else "" }} 
+              if roundcube__git_version is version("1.5", "<") else "" }}
 roundcube__default_plugins[5].state = enabled
 roundcube__default_plugins[6].name = show_folder_size
 roundcube__default_plugins[6].package = jfcherng/show-folder-size
@@ -2424,7 +2397,6 @@ Default: 'localhost'
 roundcube__default_plugins[9].options[28].value = {{ (roundcube__ldap_hosts | first)
                    if roundcube__ldap_hosts | d()
                    else "" }}
-
 roundcube__default_plugins[9].options[29].name = password_ldap_port
 roundcube__default_plugins[9].options[29].comment = LDAP server port to connect to
 Default: '389'
@@ -3159,7 +3131,6 @@ roundcube__combined_plugins = {{ roundcube__default_plugins
                                  + roundcube__plugins
                                  + roundcube__group_plugins
                                  + roundcube__host_plugins }}
-
 roundcube__skin_folder = elastic
 roundcube__skin_logo = null
 roundcube__max_file_size = 30
@@ -3175,7 +3146,7 @@ roundcube__ldap__dependent_tasks[0].objectClass = {{ roundcube__ldap_self_object
 roundcube__ldap__dependent_tasks[0].attributes = {{ roundcube__ldap_self_attributes }}
 roundcube__ldap__dependent_tasks[0].no_log = {{ debops__no_log | d(True) }}
 roundcube__ldap__dependent_tasks[0].state = {{ "present" if roundcube__ldap_password_enabled and
-                            roundcube__ldap_device_dn | d() else "ignore" }} 
+                            roundcube__ldap_device_dn | d() else "ignore" }}
 roundcube__nginx__dependent_servers[0].name = {{ roundcube__fqdn }}
 roundcube__nginx__dependent_servers[0].filename = debops.roundcube
 roundcube__nginx__dependent_servers[0].by_role = debops.roundcube

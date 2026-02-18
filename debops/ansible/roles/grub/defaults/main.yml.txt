@@ -61,7 +61,6 @@ grub__default_configuration[0].value = {{ grub__timeout_hardware
                if (ansible_virtualization_role is undefined or
                    ansible_virtualization_role not in ["guest"])
                else grub__timeout_virtual }}
-
 grub__default_configuration[1].name = cmdline_linux_default
 grub__default_configuration[1].value[0] = cgroup_enable=memory
 grub__default_configuration[1].value[1] = swapaccount=1
@@ -90,7 +89,6 @@ grub__default_configuration[6].state = {{ "present"
                if (grub__combined_users | length > 0 and
                    grub__menuentry_access is string)
                else "absent" }}
-
 grub__default_configuration[6].export = True
 grub__combined_configuration = {{ grub__original_configuration
                                   + grub__fact_configuration
@@ -101,7 +99,6 @@ grub__combined_configuration = {{ grub__original_configuration
                                   + grub__configuration
                                   + grub__group_configuration
                                   + grub__host_configuration }}
-
 grub__serial_console = True
 grub__serial_console_unit = 0
 grub__serial_console_speed = 115200

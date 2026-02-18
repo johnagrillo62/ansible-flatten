@@ -5,7 +5,6 @@ elasticsearch__group = elasticsearch
 elasticsearch__additional_groups = {{ ["ssl-cert"]
                                       if elasticsearch__pki_enabled | bool
                                       else [] }}
-
 elasticsearch__inventory_group_all = debops_service_elasticsearch
 elasticsearch__inventory_group_master = debops_service_elasticsearch_master
 elasticsearch__inventory_group_data = debops_service_elasticsearch_data
@@ -14,7 +13,6 @@ elasticsearch__inventory_group_lb = debops_service_elasticsearch_lb
 elasticsearch__inventory_master_hosts = {{ (groups[elasticsearch__inventory_group_master]
                                             | d(groups[elasticsearch__inventory_group_all]))
                                            if elasticsearch__allow_tcp else [] }}
-
 elasticsearch__initial_master_nodes[0] = {{ elasticsearch__node_name }}
 elasticsearch__pki_enabled = {{ (ansible_local.pki.enabled | d()) | bool }}
 elasticsearch__pki_base_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
@@ -25,41 +23,33 @@ elasticsearch__pki_crt_file = public/cert_intermediate.pem
 elasticsearch__tls_ca_certificate = {{ elasticsearch__pki_base_path + "/"
                                        + elasticsearch__pki_realm + "/"
                                        + elasticsearch__pki_ca_file }}
-
 elasticsearch__tls_private_key = {{ elasticsearch__pki_base_path + "/"
                                     + elasticsearch__pki_realm + "/"
                                     + elasticsearch__pki_key_file }}
-
 elasticsearch__tls_certificate = {{ elasticsearch__pki_base_path + "/"
                                     + elasticsearch__pki_realm + "/"
                                     + elasticsearch__pki_crt_file }}
-
 elasticsearch__xpack_enabled = {{ True
                                   if (elasticsearch__pki_enabled | bool and
                                       elasticsearch__allow_tcp | d())
                                   else False }}
-
 elasticsearch__api_base_url = {{ "https://" + ansible_fqdn + ":9200" }}
 elasticsearch__api_username = elastic
 elasticsearch__secret_path = {{ "elasticsearch/credentials/"
-                                + elasticsearch__cluster_name + "/built-in" }} 
+                                + elasticsearch__cluster_name + "/built-in" }}
 elasticsearch__api_password = {{ lookup("password", secret + "/"
                                  + elasticsearch__secret_path + "/"
                                  + elasticsearch__api_username + "/password") }}
-
 elasticsearch__combined_native_roles = {{ elasticsearch__native_roles
                                           + elasticsearch__group_native_roles
                                           + elasticsearch__host_native_roles }}
-
 elasticsearch__combined_native_users = {{ elasticsearch__native_users
                                           + elasticsearch__group_native_users
                                           + elasticsearch__host_native_users }}
-
 elasticsearch__network_host = {{ ["_local_", "_site_"]
                                  if (ansible_local.ferm.enabled | d() and
                                      ansible_local.ferm.enabled | bool)
                                  else ["_local_"] }}
-
 elasticsearch__http_port = 9200
 elasticsearch__transport_tcp_port = 9300
 elasticsearch__domain = {{ ansible_domain }}
@@ -67,7 +57,7 @@ elasticsearch__cluster_name = {{ elasticsearch__domain | replace(".", "-") }}
 elasticsearch__node_name = {{ ansible_hostname }}
 elasticsearch__discovery_hosts = {{ elasticsearch__inventory_master_hosts }}
 elasticsearch__discovery_minimum_master_nodes = {{ "1" if (elasticsearch__inventory_master_hosts | count <= 2)
-                                                       else ((elasticsearch__inventory_master_hosts | count / 2) | round(0, "floor") | int + 1) }} 
+                                                       else ((elasticsearch__inventory_master_hosts | count / 2) | round(0, "floor") | int + 1) }}
 elasticsearch__gateway_recover_after_nodes = {{ elasticsearch__discovery_minimum_master_nodes }}
 elasticsearch__node_master = {{ True
                                 if (elasticsearch__inventory_group_master in group_names)
@@ -78,7 +68,6 @@ elasticsearch__node_master = {{ True
                                             else (False
                                                   if (elasticsearch__inventory_group_lb in group_names)
                                                   else True))) }}
-
 elasticsearch__node_data = {{ True
                               if (elasticsearch__inventory_group_data in group_names)
                               else (False
@@ -88,7 +77,6 @@ elasticsearch__node_data = {{ True
                                           else (False
                                                 if (elasticsearch__inventory_group_lb in group_names)
                                                 else True))) }}
-
 elasticsearch__node_ingest = {{ True
                                 if (elasticsearch__inventory_group_ingest in group_names)
                                 else (False
@@ -98,24 +86,20 @@ elasticsearch__node_ingest = {{ True
                                             else (False
                                                   if (elasticsearch__inventory_group_lb in group_names)
                                                   else True))) }}
-
 elasticsearch__memory_lock = {{ True
                                 if (not (ansible_system_capabilities_enforced | d()) | bool or
                                     ((ansible_system_capabilities_enforced | d()) | bool and
                                      "cap_ipc_lock" in (ansible_system_capabilities | d([]))))
                                 else False }}
-
 elasticsearch__systemd_limit_memlock = infinity
 elasticsearch__jvm_memory_heap_size_multiplier = {{ "0.2"
                                                     if (ansible_memtotal_mb | int / 2 <= 2048)
                                                     else "0.45" }}
-
 elasticsearch__jvm_memory_min_heap_size = {{ (((ansible_memtotal_mb | int
                                                * elasticsearch__jvm_memory_heap_size_multiplier | float)
                                                | round | int) | string + "m")
                                              if (ansible_memtotal_mb | int / 2 <= 32768)
                                              else "32600m" }}
-
 elasticsearch__jvm_memory_max_heap_size = {{ elasticsearch__jvm_memory_min_heap_size }}
 elasticsearch__path_data[0] = /var/lib/elasticsearch
 elasticsearch__original_configuration[0].name = cluster.name
@@ -160,7 +144,6 @@ elasticsearch__original_configuration[7].state = comment
 elasticsearch__original_configuration[8].name = {{ "discovery.zen.ping.unicast.hosts"
               if (elasticsearch__version is version("7.0.0", "<"))
               else "discovery.seed_hosts" }}
-
 elasticsearch__original_configuration[8].comment = Pass an initial list of hosts to perform discovery when new node is started:
 The default list of hosts is ["127.0.0.1", "[::1]"]
 
@@ -211,20 +194,17 @@ elasticsearch__default_configuration[9].state = present
 elasticsearch__default_configuration[10].name = {{ "transport.tcp.port"
               if (elasticsearch__version is version("7.1.0", "<"))
               else "transport.port" }}
-
 elasticsearch__default_configuration[10].comment = Set a custom port for TCP transport
 elasticsearch__default_configuration[10].value = {{ elasticsearch__transport_tcp_port }}
 elasticsearch__default_configuration[10].state = present
 elasticsearch__default_configuration[11].name = {{ "discovery.zen.ping.unicast.hosts"
               if (elasticsearch__version is version("7.0.0", "<"))
               else "discovery.seed_hosts" }}
-
 elasticsearch__default_configuration[11].value = 
 elasticsearch__default_configuration[11].state = present
 elasticsearch__default_configuration[12].name = {{ "discovery.zen.ping.unicast.hosts"
               if (elasticsearch__version is version("7.0.0", "<"))
               else "discovery.seed_hosts" }}
-
 elasticsearch__default_configuration[12].value = {{ elasticsearch__discovery_hosts }}
 elasticsearch__default_configuration[12].state = {{ "present" if elasticsearch__discovery_hosts else "absent" }}
 elasticsearch__default_configuration[13].name = discovery.zen.minimum_master_nodes
@@ -241,7 +221,6 @@ elasticsearch__default_configuration[15].value = {{ elasticsearch__initial_maste
 elasticsearch__default_configuration[15].state = {{ "absent"
                if (elasticsearch__version is version("7.0.0", "<"))
                else "present" }}
-
 elasticsearch__default_configuration[16].name = gateway.recover_after_nodes
 elasticsearch__default_configuration[16].comment = Block initial recovery after a full cluster restart until N nodes are started
 elasticsearch__default_configuration[16].value = {{ elasticsearch__gateway_recover_after_nodes }}
@@ -297,13 +276,11 @@ elasticsearch__default_configuration[32].state = {{ "present" if elasticsearch__
 elasticsearch__plugin_configuration = {{ lookup("template",
                                          "lookup/elasticsearch__plugin_configuration.j2")
                                          | from_yaml }}
-
 elasticsearch__dependent_role = 
 elasticsearch__dependent_state = present
 elasticsearch__dependent_configuration_filter = {{ lookup("template",
                                                    "lookup/elasticsearch__dependent_configuration_filter.j2")
                                                    | from_yaml }}
-
 elasticsearch__combined_configuration = {{ lookup("flattened", (elasticsearch__original_configuration
                                            + elasticsearch__default_configuration
                                            + elasticsearch__plugin_configuration
@@ -315,7 +292,6 @@ elasticsearch__combined_configuration = {{ lookup("flattened", (elasticsearch__o
                                            + elasticsearch__lb_configuration
                                            + elasticsearch__group_configuration
                                            + elasticsearch__host_configuration)) }}
-
 elasticsearch__configuration_sections[0].name = Cluster
 elasticsearch__configuration_sections[0].part = cluster
 elasticsearch__configuration_sections[1].name = Node
@@ -345,7 +321,6 @@ elasticsearch__combined_plugins = {{ lookup("flattened", (elasticsearch__plugins
                                      + elasticsearch__lb_plugins
                                      + elasticsearch__group_plugins
                                      + elasticsearch__host_plugins)) }}
-
 elasticsearch__java_policy = // default permissions granted to all domains
 grant {
     // allows anyone to listen on dynamic ports

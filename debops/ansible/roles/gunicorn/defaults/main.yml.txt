@@ -2,7 +2,6 @@ gunicorn__binary = {{ "gunicorn3"
                       if (ansible_local | d() and ansible_local.python | d() and
                           (ansible_local.python.installed3 | d()) | bool)
                       else "gunicorn" }}
-
 gunicorn__workers = {{ ansible_processor_vcpus | int + 1 }}
 gunicorn__user = www-data
 gunicorn__group = www-data

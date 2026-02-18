@@ -1,10 +1,6 @@
-~d0.hosts = all
-~d1.vars = 
-~d2.my_color_choice = blue
-~d1.tasks = 
-~d2.name = "Verify {{ my_color_choice }} is a form of blue."
-~d3.assert = 
-~d4.that = my_color_choice is local.colors.blue
-~d2.name = "Verify yellow is not a form of blue."
-~d3.assert = 
-~d4.that = "'yellow' is not local.colors.blue"
+[0].hosts = all
+[0].vars.my_color_choice = blue
+[0].tasks[0].name = Verify {{ my_color_choice }} is a form of blue.
+[0].tasks[0].assert.that = my_color_choice is local.colors.blue
+[0].tasks[1].name = Verify yellow is not a form of blue.
+[0].tasks[1].assert.that = 'yellow' is not local.colors.blue

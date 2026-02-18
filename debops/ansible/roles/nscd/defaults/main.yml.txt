@@ -14,11 +14,9 @@ nscd__default_configuration[0].options[3].name = server_user
 nscd__default_configuration[0].options[3].value = {{ "unscd"
                    if (nscd__flavor == "unscd")
                    else "nobody" }}
-
 nscd__default_configuration[0].options[3].state = {{ "present"
                    if (nscd__flavor == "unscd")
                    else "comment" }}
-
 nscd__default_configuration[0].options[4].name = stat_user
 nscd__default_configuration[0].options[4].value = somebody
 nscd__default_configuration[0].options[4].state = comment
@@ -82,7 +80,6 @@ nscd__default_configuration[4].max_db_size = 33554432
 nscd__default_configuration[4].state = {{ "absent"
                if (nscd__flavor == "unscd")
                else "present" }}
-
 nscd__default_configuration[5].name = netgroup
 nscd__default_configuration[5].enable_cache = True
 nscd__default_configuration[5].positive_time_to_live = 28800
@@ -95,9 +92,7 @@ nscd__default_configuration[5].max_db_size = 33554432
 nscd__default_configuration[5].state = {{ "absent"
                if (nscd__flavor == "unscd")
                else "present" }}
-
 nscd__combined_configuration = {{ nscd__default_configuration
                                   + nscd__configuration
                                   + nscd__group_configuration
                                   + nscd__host_configuration }}
-

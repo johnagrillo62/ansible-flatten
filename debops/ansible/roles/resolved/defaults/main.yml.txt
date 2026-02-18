@@ -2,7 +2,6 @@ resolved__enabled = {{ True
                        if (ansible_service_mgr == "systemd" and
                            resolved__fact_service_state == "present")
                        else False }}
-
 resolved__deploy_state = absent
 resolved__resolv_conf = /run/systemd/resolve/stub-resolv.conf
 resolved__fallback_conf = 00fallback-dns.conf
@@ -12,7 +11,6 @@ resolved__base_packages = {{ ["libnss-resolve"]
                                   (["stretch", "buster", "bullseye",
                                     "bionic", "focal", "jammy"]))
                               else ["systemd-resolved", "libnss-resolve"] }}
-
 resolved__skip_packages[0] = resolvconf
 resolved__skip_packages[1] = openresolv
 resolved__version = {{ ansible_local.resolved.version | d("0") }}
@@ -54,7 +52,6 @@ resolved__combined_configuration = {{ resolved__default_configuration
                                       + resolved__configuration
                                       + resolved__group_configuration
                                       + resolved__host_configuration }}
-
 resolved__default_units[0].name = workstation.dnssd
 resolved__default_units[0].comment = Publish information about the host in mDNS
 resolved__default_units[0].raw = [Service]
@@ -84,7 +81,6 @@ resolved__combined_units = {{ resolved__default_units
                               + resolved__units
                               + resolved__group_units
                               + resolved__host_units }}
-
 resolved__etc_services__dependent_list[0].name = llmnr
 resolved__etc_services__dependent_list[0].port = 5355
 resolved__etc_services__dependent_list[0].protocols[0] = tcp
@@ -96,4 +92,3 @@ resolved__dpkg_cleanup__dependent_packages[0].state = {{ "absent"
                    (["stretch", "buster", "bullseye",
                      "bionic", "focal", "jammy"]))
                else "present" }}
-

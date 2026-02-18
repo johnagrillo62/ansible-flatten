@@ -1,4 +1,3 @@
-~d0.name = Reload tgt
-~d1.ansible.builtin.service = 
-~d2.name = 'tgt'
-~d2.state = 'reloaded'
+[0].name = Reload tgt
+[0]["ansible.builtin.service"].name = tgt
+[0]["ansible.builtin.service"].state = reloaded

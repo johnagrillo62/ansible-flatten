@@ -9,9 +9,8 @@ librenms__base_packages[1] = {{ "snmp-mibs-downloader"
         if (ansible_local | d() and ansible_local.apt | d() and
             (ansible_local.apt.nonfree | d()) | bool)
         else [] }}
-
 librenms__monitoring_packages = {{ librenms__monitoring_packages_map[ansible_distribution]
-                                   | d(["monitoring-plugins"]) }} 
+                                   | d(["monitoring-plugins"]) }}
 librenms__monitoring_packages_map.Ubuntu[0] = nagios-plugins
 librenms__fqdn = nms.{{ librenms__domain }}
 librenms__domain = {{ ansible_domain }}
@@ -25,10 +24,10 @@ librenms__shell = /bin/bash
 librenms__home = {{ ansible_local.nginx.www | d("/srv/www") + "/" + librenms__user }}
 librenms__install_path = {{ librenms__home + "/sites/public" }}
 librenms__data_path = {{ (ansible_local.fhs.data | d("/srv"))
-                         + "/" + librenms__user }} 
+                         + "/" + librenms__user }}
 librenms__rrd_dir = {{ librenms__data_path + "/rrd" }}
 librenms__log_dir = {{ (ansible_local.fhs.log | d("/var/log"))
-                       + "/librenms" }} 
+                       + "/librenms" }}
 librenms__config_mode = 0600
 librenms__install_repo = https://github.com/librenms/librenms.git
 librenms__install_version = master
@@ -40,7 +39,6 @@ librenms__database_password = {{ lookup('password', secret + '/mariadb/' +
                                  ansible_local.mariadb.delegate_to +
                                  '/credentials/' + librenms__database_user +
                                  '/password length=48') }}
-
 librenms__admin_accounts = {{ ansible_local.core.admin_users | d([]) }}
 librenms__cron_threads = {{ (ansible_processor_cores | int * 4) }}
 librenms__memcached = False
@@ -70,7 +68,7 @@ librenms__snmp_credentials_default.authlevel = authPriv
 librenms__snmp_credentials_default.authalgo = SHA
 librenms__snmp_credentials_default.cryptoalgo = AES
 librenms__home_snmp_conf = {{ (["root", librenms__user] +
-                              librenms__admin_accounts | d([])) | unique }} 
+                              librenms__admin_accounts | d([])) | unique }}
 librenms__configuration_maps[0] = {{ librenms__config_database }}
 librenms__configuration_maps[1] = {{ librenms__config_authentication }}
 librenms__configuration_maps[2] = {{ librenms__config_installation }}
@@ -133,7 +131,7 @@ librenms__php__dependent_packages[0][4] = curl
 librenms__php__dependent_packages[0][5] = mcrypt
 librenms__php__dependent_packages[0][6] = json
 librenms__php__dependent_packages[1] = {{ ["xml", "mbstring", "zip"]
-        if (php__version is version_compare("7.0", ">=")) else [] }} 
+        if (php__version is version_compare("7.0", ">=")) else [] }}
 librenms__php__dependent_pools[0].name = librenms
 librenms__php__dependent_pools[0].user = {{ librenms__user }}
 librenms__php__dependent_pools[0].group = {{ librenms__group }}

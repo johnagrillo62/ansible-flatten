@@ -2,7 +2,6 @@ apt__enabled = {{ True if (ansible_pkg_mgr == "apt") else False }}
 apt__deploy_state = {{ "present"
                        if (ansible_facts.distribution in ["Debian", "Raspbian", "Ubuntu", "Devuan"])
                        else "absent" }}
-
 apt__cache_valid_time = {{ ansible_local.core.cache_valid_time | d(60 * 60 * 24) }}
 apt__base_packages[0] = lsb-release
 apt__base_packages[1] = ca-certificates
@@ -10,37 +9,33 @@ apt__base_packages[2] = {{ "apt-transport-https"
         if (ansible_distribution_release in
             ["stretch", "trusty", "xenial"])
         else [] }}
-
 apt__base_packages[3] = gnupg
 apt__archive_types[0] = deb
 apt__archive_types[1] = deb-src
 apt__archive_sources_disabled = True
 apt__architecture = {{ apt__architecture_map[ansible_facts.architecture]
-                       | d(ansible_facts.architecture) }} 
+                       | d(ansible_facts.architecture) }}
 apt__architecture_map.x86_64 = amd64
 apt__architecture_map.armv7l = armhf
 apt__architecture_map.aarch64 = arm64
 apt__distribution = {{ ansible_facts.lsb.id | d(ansible_facts.distribution) }}
 apt__distribution_release = {{ ansible_facts.lsb.codename
-                               | d(ansible_facts.distribution_release) }} 
+                               | d(ansible_facts.distribution_release) }}
 apt__distribution_version = {{ ansible_facts.distribution_version }}
 apt__nonfree = {{ ansible_facts.ansible_local.apt.nonfree
                   | d(True
                       if (ansible_facts.virtualization_role is undefined or
                           ansible_facts.virtualization_role != "guest")
                       else False) }}
-
 apt__nonfree_firmware = {{ True
                            if (ansible_facts.virtualization_role is undefined or
                                ansible_facts.virtualization_role != "guest")
                            else False }}
-
 apt__distribution_repository_map.Debian = http://deb.debian.org/debian
 apt__distribution_repository_map.Devuan = http://deb.devuan.org/merged
 apt__distribution_repository_map.Ubuntu = {{ "http://archive.ubuntu.com/ubuntu"
                 if (apt__architecture in ["amd64", "i386"])
                 else "http://ports.ubuntu.com/ubuntu-ports" }}
-
 apt__debian_archived_releases[0] = wheezy
 apt__debian_archived_releases[1] = jessie
 apt__debian_archived_releases[2] = stretch
@@ -53,14 +48,12 @@ apt__debian_sources[0].components[0] = main
 apt__debian_sources[0].state = {{ "present"
                if (apt__distribution == "Debian")
                else "ignore" }}
-
 apt__debian_sources[1].name = debian-release
 apt__debian_sources[1].uri = http://archive.debian.org/debian
 apt__debian_sources[1].state = {{ "present"
                if (apt__distribution == "Debian" and
                    apt__distribution_release in apt__debian_archived_releases)
                else "ignore" }}
-
 apt__debian_sources[2].name = debian-release
 apt__debian_sources[2].suites[0] = {{ apt__distribution_release + "-updates" }}
 apt__debian_sources[2].state = {{ "present"
@@ -68,14 +61,12 @@ apt__debian_sources[2].state = {{ "present"
                    apt__distribution_release not in apt__debian_archived_releases and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__debian_sources[3].name = debian-release
 apt__debian_sources[3].suites[0] = {{ apt__distribution_release + "-backports" }}
 apt__debian_sources[3].state = {{ "present"
                if (apt__distribution == "Debian" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__debian_sources[4].name = debian-release
 apt__debian_sources[4].components[0] = non-free-firmware
 apt__debian_sources[4].state = {{ "ignore"
@@ -86,7 +77,6 @@ apt__debian_sources[4].state = {{ "ignore"
                      if (apt__distribution == "Debian" and
                          apt__nonfree_firmware | bool)
                      else "ignore") }}
-
 apt__debian_sources[5].name = debian-release
 apt__debian_sources[5].components[0] = contrib
 apt__debian_sources[5].components[1] = non-free
@@ -94,7 +84,6 @@ apt__debian_sources[5].state = {{ "present"
                if (apt__distribution == "Debian" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__debian_sources[6].name = debian-release-security
 apt__debian_sources[6].types = {{ apt__archive_types }}
 apt__debian_sources[6].uri = http://deb.debian.org/debian-security/
@@ -105,7 +94,6 @@ apt__debian_sources[6].state = {{ "present"
                    apt__distribution_release not in apt__debian_archived_releases and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__debian_sources[7].name = debian-release-security
 apt__debian_sources[7].uri = http://security.debian.org/
 apt__debian_sources[7].suites[0].name = {{ apt__distribution_release + "-security" }}
@@ -117,7 +105,6 @@ apt__debian_sources[7].state = {{ "present"
                    apt__distribution_release in ["buster"] and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__debian_sources[8].name = debian-release-security
 apt__debian_sources[8].components[0] = non-free-firmware
 apt__debian_sources[8].state = {{ "present"
@@ -127,7 +114,6 @@ apt__debian_sources[8].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree_firmware | bool)
                else "ignore" }}
-
 apt__debian_sources[9].name = debian-release-security
 apt__debian_sources[9].components[0] = contrib
 apt__debian_sources[9].components[1] = non-free
@@ -137,7 +123,6 @@ apt__debian_sources[9].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__devuan_sources[0].name = devuan-release
 apt__devuan_sources[0].types = {{ apt__archive_types }}
 apt__devuan_sources[0].uri = {{ apt__distribution_repository_map.Devuan | d() }}
@@ -146,14 +131,12 @@ apt__devuan_sources[0].components[0] = main
 apt__devuan_sources[0].state = {{ "present"
                if (apt__distribution == "Devuan")
                else "ignore" }}
-
 apt__devuan_sources[1].name = devuan-release
 apt__devuan_sources[1].uri = http://archive.devuan.org/merged
 apt__devuan_sources[1].state = {{ "present"
                if (apt__distribution == "Devuan" and
                    apt__distribution_release in ["jessie", "ascii"])
                else "ignore" }}
-
 apt__devuan_sources[2].name = devuan-release
 apt__devuan_sources[2].suites[0] = {{ apt__distribution_release + "-updates" }}
 apt__devuan_sources[2].state = {{ "present"
@@ -161,7 +144,6 @@ apt__devuan_sources[2].state = {{ "present"
                    apt__distribution_release not in ["jessie", "ascii"] and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__devuan_sources[3].name = devuan-release
 apt__devuan_sources[3].suites[0] = {{ apt__distribution_release + "-backports" }}
 apt__devuan_sources[3].state = {{ "present"
@@ -169,7 +151,6 @@ apt__devuan_sources[3].state = {{ "present"
                    apt__distribution_release not in ["jessie"] and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__devuan_sources[4].name = devuan-release
 apt__devuan_sources[4].components[0] = contrib
 apt__devuan_sources[4].components[1] = non-free
@@ -177,7 +158,6 @@ apt__devuan_sources[4].state = {{ "present"
                if (apt__distribution == "Devuan" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__devuan_sources[5].name = devuan-release-security
 apt__devuan_sources[5].types = {{ apt__archive_types }}
 apt__devuan_sources[5].uri = http://pkgmaster.devuan.org/merged
@@ -188,7 +168,6 @@ apt__devuan_sources[5].state = {{ "present"
                    apt__distribution_release not in ["jessie", "ascii"] and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__devuan_sources[6].name = devuan-release-security
 apt__devuan_sources[6].components[0] = contrib
 apt__devuan_sources[6].components[1] = non-free
@@ -198,7 +177,6 @@ apt__devuan_sources[6].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[0].name = ubuntu-release
 apt__ubuntu_sources[0].comment = See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
 newer versions of the distribution.
@@ -210,14 +188,12 @@ apt__ubuntu_sources[0].components[0] = main
 apt__ubuntu_sources[0].state = {{ "present"
                if (apt__distribution == "Ubuntu")
                else "ignore" }}
-
 apt__ubuntu_sources[1].name = ubuntu-release
 apt__ubuntu_sources[1].components[0] = restricted
 apt__ubuntu_sources[1].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[2].name = ubuntu-release-updates
 apt__ubuntu_sources[2].comment = Major bug fix updates produced after the final release of the
 distribution.
@@ -230,7 +206,6 @@ apt__ubuntu_sources[2].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__ubuntu_sources[3].name = ubuntu-release-updates
 apt__ubuntu_sources[3].components[0] = restricted
 apt__ubuntu_sources[3].state = {{ "present"
@@ -238,7 +213,6 @@ apt__ubuntu_sources[3].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[4].name = ubuntu-release-universe
 apt__ubuntu_sources[4].comment = N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
 team. Also, please note that software in universe WILL NOT receive any
@@ -252,7 +226,6 @@ apt__ubuntu_sources[4].components[0] = universe
 apt__ubuntu_sources[4].state = {{ "present"
                if (apt__distribution == "Ubuntu")
                else "ignore" }}
-
 apt__ubuntu_sources[5].name = ubuntu-release-multiverse
 apt__ubuntu_sources[5].comment = N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
 team, and may not be under a free licence. Please satisfy yourself as to
@@ -269,7 +242,6 @@ apt__ubuntu_sources[5].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[6].name = ubuntu-release-backports
 apt__ubuntu_sources[6].comment = N.B. software from this repository may not have been tested as
 extensively as that contained in the main release, although it includes
@@ -285,7 +257,6 @@ apt__ubuntu_sources[6].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__ubuntu_sources[7].name = ubuntu-release-backports
 apt__ubuntu_sources[7].components[0] = restricted
 apt__ubuntu_sources[7].state = {{ "present"
@@ -293,14 +264,12 @@ apt__ubuntu_sources[7].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[8].name = ubuntu-release-backports
 apt__ubuntu_sources[8].components[0] = universe
 apt__ubuntu_sources[8].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__ubuntu_sources[9].name = ubuntu-release-backports
 apt__ubuntu_sources[9].components[0] = multiverse
 apt__ubuntu_sources[9].state = {{ "present"
@@ -308,7 +277,6 @@ apt__ubuntu_sources[9].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[10].name = ubuntu-release-partner
 apt__ubuntu_sources[10].comment = Uncomment the following two lines to add software from Canonical's
 'partner' repository.
@@ -324,7 +292,6 @@ apt__ubuntu_sources[10].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[11].name = ubuntu-release-security
 apt__ubuntu_sources[11].types = {{ apt__archive_types }}
 apt__ubuntu_sources[11].uri = {{ apt__distribution_repository_map.Ubuntu | d() }}
@@ -335,7 +302,6 @@ apt__ubuntu_sources[11].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__ubuntu_sources[12].name = ubuntu-release-security
 apt__ubuntu_sources[12].components[0] = restricted
 apt__ubuntu_sources[12].separate = False
@@ -344,7 +310,6 @@ apt__ubuntu_sources[12].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__ubuntu_sources[13].name = ubuntu-release-universe-security
 apt__ubuntu_sources[13].types = {{ apt__archive_types }}
 apt__ubuntu_sources[13].uri = {{ apt__distribution_repository_map.Ubuntu | d() }}
@@ -355,7 +320,6 @@ apt__ubuntu_sources[13].state = {{ "present"
                if (apt__distribution == "Ubuntu" and
                    apt__distribution_version != "n/a")
                else "ignore" }}
-
 apt__ubuntu_sources[14].name = ubuntu-release-multiverse-security
 apt__ubuntu_sources[14].types = {{ apt__archive_types }}
 apt__ubuntu_sources[14].uri = {{ apt__distribution_repository_map.Ubuntu | d() }}
@@ -366,18 +330,15 @@ apt__ubuntu_sources[14].state = {{ "present"
                    apt__distribution_version != "n/a" and
                    apt__nonfree | bool)
                else "ignore" }}
-
 apt__combined_sources = {{ apt__debian_sources
                            + apt__devuan_sources
                            + apt__ubuntu_sources
                            + apt__sources
                            + apt__group_sources
                            + apt__host_sources }}
-
 apt__combined_repositories = {{ apt__repositories
                                 + apt__group_repositories
                                 + apt__host_repositories }}
-
 apt__default_configuration[0].name = non-free-firmware-note
 apt__default_configuration[0].filename = non-free-firmware-note.conf
 apt__default_configuration[0].comment = Disable note about Debian Bookworm moving firmware to a separate section
@@ -388,7 +349,6 @@ apt__default_configuration[0].state = {{ "ignore"
                    apt__distribution_release in ["wheezy", "jessie", "stretch",
                                                  "buster", "bullseye"])
                else "present" }}
-
 apt__default_configuration[1].name = no-recommends
 apt__default_configuration[1].filename = 25no-recommends.conf
 apt__default_configuration[1].comment = Should APT install recommended or suggested packages?
@@ -400,4 +360,3 @@ apt__combined_configuration = {{ apt__default_configuration
                                  + apt__configuration
                                  + apt__group_configuration
                                  + apt__host_configuration }}
-

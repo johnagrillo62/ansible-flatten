@@ -1,12 +1,11 @@
 nodejs__distribution_release = {{ ansible_local.core.distribution_release | d(ansible_distribution_release) }}
 nodejs__node_upstream = {{ ansible_local.nodejs.node_upstream
-                            | d(nodejs__distribution_release in ["xenial"]) | bool }} 
+                            | d(nodejs__distribution_release in ["xenial"]) | bool }}
 nodejs__node_upstream_release = {{ "node_8.x"
                                    if (nodejs__distribution_release in
                                        ["stretch", "trusty",
                                         "xenial", "bionic"])
                                    else "node_10.x" }}
-
 nodejs__node_upstream_key_id = 9FD3B784BC1C6FC31A8A0A1C1655A0AB68576280
 nodejs__node_upstream_repository = deb https://deb.nodesource.com/{{ nodejs__node_upstream_release }} {{ nodejs__distribution_release }} main
 nodejs__yarn_upstream = {{ True
@@ -14,7 +13,6 @@ nodejs__yarn_upstream = {{ True
                            else (ansible_local.nodejs.yarn_upstream
                                   | d(nodejs__distribution_release in
                                     ["stretch", "xenial", "bionic"])) }}
-
 nodejs__yarn_upstream_key_id = 72ECF46A56B4AD39C907BBB71646B01B86E50310
 nodejs__yarn_upstream_repository = deb https://dl.yarnpkg.com/debian/ stable main
 nodejs__remove_packages[0] = cmdtest
@@ -28,7 +26,6 @@ nodejs__base_packages[2] = {{ "yarn"
                   ["stretch", "trusty",
                    "xenial", "bionic"])
               else "yarnpkg") }}
-
 nodejs__npm_production_mode = True
 nodejs__apt_preferences__dependent_list[0].packages[0] = nodejs
 nodejs__apt_preferences__dependent_list[0].packages[1] = nodejs-*

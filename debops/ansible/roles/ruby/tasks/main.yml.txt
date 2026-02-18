@@ -5,7 +5,6 @@
                               + ruby__group_packages
                               + ruby__host_packages
                               + ruby__dependent_packages)) }}
-
 [0]["ansible.builtin.package"].state = present
 [0].register = ruby__register_packages
 [0].until = ruby__register_packages is succeeded
@@ -23,7 +22,6 @@
                            + ruby__group_gems
                            + ruby__host_gems
                            + ruby__dependent_gems) }}
-
 [2].name = Make sure that required groups exist
 [2]["ansible.builtin.group"].name = {{ item.group | d(item.owner) }}
 [2]["ansible.builtin.group"].system = {{ (item.system | d(True)) | bool }}
@@ -32,20 +30,18 @@
                            + ruby__group_user_gems
                            + ruby__host_user_gems
                            + ruby__dependent_user_gems) }}
-
 [2].when = (item.group | d() or item.owner | d())
 [3].name = Make sure that required users exist
 [3]["ansible.builtin.user"].name = {{ item.owner }}
 [3]["ansible.builtin.user"].group = {{ item.group | d(item.owner) }}
 [3]["ansible.builtin.user"].home = {{ item.home | d((ansible_local.fhs.home | d("/var/local"))
-                            + "/" + item.owner) }} 
+                            + "/" + item.owner) }}
 [3]["ansible.builtin.user"].system = {{ (item.system | d(True)) | bool }}
 [3]["ansible.builtin.user"].state = present
 [3].loop = {{ q("flattened", ruby__user_gems
                            + ruby__group_user_gems
                            + ruby__host_user_gems
                            + ruby__dependent_user_gems) }}
-
 [3].when = item.owner | d()
 [4].name = Install Ruby user gems
 [4]["community.general.gem"].name = {{ item.name }}
@@ -61,7 +57,6 @@
                            + ruby__group_user_gems
                            + ruby__host_user_gems
                            + ruby__dependent_user_gems) }}
-
 [4].become = True
 [4].become_user = {{ item.user | d(item.owner) }}
 [4].when = (item.user | d() or item.owner | d())

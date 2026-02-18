@@ -23,9 +23,9 @@ apt_cacher_ng__offline_mode = False
 apt_cacher_ng__network_timeout = 60
 apt_cacher_ng__max_download_speed_kib = 
 apt_cacher_ng__upstream_mirror_debian = {{ ansible_local.apt.default_sources_map.Debian[0]
-                                            | d("http://deb.debian.org/debian") }} 
+                                            | d("http://deb.debian.org/debian") }}
 apt_cacher_ng__upstream_mirror_ubuntu = {{ ansible_local.apt.default_sources_map.Ubuntu[0]
-                                            | d("http://archive.ubuntu.com/ubuntu") }} 
+                                            | d("http://archive.ubuntu.com/ubuntu") }}
 apt_cacher_ng__upstream_mirror_gentoo = {{ ansible_local.apt.default_sources_map.Gentoo[0] | d("") }}
 apt_cacher_ng__cache_dir = /var/cache/apt-cacher-ng
 apt_cacher_ng__cache_dir_owner = apt-cacher-ng
@@ -37,7 +37,6 @@ apt_cacher_ng__user = admin
 apt_cacher_ng__password = {{ lookup("password", secret + "/credentials/" +
                              inventory_hostname + "/apt_cacher_ng/" +
                              apt_cacher_ng__user + "/password length=24") }}
-
 apt_cacher_ng__log_dir = /var/log/apt-cacher-ng
 apt_cacher_ng__support_dir = /usr/lib/apt-cacher-ng
 apt_cacher_ng__debug = 0
@@ -59,7 +58,6 @@ apt_cacher_ng__ferm__dependent_rules[0].dport[0] = acng
 apt_cacher_ng__ferm__dependent_rules[0].saddr = {{ (apt_cacher_ng__allow | d([]) | list) +
                (apt_cacher_ng__group_allow | d([]) | list) +
                (apt_cacher_ng__host_allow | d([]) | list) }}
-
 apt_cacher_ng__ferm__dependent_rules[0].accept_any = True
 apt_cacher_ng__ferm__dependent_rules[0].interface = {{ apt_cacher_ng__interfaces }}
 apt_cacher_ng__ferm__dependent_rules[0].weight = 40

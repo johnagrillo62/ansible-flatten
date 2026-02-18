@@ -2,7 +2,6 @@ telegraf__base_packages[0] = telegraf
 telegraf__additional_groups[0] = {{ (ansible_local.proc_hidepid.group | d("procadmins"))
         if (ansible_local.proc_hidepid.enabled | d()) | bool
         else [] }}
-
 telegraf__default_configuration[0].name = agent
 telegraf__default_configuration[0].config.agent.interval = 10s
 telegraf__default_configuration[0].config.agent.round_interval = True
@@ -18,7 +17,6 @@ telegraf__combined_configuration = {{ telegraf__default_configuration
                                       + telegraf__configuration
                                       + telegraf__group_configuration
                                       + telegraf__host_configuration }}
-
 telegraf__default_plugins[0].name = input_system
 telegraf__default_plugins[1].name = input_cpu
 telegraf__default_plugins[1].config.inputs.cpu[0].percpu = True
@@ -44,6 +42,5 @@ telegraf__combined_plugins = {{ telegraf__default_plugins
                                 + telegraf__plugins
                                 + telegraf__group_plugins
                                 + telegraf__host_plugins }}
-
 telegraf__influxdata__dependent_packages[0] = {{ telegraf__base_packages }}
 telegraf__influxdata__dependent_packages[1] = {{ telegraf__packages }}

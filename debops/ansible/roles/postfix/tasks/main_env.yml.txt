@@ -1,8 +1,6 @@
-~d0.name = Load persistent Postfix configuration
-~d1.ansible.builtin.set_fact = 
-~d2.postfix__env_persistent_maincf = '{{ lookup("template", "lookup/postfix__env_persistent_maincf.j2") | from_yaml }}'
-~d2.postfix__env_persistent_mastercf = '{{ lookup("template", "lookup/postfix__env_persistent_mastercf.j2") | from_yaml }}'
-~d0.name = Prepare Postfix environment
-~d1.ansible.builtin.set_fact = 
-~d2.postfix__env_active_services = '{{ lookup("template", "lookup/postfix__env_active_services.j2") | from_yaml }}'
-~d2.postfix__secret__directories = '{{ lookup("template", "lookup/postfix__secret__directories.j2") | from_yaml }}'
+[0].name = Load persistent Postfix configuration
+[0]["ansible.builtin.set_fact"].postfix__env_persistent_maincf = {{ lookup("template", "lookup/postfix__env_persistent_maincf.j2") | from_yaml }}
+[0]["ansible.builtin.set_fact"].postfix__env_persistent_mastercf = {{ lookup("template", "lookup/postfix__env_persistent_mastercf.j2") | from_yaml }}
+[1].name = Prepare Postfix environment
+[1]["ansible.builtin.set_fact"].postfix__env_active_services = {{ lookup("template", "lookup/postfix__env_active_services.j2") | from_yaml }}
+[1]["ansible.builtin.set_fact"].postfix__secret__directories = {{ lookup("template", "lookup/postfix__secret__directories.j2") | from_yaml }}

@@ -1,4 +1,4 @@
-~d0.name = Configure Hardware RAID monitoring
-~d1.import_playbook = '../service/hwraid.yml'
-~d0.name = Configure GRUB bootloader
-~d1.import_playbook = '../service/grub.yml'
+[0].name = Configure Hardware RAID monitoring
+[0].import_playbook = ../service/hwraid.yml
+[1].name = Configure GRUB bootloader
+[1].import_playbook = ../service/grub.yml

@@ -1,5 +1,5 @@
 environment__enabled = {{ lookup("template", "lookup/environment__enabled.j2")
-                          | from_yaml | bool }} 
+                          | from_yaml | bool }}
 environment__file = /etc/environment
 environment__case = preserve
 environment__placement = before

@@ -93,4 +93,4 @@
 [1].hosts = aws
 [1].gather_facts = false
 [1].tasks[0].name = Wait for hosts to become available.
-[1].tasks[0].wait_for_connection: = null
+[1].tasks[0].wait_for_connection = null

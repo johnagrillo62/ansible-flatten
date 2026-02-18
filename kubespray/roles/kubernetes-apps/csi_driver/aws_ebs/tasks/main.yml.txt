@@ -1,21 +1,22 @@
-~d0.name = AWS CSI Driver | Generate Manifests
-~d1.template = 
-~d2.src = "{{ item.file }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.mode = "0644"
-~d1.with_items = 
-~d2.{name = aws-ebs-csi-driver, file: aws-ebs-csi-driver.yml}
-~d2.{name = aws-ebs-csi-controllerservice, file: aws-ebs-csi-controllerservice-rbac.yml}
-~d2.{name = aws-ebs-csi-controllerservice, file: aws-ebs-csi-controllerservice.yml}
-~d2.{name = aws-ebs-csi-nodeservice, file: aws-ebs-csi-nodeservice.yml}
-~d1.register = aws_csi_manifests
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = AWS CSI Driver | Apply Manifests
-~d1.kube = 
-~d2.kubectl = "{{ bin_dir }}/kubectl"
-~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
-~d2.state = "latest"
-~d1.with_items = 
-~d1.when = 
-~d1.loop_control = 
-~d2.label = "{{ item.item.file }}"
+[0].name = AWS CSI Driver | Generate Manifests
+[0].template.src = {{ item.file }}.j2
+[0].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[0].template.mode = 0644
+[0].with_items[0].name = aws-ebs-csi-driver
+[0].with_items[0].file = aws-ebs-csi-driver.yml
+[0].with_items[1].name = aws-ebs-csi-controllerservice
+[0].with_items[1].file = aws-ebs-csi-controllerservice-rbac.yml
+[0].with_items[2].name = aws-ebs-csi-controllerservice
+[0].with_items[2].file = aws-ebs-csi-controllerservice.yml
+[0].with_items[3].name = aws-ebs-csi-nodeservice
+[0].with_items[3].file = aws-ebs-csi-nodeservice.yml
+[0].register = aws_csi_manifests
+[0].when = inventory_hostname == groups['kube_control_plane'][0]
+[1].name = AWS CSI Driver | Apply Manifests
+[1].kube.kubectl = {{ bin_dir }}/kubectl
+[1].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[1].kube.state = latest
+[1].with_items[0] = {{ aws_csi_manifests.results }}
+[1].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[1].when[1] = not item is skipped
+[1].loop_control.label = {{ item.item.file }}

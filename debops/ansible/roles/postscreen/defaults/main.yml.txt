@@ -2,13 +2,11 @@ postscreen__deploy_state = present
 postscreen__combined_access = {{ postscreen__access
                                  + postscreen__group_access
                                  + postscreen__host_access }}
-
 postscreen__dnsbl_enabled = {{ True
                                if ((ansible_all_ipv4_addresses | d([])
                                     + ansible_all_ipv6_addresses | d([]))
                                    | ansible.utils.ipaddr("public"))
                                else False }}
-
 postscreen__dnsbl_providers[0] = spamhaus
 postscreen__dnsbl_providers[1] = cbl
 postscreen__dnsbl_providers[2] = spamcop
@@ -17,42 +15,34 @@ postscreen__dnsbl_sites[0].name = zen.spamhaus.org*3
 postscreen__dnsbl_sites[0].state = {{ "present"
                if "spamhaus" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[1].name = b.barracudacentral.org*2
 postscreen__dnsbl_sites[1].state = {{ "present"
                if "barracuda" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[2].name = cbl.abuseat.org*2
 postscreen__dnsbl_sites[2].state = {{ "present"
                if "cbl" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[3].name = bl.spameatingmonkey.net*2
 postscreen__dnsbl_sites[3].state = {{ "present"
                if "spameatingmonkey" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[4].name = backscatter.spameatingmonkey.net*2
 postscreen__dnsbl_sites[4].state = {{ "present"
                if "spameatingmonkey" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[5].name = bl.spamcop.net
 postscreen__dnsbl_sites[5].state = {{ "present"
                if "spamcop" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[6].name = psbl.surriel.com
 postscreen__dnsbl_sites[6].state = {{ "present"
                if "psbl" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_sites[7].name = bl.mailspike.net
 postscreen__dnsbl_sites[7].state = {{ "present"
                if "mailspike" in postscreen__dnsbl_providers
                else "absent" }}
-
 postscreen__dnsbl_wl_sites[0] = list.dnswl.org=127.[0..255].[0..255].0*-2
 postscreen__dnsbl_wl_sites[1] = list.dnswl.org=127.[0..255].[0..255].1*-3
 postscreen__dnsbl_wl_sites[2] = list.dnswl.org=127.[0..255].[0..255].[2..255]*-4
@@ -83,25 +73,21 @@ postscreen__postfix__dependent_maincf[4].value = {{ postscreen__dnsbl_sites + po
 postscreen__postfix__dependent_maincf[4].state = {{ "present"
                if postscreen__dnsbl_enabled | bool
                else "comment" }}
-
 postscreen__postfix__dependent_maincf[5].name = postscreen_dnsbl_reply_map
 postscreen__postfix__dependent_maincf[5].value[0] = pcre:${config_directory}/postscreen_dnsbl_reply_map.pcre
 postscreen__postfix__dependent_maincf[5].state = {{ "present"
                if postscreen__dnsbl_enabled | bool
                else "comment" }}
-
 postscreen__postfix__dependent_maincf[6].name = postscreen_dnsbl_threshold
 postscreen__postfix__dependent_maincf[6].value = 3
 postscreen__postfix__dependent_maincf[6].state = {{ "present"
                if postscreen__dnsbl_enabled | bool
                else "comment" }}
-
 postscreen__postfix__dependent_maincf[7].name = postscreen_dnsbl_whitelist_threshold
 postscreen__postfix__dependent_maincf[7].value = -1
 postscreen__postfix__dependent_maincf[7].state = {{ "present"
                if postscreen__dnsbl_enabled | bool
                else "comment" }}
-
 postscreen__postfix__dependent_maincf[8].name = postscreen_whitelist_interfaces
 postscreen__postfix__dependent_maincf[8].value[0] = static:all
 postscreen__postfix__dependent_maincf[8].state = present
@@ -127,24 +113,19 @@ postscreen__postfix__dependent_mastercf[0].name = smtp
 postscreen__postfix__dependent_mastercf[0].state = {{ "comment"
                if (postscreen__deploy_state == "present")
                else "ignore" }}
-
 postscreen__postfix__dependent_mastercf[1].name = postscreen
 postscreen__postfix__dependent_mastercf[1].state = {{ "present"
                if (postscreen__deploy_state == "present")
                else "ignore" }}
-
 postscreen__postfix__dependent_mastercf[2].name = smtpd
 postscreen__postfix__dependent_mastercf[2].state = {{ "present"
                if (postscreen__deploy_state == "present")
                else "ignore" }}
-
 postscreen__postfix__dependent_mastercf[3].name = dnsblog
 postscreen__postfix__dependent_mastercf[3].state = {{ "present"
                if (postscreen__deploy_state == "present")
                else "ignore" }}
-
 postscreen__postfix__dependent_mastercf[4].name = tlsproxy
 postscreen__postfix__dependent_mastercf[4].state = {{ "present"
                if (postscreen__deploy_state == "present")
                else "ignore" }}
-

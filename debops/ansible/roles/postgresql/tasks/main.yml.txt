@@ -1,212 +1,230 @@
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Import DebOps secret role
-~d1.ansible.builtin.import_role = 
-~d2.name = 'secret'
-~d0.name = Get default PostgreSQL version
-~d1.environment = 
-~d2.LC_ALL = 'C'
-~d1.ansible.builtin.shell = "set -o nounset -o pipefail -o errexit &&
-~d5.apt-cache policy postgresql-client | grep -E '^\\s+Candidate = \\s+' | awk '{print $2}' | cut -d+ -f1"
-~d1.args = 
-~d2.executable = 'bash'
-~d1.register = postgresql__register_version
-~d1.check_mode = False
-~d1.changed_when = False
-~d0.name = Set default PostgreSQL version variable
-~d1.ansible.builtin.set_fact = 
-~d2.postgresql__version = '{{ (ansible_local.postgresql.version
-~d0.name = Install PostgreSQL packages
-~d1.ansible.builtin.package = 
-~d2.name = '{{ q("flattened", (postgresql__base_packages
-~d2.state = 'present'
-~d1.register = postgresql__register_packages
-~d1.until = postgresql__register_packages is succeeded
-~d0.name = Check if database server is installed
-~d1.environment = 
-~d2.LC_MESSAGES = 'C'
-~d1.ansible.builtin.shell = set -o nounset -o pipefail -o errexit &&
-~d1.args = 
-~d2.executable = 'bash'
-~d1.register = postgresql__register_server
-~d1.changed_when = False
-~d1.check_mode = False
-~d1.failed_when = False
-~d0.name = Configure system-wide user to cluster mapping
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/postgresql-common/user_clusters.j2'
-~d2.dest = '/etc/postgresql-common/user_clusters'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d0.name = Make sure that Ansible local fact directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Save PostgreSQL local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/postgresql.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/postgresql.fact'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Re-read local facts if they have been modified
-~d1.ansible.builtin.meta = 'flush_handlers'
-~d0.name = Drop PostgreSQL roles if requested
-~d1.community.postgresql.postgresql_user = 
-~d2.name = '{{ item.name | d(item.role) }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", postgresql__roles
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = item.state | d('present') == 'absent'
-~d1.no_log = '{{ debops__no_log | d(True) }}'
-~d0.name = Create PostgreSQL roles
-~d1.community.postgresql.postgresql_user = 
-~d2.name = '{{ item.name | d(item.role) }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.password = '{{ item.password | d(lookup("password",
-~d2.encrypted = '{{ item.encrypted | d(True) }}'
-~d2.expires = '{{ item.expires | d(omit) }}'
-~d2.role_attr_flags = '{{ (item.flags | d() | join(",")) | d(omit) }}'
-~d2.state = 'present'
-~d1.loop = '{{ q("flattened", postgresql__roles
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = item.state | d('present') == 'present'
-~d1.no_log = '{{ debops__no_log | d(True) }}'
-~d0.name = Drop PostgreSQL databases if requested
-~d1.community.postgresql.postgresql_db = 
-~d2.name = '{{ item.name | d(item.database) }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.state = 'absent'
-~d1.loop = '{{ q("flattened", postgresql__databases
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = item.state | d('present') == 'absent'
-~d0.name = Create PostgreSQL databases
-~d1.community.postgresql.postgresql_db = 
-~d2.name = '{{ item.name | d(item.database) }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.template = '{{ item.template | d(omit) }}'
-~d2.encoding = '{{ item.encoding | d(omit) }}'
-~d2.lc_collate = '{{ item.lc_collate | d(omit) }}'
-~d2.lc_ctype = '{{ item.lc_ctype | d(omit) }}'
-~d2.state = 'present'
-~d1.loop = '{{ q("flattened", postgresql__databases
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = (item.state | d('present') == 'present') and
-~d0.name = Enable or disable specified database extensions
-~d1.community.postgresql.postgresql_ext = 
-~d2.db = '{{ item.database }}'
-~d2.name = '{{ item.extension }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.state = '{{ item.state | d("present") }}'
-~d1.loop = '{{ q("flattened", postgresql__extensions
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = item.state | d('present') in ['present', 'absent']
-~d0.name = Grant public schema permissions
-~d1.community.postgresql.postgresql_privs = 
-~d2.roles = '{{ item.owner }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.type = '{{ item.type | d("schema") }}'
-~d2.database = '{{ item.name | d(item.database) }}'
-~d2.objs = '{{ item.objs | d("public") }}'
-~d2.privs = '{{ item.public_privs | d(["ALL"]) | join(",") }}'
-~d2.grant_option = '{{ item.grant_option | d("yes") }}'
-~d2.state = 'present'
-~d1.loop = '{{ q("flattened", postgresql__databases
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = (item.state | d('present') == 'present') and
-~d0.name = Grant PostgreSQL groups
-~d1.community.postgresql.postgresql_privs = 
-~d2.roles = '{{ item.roles | join(",") }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.type = 'group'
-~d2.database = '{{ item.database }}'
-~d2.objs = '{{ item.groups | join(",") }}'
-~d2.grant_option = '{{ item.grant_option | d(omit) }}'
-~d2.state = 'present'
-~d1.loop = '{{ q("flattened", postgresql__groups
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = (item.state | d('present') == 'present') and
-~d0.name = Grant database privileges to PostgreSQL roles
-~d1.community.postgresql.postgresql_user = 
-~d2.name = '{{ item.name | d(item.role) }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.db = '{{ item.db }}'
-~d2.priv = '{{ item.priv | join("/") }}'
-~d2.state = 'present'
-~d1.loop = '{{ q("flattened", postgresql__roles
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = (item.state | d('present') == 'present') and
-~d1.no_log = '{{ debops__no_log | d(True) }}'
-~d0.name = Grant or revoke extra privileges
-~d1.community.postgresql.postgresql_privs = 
-~d2.database = '{{ item.database }}'
-~d2.port = '{{ item.port | d(postgresql__port if postgresql__port else omit) }}'
-~d2.grant_option = '{{ item.grant_option | d(omit) }}'
-~d2.objs = '{{ item.objs | join(",") }}'
-~d2.privs = '{{ item.public_privs | d(["ALL"]) | join(",") }}'
-~d2.roles = '{{ item.roles | join(",") }}'
-~d2.schema = '{{ item.schema | d(omit) }}'
-~d2.state = '{{ item.state | d("present") }}'
-~d2.target_roles = '{{ item.target_roles | d(omit) }}'
-~d2.type = '{{ item.type }}'
-~d1.loop = '{{ q("flattened", postgresql__privileges
-~d1.become = True
-~d1.become_user = '{{ postgresql__user }}'
-~d1.delegate_to = '{{ postgresql__delegate_to }}'
-~d1.when = (item.state | d('present') == 'present') and
-~d0.name = Make sure required system groups exist
-~d1.ansible.builtin.group = 
-~d2.name = '{{ item.group | d(item.owner) }}'
-~d2.state = 'present'
-~d2.system = '{{ item.system | d(True) }}'
-~d1.loop = '{{ q("flattened", postgresql__pgpass
-~d1.no_log = '{{ debops__no_log | d(True) }}'
-~d0.name = Make sure required system accounts exist
-~d1.ansible.builtin.user = 
-~d2.name = '{{ item.owner }}'
-~d2.group = '{{ item.group | d(item.owner) }}'
-~d2.home = '{{ item.home | d(omit) }}'
-~d2.state = 'present'
-~d2.system = '{{ item.system | d(True) }}'
-~d1.loop = '{{ q("flattened", postgresql__pgpass
-~d1.no_log = '{{ debops__no_log | d(True) }}'
-~d0.name = Populate ~/.pgpass file
-~d1.ansible.builtin.lineinfile = 
-~d2.dest = '{{ "~" + item.owner }}/.pgpass'
-~d2.regexp = '{{ "^" + ([((item.server | d(postgresql__server if postgresql__server else "localhost")) | replace(".", "\.")),
-~d12.(item.name | d(item.role | d(item.owner | d("\*"))))] | join(" = ")) + ":" }}'
-~d2.line = '{{ [(item.server | d(postgresql__server if postgresql__server else "localhost")),
-~d16.| regex_replace("\\", "\\\\") | regex_replace(" = ", "\:"))]
-~d7.| join(" = ") }}'
-~d2.state = 'present'
-~d2.create = True
-~d2.owner = '{{ item.owner }}'
-~d2.group = '{{ item.owner }}'
-~d2.mode = '0600'
-~d1.loop = '{{ q("flattened", postgresql__pgpass
-~d1.no_log = '{{ debops__no_log | d(True) }}'
+[0].name = Import DebOps global handlers
+[0]["ansible.builtin.import_role"].name = global_handlers
+[1].name = Import DebOps secret role
+[1]["ansible.builtin.import_role"].name = secret
+[2].name = Get default PostgreSQL version
+[2].environment.LC_ALL = C
+[2]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && apt-cache policy postgresql-client | grep -E '^\s+Candidate:\s+' | awk '{print $2}' | cut -d+ -f1
+[2].args.executable = bash
+[2].register = postgresql__register_version
+[2].check_mode = False
+[2].changed_when = False
+[3].name = Set default PostgreSQL version variable
+[3]["ansible.builtin.set_fact"].postgresql__version = {{ (ansible_local.postgresql.version
+                              if (ansible_local.postgresql.version | d())
+                                 else (postgresql__preferred_version
+                                       if postgresql__preferred_version | d()
+                                       else postgresql__register_version.stdout)) }}
+[4].name = Install PostgreSQL packages
+[4]["ansible.builtin.package"].name = {{ q("flattened", (postgresql__base_packages
+                              + postgresql__python_packages
+                              + postgresql__packages)) }}
+[4]["ansible.builtin.package"].state = present
+[4].register = postgresql__register_packages
+[4].until = postgresql__register_packages is succeeded
+[5].name = Check if database server is installed
+[5].environment.LC_MESSAGES = C
+[5]["ansible.builtin.shell"] = set -o nounset -o pipefail -o errexit && dpkg-query -W -f='${Version}\n' 'postgresql' | grep -v '^$'
+[5].args.executable = bash
+[5].register = postgresql__register_server
+[5].changed_when = False
+[5].check_mode = False
+[5].failed_when = False
+[6].name = Configure system-wide user to cluster mapping
+[6]["ansible.builtin.template"].src = etc/postgresql-common/user_clusters.j2
+[6]["ansible.builtin.template"].dest = /etc/postgresql-common/user_clusters
+[6]["ansible.builtin.template"].owner = root
+[6]["ansible.builtin.template"].group = root
+[6]["ansible.builtin.template"].mode = 0644
+[7].name = Make sure that Ansible local fact directory exists
+[7]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[7]["ansible.builtin.file"].state = directory
+[7]["ansible.builtin.file"].owner = root
+[7]["ansible.builtin.file"].group = root
+[7]["ansible.builtin.file"].mode = 0755
+[8].name = Save PostgreSQL local facts
+[8]["ansible.builtin.template"].src = etc/ansible/facts.d/postgresql.fact.j2
+[8]["ansible.builtin.template"].dest = /etc/ansible/facts.d/postgresql.fact
+[8]["ansible.builtin.template"].owner = root
+[8]["ansible.builtin.template"].group = root
+[8]["ansible.builtin.template"].mode = 0644
+[8].notify[0] = Refresh host facts
+[8].tags[0] = meta::facts
+[9].name = Re-read local facts if they have been modified
+[9]["ansible.builtin.meta"] = flush_handlers
+[10].name = Drop PostgreSQL roles if requested
+[10]["community.postgresql.postgresql_user"].name = {{ item.name | d(item.role) }}
+[10]["community.postgresql.postgresql_user"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[10]["community.postgresql.postgresql_user"].state = absent
+[10].loop = {{ q("flattened", postgresql__roles
+                           + postgresql_roles | d([])
+                           + postgresql__dependent_roles) }}
+[10].become = True
+[10].become_user = {{ postgresql__user }}
+[10].delegate_to = {{ postgresql__delegate_to }}
+[10].when = item.state | d('present') == 'absent'
+[10].no_log = {{ debops__no_log | d(True) }}
+[11].name = Create PostgreSQL roles
+[11]["community.postgresql.postgresql_user"].name = {{ item.name | d(item.role) }}
+[11]["community.postgresql.postgresql_user"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[11]["community.postgresql.postgresql_user"].password = {{ item.password | d(lookup("password",
+                  secret + "/postgresql/" + postgresql__password_hostname +
+                  "/" + (item.port | d(postgresql__port)) +
+                  "/credentials/" + item.name | d(item.role) + "/password " +
+                  "length=" + postgresql__password_length + " chars=" + postgresql__password_characters)) }}
+[11]["community.postgresql.postgresql_user"].encrypted = {{ item.encrypted | d(True) }}
+[11]["community.postgresql.postgresql_user"].expires = {{ item.expires | d(omit) }}
+[11]["community.postgresql.postgresql_user"].role_attr_flags = {{ (item.flags | d() | join(",")) | d(omit) }}
+[11]["community.postgresql.postgresql_user"].state = present
+[11].loop = {{ q("flattened", postgresql__roles
+                           + postgresql_roles | d([])
+                           + postgresql__dependent_roles) }}
+[11].become = True
+[11].become_user = {{ postgresql__user }}
+[11].delegate_to = {{ postgresql__delegate_to }}
+[11].when = item.state | d('present') == 'present'
+[11].no_log = {{ debops__no_log | d(True) }}
+[12].name = Drop PostgreSQL databases if requested
+[12]["community.postgresql.postgresql_db"].name = {{ item.name | d(item.database) }}
+[12]["community.postgresql.postgresql_db"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[12]["community.postgresql.postgresql_db"].state = absent
+[12].loop = {{ q("flattened", postgresql__databases
+                           + postgresql_databases | d([])
+                           + postgresql__dependent_databases) }}
+[12].become = True
+[12].become_user = {{ postgresql__user }}
+[12].delegate_to = {{ postgresql__delegate_to }}
+[12].when = item.state | d('present') == 'absent'
+[13].name = Create PostgreSQL databases
+[13]["community.postgresql.postgresql_db"].name = {{ item.name | d(item.database) }}
+[13]["community.postgresql.postgresql_db"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[13]["community.postgresql.postgresql_db"].owner = {{ item.owner | d(omit) }}
+[13]["community.postgresql.postgresql_db"].template = {{ item.template | d(omit) }}
+[13]["community.postgresql.postgresql_db"].encoding = {{ item.encoding | d(omit) }}
+[13]["community.postgresql.postgresql_db"].lc_collate = {{ item.lc_collate | d(omit) }}
+[13]["community.postgresql.postgresql_db"].lc_ctype = {{ item.lc_ctype | d(omit) }}
+[13]["community.postgresql.postgresql_db"].state = present
+[13].loop = {{ q("flattened", postgresql__databases
+                           + postgresql_databases | d([])
+                           + postgresql__dependent_databases) }}
+[13].become = True
+[13].become_user = {{ postgresql__user }}
+[13].delegate_to = {{ postgresql__delegate_to }}
+[13].when = (item.state | d('present') == 'present') and item.create_db | d(True)
+[14].name = Enable or disable specified database extensions
+[14]["community.postgresql.postgresql_ext"].db = {{ item.database }}
+[14]["community.postgresql.postgresql_ext"].name = {{ item.extension }}
+[14]["community.postgresql.postgresql_ext"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[14]["community.postgresql.postgresql_ext"].state = {{ item.state | d("present") }}
+[14].loop = {{ q("flattened", postgresql__extensions
+                           + postgresql__dependent_extensions) }}
+[14].become = True
+[14].become_user = {{ postgresql__user }}
+[14].delegate_to = {{ postgresql__delegate_to }}
+[14].when = item.state | d('present') in ['present', 'absent']
+[15].name = Grant public schema permissions
+[15]["community.postgresql.postgresql_privs"].roles = {{ item.owner }}
+[15]["community.postgresql.postgresql_privs"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[15]["community.postgresql.postgresql_privs"].type = {{ item.type | d("schema") }}
+[15]["community.postgresql.postgresql_privs"].database = {{ item.name | d(item.database) }}
+[15]["community.postgresql.postgresql_privs"].objs = {{ item.objs | d("public") }}
+[15]["community.postgresql.postgresql_privs"].privs = {{ item.public_privs | d(["ALL"]) | join(",") }}
+[15]["community.postgresql.postgresql_privs"].grant_option = {{ item.grant_option | d("yes") }}
+[15]["community.postgresql.postgresql_privs"].state = present
+[15].loop = {{ q("flattened", postgresql__databases
+                           + postgresql_databases | d([])
+                           + postgresql__dependent_databases) }}
+[15].become = True
+[15].become_user = {{ postgresql__user }}
+[15].delegate_to = {{ postgresql__delegate_to }}
+[15].when = (item.state | d('present') == 'present') and item.owner | d()
+[16].name = Grant PostgreSQL groups
+[16]["community.postgresql.postgresql_privs"].roles = {{ item.roles | join(",") }}
+[16]["community.postgresql.postgresql_privs"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[16]["community.postgresql.postgresql_privs"].type = group
+[16]["community.postgresql.postgresql_privs"].database = {{ item.database }}
+[16]["community.postgresql.postgresql_privs"].objs = {{ item.groups | join(",") }}
+[16]["community.postgresql.postgresql_privs"].grant_option = {{ item.grant_option | d(omit) }}
+[16]["community.postgresql.postgresql_privs"].state = present
+[16].loop = {{ q("flattened", postgresql__groups
+                           + postgresql_groups | d([])
+                           + postgresql__dependent_groups) }}
+[16].become = True
+[16].become_user = {{ postgresql__user }}
+[16].delegate_to = {{ postgresql__delegate_to }}
+[16].when = (item.state | d('present') == 'present') and item.enabled | d(True) | bool
+[17].name = Grant database privileges to PostgreSQL roles
+[17]["community.postgresql.postgresql_user"].name = {{ item.name | d(item.role) }}
+[17]["community.postgresql.postgresql_user"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[17]["community.postgresql.postgresql_user"].db = {{ item.db }}
+[17]["community.postgresql.postgresql_user"].priv = {{ item.priv | join("/") }}
+[17]["community.postgresql.postgresql_user"].state = present
+[17].loop = {{ q("flattened", postgresql__roles
+                           + postgresql_roles | d([])
+                           + postgresql__dependent_roles) }}
+[17].become = True
+[17].become_user = {{ postgresql__user }}
+[17].delegate_to = {{ postgresql__delegate_to }}
+[17].when = (item.state | d('present') == 'present') and (item.db | d() and item.priv | d())
+[17].no_log = {{ debops__no_log | d(True) }}
+[18].name = Grant or revoke extra privileges
+[18]["community.postgresql.postgresql_privs"].database = {{ item.database }}
+[18]["community.postgresql.postgresql_privs"].port = {{ item.port | d(postgresql__port if postgresql__port else omit) }}
+[18]["community.postgresql.postgresql_privs"].grant_option = {{ item.grant_option | d(omit) }}
+[18]["community.postgresql.postgresql_privs"].objs = {{ item.objs | join(",") }}
+[18]["community.postgresql.postgresql_privs"].privs = {{ item.public_privs | d(["ALL"]) | join(",") }}
+[18]["community.postgresql.postgresql_privs"].roles = {{ item.roles | join(",") }}
+[18]["community.postgresql.postgresql_privs"].schema = {{ item.schema | d(omit) }}
+[18]["community.postgresql.postgresql_privs"].state = {{ item.state | d("present") }}
+[18]["community.postgresql.postgresql_privs"].target_roles = {{ item.target_roles | d(omit) }}
+[18]["community.postgresql.postgresql_privs"].type = {{ item.type }}
+[18].loop = {{ q("flattened", postgresql__privileges
+                           + postgresql__dependent_privileges) }}
+[18].become = True
+[18].become_user = {{ postgresql__user }}
+[18].delegate_to = {{ postgresql__delegate_to }}
+[18].when = (item.state | d('present') == 'present') and item.enabled | d(True) | bool
+[19].name = Make sure required system groups exist
+[19]["ansible.builtin.group"].name = {{ item.group | d(item.owner) }}
+[19]["ansible.builtin.group"].state = present
+[19]["ansible.builtin.group"].system = {{ item.system | d(True) }}
+[19].loop = {{ q("flattened", postgresql__pgpass
+                           + postgresql_pgpass | d([])
+                           + postgresql__dependent_pgpass) }}
+[19].no_log = {{ debops__no_log | d(True) }}
+[20].name = Make sure required system accounts exist
+[20]["ansible.builtin.user"].name = {{ item.owner }}
+[20]["ansible.builtin.user"].group = {{ item.group | d(item.owner) }}
+[20]["ansible.builtin.user"].home = {{ item.home | d(omit) }}
+[20]["ansible.builtin.user"].state = present
+[20]["ansible.builtin.user"].system = {{ item.system | d(True) }}
+[20].loop = {{ q("flattened", postgresql__pgpass
+                           + postgresql_pgpass | d([])
+                           + postgresql__dependent_pgpass) }}
+[20].no_log = {{ debops__no_log | d(True) }}
+[21].name = Populate ~/.pgpass file
+[21]["ansible.builtin.lineinfile"].dest = {{ "~" + item.owner }}/.pgpass
+[21]["ansible.builtin.lineinfile"].regexp = {{ "^" + ([((item.server | d(postgresql__server if postgresql__server else "localhost")) | replace(".", "\.")),
+                        (item.port | d(postgresql__port)),
+                        (item.database | d("\*")),
+                        (item.name | d(item.role | d(item.owner | d("\*"))))] | join(":")) + ":" }}
+[21]["ansible.builtin.lineinfile"].line = {{ [(item.server | d(postgresql__server if postgresql__server else "localhost")),
+               (item.port | d(postgresql__port)),
+               (item.database | d("*")),
+               (item.role | d(item.owner)),
+               (item.password | d(lookup("password",
+                                  secret + "/postgresql/" + (item.server | d(postgresql__password_hostname))
+                                  + "/" + (item.port | d(postgresql__port)) + "/credentials/"
+                                  + item.name | d(item.role | d(item.owner))
+                                  + "/password length=" + postgresql__password_length))
+                                 | regex_replace("\\", "\\\\") | regex_replace(":", "\:"))]
+              | join(":") }}
+[21]["ansible.builtin.lineinfile"].state = present
+[21]["ansible.builtin.lineinfile"].create = True
+[21]["ansible.builtin.lineinfile"].owner = {{ item.owner }}
+[21]["ansible.builtin.lineinfile"].group = {{ item.owner }}
+[21]["ansible.builtin.lineinfile"].mode = 0600
+[21].loop = {{ q("flattened", postgresql__pgpass
+                           + postgresql_pgpass | d([])
+                           + postgresql__dependent_pgpass) }}
+[21].no_log = {{ debops__no_log | d(True) }}

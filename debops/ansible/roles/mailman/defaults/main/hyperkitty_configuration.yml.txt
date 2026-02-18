@@ -21,4 +21,3 @@ mailman__hyperkitty_combined_configuration = {{ mailman__hyperkitty_original_con
                                                 + mailman__hyperkitty_configuration
                                                 + mailman__hyperkitty_group_configuration
                                                 + mailman__hyperkitty_host_configuration }}
-

@@ -9,7 +9,6 @@ rsnapshot__scheduler_type = {{ "batch"
                                if (ansible_local | d() and ansible_local.atd | d() and
                                    (ansible_local.atd.enabled | d()) | bool)
                                else "sleep" }}
-
 rsnapshot__scheduler_batch_queue = R
 rsnapshot__scheduler_batch_command = at -q {{ rsnapshot__scheduler_batch_queue }} now
 rsnapshot__scheduler_sleep_max_delay = 20
@@ -36,7 +35,6 @@ rsnapshot__combined_hosts = {{ q("flattened",
                                  + rsnapshot__hosts
                                  + rsnapshot__group_hosts
                                  + rsnapshot__host_hosts) }}
-
 rsnapshot__default_excludes[0] = /bin
 rsnapshot__default_excludes[1] = /boot
 rsnapshot__default_excludes[2] = /cdrom
@@ -79,10 +77,10 @@ rsnapshot__default_excludes[36] = /var/spool/postfix
 rsnapshot__default_excludes[37] = /var/tmp
 rsnapshot__default_excludes[38] = /vz
 rsnapshot__combined_excludes = {{ rsnapshot__default_excludes
-                                  + rsnapshot__excludes }} 
+                                  + rsnapshot__excludes }}
 rsnapshot__default_includes[0] = /*
 rsnapshot__combined_includes = {{ rsnapshot__default_includes
-                                  + rsnapshot__includes }} 
+                                  + rsnapshot__includes }}
 rsnapshot__original_configuration[0].name = config_version
 rsnapshot__original_configuration[0].value = 1.2
 rsnapshot__original_configuration[0].section = config-version
@@ -448,7 +446,6 @@ rsnapshot__default_configuration[19].weight = -300
 rsnapshot__combined_configuration = {{ rsnapshot__original_configuration
                                        + rsnapshot__default_configuration
                                        + rsnapshot__configuration }}
-
 rsnapshot__configuration_sections[0].name = config-version
 rsnapshot__configuration_sections[0].value = Config file version
 rsnapshot__configuration_sections[1].name = snapshot-root

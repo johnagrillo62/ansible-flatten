@@ -1,9 +1,8 @@
-~d0.system_users__groups = 
-~d1.name = 'group1'
-~d2.user = False
-~d1.name = 'group1_sys'
-~d2.system = True
-~d2.user = False
-~d1.name = 'group_removed'
-~d2.user = False
-~d2.state = 'absent'
+system_users__groups[0].name = group1
+system_users__groups[0].user = False
+system_users__groups[1].name = group1_sys
+system_users__groups[1].system = True
+system_users__groups[1].user = False
+system_users__groups[2].name = group_removed
+system_users__groups[2].user = False
+system_users__groups[2].state = absent

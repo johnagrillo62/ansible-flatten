@@ -5,7 +5,6 @@
 [1]["ansible.builtin.package"].state = {{ "present"
                if ((ansible_local.tzdata.configured | d()) | bool)
                else "latest" }}
-
 [1].register = tzdata__register_packages
 [1].until = tzdata__register_packages is succeeded
 [1].when = tzdata__enabled | bool
@@ -44,5 +43,5 @@
 [9]["ansible.builtin.systemd"].state = restarted
 [9]["ansible.builtin.systemd"].no_block = True
 [9].loop = {{ q("flattened", (tzdata__restart_default_services
-                            + tzdata__restart_services)) }} 
+                            + tzdata__restart_services)) }}
 [9].when = (tzdata__enabled | bool and ansible_service_mgr == 'systemd' and tzdata__register_timezone is changed and item in tzdata__register_services.stdout_lines)

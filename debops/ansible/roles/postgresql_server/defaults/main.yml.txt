@@ -13,20 +13,18 @@ postgresql_server__pgbadger_logs = False
 postgresql_server__listen_addresses[0] = localhost
 postgresql_server__max_connections = 100
 postgresql_server__admins = {{ ["root", "*postgres*"] +
-                               ansible_local.core.admin_users | d([]) }} 
+                               ansible_local.core.admin_users | d([]) }}
 postgresql_server__admin_password = {{ lookup('password', secret + '/credentials/' +
                                        inventory_hostname + '/postgresql/default/' +
                                        postgresql_server__user + '/password length=' +
                                        postgresql_server__password_length +
                                        ' chars=' + postgresql_server__password_characters) }}
-
 postgresql_server__password_length = 64
 postgresql_server__password_characters = ascii_letters,digits,.-_~&()*=
 postgresql_server__trusted = {{ ansible_local.core.admin_users | d([]) }}
 postgresql_server__log_destination = {{ "stderr"
                                         if (postgresql_server__pgbadger_logs | bool)
                                         else "syslog" }}
-
 postgresql_server__locale = en_US.UTF-8
 postgresql_server__locale_messages = C
 postgresql_server__timezone = {{ ansible_local.tzdata.timezone | d("Etc/UTC") }}
@@ -117,7 +115,6 @@ postgresql_server__cluster_main.port = 5432
 postgresql_server__autopostgresqlbackup = {{ False
                                              if (ansible_distribution_release in ["bullseye"])
                                              else True }}
-
 postgresql_server__auto_backup = True
 postgresql_server__auto_backup_dir = /var/lib/autopostgresqlbackup
 postgresql_server__auto_backup_pg_opts = 

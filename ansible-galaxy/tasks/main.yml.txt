@@ -99,7 +99,7 @@
 [21].name = Include copy themes files
 [21]["ansible.builtin.include_tasks"] = themes.yml
 [21].loop = {{ galaxy_themes_subdomains if galaxy_themes_subdomains|length or \
-    galaxy_manage_themes else [] }} 
+    galaxy_manage_themes else [] }}
 [21].loop_control.loop_var = subdomain
 [21].when = galaxy_manage_themes
 [21].tags[0] = galaxy_manage_themes

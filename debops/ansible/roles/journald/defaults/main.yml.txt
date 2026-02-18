@@ -1,7 +1,6 @@
 journald__enabled = {{ True
                        if (ansible_service_mgr == "systemd")
                        else False }}
-
 journald__version = {{ ansible_local.journald.version | d("0") }}
 journald__storage = auto
 journald__persistent_state = {{ "absent"
@@ -9,11 +8,9 @@ journald__persistent_state = {{ "absent"
                                 else ("present"
                                       if (ansible_local.journald.persistent | d()) | bool
                                       else "absent") }}
-
 journald__fss_enabled = {{ True
                            if (journald__persistent_state == "present")
                            else False }}
-
 journald__fss_interval = 15min
 journald__fss_verify_key_path = {{ "journald/fss/" + inventory_hostname + "/verify_key" }}
 journald__fss_verify_key = {{ lookup("file", secret + "/" + journald__fss_verify_key_path) }}
@@ -22,7 +19,6 @@ journald__default_configuration[0].value = {{ journald__storage }}
 journald__default_configuration[0].state = {{ "init"
                if (journald__storage == "auto")
                else "present" }}
-
 journald__default_configuration[1].name = Compress
 journald__default_configuration[1].value = True
 journald__default_configuration[1].state = init
@@ -111,4 +107,3 @@ journald__combined_configuration = {{ journald__default_configuration
                                       + journald__configuration
                                       + journald__group_configuration
                                       + journald__host_configuration }}
-

@@ -3,30 +3,26 @@ rsyslog__deploy_state = present
 rsyslog__unprivileged = {{ "True"
                            if (ansible_distribution in ["Ubuntu"])
                            else "False" }}
-
 rsyslog__remote_enabled = {{ True
                              if (rsyslog__allow
                                  + rsyslog__group_allow
                                  + rsyslog__host_allow)
                              else False }}
-
 rsyslog__forward_enabled = {{ True
                               if q("flattened", (rsyslog__default_forward
                                                  + rsyslog__forward
                                                  + rsyslog__group_forward
                                                  + rsyslog__host_forward))
                               else False }}
-
 rsyslog__base_packages[0] = rsyslog
 rsyslog__tls_packages[0] = rsyslog-gnutls
 rsyslog__user = {{ "syslog" if rsyslog__unprivileged | bool else "root" }}
 rsyslog__group = {{ "syslog" if rsyslog__unprivileged | bool else "root" }}
 rsyslog__append_groups = {{ ["ssl-cert"] if (rsyslog__unprivileged | bool
-				and rsyslog__pki | bool) else [] }} 
+				and rsyslog__pki | bool) else [] }}
 rsyslog__home = {{ "/home/syslog"
                    if (ansible_distribution in ["Ubuntu"])
                    else "/var/log" }}
-
 rsyslog__file_owner = {{ rsyslog__user }}
 rsyslog__file_group = adm
 rsyslog__default_logfiles[0] = /var/log/syslog
@@ -51,27 +47,23 @@ rsyslog__pki_key = {{ ansible_local.pki.key | d("default.key") }}
 rsyslog__default_netstream_driver = {{ "gtls"
                                        if rsyslog__pki | bool
                                        else "ptcp" }}
-
 rsyslog__default_driver_mode = {{ "1"
                                   if rsyslog__default_netstream_driver == "gtls"
                                   else "0" }}
-
 rsyslog__default_driver_authmode = {{ "x509/name"
                                       if rsyslog__default_netstream_driver == "gtls" and
                                          rsyslog__default_driver_mode == "1"
                                       else "anon" }}
-
 rsyslog__domain = {{ ansible_domain }}
 rsyslog__permitted_peers[0] = *.{{ rsyslog__domain }}
 rsyslog__send_permitted_peers = {{ rsyslog__permitted_peers | first }}
 rsyslog__syslog_srv_rr = {{ q("debops.debops.dig_srv", "_syslog._tcp." + rsyslog__domain,
-                              "syslog." + rsyslog__domain, 6514) }} 
+                              "syslog." + rsyslog__domain, 6514) }}
 rsyslog__default_forward = {{ rsyslog__syslog_srv_rr
                               if (rsyslog__syslog_srv_rr[0]["dig_srv_src"] | d("") != "fallback" and
                                   not rsyslog__remote_enabled | bool and
                                   rsyslog__pki | bool)
                               else [] }}
-
 rsyslog__original_configuration[0].name = module_imuxsock
 rsyslog__original_configuration[0].comment = Provides support for local system logging
 rsyslog__original_configuration[0].raw = module(load="imuxsock")
@@ -207,7 +199,6 @@ rsyslog__default_configuration[0].name = module_imklog
 rsyslog__default_configuration[0].state = {{ "comment"
                if (ansible_virtualization_type in ["lxc", "docker", "openvz"])
                else "ignore" }}
-
 rsyslog__default_configuration[1].name = module_imudp
 rsyslog__default_configuration[1].raw = module(load="imudp")
 input(type="imudp" port="514" ruleset="remote")
@@ -265,7 +256,6 @@ rsyslog__combined_configuration = {{ rsyslog__original_configuration
                                      + rsyslog__configuration
                                      + rsyslog__group_configuration
                                      + rsyslog__host_configuration }}
-
 rsyslog__default_configuration_sections[0].name = modules
 rsyslog__default_configuration_sections[1].name = global
 rsyslog__default_configuration_sections[1].title = Global directives
@@ -278,13 +268,12 @@ rsyslog__default_configuration_sections[4].name = rules
 rsyslog__default_configuration_sections[5].name = unknown
 rsyslog__default_configuration_sections[5].title = Other options
 rsyslog__combined_configuration_sections = {{ rsyslog__default_configuration_sections
-                                              + rsyslog__configuration_sections }} 
+                                              + rsyslog__configuration_sections }}
 rsyslog__default_rules[0].name = 00forward-logs.conf
 rsyslog__default_rules[0].state = {{ "present"
                if (rsyslog__forward_enabled | bool and
                    rsyslog__pki | bool)
                else "absent" }}
-
 rsyslog__default_rules[0].options[0].name = forward_logs_to_hosts
 rsyslog__default_rules[0].options[0].comment = Forward logs to specified hosts
 rsyslog__default_rules[0].options[0].raw = {% for element in q("flattened", (rsyslog__default_forward
@@ -389,12 +378,10 @@ rsyslog__default_rules[2].state = {{ "present"
                if (rsyslog__remote_enabled | bool or
                    rsyslog__forward_enabled | bool)
                else "absent" }}
-
 rsyslog__default_rules[3].name = remote.input
 rsyslog__default_rules[3].state = {{ "present"
                if rsyslog__remote_enabled | bool
                else "absent" }}
-
 rsyslog__default_rules[3].options[0].name = tcp_plain_module
 rsyslog__default_rules[3].options[0].comment = Enable plain TCP support
 rsyslog__default_rules[3].options[0].raw = module(
@@ -439,13 +426,11 @@ rsyslog__default_rules[4].divert_to = 65-ufw.conf
 rsyslog__default_rules[4].state = {{ rsyslog__deploy_state
                if (ansible_distribution in ["Ubuntu"])
                else "ignore" }}
-
 rsyslog__default_rules[5].name = 50-default.conf
 rsyslog__default_rules[5].divert = True
 rsyslog__default_rules[5].state = {{ "present"
                if (ansible_distribution in ["Ubuntu"])
                else "absent" }}
-
 rsyslog__default_rules[6].name = remote.template
 rsyslog__default_rules[6].state = {{ "present" if rsyslog__remote_enabled | bool else "absent" }}
 rsyslog__default_rules[6].options[0].name = remote_host_syslog
@@ -584,7 +569,6 @@ rsyslog__combined_rules = {{ rsyslog__default_rules
                              + rsyslog__group_rules
                              + rsyslog__host_rules
                              + rsyslog__dependent_rules }}
-
 rsyslog__rotation_period_system = weekly
 rsyslog__rotation_count_system = 8
 rsyslog__rotation_period_remote = weekly
@@ -601,7 +585,6 @@ rsyslog__ferm__dependent_rules[0].rule_state = {{ "present"
                     if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
                         rsyslog__remote_enabled | bool)
                     else "absent" }}
-
 rsyslog__ferm__dependent_rules[1].name = syslog-tls
 rsyslog__ferm__dependent_rules[1].type = accept
 rsyslog__ferm__dependent_rules[1].dport[0] = syslog-tls
@@ -612,7 +595,6 @@ rsyslog__ferm__dependent_rules[1].rule_state = {{ "present"
                     if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
                         rsyslog__remote_enabled | bool)
                     else "absent" }}
-
 rsyslog__logrotate__dependent_config[0].filename = 000rsyslog-unprivileged
 rsyslog__logrotate__dependent_config[0].comment = The rsyslog daemon is run unprivileged
 rsyslog__logrotate__dependent_config[0].options = su root {{ rsyslog__group }}
@@ -621,7 +603,6 @@ rsyslog__logrotate__dependent_config[0].state = {{ "present"
                 if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
                     rsyslog__unprivileged | bool)
                 else "absent" }}
-
 rsyslog__logrotate__dependent_config[1].filename = rsyslog
 rsyslog__logrotate__dependent_config[1].divert = True
 rsyslog__logrotate__dependent_config[1].sections[0].logs = /var/log/syslog
@@ -641,7 +622,6 @@ rsyslog__logrotate__dependent_config[1].sections[0].postrotate = {{ "invoke-rc.d
 rsyslog__logrotate__dependent_config[1].sections[1].logs = {{ (rsyslog__default_logfiles
                    + rsyslog__logfiles)
                   | difference(["/var/log/syslog"]) | sort }}
-
 rsyslog__logrotate__dependent_config[1].sections[1].options = rotate {{ rsyslog__rotation_count_system }}
 {{ rsyslog__rotation_period_system }}
 maxsize 1G
@@ -659,7 +639,6 @@ rsyslog__logrotate__dependent_config[1].sections[1].postrotate = {{ "invoke-rc.d
 rsyslog__logrotate__dependent_config[1].state = {{ "present"
                 if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent")
                 else "absent" }}
-
 rsyslog__logrotate__dependent_config[2].filename = rsyslog-remote
 rsyslog__logrotate__dependent_config[2].logs[0] = /var/log/remote/*/*/syslog
 rsyslog__logrotate__dependent_config[2].logs[1] = /var/log/remote/*/*/*.log
@@ -681,7 +660,6 @@ rsyslog__logrotate__dependent_config[2].state = {{ "present"
                 if (rsyslog__enabled | bool and rsyslog__deploy_state != "absent" and
                     rsyslog__remote_enabled | bool)
                 else "absent" }}
-
 rsyslog__dpkg_cleanup__dependent_packages[0].name = rsyslog
 rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[0] = /etc/rsyslog.conf
 rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[1] = /etc/logrotate.d/rsyslog
@@ -690,10 +668,8 @@ rsyslog__dpkg_cleanup__dependent_packages[0].revert_files[2] = {{ rsyslog__combi
             | selectattr("divert", "equalto", True) | list
             | map(attribute="name") | list
             | map("regex_replace", "^(.*)$", "/etc/rsyslog.d/\1") | list }}
-
 rsyslog__dpkg_cleanup__dependent_packages[0].remove_files[0] = /etc/logrotate.d/rsyslog-remote
 rsyslog__dpkg_cleanup__dependent_packages[0].remove_files[1] = {{ rsyslog__combined_rules | flatten | debops.debops.parse_kv_items
             | selectattr("divert", "undefined") | list
             | map(attribute="name") | list
             | map("regex_replace", "^(.*)$", "/etc/rsyslog.d/\1") | list }}
-

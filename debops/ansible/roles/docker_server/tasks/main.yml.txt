@@ -2,7 +2,7 @@
 [0]["ansible.builtin.import_role"].name = global_handlers
 [1].name = Install required packages
 [1]["ansible.builtin.apt"].name = {{ (docker_server__base_packages
-               + docker_server__packages) | flatten }} 
+               + docker_server__packages) | flatten }}
 [1]["ansible.builtin.apt"].state = present
 [1]["ansible.builtin.apt"].install_recommends = False
 [1].notify[0] = Refresh host facts

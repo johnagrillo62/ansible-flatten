@@ -13,7 +13,6 @@
                               + (["autopostgresqlbackup"]
                                  if (postgresql_server__autopostgresqlbackup | d()) | bool
                                  else []))) }}
-
 [1]["ansible.builtin.package"].state = present
 [1].register = postgresql_server__register_packages
 [1].until = postgresql_server__register_packages is succeeded

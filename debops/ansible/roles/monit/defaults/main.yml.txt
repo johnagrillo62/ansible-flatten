@@ -9,7 +9,6 @@ monit__httpd_username = monit
 monit__httpd_password = {{ lookup("password", secret + "/credentials/"
                            + inventory_hostname + "/monit/httpd/password "
                            + "chars=ascii_letters,digits length=32") }}
-
 monit__default_config[0].name = daemon
 monit__default_config[0].content = set daemon {{ monit__check_interval }}
     with start delay {{ monit__start_delay }}
@@ -88,7 +87,6 @@ check file apache2_rc with path /etc/init.d/apache2
 monit__service_config[0].state = {{ "present"
                if (ansible_local.apache.enabled | d() | bool)
                else "init" }}
-
 monit__service_config[1].name = atd
 monit__service_config[1].content = check process atd with pidfile /var/run/atd.pid
   group system
@@ -126,7 +124,6 @@ monit__service_config[1].state = {{ "present"
                if (ansible_local | d() and ansible_local.atd | d() and
                    (ansible_local.atd.enabled | d()) | bool)
                else "init" }}
-
 monit__service_config[2].name = cron
 monit__service_config[2].content = check process crond with pidfile /var/run/crond.pid
   group system
@@ -171,7 +168,6 @@ monit__service_config[2].state = {{ "present"
                if (ansible_local | d() and ansible_local.cron | d() and
                    (ansible_local.cron.enabled | d()) | bool)
                else "init" }}
-
 monit__service_config[3].name = memcached
 monit__service_config[3].content = check process memcached matching "^/usr/bin/memcached"
   group cache
@@ -212,7 +208,6 @@ monit__service_config[3].state = {{ "present"
                if (ansible_local | d() and ansible_local.memcached | d() and
                    (ansible_local.memcached.installed | d()) | bool)
                else "init" }}
-
 monit__service_config[4].name = mysql
 monit__service_config[4].content = check process mysqld with pidfile /var/run/mysqld/mysqld.pid
   group database
@@ -242,7 +237,6 @@ monit__service_config[4].state = {{ "present"
                if (ansible_local | d() and ansible_local.mariadb | d() and
                    ansible_local.mariadb.server | d("") == "localhost")
                else "init" }}
-
 monit__service_config[5].name = nginx
 monit__service_config[5].content = check process nginx with pidfile /var/run/nginx.pid
   group www
@@ -281,7 +275,6 @@ monit__service_config[5].state = {{ "present"
                if (ansible_local | d() and ansible_local.nginx | d() and
                    (ansible_local.nginx.enabled | d()) | bool)
                else "init" }}
-
 monit__service_config[6].name = openntpd
 monit__service_config[6].content = check process ntpd matching "^/usr/sbin/ntpd -f /etc/openntpd/ntpd.conf"
   group system
@@ -320,7 +313,6 @@ monit__service_config[6].state = {{ "present"
                    (ansible_local.ntp.configured | d()) | bool and
                    ansible_local.ntp.daemon | d("") == "openntpd")
                else "init" }}
-
 monit__service_config[7].name = postfix
 monit__service_config[7].content = check process postfix with pidfile /var/spool/postfix/pid/master.pid
   group system
@@ -390,7 +382,6 @@ monit__service_config[7].state = {{ "present"
                if (ansible_local | d() and ansible_local.postfix | d() and
                    (ansible_local.postfix.installed | d()) | bool)
                else "init" }}
-
 monit__service_config[8].name = rsyslog
 monit__service_config[8].content = check process rsyslogd with pidfile /var/run/rsyslogd.pid
   group system
@@ -436,7 +427,6 @@ monit__service_config[8].state = {{ "present"
                if (ansible_local | d() and ansible_local.rsyslog | d() and
                    (ansible_local.rsyslog.enabled | d()) | bool)
                else "init" }}
-
 monit__service_config[9].name = snmpd
 monit__service_config[9].content = check process snmpd with pidfile /var/run/snmpd.pid
 {% if ansible_service_mgr == 'systemd' %}
@@ -453,7 +443,6 @@ monit__service_config[9].state = {{ "present"
                if (ansible_local | d() and ansible_local.snmpd | d() and
                    (ansible_local.snmpd.installed | d()) | bool)
                else "init" }}
-
 monit__service_config[10].name = sshd
 monit__service_config[10].content = check process sshd with pidfile /var/run/sshd.pid
   group system
@@ -512,13 +501,11 @@ monit__service_config[10].state = {{ "present"
                if (ansible_local | d() and ansible_local.sshd | d() and
                    (ansible_local.sshd.configured | d()) | bool)
                else "init" }}
-
 monit__combined_config = {{ monit__default_config
                             + monit__service_config
                             + monit__dependent_config
                             + monit__config
                             + monit__group_config
                             + monit__host_config }}
-
 monit__etc_services__dependent_list[0].name = monit
 monit__etc_services__dependent_list[0].port = {{ monit__httpd_port }}

@@ -1,3 +1,3 @@
-~d0.application__etc_aliases__dependent_recipients = 
-~d1.name = 'application'
-~d2.dest = [ 'user1', 'user2' ]
+application__etc_aliases__dependent_recipients[0].name = application
+application__etc_aliases__dependent_recipients[0].dest[0] = user1
+application__etc_aliases__dependent_recipients[0].dest[1] = user2

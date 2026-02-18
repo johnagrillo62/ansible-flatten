@@ -67,7 +67,6 @@ prosody__combined_config_global = {{ prosody__default_config_global | combine(pr
                                                                               prosody__config_global,
                                                                               prosody__group_config_global,
                                                                               prosody__host_config_global) }}
-
 prosody__config_virtual_hosts[0].name = {{ ansible_domain }}
 prosody__config_virtual_hosts[0].enabled = false
 prosody__config_virtual_hosts[0].pki_realm = domain
@@ -78,12 +77,11 @@ prosody__config_http_upload[0].params = "http_upload"
 prosody__config_muc[0].domain = conference.{{ prosody__domain }}
 prosody__config_muc[0].params = "muc"
 prosody__default_config_components = {{ (prosody__config_http_upload if prosody__http_upload | bool else [])
-                                      + (prosody__config_muc if prosody__muc | bool else []) }} 
+                                      + (prosody__config_muc if prosody__muc | bool else []) }}
 prosody__combined_config_components = {{ prosody__default_config_components
                                          + prosody__config_components
                                          + prosody__group_config_components
                                          + prosody__host_config_components }}
-
 prosody__ferm__dependent_rules[0].type = accept
 prosody__ferm__dependent_rules[0].dport[0] = 5222
 prosody__ferm__dependent_rules[0].accept_any = True

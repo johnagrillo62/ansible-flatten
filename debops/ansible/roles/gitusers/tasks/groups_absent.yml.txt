@@ -4,5 +4,4 @@
 [0].loop = {{ q("flattened", gitusers_list
                            + gitusers_group_list
                            + gitusers_host_list) }}
-
 [0].when = (item.name is defined and (item.state is defined and item.state == 'absent'))

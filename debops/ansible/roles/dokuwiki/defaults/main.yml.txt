@@ -1,6 +1,6 @@
 dokuwiki__fqdn = wiki.{{ ansible_domain }}
 dokuwiki__domains = {{ [dokuwiki__fqdn] +
-                       dokuwiki__farm_animals | d([]) }} 
+                       dokuwiki__farm_animals | d([]) }}
 dokuwiki__nginx_auth_realm = Wiki access is restricted
 dokuwiki__nginx_access_policy = 
 dokuwiki__nginx_filename = debops.dokuwiki
@@ -9,7 +9,7 @@ dokuwiki__group = dokuwiki
 dokuwiki__home = {{ ansible_local.nginx.www | d("/srv/www") + "/" + dokuwiki__user }}
 dokuwiki__shell = /bin/false
 dokuwiki__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                   + "/" + dokuwiki__user }} 
+                   + "/" + dokuwiki__user }}
 dokuwiki__www = {{ ansible_local.nginx.www | d("/srv/www") + "/" + dokuwiki__user }}
 dokuwiki__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
 dokuwiki__git_repo = https://github.com/splitbrain/dokuwiki.git
@@ -20,7 +20,6 @@ dokuwiki__ldap_enabled = {{ True
                             if (ansible_local | d() and ansible_local.ldap | d() and
                                 (ansible_local.ldap.enabled | d()) | bool)
                             else False }}
-
 dokuwiki__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 dokuwiki__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 dokuwiki__ldap_self_rdn = uid=dokuwiki
@@ -35,7 +34,6 @@ dokuwiki__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                    + dokuwiki__ldap_binddn | to_uuid + ".password length=32"))
                            if dokuwiki__ldap_enabled | bool
                            else "" }}
-
 dokuwiki__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
 dokuwiki__ldap_people_dn = {{ [dokuwiki__ldap_people_rdn] + dokuwiki__ldap_base_dn }}
 dokuwiki__ldap_private_groups = True
@@ -44,20 +42,18 @@ dokuwiki__ldap_groups_dn = {{ ([dokuwiki__ldap_groups_rdn, dokuwiki__ldap_self_r
                                + dokuwiki__ldap_device_dn)
                               if dokuwiki__ldap_private_groups | bool
                               else ([dokuwiki__ldap_groups_rdn] + dokuwiki__ldap_base_dn) }}
-
 dokuwiki__ldap_admin_group_rdn = cn=DokuWiki Administrators
 dokuwiki__ldap_admin_group_dn = {{ [dokuwiki__ldap_admin_group_rdn]
-                                   + dokuwiki__ldap_groups_dn }} 
+                                   + dokuwiki__ldap_groups_dn }}
 dokuwiki__ldap_object_owner_rdn = uid={{ lookup("env", "USER") }}
 dokuwiki__ldap_object_ownerdn = {{ ([dokuwiki__ldap_object_owner_rdn, dokuwiki__ldap_people_rdn]
-                                    + dokuwiki__ldap_base_dn) | join(",") }} 
+                                    + dokuwiki__ldap_base_dn) | join(",") }}
 dokuwiki__ldap_server_uri = {{ ansible_local.ldap.uri | d([""]) | first }}
 dokuwiki__ldap_server_port = {{ ansible_local.ldap.port | d("389" if dokuwiki__ldap_start_tls | bool else "636") }}
 dokuwiki__ldap_start_tls = {{ ansible_local.ldap.start_tls
                               if (ansible_local | d() and ansible_local.ldap | d() and
                                   (ansible_local.ldap.start_tls | d()) | bool)
                               else True }}
-
 dokuwiki__ldap_user_filter = (& (objectClass=inetOrgPerson) (| (uid=%{user}) (mail=%{user}) ) (| (authorizedService=all) (authorizedService=dokuwiki) (authorizedService=web:public) ) )
 dokuwiki__ldap_group_filter = (& (objectClass=groupOfNames) (member=%{dn}) )
 dokuwiki__ldap_configuration = $conf['useacl'] = 1;
@@ -104,7 +100,6 @@ dokuwiki__plugins_enabled = True
 dokuwiki__default_plugins = {{ dokuwiki__plugins_editor +
                                dokuwiki__plugins_syntax +
                                dokuwiki__plugins_git }}
-
 dokuwiki__plugins_editor[0].repo = https://github.com/cosmocode/edittable.git
 dokuwiki__plugins_editor[0].dest = edittable
 dokuwiki__plugins_editor[1].repo = https://gitlab.com/albertgasset/dokuwiki-plugin-codemirror.git
@@ -167,7 +162,6 @@ dokuwiki__ldap__dependent_tasks[1].state = {{ "present"
                if (dokuwiki__ldap_device_dn | d() and
                    dokuwiki__ldap_private_groups | bool)
                else "ignore" }}
-
 dokuwiki__ldap__dependent_tasks[2].name = Create DokuWiki admin group for {{ dokuwiki__ldap_device_dn | join(",") }}
 dokuwiki__ldap__dependent_tasks[2].dn = {{ dokuwiki__ldap_admin_group_dn }}
 dokuwiki__ldap__dependent_tasks[2].objectClass = groupOfNames

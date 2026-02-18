@@ -1,7 +1,6 @@
-~d0.apiVersion = scheduling.k8s.io/v1
-~d0.kind = PriorityClass
-~d0.metadata = 
-~d1.name = k8s-cluster-critical
-~d0.value = 1000000000
-~d0.globalDefault = false
-~d0.description = "This priority class should only be used by the pods installed using kubespray."
+apiVersion = scheduling.k8s.io/v1
+kind = PriorityClass
+metadata.name = k8s-cluster-critical
+value = 1000000000
+globalDefault = false
+description = This priority class should only be used by the pods installed using kubespray.

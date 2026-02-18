@@ -8,7 +8,7 @@
 [1]["ansible.builtin.file"].path = /etc/gunicorn.d/{{ item.name }}
 [1]["ansible.builtin.file"].state = absent
 [1].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [1].notify[0] = Restart gunicorn
 [1].when = item.name | d() and item.state | d('present') == 'absent'
 [2].name = Generate gunicorn configuration
@@ -18,6 +18,6 @@
 [2]["ansible.builtin.template"].group = root
 [2]["ansible.builtin.template"].mode = 0644
 [2].loop = {{ q("flattened", gunicorn__applications
-                           + gunicorn__dependent_applications) }} 
+                           + gunicorn__dependent_applications) }}
 [2].notify[0] = Restart gunicorn
 [2].when = item.name | d() and item.state | d('present') != 'absent'

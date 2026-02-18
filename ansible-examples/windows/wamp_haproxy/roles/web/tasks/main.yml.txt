@@ -1,4 +1,3 @@
-~d0.name = Download simple web site to 'C:\inetpub\wwwroot\ansible.html'
-~d1.win_get_url = 
-~d2.url = 'https://raw.githubusercontent.com/thisdavejohnson/mywebapp/master/index.html'
-~d2.dest = 'C:\inetpub\wwwroot\ansible.html'
+[0].name = Download simple web site to 'C:\inetpub\wwwroot\ansible.html'
+[0].win_get_url.url = https://raw.githubusercontent.com/thisdavejohnson/mywebapp/master/index.html
+[0].win_get_url.dest = C:\inetpub\wwwroot\ansible.html

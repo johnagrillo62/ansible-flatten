@@ -13,84 +13,71 @@ lldpd__default_configuration[0].options[0].value = Container ({{ ansible_hostnam
 lldpd__default_configuration[0].options[0].state = {{ "present"
                    if (ansible_virtualization_type == "container")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[1].name = chassis-docker
 lldpd__default_configuration[0].options[1].option = configure system chassisid
 lldpd__default_configuration[0].options[1].value = Docker container ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[1].state = {{ "present"
                    if (ansible_virtualization_type == "docker")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[2].name = chassis-kvm
 lldpd__default_configuration[0].options[2].option = configure system chassisid
 lldpd__default_configuration[0].options[2].value = KVM virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[2].state = {{ "present"
                    if (ansible_virtualization_type == "kvm")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[3].name = chassis-lxc
 lldpd__default_configuration[0].options[3].option = configure system chassisid
 lldpd__default_configuration[0].options[3].value = LXC container ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[3].state = {{ "present"
                    if (ansible_virtualization_type == "lxc")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[4].name = chassis-openstack
 lldpd__default_configuration[0].options[4].option = configure system chassisid
 lldpd__default_configuration[0].options[4].value = Openstack virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[4].state = {{ "present"
                    if (ansible_virtualization_type == "openstack")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[5].name = chassis-openvz
 lldpd__default_configuration[0].options[5].option = configure system chassisid
 lldpd__default_configuration[0].options[5].value = OpenVZ container ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[5].state = {{ "present"
                    if (ansible_virtualization_type == "openvz")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[6].name = chassis-podman
 lldpd__default_configuration[0].options[6].option = configure system chassisid
 lldpd__default_configuration[0].options[6].value = Podman container ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[6].state = {{ "present"
                    if (ansible_virtualization_type == "podman")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[7].name = chassis-virtualbox
 lldpd__default_configuration[0].options[7].option = configure system chassisid
 lldpd__default_configuration[0].options[7].value = VirtualBox virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[7].state = {{ "present"
                    if (ansible_virtualization_type == "virtualbox")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[8].name = chassis-virtualpc
 lldpd__default_configuration[0].options[8].option = configure system chassisid
 lldpd__default_configuration[0].options[8].value = VirtualPC virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[8].state = {{ "present"
                    if (ansible_virtualization_type == "VirtualPC")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[9].name = chassis-vmware
 lldpd__default_configuration[0].options[9].option = configure system chassisid
 lldpd__default_configuration[0].options[9].value = VMware virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[9].state = {{ "present"
                    if (ansible_virtualization_type == "VMware")
                    else "absent" }}
-
 lldpd__default_configuration[0].options[10].name = chassis-xen
 lldpd__default_configuration[0].options[10].option = configure system chassisid
 lldpd__default_configuration[0].options[10].value = Xen virtual machine ({{ ansible_hostname }})
 lldpd__default_configuration[0].options[10].state = {{ "present"
                    if (ansible_virtualization_type == "xen")
                    else "absent" }}
-
 lldpd__default_configuration[0].state = {{ "present"
                if (ansible_virtualization_role == "guest" and
                    lldpd__version is version("1.0.0", ">="))
                else "absent" }}
-
 lldpd__combined_configuration = {{ lldpd__default_configuration
                                    + lldpd__configuration
                                    + lldpd__group_configuration
                                    + lldpd__host_configuration }}
-

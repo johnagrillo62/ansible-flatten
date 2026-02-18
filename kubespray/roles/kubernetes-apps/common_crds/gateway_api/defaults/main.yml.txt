@@ -1,2 +1,2 @@
-~d0.gateway_api_enabled = false
-~d0.gateway_api_channel = "standard"
+gateway_api_enabled = false
+gateway_api_channel = standard

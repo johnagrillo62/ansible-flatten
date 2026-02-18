@@ -1,46 +1,41 @@
-~d0.name = systemd daemon reload
-~d1.systemd = 
-~d2.daemon_reload = yes
-~d2.scope = "{{ galaxy_systemd_root | ternary(omit, 'user') }}"
-~d0.name = galaxy systemd start
-~d1.systemd = 
-~d2.name = galaxy.service
-~d2.state = started
-~d2.scope = "{{ galaxy_systemd_root | ternary(omit, 'user') }}"
-~d1.when = "galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd"
-~d1.listen = "start galaxy"
-~d0.name = galaxy mule restart
-~d1.systemd = 
-~d2.name = galaxy.service
-~d2.state = restarted
-~d2.scope = "{{ galaxy_systemd_root | ternary(omit, 'user') }}"
-~d1.when = "galaxy_systemd_mode == 'mule' and galaxy_manage_systemd"
-~d1.listen = "restart galaxy"
-~d0.name = galaxy gravity restart (22.05)
-~d1.command = "{{ galaxy_gravity_command }} graceful"
-~d1.environment = 
-~d2.GRAVITY_STATE_DIR = "{{ galaxy_gravity_state_dir }}"
-~d1.listen = "restart galaxy"
-~d1.when = "galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd and __galaxy_major_version is version('23.0', '<')"
-~d1.become = yes
-~d1.become_user = "{{ __galaxy_user_name }}"
-~d0.name = galaxyctl update (22.05)
-~d1.command = "{{ galaxy_gravity_command }} update"
-~d1.environment = 
-~d2.GRAVITY_STATE_DIR = "{{ galaxy_gravity_state_dir }}"
-~d1.listen = "galaxyctl update"
-~d1.when = "galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd and __galaxy_major_version is version('23.0', '<')"
-~d1.become = yes
-~d1.become_user = "{{ __galaxy_user_name }}"
-~d0.name = galaxyctl update (23.0+)
-~d1.command = "{{ galaxy_gravity_command }} -c {{ galaxy_config_file }} update"
-~d1.listen = "galaxyctl update"
-~d1.when = "galaxy_systemd_mode == 'gravity' and __galaxy_major_version is version('23.0', '>=')"
-~d1.become = yes
-~d1.become_user = "{{ (__galaxy_gravity_pm == 'systemd' and galaxy_systemd_root) | ternary('root', __galaxy_user_name) }}"
-~d0.name = galaxy gravity restart (23.0+)
-~d1.command = "{{ galaxy_gravity_command }} -c {{ galaxy_config_file }} graceful"
-~d1.listen = "restart galaxy"
-~d1.when = "galaxy_systemd_mode == 'gravity' and __galaxy_major_version is version('23.0', '>=')"
-~d1.become = yes
-~d1.become_user = "{{ (__galaxy_gravity_pm == 'systemd' and galaxy_systemd_root) | ternary('root', __galaxy_user_name) }}"
+[0].name = systemd daemon reload
+[0].systemd.daemon_reload = yes
+[0].systemd.scope = {{ galaxy_systemd_root | ternary(omit, 'user') }}
+[1].name = galaxy systemd start
+[1].systemd.name = galaxy.service
+[1].systemd.state = started
+[1].systemd.scope = {{ galaxy_systemd_root | ternary(omit, 'user') }}
+[1].when = galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd
+[1].listen = start galaxy
+[2].name = galaxy mule restart
+[2].systemd.name = galaxy.service
+[2].systemd.state = restarted
+[2].systemd.scope = {{ galaxy_systemd_root | ternary(omit, 'user') }}
+[2].when = galaxy_systemd_mode == 'mule' and galaxy_manage_systemd
+[2].listen = restart galaxy
+[3].name = galaxy gravity restart (22.05)
+[3].command = {{ galaxy_gravity_command }} graceful
+[3].environment.GRAVITY_STATE_DIR = {{ galaxy_gravity_state_dir }}
+[3].listen = restart galaxy
+[3].when = galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd and __galaxy_major_version is version('23.0', '<')
+[3].become = yes
+[3].become_user = {{ __galaxy_user_name }}
+[4].name = galaxyctl update (22.05)
+[4].command = {{ galaxy_gravity_command }} update
+[4].environment.GRAVITY_STATE_DIR = {{ galaxy_gravity_state_dir }}
+[4].listen = galaxyctl update
+[4].when = galaxy_systemd_mode == 'gravity' and galaxy_manage_systemd and __galaxy_major_version is version('23.0', '<')
+[4].become = yes
+[4].become_user = {{ __galaxy_user_name }}
+[5].name = galaxyctl update (23.0+)
+[5].command = {{ galaxy_gravity_command }} -c {{ galaxy_config_file }} update
+[5].listen = galaxyctl update
+[5].when = galaxy_systemd_mode == 'gravity' and __galaxy_major_version is version('23.0', '>=')
+[5].become = yes
+[5].become_user = {{ (__galaxy_gravity_pm == 'systemd' and galaxy_systemd_root) | ternary('root', __galaxy_user_name) }}
+[6].name = galaxy gravity restart (23.0+)
+[6].command = {{ galaxy_gravity_command }} -c {{ galaxy_config_file }} graceful
+[6].listen = restart galaxy
+[6].when = galaxy_systemd_mode == 'gravity' and __galaxy_major_version is version('23.0', '>=')
+[6].become = yes
+[6].become_user = {{ (__galaxy_gravity_pm == 'systemd' and galaxy_systemd_root) | ternary('root', __galaxy_user_name) }}

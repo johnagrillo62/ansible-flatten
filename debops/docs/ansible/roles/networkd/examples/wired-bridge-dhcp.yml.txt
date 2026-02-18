@@ -1,10 +1,25 @@
-~d0.networkd__units = 
-~d1.name = 'br0.netdev'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = 'br0.network'
-~d2.raw = |
-~d2.state = 'present'
-~d1.name = 'enp1s0.network'
-~d2.raw = |
-~d2.state = 'present'
+networkd__units[0].name = br0.netdev
+networkd__units[0].raw = [NetDev]
+Name=br0
+Kind=bridge
+
+networkd__units[0].state = present
+networkd__units[1].name = br0.network
+networkd__units[1].raw = [Match]
+Name=br0
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+UseDomains=true
+
+networkd__units[1].state = present
+networkd__units[2].name = enp1s0.network
+networkd__units[2].raw = [Match]
+Name=enp1s0
+
+[Network]
+Bridge=br0
+
+networkd__units[2].state = present

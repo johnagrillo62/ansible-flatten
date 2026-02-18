@@ -5,79 +5,66 @@ debops_legacy__remove_default_diversions[0].state = {{ "absent"
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_diversions[1].name = /etc/redis/sentinel.conf
 debops_legacy__remove_default_diversions[1].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_combined_diversions = {{ debops_legacy__remove_default_diversions
                                                + debops_legacy__remove_diversions
                                                + debops_legacy__remove_group_diversions
                                                + debops_legacy__remove_host_diversions }}
-
 debops_legacy__remove_combined_packages = {{ debops_legacy__remove_default_packages
                                              + debops_legacy__remove_packages
                                              + debops_legacy__remove_group_packages
                                              + debops_legacy__remove_host_packages }}
-
 debops_legacy__remove_default_files[0].name = /etc/sudoers.d/admins
 debops_legacy__remove_default_files[0].state = {{ "absent"
                if (ansible_local | d() and ansible_local.system_groups | d() and
                    (ansible_local.system_groups.configured | d() | bool))
                else "ignore" }}
-
 debops_legacy__remove_default_files[1].name = /etc/ansible/facts.d/redis.fact
 debops_legacy__remove_default_files[1].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[2].name = /etc/redis/notify.d
 debops_legacy__remove_default_files[2].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[3].name = /etc/redis/trigger.d
 debops_legacy__remove_default_files[3].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[4].name = /usr/local/lib/redis
 debops_legacy__remove_default_files[4].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[5].name = /etc/redis/ansible-redis-dynamic.conf
 debops_legacy__remove_default_files[5].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[6].name = /etc/redis/ansible-redis-static.conf
 debops_legacy__remove_default_files[6].state = {{ "absent"
                if (ansible_local | d() and
                    (ansible_local.redis_server is defined or
                     ansible_local.redis_sentinel is defined))
                else "ignore" }}
-
 debops_legacy__remove_default_files[7].name = /etc/sysctl.d/30-ferm.conf
 debops_legacy__remove_default_files[7].state = {{ "absent"
                if (ansible_local | d() and ansible_local.ferm is defined)
                else "ignore" }}
-
 debops_legacy__remove_combined_files = {{ debops_legacy__remove_default_files
                                           + debops_legacy__remove_files
                                           + debops_legacy__remove_group_files
                                           + debops_legacy__remove_host_files }}
-

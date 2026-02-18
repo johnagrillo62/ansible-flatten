@@ -13,10 +13,8 @@ firejail__combined_program_sandboxes = {{
   | combine(firejail__program_sandboxes)
   | combine(firejail__group_program_sandboxes)
   | combine(firejail__host_program_sandboxes) }}
-
 firejail__global_profiles_system_wide_sandboxed = if_installed
 firejail__program_sandboxes_system_wide_sandboxed = if_installed
 firejail__combined_fix_for_users = {{ (firejail__fix_for_users | list)
                                       + (firejail__group_fix_for_users | list)
                                       + (firejail__host_fix_for_users | list) }}
-

@@ -9,7 +9,6 @@ homeassistant__base_packages[7] = libtiff5
 homeassistant__base_packages[8] = {{ "libturbojpeg"
         if (ansible_distribution == "Ubuntu")
         else "libturbojpeg0" }}
-
 homeassistant__base_packages[9] = tzdata
 homeassistant__dependency_python_packages[0] = python3-dev
 homeassistant__dependency_python_packages[1] = python3-venv
@@ -23,16 +22,13 @@ homeassistant__dependency_python_packages[8] = python3-voluptuous
 homeassistant__dependency_python_packages[9] = {{ ["python3-aiohttp"]
         if (ansible_distribution_release not in ["trusty"])
         else [] }}
-
 homeassistant__dependency_python_packages[10] = {{ ["python3-async-timeout"]
         if (ansible_distribution == "Debian" and ansible_distribution_major_version | int >= 9)
         else [] }}
-
 homeassistant__dependency_python_packages[11] = python3-chardet
 homeassistant__optional_python_packages[0] = {{ ["python3-colorlog"]
         if (ansible_distribution_release not in ["trusty"])
         else [] }}
-
 homeassistant__optional_python_packages[1] = libffi-dev
 homeassistant__optional_python_packages[2] = libssl-dev
 homeassistant__optional_python_packages[3] = python3-crypto
@@ -48,7 +44,6 @@ homeassistant__combined_packages = {{ (homeassistant__base_packages
                                           if (not homeassistant__virtualenv | bool)
                                           else []))
                                       | unique | sort }}
-
 homeassistant__deploy_state = present
 homeassistant__fqdn = ha.{{ homeassistant__domain }}
 homeassistant__domain = {{ ansible_domain }}
@@ -59,7 +54,7 @@ homeassistant__basic_auth_name = homeassistant
 homeassistant__basic_auth_users = {{ ansible_local.core.admin_users | d([]) }}
 homeassistant__webserver_user = {{ ansible_local.nginx.user | d("www-data") }}
 homeassistant__home_path = {{ (ansible_local.fhs.home | d("/var/local"))
-                              + "/" + homeassistant__user }} 
+                              + "/" + homeassistant__user }}
 homeassistant__virtualenv_path = {{ homeassistant__home_path + "/prod_venv" }}
 homeassistant__user = homeassistant
 homeassistant__group = homeassistant
@@ -77,7 +72,6 @@ homeassistant__git_update = True
 homeassistant__daemon_path = {{ (homeassistant__home_path + "/prod_venv/bin/hass")
                                 if (homeassistant__virtualenv | bool)
                                 else (homeassistant__home_path + "/.local/bin/hass") }}
-
 homeassistant__nginx__dependent_upstreams[0].name = homeassistant
 homeassistant__nginx__dependent_upstreams[0].type = default
 homeassistant__nginx__dependent_upstreams[0].state = {{ "present" if (homeassistant__deploy_state == "present") else "absent" }}

@@ -1,8 +1,9 @@
-~d0.etcd_owner = etcd
-~d0.etcd_cert_alt_names = 
-~d0.etcd_cert_alt_ips = []
-~d0.etcd_heartbeat_interval = "250"
-~d0.etcd_election_timeout = "5000"
-~d0.etcd_metrics = "basic"
-~d0.etcd_extra_vars = {}
-~d0.etcd_compaction_retention = "8"
+etcd_owner = etcd
+etcd_cert_alt_names[0] = etcd.kube-system.svc.{{ dns_domain }}
+etcd_cert_alt_names[1] = etcd.kube-system.svc
+etcd_cert_alt_names[2] = etcd.kube-system
+etcd_cert_alt_names[3] = etcd
+etcd_heartbeat_interval = 250
+etcd_election_timeout = 5000
+etcd_metrics = basic
+etcd_compaction_retention = 8

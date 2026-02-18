@@ -1,10 +1,10 @@
-~d0.name = Upgrade a machine using APT
-~d1.hosts = [ 'debops_all_hosts' ]
-~d1.become = True
-~d1.gather_facts = False
-~d1.environment = '{{ inventory__environment | d({})
-~d1.tasks = 
-~d2.name = Upgrade safe packages with refreshed cache
-~d3.ansible.builtin.apt = 
-~d4.update_cache = True
-~d4.upgrade = 'safe'
+[0].name = Upgrade a machine using APT
+[0].hosts[0] = debops_all_hosts
+[0].become = True
+[0].gather_facts = False
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].tasks[0].name = Upgrade safe packages with refreshed cache
+[0].tasks[0]["ansible.builtin.apt"].update_cache = True
+[0].tasks[0]["ansible.builtin.apt"].upgrade = safe

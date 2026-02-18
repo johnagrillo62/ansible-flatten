@@ -1,37 +1,38 @@
-~d0.name = Azure CSI Driver | Check Azure credentials
-~d1.include_tasks = azure-credential-check.yml
-~d0.name = Azure CSI Driver | Write Azure CSI cloud-config
-~d1.template = 
-~d2.src = "azure-csi-cloud-config.j2"
-~d2.dest = "{{ kube_config_dir }}/azure_csi_cloud_config"
-~d2.group = "{{ kube_cert_group }}"
-~d2.mode = "0640"
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = Azure CSI Driver | Get base64 cloud-config
-~d1.slurp = 
-~d2.src = "{{ kube_config_dir }}/azure_csi_cloud_config"
-~d1.register = cloud_config_secret
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = Azure CSI Driver | Generate Manifests
-~d1.template = 
-~d2.src = "{{ item.file }}.j2"
-~d2.dest = "{{ kube_config_dir }}/{{ item.file }}"
-~d2.mode = "0644"
-~d1.with_items = 
-~d2.{name = azure-csi-azuredisk-driver, file: azure-csi-azuredisk-driver.yml}
-~d2.{name = azure-csi-cloud-config-secret, file: azure-csi-cloud-config-secret.yml}
-~d2.{name = azure-csi-azuredisk-controller, file: azure-csi-azuredisk-controller-rbac.yml}
-~d2.{name = azure-csi-azuredisk-controller, file: azure-csi-azuredisk-controller.yml}
-~d2.{name = azure-csi-azuredisk-node-rbac, file: azure-csi-azuredisk-node-rbac.yml}
-~d2.{name = azure-csi-azuredisk-node, file: azure-csi-azuredisk-node.yml}
-~d1.register = azure_csi_manifests
-~d1.when = inventory_hostname == groups['kube_control_plane'][0]
-~d0.name = Azure CSI Driver | Apply Manifests
-~d1.kube = 
-~d2.kubectl = "{{ bin_dir }}/kubectl"
-~d2.filename = "{{ kube_config_dir }}/{{ item.item.file }}"
-~d2.state = "latest"
-~d1.with_items = 
-~d1.when = 
-~d1.loop_control = 
-~d2.label = "{{ item.item.file }}"
+[0].name = Azure CSI Driver | Check Azure credentials
+[0].include_tasks = azure-credential-check.yml
+[1].name = Azure CSI Driver | Write Azure CSI cloud-config
+[1].template.src = azure-csi-cloud-config.j2
+[1].template.dest = {{ kube_config_dir }}/azure_csi_cloud_config
+[1].template.group = {{ kube_cert_group }}
+[1].template.mode = 0640
+[1].when = inventory_hostname == groups['kube_control_plane'][0]
+[2].name = Azure CSI Driver | Get base64 cloud-config
+[2].slurp.src = {{ kube_config_dir }}/azure_csi_cloud_config
+[2].register = cloud_config_secret
+[2].when = inventory_hostname == groups['kube_control_plane'][0]
+[3].name = Azure CSI Driver | Generate Manifests
+[3].template.src = {{ item.file }}.j2
+[3].template.dest = {{ kube_config_dir }}/{{ item.file }}
+[3].template.mode = 0644
+[3].with_items[0].name = azure-csi-azuredisk-driver
+[3].with_items[0].file = azure-csi-azuredisk-driver.yml
+[3].with_items[1].name = azure-csi-cloud-config-secret
+[3].with_items[1].file = azure-csi-cloud-config-secret.yml
+[3].with_items[2].name = azure-csi-azuredisk-controller
+[3].with_items[2].file = azure-csi-azuredisk-controller-rbac.yml
+[3].with_items[3].name = azure-csi-azuredisk-controller
+[3].with_items[3].file = azure-csi-azuredisk-controller.yml
+[3].with_items[4].name = azure-csi-azuredisk-node-rbac
+[3].with_items[4].file = azure-csi-azuredisk-node-rbac.yml
+[3].with_items[5].name = azure-csi-azuredisk-node
+[3].with_items[5].file = azure-csi-azuredisk-node.yml
+[3].register = azure_csi_manifests
+[3].when = inventory_hostname == groups['kube_control_plane'][0]
+[4].name = Azure CSI Driver | Apply Manifests
+[4].kube.kubectl = {{ bin_dir }}/kubectl
+[4].kube.filename = {{ kube_config_dir }}/{{ item.item.file }}
+[4].kube.state = latest
+[4].with_items[0] = {{ azure_csi_manifests.results }}
+[4].when[0] = inventory_hostname == groups['kube_control_plane'][0]
+[4].when[1] = not item is skipped
+[4].loop_control.label = {{ item.item.file }}

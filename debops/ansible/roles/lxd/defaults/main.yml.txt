@@ -2,7 +2,6 @@ lxd__upstream_enabled = True
 lxd__upstream_type = {{ "apt"
                         if (ansible_distribution == "Ubuntu")
                         else "git" }}
-
 lxd__upstream_gpg_key[0] = 602F 5676 63E5 93BC BD14  F338 C638 974D 6479 2D67
 lxd__upstream_gpg_key[1] = 5DE3 E050 9C47 EA3C F04A  42D3 4AEE 18F8 3AFD EB23
 lxd__upstream_git_repository = https://github.com/lxc/lxd
@@ -11,7 +10,6 @@ lxd__golang_gosrc = {{ ansible_local.golang.gosrc | d("") }}
 lxd__binary = {{ ansible_local.golang.binaries["lxd"]
                  if (ansible_local.golang.binaries.lxd | d())
                  else "/usr/bin/lxd" }}
-
 lxd__base_packages[0] = dnsmasq-base
 lxd__base_packages[1] = lxcfs
 lxd__base_packages[2] = squashfs-tools
@@ -44,12 +42,10 @@ lxd__combined_preseed = {{ lxd__default_preseed
                            + lxd__preseed
                            + lxd__group_preseed
                            + lxd__host_preseed }}
-
 lxd__init_preseed = {{ False
                        if (ansible_local | d() and ansible_local.lxd | d() and
                            (ansible_local.lxd.installed | d()) | bool)
                        else True }}
-
 lxd__preseed_data = {{ lookup("template", "lookup/lxd__preseed_data.j2") }}
 lxd__golang__dependent_packages[0].name = lxd
 lxd__golang__dependent_packages[0].state = {{ "present" if lxd__upstream_enabled | bool else "absent" }}

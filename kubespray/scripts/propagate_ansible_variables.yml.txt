@@ -1,22 +1,24 @@
-~d0.name = Update README.md versions
-~d1.hosts = localhost
-~d1.connection = local
-~d1.gather_facts = false
-~d1.vars = 
-~d2.fallback_ip = 'bypass tasks in kubespray_defaults'
-~d1.roles = 
-~d1.tasks = 
-~d1.name = Include versions not in kubespray_defaults
-~d2.include_vars = "{{ item }}"
-~d2.loop = 
-~d1.name = Render versions in README.md
-~d2.blockinfile = 
-~d3.marker = '<!-- {mark} ANSIBLE MANAGED BLOCK -->'
-~d3.block = "\n{{ lookup('ansible.builtin.template', 'readme_versions.md.j2') }}\n\n"
-~d3.path = ../README.md
-~d1.name = Render Dockerfiles
-~d2.template = 
-~d3.src = "{{ item }}.j2"
-~d3.dest = "../{{ item }}"
-~d3.mode = "0644"
-~d2.loop = 
+[0].name = Update README.md versions
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = false
+[0].vars.fallback_ip = bypass tasks in kubespray_defaults
+[0].roles[0] = kubespray_defaults
+[0].tasks[0].name = Include versions not in kubespray_defaults
+[0].tasks[0].include_vars = {{ item }}
+[0].tasks[0].loop[0] = ../roles/container-engine/docker/defaults/main.yml
+[0].tasks[0].loop[1] = ../roles/kubernetes/node/defaults/main.yml
+[0].tasks[0].loop[2] = ../roles/kubernetes-apps/argocd/defaults/main.yml
+[0].tasks[1].name = Render versions in README.md
+[0].tasks[1].blockinfile.marker = <!-- {mark} ANSIBLE MANAGED BLOCK -->
+[0].tasks[1].blockinfile.block = 
+{{ lookup('ansible.builtin.template', 'readme_versions.md.j2') }}
+
+
+[0].tasks[1].blockinfile.path = ../README.md
+[0].tasks[2].name = Render Dockerfiles
+[0].tasks[2].template.src = {{ item }}.j2
+[0].tasks[2].template.dest = ../{{ item }}
+[0].tasks[2].template.mode = 0644
+[0].tasks[2].loop[0] = pipeline.Dockerfile
+[0].tasks[2].loop[1] = Dockerfile

@@ -1,7 +1,6 @@
 icinga__upstream = {{ True
                       if (ansible_distribution_release in ["trusty"])
                       else False }}
-
 icinga__upstream_apt_key_id = DD3A F619 8ED0 00B4 C0B7 3956 CC11 6F55 AA7F 2382
 icinga__upstream_apt_repo = deb https://packages.icinga.com/{{ icinga__distribution | lower }} icinga-{{ icinga__distribution_release | lower }} main
 icinga__distribution = {{ ansible_local.core.distribution | d(ansible_distribution) }}
@@ -18,32 +17,27 @@ icinga__additional_groups[1] = {{ ansible_local.proc_hidepid.group
         if (ansible_local.proc_hidepid.group | d() and
             (ansible_local.proc_hidepid.enabled | d()) | bool)
         else [] }}
-
 icinga__fqdn = {{ ansible_fqdn }}
 icinga__display_name = {{ (inventory_hostname_short | d(inventory_hostname.split(".")[0]))
                           if (inventory_hostname_short | d(inventory_hostname.split(".")[0]) != "localhost")
                           else ansible_hostname }}
-
 icinga__ipv4_address = {{ ansible_default_ipv4.address
                           | d(ansible_all_ipv4_addresses | d([]) | first)
                           | d(icinga_fqdn) }}
-
 icinga__ipv6_address = {{ ansible_default_ipv6.address
                           | d(ansible_all_ipv6_addresses | d([]) | first)
                           | d(omit, true) }}
-
 icinga__domain = {{ ansible_domain }}
 icinga__master_nodes = {{ q("debops.debops.dig_srv", "_icinga-master._tcp." + icinga__domain,
-                            "icinga-master." + icinga__domain, icinga__api_port) }} 
+                            "icinga-master." + icinga__domain, icinga__api_port) }}
 icinga__master_delegate_to = {{ icinga__master_nodes[0]["target"] }}
 icinga__director_nodes = {{ q("debops.debops.dig_srv", "_icinga-director._tcp." + icinga__domain,
-                              "icinga-director." + icinga__domain, 443) }} 
+                              "icinga-director." + icinga__domain, 443) }}
 icinga__node_type = {{ "master"
                        if (icinga__fqdn in
                            (icinga__master_nodes | map(attribute="target")) or
                            not icinga__director_enabled | bool)
                        else "client" }}
-
 icinga__api_listen = ::
 icinga__api_port = 5665
 icinga__api_user = root
@@ -52,24 +46,20 @@ icinga__api_password = {{ lookup("password", secret + "/icinga/api/"
                                   + icinga__api_user + "/password")
                           if (icinga__node_type == "master")
                           else "" }}
-
 icinga__api_permissions[0] = *
 icinga__director_enabled = {{ True
                               if (icinga__master_nodes[0]["dig_srv_src"] | d("") != "fallback" and
                                   icinga__director_nodes[0]["dig_srv_src"] | d("") != "fallback")
                               else False }}
-
 icinga__director_register = {{ True
                                if (icinga__director_enabled | bool)
                                else False }}
-
 icinga__director_register_api_fqdn = {{ icinga__director_nodes[0]["target"] }}
 icinga__director_register_api_url = https://{{ icinga__director_register_api_fqdn }}/director/host
 icinga__director_register_api_user = director-api
 icinga__director_register_api_password = {{ lookup("password", secret + "/icinga_web/api/"
                                             + icinga__director_register_api_fqdn + "/credentials/"
                                             + icinga__director_register_api_user + "/password") }}
-
 icinga__director_register_default_templates[0] = icinga-agent-host
 icinga__director_register_default_vars.ansible_managed = True
 icinga__director_register_host_object.object_type = object
@@ -82,39 +72,34 @@ icinga__director_register_host_object.imports = {{ q("flattened",
                   + icinga__director_register_templates
                   + icinga__director_register_group_templates
                   + icinga__director_register_host_templates)) }}
-
 icinga__director_register_host_object.vars = {{ icinga__director_register_default_vars
             | combine(icinga__director_register_vars,
                       icinga__director_register_group_vars,
                       icinga__director_register_host_vars) }}
-
 icinga__director_deploy = {{ True
                              if (icinga__director_register | bool)
                              else False }}
-
 icinga__director_deploy_api_fqdn = {{ icinga__director_nodes[0]["target"] }}
 icinga__director_deploy_api_url = https://{{ icinga__director_deploy_api_fqdn }}/director/config/deploy
 icinga__director_deploy_api_user = director-api
 icinga__director_deploy_api_password = {{ lookup("password", secret + "/icinga_web/api/"
                                             + icinga__director_deploy_api_fqdn + "/credentials/"
                                             + icinga__director_deploy_api_user + "/password") }}
-
 icinga__pki_enabled = {{ True
                          if (ansible_local | d() and ansible_local.pki | d() and
                              (ansible_local.pki.enabled | d()) | bool)
                          else False }}
-
 icinga__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 icinga__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 icinga__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
 icinga__pki_crt = {{ ansible_local.pki.crt | d("default.crt") }}
 icinga__pki_key = {{ ansible_local.pki.key | d("default.key") }}
 icinga__pki_cert_path = {{ icinga__pki_path + "/" + icinga__pki_realm
-                           + "/" + icinga__pki_crt }} 
+                           + "/" + icinga__pki_crt }}
 icinga__pki_key_path = {{ icinga__pki_path + "/" + icinga__pki_realm
-                          + "/" + icinga__pki_key }} 
+                          + "/" + icinga__pki_key }}
 icinga__pki_ca_path = {{ icinga__pki_path + "/" + icinga__pki_realm
-                         + "/" + icinga__pki_ca }} 
+                         + "/" + icinga__pki_ca }}
 icinga__default_configuration[0].name = icinga2.conf
 icinga__default_configuration[0].divert = True
 icinga__default_configuration[0].comment = Icinga 2 configuration file
@@ -180,7 +165,6 @@ icinga__default_configuration[0].options[6].value = include_recursive "repositor
 icinga__default_configuration[0].options[6].state = {{ "absent"
                    if (icinga__version is version("2.8.0", ">="))
                    else "present" }}
-
 icinga__default_configuration[0].options[7].name = conf.d
 icinga__default_configuration[0].options[7].comment = Although in theory you could define all your objects in this file
 the preferred way is to create separate directories and files in the conf.d
@@ -198,7 +182,6 @@ icinga__default_configuration[0].options[8].state = {{ "present"
                    if (icinga__director_enabled | bool and
                        icinga__node_type == "master")
                    else "absent" }}
-
 icinga__default_configuration[1].name = zones.conf
 icinga__default_configuration[1].divert = True
 icinga__default_configuration[1].comment = Endpoint and Zone configuration for a cluster setup
@@ -223,7 +206,6 @@ icinga__default_configuration[1].options[0].state = {{ "present"
                    if (icinga__node_type != "master" and
                        icinga__master_nodes[0]["dig_srv_src"] | d("") != "fallback")
                    else "absent" }}
-
 icinga__default_configuration[1].options[1].name = object_node
 icinga__default_configuration[1].options[1].value = object Endpoint NodeName {
   host = NodeName
@@ -257,7 +239,6 @@ icinga__default_configuration[2].no_log = {{ debops__no_log | d(True) }}
 icinga__default_configuration[2].state = {{ "present"
                if (icinga__node_type == "master")
                else "absent" }}
-
 icinga__default_configuration[2].options[0].name = api_user_root
 icinga__default_configuration[2].options[0].value = object ApiUser "{{ icinga__api_user }}" {
   password = "{{ icinga__api_password }}"
@@ -305,17 +286,14 @@ icinga__default_configuration[5].feature_state = {{ "present" if (icinga__node_t
 icinga__dependent_configuration_filter = {{ lookup("template",
                                              "lookup/icinga__dependent_configuration_filter.j2")
                                              | from_yaml }}
-
 icinga__combined_configuration = {{ icinga__default_configuration
                                     + icinga__dependent_configuration_filter
                                     + icinga__configuration
                                     + icinga__group_configuration
                                     + icinga__host_configuration }}
-
 icinga__master_combined_configuration = {{ icinga__master_configuration
                                            + icinga__master_group_configuration
                                            + icinga__master_host_configuration }}
-
 icinga__etc_services__dependent_list[0].name = icinga-api
 icinga__etc_services__dependent_list[0].port = {{ icinga__api_port }}
 icinga__etc_services__dependent_list[0].comment = Icinga 2 REST API

@@ -8,17 +8,14 @@ bind__features[3] = {{ "doh_https"
             and "debops_service_nginx" not in group_names
             and "debops_service_apache" not in group_names)
         else [] }}
-
 bind__features[4] = {{ "doh_proxy"
         if (bind__pki and ansible_local.nginx.enabled | d(False)
             or "debops_service_nginx" in group_names)
         else [] }}
-
 bind__features[5] = {{ "stats_proxy"
         if (bind__pki and ansible_local.nginx.enabled | d(False)
             or "debops_service_nginx" in group_names)
         else [] }}
-
 bind__version = {{ ansible_local.bind.version | d("0.0.0") }}
 bind__fqdn = dns.{{ bind__domain }}
 bind__domain = {{ ansible_domain }}
@@ -40,7 +37,7 @@ bind__dnssec_script_default_configuration[1].name = log_file
 bind__dnssec_script_default_configuration[1].value = /var/log/debops-bind-rollkey.log
 bind__dnssec_script_default_configuration[2].name = email_to
 bind__dnssec_script_default_configuration[2].value = {{ ansible_local.core.admin_public_email[0]
-               | d("root@" + ansible_domain) }} 
+               | d("root@" + ansible_domain) }}
 bind__dnssec_script_default_configuration[3].name = email_from
 bind__dnssec_script_default_configuration[3].value = {{ "noreply@" + ansible_domain }}
 bind__dnssec_script_default_configuration[4].name = email_host
@@ -58,7 +55,6 @@ bind__dnssec_script_combined_configuration = {{
   + bind__dnssec_script_configuration
   + bind__dnssec_script_group_configuration
   + bind__dnssec_script_host_configuration }}
-
 bind__doh_endpoints[0] = /dns-query
 bind__doh_proxy_port = 83
 bind__doh_proxy_allow = {%- set cidrs = [] -%} {%- for item in ((ansible_interfaces
@@ -78,13 +74,12 @@ bind__stats_proxy_allow = {{ ["127.0.0.1", "::1"]
                                 | difference(ansible_all_ipv6_addresses | d([])
                                              | ansible.utils.ipaddr("link-local")))
                              | unique | sort }}
-
 bind__stats_proxy_access_policy = 
 bind__default_configuration[0].name = debops-tls
 bind__default_configuration[0].option = tls "debops-tls"
 bind__default_configuration[0].comment = TLS options for DoH and DoT
 bind__default_configuration[0].state = {{ "present" if bind__features | intersect(["dot", "doh_https"])
-               else "absent" }} 
+               else "absent" }}
 bind__default_configuration[0].options[0].name = ciphers
 bind__default_configuration[0].options[0].value = "{{ bind__tls_cipher_list }}"
 bind__default_configuration[0].options[1].name = dhparam-file
@@ -110,7 +105,6 @@ bind__default_configuration[1].comment = DoH options
 bind__default_configuration[1].state = {{ "present"
                if bind__features | intersect(["doh_https", "doh_proxy", "doh_http"])
                else "absent" }}
-
 bind__default_configuration[1].options[0].name = endpoints
 bind__default_configuration[1].options[0].options[0].name = endpoints
 bind__default_configuration[1].options[0].options[0].raw = {{ bind__doh_endpoints | map('regex_replace', '^(.*)$', '\"\\1\";') | join(' ') }}
@@ -282,7 +276,6 @@ bind__default_configuration[5].state = {{ "present"
                   | selectattr("state", "equalto", "present")
                   | length > 0
                else "absent" }}
-
 bind__default_configuration[5].autovalue = keys
 bind__default_configuration[6].name = acl debops-acl
 bind__default_configuration[6].state = {{ "present"
@@ -292,7 +285,6 @@ bind__default_configuration[6].state = {{ "present"
                                    | selectattr("state", "equalto", "present")
                                    | map(attribute="name"))
                else "absent" }}
-
 bind__default_configuration[6].options[0].name = debops-key
 bind__default_configuration[6].options[0].raw = key debops-key;
 bind__default_configuration[7].name = dnssec-policy-csk
@@ -479,7 +471,6 @@ bind__combined_configuration = {{ bind__default_configuration
                                    + bind__configuration
                                    + bind__group_configuration
                                    + bind__host_configuration }}
-
 bind__default_keys[0].name = debops-key
 bind__default_keys[0].algorithm = hmac-sha512
 bind__default_keys[0].type = tsig
@@ -487,7 +478,6 @@ bind__combined_keys = {{ bind__default_keys
                           + bind__keys
                           + bind__group_keys
                           + bind__host_keys }}
-
 bind__default_zone_ttl = 1D
 bind__default_zone_soa_primary = {{ ansible_fqdn | regex_replace("\.*$", ".") }}
 bind__default_zone_soa_email = {{ "hostmaster." + ansible_domain + "." }}
@@ -507,12 +497,10 @@ bind__default_zones[0].options[1].autovalue = zone_file_path
 bind__default_zones[0].content = {{ ["@	IN NS localhost."]
                  + bind__blocked_domains | d([]) | map("regex_replace", "^(.*)$", "\1 CNAME .")
               }}
-
 bind__combined_zones = {{ bind__default_zones
                            + bind__zones
                            + bind__group_zones
                            + bind__host_zones }}
-
 bind__default_generic_zones[0].name = .
 bind__default_generic_zones[0].comment = prime the server with knowledge of the root servers
 bind__default_generic_zones[0].options[0].name = type
@@ -547,12 +535,10 @@ bind__combined_generic_zones = {{ bind__default_generic_zones
                                    + bind__generic_zones
                                    + bind__group_generic_zones
                                    + bind__host_generic_zones }}
-
 bind__pki = {{ True
                if (ansible_local.pki.enabled | d(False) | bool
                    and bind__version is version("9.18.0", ">="))
                else False }}
-
 bind__pki_path = {{ ansible_local.pki.path | d("/etc/pki/realms") }}
 bind__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 bind__pki_ca = {{ ansible_local.pki.ca | d("CA.crt") }}
@@ -576,7 +562,6 @@ bind__accept_any = {{ True
                       if bind__features
                          | intersect(["dns", "dot", "doh_http", "doh_https"])
                       else False }}
-
 bind__ferm__dependent_rules[0].name = reject_bind_tcp
 bind__ferm__dependent_rules[0].type = accept
 bind__ferm__dependent_rules[0].protocol = tcp
@@ -589,7 +574,6 @@ bind__ferm__dependent_rules[0].target = REJECT
 bind__ferm__dependent_rules[0].rule_state = {{ "present"
                     if (bind__deny + bind__group_deny + bind__host_deny)
                     else "absent" }}
-
 bind__ferm__dependent_rules[1].name = reject_bind_udp
 bind__ferm__dependent_rules[1].type = accept
 bind__ferm__dependent_rules[1].protocol = udp
@@ -602,7 +586,6 @@ bind__ferm__dependent_rules[1].target = REJECT
 bind__ferm__dependent_rules[1].rule_state = {{ "present"
                     if (bind__deny + bind__group_deny + bind__host_deny)
                     else "absent" }}
-
 bind__ferm__dependent_rules[2].name = accept_bind_tcp
 bind__ferm__dependent_rules[2].type = accept
 bind__ferm__dependent_rules[2].protocol = tcp
@@ -629,7 +612,6 @@ bind__nginx__dependent_servers[0].webroot_create = False
 bind__nginx__dependent_servers[0].state = {{ "present"
                if bind__features | intersect(["doh_proxy", "stats_proxy"])
                else "absent" }}
-
 bind__nginx__dependent_servers[0].root = False
 bind__nginx__dependent_servers[0].maintenance = False
 bind__nginx__dependent_servers[0].toplevel_options = {% if "doh_proxy" in bind__features | d([]) %}
@@ -660,7 +642,6 @@ bind__logrotate__dependent_config[0].state = {{ "present"
                 if ("dnssec" in bind__features and
                     bind__dnssec_script_enabled | d(False))
                 else "absent" }}
-
 bind__logrotate__dependent_config[0].sections[0].logs = /var/log/debops-bind-rollkey.log
 bind__logrotate__dependent_config[0].sections[0].options = notifempty
 missingok

@@ -1,45 +1,38 @@
-~d0.name = Verify correct structure of Kubespray variables
-~d1.hosts = localhost
-~d1.connection = local
-~d1.gather_facts = false
-~d1.vars = 
-~d2.fallback_ip = 'bypass tasks in kubespray_defaults'
-~d2._keys = "{{ query('ansible.builtin.varnames', '^.+_checksums$') }}"
-~d2._values = "{{ query('ansible.builtin.vars', *_keys) | map('dict2items') }}"
-~d2._components_archs_values = "{{ _keys | zip(_values) | community.general.dict | dict2items | subelements('value') }}"
-~d2._minimal_data_needed = "{{ _components_archs_values | map(attribute='0.key') | zip(_components_archs_values | map(attribute='1')) }}"
-~d1.roles = 
-~d1.tasks = 
-~d1.name = Check all versions are strings
-~d2.assert = 
-~d3.that = "{{ item.1.value | reject('string') == [] }}"
-~d3.quiet = true
-~d2.loop = "{{ _minimal_data_needed }}"
-~d2.loop_control = 
-~d3.label = "{{ item.0 }}:{{ item.1.key }}"
-~d1.name = Check all checksums are sorted by version
-~d2.vars = 
-~d3.actual = "{{ item.1.value.keys() | map('string') | reverse}}"
-~d3.sorted = "{{ item.1.value.keys() | map('string') | community.general.version_sort }}"
-~d2.assert = 
-~d3.that = actual == sorted
-~d3.quiet = true
-~d3.msg = "{{ actual | ansible.utils.fact_diff(sorted) }}"
-~d2.loop = "{{ _minimal_data_needed }}"
-~d2.loop_control = 
-~d3.label = "{{ item.0 }}:{{ item.1.key }}"
-~d2.when = 
-~d1.name = Include the packages list variable
-~d2.include_vars = ../roles/system_packages/vars/main.yml
-~d1.name = Verify that the packages list is sorted
-~d2.loop = 
-~d2.vars = 
-~d3.pkgs_lists = "{{ lookup('vars', item).keys() | list }}"
-~d3.ansible_distribution = irrelevant
-~d3.ansible_distribution_major_version = irrelevant
-~d3.ansible_distribution_minor_version = irrelevant
-~d3.ansible_distribution_version = 1.0
-~d3.ansible_os_family = irrelevant
-~d2.assert = 
-~d3.that = "pkgs_lists | sort == pkgs_lists"
-~d3.fail_msg = "{{ item }} is not sorted: {{ pkgs_lists | ansible.utils.fact_diff(pkgs_lists | sort) }}"
+[0].name = Verify correct structure of Kubespray variables
+[0].hosts = localhost
+[0].connection = local
+[0].gather_facts = false
+[0].vars.fallback_ip = bypass tasks in kubespray_defaults
+[0].vars._keys = {{ query('ansible.builtin.varnames', '^.+_checksums$') }}
+[0].vars._values = {{ query('ansible.builtin.vars', *_keys) | map('dict2items') }}
+[0].vars._components_archs_values = {{ _keys | zip(_values) | community.general.dict | dict2items | subelements('value') }}
+[0].vars._minimal_data_needed = {{ _components_archs_values | map(attribute='0.key') | zip(_components_archs_values | map(attribute='1')) }}
+[0].roles[0] = kubespray_defaults
+[0].tasks[0].name = Check all versions are strings
+[0].tasks[0].assert.that = {{ item.1.value | reject('string') == [] }}
+[0].tasks[0].assert.quiet = true
+[0].tasks[0].loop = {{ _minimal_data_needed }}
+[0].tasks[0].loop_control.label = {{ item.0 }}:{{ item.1.key }}
+[0].tasks[1].name = Check all checksums are sorted by version
+[0].tasks[1].vars.actual = {{ item.1.value.keys() | map('string') | reverse}}
+[0].tasks[1].vars.sorted = {{ item.1.value.keys() | map('string') | community.general.version_sort }}
+[0].tasks[1].assert.that = actual == sorted
+[0].tasks[1].assert.quiet = true
+[0].tasks[1].assert.msg = {{ actual | ansible.utils.fact_diff(sorted) }}
+[0].tasks[1].loop = {{ _minimal_data_needed }}
+[0].tasks[1].loop_control.label = {{ item.0 }}:{{ item.1.key }}
+[0].tasks[1].when[0] = item.1.value is not string
+[0].tasks[1].when[1] = (item.1.value | dict2items)[0].value is string or (item.1.value | dict2items)[0].value is number
+[0].tasks[2].name = Include the packages list variable
+[0].tasks[2].include_vars = ../roles/system_packages/vars/main.yml
+[0].tasks[3].name = Verify that the packages list is sorted
+[0].tasks[3].loop[0] = pkgs_to_remove
+[0].tasks[3].loop[1] = pkgs
+[0].tasks[3].vars.pkgs_lists = {{ lookup('vars', item).keys() | list }}
+[0].tasks[3].vars.ansible_distribution = irrelevant
+[0].tasks[3].vars.ansible_distribution_major_version = irrelevant
+[0].tasks[3].vars.ansible_distribution_minor_version = irrelevant
+[0].tasks[3].vars.ansible_distribution_version = 1.0
+[0].tasks[3].vars.ansible_os_family = irrelevant
+[0].tasks[3].assert.that = pkgs_lists | sort == pkgs_lists
+[0].tasks[3].assert.fail_msg = {{ item }} is not sorted: {{ pkgs_lists | ansible.utils.fact_diff(pkgs_lists | sort) }}

@@ -1,46 +1,43 @@
-~d0.name = Create base directory for local modification {{ item.name }}
-~d1.ansible.builtin.file = 
-~d2.path = '{{ "/etc/apparmor.d/local/" + item.name | dirname }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = 
-~d1.tags = [ 'role::apparmor:locals' ]
-~d0.name = Create local modification {{ item.name }}
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/apparmor.d/snippet.j2'
-~d2.dest = '{{ "/etc/apparmor.d/local/" + item.name }}'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.when = item.state | d("present") == "present"
-~d1.vars = 
-~d2.apparmor__var_template_title = 'AppArmor local modification'
-~d2.apparmor__var_template_suffix = ','
-~d2.apparmor__var_template_operator = ' '
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:locals' ]
-~d0.name = Check the presence of profile {{ item.name }}
-~d1.ansible.builtin.stat = 
-~d2.path = '{{ "/etc/apparmor.d/" + item.name }}'
-~d1.register = apparmor__register_local_profile
-~d1.when = item.state | d("present") == "absent"
-~d1.tags = [ 'role::apparmor:locals' ]
-~d0.name = Truncate local modification {{ item.name }}
-~d1.ansible.builtin.copy = 
-~d2.dest = '{{ "/etc/apparmor.d/local/" + item.name }}'
-~d2.content = ''
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0644'
-~d1.when = 
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:locals' ]
-~d0.name = Remove local modification {{ item.name }}
-~d1.ansible.builtin.file = 
-~d2.path = '{{ "/etc/apparmor.d/local/" + item.name }}'
-~d2.state = 'absent'
-~d1.when = 
-~d1.notify = [ 'Reload all AppArmor profiles' ]
-~d1.tags = [ 'role::apparmor:locals' ]
+[0].name = Create base directory for local modification {{ item.name }}
+[0]["ansible.builtin.file"].path = {{ "/etc/apparmor.d/local/" + item.name | dirname }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[0].when[0] = item.state | d("present") == "present"
+[0].when[1] = item.name | dirname != ""
+[0].tags[0] = role::apparmor:locals
+[1].name = Create local modification {{ item.name }}
+[1]["ansible.builtin.template"].src = etc/apparmor.d/snippet.j2
+[1]["ansible.builtin.template"].dest = {{ "/etc/apparmor.d/local/" + item.name }}
+[1]["ansible.builtin.template"].owner = root
+[1]["ansible.builtin.template"].group = root
+[1]["ansible.builtin.template"].mode = 0644
+[1].when = item.state | d("present") == "present"
+[1].vars.apparmor__var_template_title = AppArmor local modification
+[1].vars.apparmor__var_template_suffix = ,
+[1].vars.apparmor__var_template_operator =  
+[1].notify[0] = Reload all AppArmor profiles
+[1].tags[0] = role::apparmor:locals
+[2].name = Check the presence of profile {{ item.name }}
+[2]["ansible.builtin.stat"].path = {{ "/etc/apparmor.d/" + item.name }}
+[2].register = apparmor__register_local_profile
+[2].when = item.state | d("present") == "absent"
+[2].tags[0] = role::apparmor:locals
+[3].name = Truncate local modification {{ item.name }}
+[3]["ansible.builtin.copy"].dest = {{ "/etc/apparmor.d/local/" + item.name }}
+[3]["ansible.builtin.copy"].content = 
+[3]["ansible.builtin.copy"].owner = root
+[3]["ansible.builtin.copy"].group = root
+[3]["ansible.builtin.copy"].mode = 0644
+[3].when[0] = item.state | d("present") == "absent"
+[3].when[1] = apparmor__register_local_profile.stat.exists | d(False)
+[3].notify[0] = Reload all AppArmor profiles
+[3].tags[0] = role::apparmor:locals
+[4].name = Remove local modification {{ item.name }}
+[4]["ansible.builtin.file"].path = {{ "/etc/apparmor.d/local/" + item.name }}
+[4]["ansible.builtin.file"].state = absent
+[4].when[0] = item.state | d("present") == "absent"
+[4].when[1] = not apparmor__register_local_profile.stat.exists | d(False)
+[4].notify[0] = Reload all AppArmor profiles
+[4].tags[0] = role::apparmor:locals

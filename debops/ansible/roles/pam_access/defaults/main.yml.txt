@@ -8,4 +8,3 @@ pam_access__combined_rules = {{ q("flattened", (pam_access__default_rules
                                                 + pam_access__rules
                                                 + pam_access__group_rules
                                                 + pam_access__host_rules)) }}
-

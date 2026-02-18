@@ -1,25 +1,18 @@
-~d0.name = Launch a Job Template
-~d1.job_launch = 
-~d2.job_template = "Demo Job Template"
-~d1.register = job
-~d0.assert = 
-~d2.that = 
-~d0.name = List jobs w/ a matching primary key
-~d1.job_list = 
-~d2.query = {"id": "{{ job.id }}"}
-~d1.register = matching_jobs
-~d0.assert = 
-~d2.that = 
-~d0.name = List failed jobs (which don't exist)
-~d1.job_list = 
-~d2.status = failed
-~d2.query = {"id": "{{ job.id }}"}
-~d1.register = successful_jobs
-~d0.assert = 
-~d2.that = 
-~d0.name = Get ALL result pages!
-~d1.job_list = 
-~d2.all_pages = true
-~d1.register = all_page_query
-~d0.assert = 
-~d2.that = 
+[0].name = Launch a Job Template
+[0].job_launch.job_template = Demo Job Template
+[0].register = job
+[1].assert.that[0] = job is changed
+[1].assert.that[1] = job.status == 'pending'
+[2].name = List jobs w/ a matching primary key
+[2].job_list.query.id = {{ job.id }}
+[2].register = matching_jobs
+[3].assert.that[0] = matching_jobs.count == 1
+[4].name = List failed jobs (which don't exist)
+[4].job_list.status = failed
+[4].job_list.query.id = {{ job.id }}
+[4].register = successful_jobs
+[5].assert.that[0] = successful_jobs.count == 0
+[6].name = Get ALL result pages!
+[6].job_list.all_pages = true
+[6].register = all_page_query
+[7].assert.that[0] = not all_page_query.next

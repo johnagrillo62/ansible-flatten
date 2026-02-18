@@ -1,4 +1,3 @@
-~d0.name = Restart dovecot
-~d1.ansible.builtin.service = 
-~d2.name = 'dovecot'
-~d2.state = 'restarted'
+[0].name = Restart dovecot
+[0]["ansible.builtin.service"].name = dovecot
+[0]["ansible.builtin.service"].state = restarted

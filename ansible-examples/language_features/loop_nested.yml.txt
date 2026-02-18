@@ -1,10 +1,20 @@
-~d0.hosts = all
-~d1.tasks = 
-~d2.shell = echo "nested test a={{ item[0] }} b={{ item[1] }} c={{ item[2] }}"
-~d3.with_nested = 
-~d0.hosts = all
-~d1.vars = 
-~d2.listvar1 = 
-~d1.tasks = 
-~d2.shell = echo "nested test a={{ item[0] }} b={{ item[1] }}"
-~d3.with_nested = 
+[0].hosts = all
+[0].tasks[0].shell = echo "nested test a={{ item[0] }} b={{ item[1] }} c={{ item[2] }}"
+[0].tasks[0].with_nested[0][0] = red
+[0].tasks[0].with_nested[0][1] = blue
+[0].tasks[0].with_nested[0][2] = green
+[0].tasks[0].with_nested[1][0] = 1
+[0].tasks[0].with_nested[1][1] = 2
+[0].tasks[0].with_nested[1][2] = 3
+[0].tasks[0].with_nested[2][0] = up
+[0].tasks[0].with_nested[2][1] = down
+[0].tasks[0].with_nested[2][2] = strange
+[1].hosts = all
+[1].vars.listvar1[0] = a
+[1].vars.listvar1[1] = b
+[1].vars.listvar1[2] = c
+[1].tasks[0].shell = echo "nested test a={{ item[0] }} b={{ item[1] }}"
+[1].tasks[0].with_nested[0] = listvar1
+[1].tasks[0].with_nested[1][0] = 1
+[1].tasks[0].with_nested[1][1] = 2
+[1].tasks[0].with_nested[1][2] = 3

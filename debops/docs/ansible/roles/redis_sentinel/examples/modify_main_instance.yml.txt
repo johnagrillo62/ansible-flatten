@@ -1,6 +1,5 @@
-~d0.redis_sentinel__instances = 
-~d1.name = 'main'
-~d2.bind = [ '0.0.0.0', '::' ]
-~d0.redis_sentinel__monitors = 
-~d1.name = 'redis-ha'
-~d2.host = '{{ ansible_fqdn }}'
+redis_sentinel__instances[0].name = main
+redis_sentinel__instances[0].bind[0] = 0.0.0.0
+redis_sentinel__instances[0].bind[1] = ::
+redis_sentinel__monitors[0].name = redis-ha
+redis_sentinel__monitors[0].host = {{ ansible_fqdn }}

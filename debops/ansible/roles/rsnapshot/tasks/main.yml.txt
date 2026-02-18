@@ -4,7 +4,7 @@
 [1]["ansible.builtin.import_role"].name = global_handlers
 [2].name = Install required APT packages
 [2]["ansible.builtin.package"].name = {{ q("flattened", (rsnapshot__base_packages
-                              + rsnapshot__packages)) }} 
+                              + rsnapshot__packages)) }}
 [2]["ansible.builtin.package"].state = present
 [2].register = rsnapshot__register_packages
 [2].until = rsnapshot__register_packages is succeeded
@@ -74,7 +74,7 @@
 [13].delegate_to = {{ item.name }}
 [13].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
 [13].loop_control.label = {{ {"name": item.name, "state": item.state | d("present"),
-                "packages": q("flattened", rsnapshot__host_packages)} }} 
+                "packages": q("flattened", rsnapshot__host_packages)} }}
 [13].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and (item.rsync | d(True)) | bool and hostvars[item.name] | d() and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
 [14].name = Install restricted rsync script used for backups
 [14].environment.rrsync_source = {{ item.rrsync_source | d(rsnapshot__rrsync_source) }}
@@ -92,7 +92,7 @@ chmod 0755 "${rrsync_binary}"
 [14].delegate_to = {{ item.name }}
 [14].loop = {{ rsnapshot__combined_hosts | debops.debops.parse_kv_items }}
 [14].loop_control.label = {{ {"name": item.name, "state": item.state | d("present"),
-                "packages": q("flattened", rsnapshot__host_packages)} }} 
+                "packages": q("flattened", rsnapshot__host_packages)} }}
 [14].when = (item.name | d() and item.state | d('present') not in ['absent', 'ignore'] and (item.rsync | d(True)) | bool and hostvars[item.name] | d() and (not rsnapshot__limit | d() or (item.name in rsnapshot__limit)))
 [15].name = Deploy root ssh public key on configured hosts
 [15]["ansible.posix.authorized_key"].user = {{ item.ssh_user | d("root") }}
@@ -100,7 +100,6 @@ chmod 0755 "${rrsync_binary}"
              if (ansible_local.rsnapshot.ssh_identities | d() and
                  ansible_local.rsnapshot.ssh_identities[item.ssh_identity | d(rsnapshot__ssh_main_identity)] | d())
              else "" }}
-
 [15]["ansible.posix.authorized_key"].key_options = {{ item.ssh_options | d(rsnapshot__ssh_options) }},command="{{ item.ssh_command | d(rsnapshot__ssh_command) }}"
 [15]["ansible.posix.authorized_key"].state = {{ item.state | d("present") }}
 [15].delegate_to = {{ item.fqdn | d(item.name) }}
@@ -170,6 +169,5 @@ fi
                                                                                 "includes": (rsnapshot__combined_includes | debops.debops.parse_kv_items)},
                                                                       merge_keys=["excludes", "includes"]))
             | product(["include.txt", "exclude.txt", "rsnapshot.conf"]) | list }}
-
 [21].loop_control.label = {{ {"name": item.0.name, "state": item.0.state | d("present"), "file": item.1} }}
 [21].when = (item.0.name | d() and item.0.state | d('present') not in ['absent', 'ignore'] and (not rsnapshot__limit | d() or (item.0.name in rsnapshot__limit)))

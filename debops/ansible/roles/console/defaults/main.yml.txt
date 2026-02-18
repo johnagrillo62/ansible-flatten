@@ -9,7 +9,6 @@ console_conditional_packages[0][0] = {{ "nfs-common"
               console_group_mounts_nfs | d() or
               console_host_mounts_nfs | d())
           else [] }}
-
 console_fsckfix = yes
 console_fsckfix_releases[0] = trusty
 console_fsckfix_releases[1] = xenial

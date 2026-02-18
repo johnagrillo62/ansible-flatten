@@ -1,9 +1,7 @@
-~d0.name = Start elasticsearch
-~d1.ansible.builtin.service = 
-~d2.name = 'elasticsearch'
-~d2.state = 'started'
-~d2.enabled = True
-~d0.name = Restart elasticsearch
-~d1.ansible.builtin.service = 
-~d2.name = 'elasticsearch'
-~d2.state = 'restarted'
+[0].name = Start elasticsearch
+[0]["ansible.builtin.service"].name = elasticsearch
+[0]["ansible.builtin.service"].state = started
+[0]["ansible.builtin.service"].enabled = True
+[1].name = Restart elasticsearch
+[1]["ansible.builtin.service"].name = elasticsearch
+[1]["ansible.builtin.service"].state = restarted

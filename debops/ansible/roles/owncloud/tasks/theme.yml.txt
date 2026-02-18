@@ -3,7 +3,6 @@
                 owncloud__theme_copy_files
       | combine(owncloud__theme_copy_files_host_group)
       | combine(owncloud__theme_copy_files_host) }}
-
 [0].tags[0] = role::owncloud:theme:copy
 [1].name = Ensure the theme directory is present
 [1]["ansible.builtin.file"].path = {{ owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name }}
@@ -31,7 +30,7 @@
 [3].tags[0] = role::owncloud:theme:copy
 [4].name = Copy additional theme files
 [4]["ansible.builtin.copy"].dest = {{ (owncloud__deploy_path + "/themes/" + owncloud__theme_directory_name + "/" + item.key)
-                        if (not item.key.startswith("/")) else item.key }} 
+                        if (not item.key.startswith("/")) else item.key }}
 [4]["ansible.builtin.copy"].backup = {{ item.value.backup | d(omit) }}
 [4]["ansible.builtin.copy"].content = {{ item.value.content | d(omit) }}
 [4]["ansible.builtin.copy"].directory_mode = {{ item.value.directory_mode | d(omit) }}

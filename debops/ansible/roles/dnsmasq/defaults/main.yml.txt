@@ -5,9 +5,8 @@ dnsmasq__default_interfaces[0].name = br2
 dnsmasq__default_interfaces[0].state = {{ "present"
                if (hostvars[inventory_hostname]["ansible_br2"] is defined)
                else "absent" }}
-
 dnsmasq__combined_interfaces = {{ dnsmasq__default_interfaces
-                                  + dnsmasq__interfaces }} 
+                                  + dnsmasq__interfaces }}
 dnsmasq__hostname = {{ ansible_hostname }}
 dnsmasq__base_domain = {{ ansible_domain }}
 dnsmasq__base_domain_rebind_ok = True
@@ -58,7 +57,6 @@ dnsmasq__default_configuration[2].raw = server = /consul/127.0.0.1#8600
 dnsmasq__default_configuration[2].state = {{ "present"
                if (ansible_local.consul.installed | d() | bool)
                else "init" }}
-
 dnsmasq__default_configuration[3].name = lxd-override
 dnsmasq__default_configuration[3].filename = lxd
 dnsmasq__default_configuration[3].comment = Tell any system-wide dnsmasq instance to make sure to bind to interfaces
@@ -149,7 +147,6 @@ dnsmasq__default_configuration[6].options[5].state = {{ "present"
                    if (dnsmasq__base_domain_rebind_ok | bool and
                        dnsmasq__base_domain | d())
                    else "absent" }}
-
 dnsmasq__default_configuration[6].options[6].name = rebind-parent-domain-ok
 dnsmasq__default_configuration[6].options[6].comment = Skip rebinding checks for the parent domain if it has 4 or more
 levels, which is most likely an internal domain on a network with
@@ -162,7 +159,6 @@ dnsmasq__default_configuration[6].options[6].state = {{ "present"
                         dnsmasq__base_domain | d() and
                        (dnsmasq__base_domain.split(".") | length >= 4))
                    else "absent" }}
-
 dnsmasq__default_configuration[6].options[7].name = bogus-priv
 dnsmasq__default_configuration[6].options[7].comment = Do not forward reverse DNS queries for private IP addresses to
 upstream DNS servers.
@@ -179,7 +175,6 @@ dnsmasq__default_configuration[6].options[7].state = {{ "comment"
                         | d(ansible_dns.nameservers)
                         | ansible.utils.ipaddr("private")))
                    else "present" }}
-
 dnsmasq__default_configuration[6].options[8].name = resolv-file
 dnsmasq__default_configuration[6].options[8].comment = Use custom list of nameservers instead of the system upstream
 nameservers
@@ -192,23 +187,21 @@ configuration
 
 dnsmasq__default_configuration[7].options[0].name = local
 dnsmasq__default_configuration[7].options[0].value = {{ "/" + (ansible_local.lxc.net_domain | d(""))
-                   + "/" + ansible_local.lxc.net_address | d("") }} 
+                   + "/" + ansible_local.lxc.net_address | d("") }}
 dnsmasq__default_configuration[7].options[1].name = host-record
 dnsmasq__default_configuration[7].options[1].value = {{ ansible_local.lxc.net_domain | d("")
-                   + "," + ansible_local.lxc.net_address | d("") }} 
+                   + "," + ansible_local.lxc.net_address | d("") }}
 dnsmasq__default_configuration[7].options[1].state = {{ "present"
                    if ("." not in ansible_local.lxc.net_domain | d())
                    else "absent" }}
-
 dnsmasq__default_configuration[7].options[2].name = rev-server
 dnsmasq__default_configuration[7].options[2].value = {{ ansible_local.lxc.net_subnet | d("")
-                   + "," + ansible_local.lxc.net_address | d("") }} 
+                   + "," + ansible_local.lxc.net_address | d("") }}
 dnsmasq__default_configuration[7].options[3].name = rebind-domain-ok
 dnsmasq__default_configuration[7].options[3].value = {{ ansible_local.lxc.net_domain | d("") }}
 dnsmasq__default_configuration[7].state = {{ "present"
                if (ansible_local.lxc.net_domain | d())
                else "init" }}
-
 dnsmasq__default_configuration[8].name = dhcp-boot.conf
 dnsmasq__default_configuration[8].comment = This configuration file contains dnsmasq options related to booting
 remote hosts using iPXE boot menu
@@ -264,13 +257,12 @@ dhcp-boot = {{ dnsmasq__boot_filename }},,{{ dnsmasq__boot_server }}
 dnsmasq__default_configuration[8].options[4].state = {{ "present" if dnsmasq__boot_server | d() else "absent" }}
 dnsmasq__default_configuration[8].state = {{ "present" if dnsmasq__boot_enabled | bool else "init" }}
 dnsmasq__interface_configuration = {{ lookup("template", "lookup/dnsmasq__interface_configuration.j2",
-                                             convert_data=False) | from_yaml }} 
+                                             convert_data=False) | from_yaml }}
 dnsmasq__combined_configuration = {{ dnsmasq__default_configuration
                                      + dnsmasq__interface_configuration
                                      + dnsmasq__configuration
                                      + dnsmasq__group_configuration
                                      + dnsmasq__host_configuration }}
-
 dnsmasq__ferm__dependent_rules[0].type = accept
 dnsmasq__ferm__dependent_rules[0].by_role = debops.dnsmasq
 dnsmasq__ferm__dependent_rules[0].name = dns
@@ -285,14 +277,12 @@ dnsmasq__ferm__dependent_rules[0].interface = {{ []
                    else (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                          | selectattr("state", "equalto", "present")
                          | map(attribute="name") | list) }}
-
 dnsmasq__ferm__dependent_rules[0].rule_state = {{ "present"
                     if ((dnsmasq__public_dns | bool) or
                         (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                             | selectattr("state", "equalto", "present")
                             | map(attribute="name") | list))
                     else "absent" }}
-
 dnsmasq__ferm__dependent_rules[1].type = accept
 dnsmasq__ferm__dependent_rules[1].by_role = debops.dnsmasq
 dnsmasq__ferm__dependent_rules[1].name = dhcpv4
@@ -302,14 +292,12 @@ dnsmasq__ferm__dependent_rules[1].dport[0] = bootps
 dnsmasq__ferm__dependent_rules[1].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                    | selectattr("state", "equalto", "present")
                    | map(attribute="name") | list }}
-
 dnsmasq__ferm__dependent_rules[1].rule_state = {{ "present"
                     if (dnsmasq__dhcpv4 | bool and
                         (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                          | selectattr("state", "equalto", "present")
                          | map(attribute="name") | list))
                     else "absent" }}
-
 dnsmasq__ferm__dependent_rules[2].type = accept
 dnsmasq__ferm__dependent_rules[2].by_role = debops.dnsmasq
 dnsmasq__ferm__dependent_rules[2].name = dhcpv6
@@ -322,14 +310,12 @@ dnsmasq__ferm__dependent_rules[2].dport[0] = dhcpv6-server
 dnsmasq__ferm__dependent_rules[2].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                    | selectattr("state", "equalto", "present")
                    | map(attribute="name") | list }}
-
 dnsmasq__ferm__dependent_rules[2].rule_state = {{ "present"
                     if (dnsmasq__dhcpv6 | bool and
                         (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                          | selectattr("state", "equalto", "present")
                          | map(attribute="name") | list))
                     else "absent" }}
-
 dnsmasq__ferm__dependent_rules[3].type = accept
 dnsmasq__ferm__dependent_rules[3].by_role = debops.dnsmasq
 dnsmasq__ferm__dependent_rules[3].filename = tftp
@@ -339,16 +325,14 @@ dnsmasq__ferm__dependent_rules[3].protocol[0] = udp
 dnsmasq__ferm__dependent_rules[3].interface = {{ dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                    | selectattr("state", "equalto", "present")
                    | map(attribute="name") | list }}
-
 dnsmasq__ferm__dependent_rules[3].rule_state = {{ "present"
                     if (dnsmasq__boot_enabled | bool and
                         (dnsmasq__combined_interfaces | flatten | debops.debops.parse_kv_items
                          | selectattr("state", "equalto", "present")
                          | map(attribute="name") | list))
                     else "absent" }}
-
 dnsmasq__tcpwrappers__dependent_allow = {{ lookup("template", "lookup/dnsmasq__tcpwrappers__dependent_allow.j2",
-                                             convert_data=False) | from_yaml }} 
+                                             convert_data=False) | from_yaml }}
 dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].comment = Allow dnsmasq to read upstream DNS servers
 dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].rules[0] = /etc/resolvconf/upstream.conf r
 dnsmasq__apparmor__local_dependent_config["usr.sbin.dnsmasq"][0].rules[1] = /etc/hosts.dnsmasq r

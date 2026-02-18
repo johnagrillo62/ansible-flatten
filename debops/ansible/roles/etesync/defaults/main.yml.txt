@@ -6,14 +6,14 @@ etesync__group = etesync
 etesync__gecos = EteSync
 etesync__shell = /usr/sbin/nologin
 etesync__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                   + "/" + etesync__user }} 
+                   + "/" + etesync__user }}
 etesync__etc = /etc/etesync-server
 etesync__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                  + "/" + etesync__user }} 
+                  + "/" + etesync__user }}
 etesync__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                  + "/" + etesync__user }} 
+                  + "/" + etesync__user }}
 etesync__data = {{ (ansible_local.fhs.data | d("/srv"))
-                   + "/" + etesync__user }} 
+                   + "/" + etesync__user }}
 etesync__git_gpg_key_id = 9E21 F091 FC39 5F36 6A47  43E2 D2E5 84C3 7C47 7933
 etesync__git_repo = https://github.com/etesync/server.git
 etesync__git_version = b026643cceae07b039942bf0c990ccf917eb072a
@@ -27,26 +27,22 @@ etesync__config_allowed_hosts[3] = localhost
 etesync__config_allowed_hosts[4] = [::1]
 etesync__config_allowed_hosts[5] = 127.0.0.1
 etesync__config_secret_key = {{ lookup("password", secret + "/etesync/" +
-                                etesync__domain + "/config/secret_key length=64") }} 
+                                etesync__domain + "/config/secret_key length=64") }}
 etesync__config_secret_key_filepath = {{ etesync__etc + "/secret.txt" }}
 etesync__superuser_name = {{ ansible_local.core.admin_users[0]
                              if (ansible_local.core.admin_users | d())
                              else "admin" }}
-
 etesync__superuser_email = {{ ansible_local.core.admin_private_email[0]
                               if (ansible_local.core.admin_private_email | d())
                               else ("root@" + etesync__domain) }}
-
 etesync__superuser_password = {{ lookup("password", secret + "/etesync/" +
                                  inventory_hostname + "/superuser/" +
                                  etesync__superuser_name + "/password") }}
-
 etesync__app_name = {{ etesync__user }}
 etesync__app_runtime_dir = {{ "gunicorn"
                               if (ansible_distribution_release in
                                   ["trusty", "xenial"])
                               else "gunicorn-etesync" }}
-
 etesync__app_bind = unix:/run/{{ etesync__app_runtime_dir }}/etesync.sock
 etesync__app_workers = {{ ansible_processor_vcpus | int + 1 }}
 etesync__app_timeout = 900
@@ -62,7 +58,6 @@ etesync__http_psk_subpath = {{ lookup("password", secret + "/etesync/" +
                                  inventory_hostname + "/config/subpath chars=ascii_letters,digits length=23")
                                if etesync__http_psk_subpath_enabled | bool
                                else "" }}
-
 etesync__url = {{ "https://" + etesync__fqdn + "/" + etesync__http_psk_subpath }}
 etesync__admin_auth_basic_realm = Access to EteSync admin interface is restricted
 etesync__admin_auth_basic_filename = 
@@ -127,7 +122,6 @@ proxy_read_timeout {{ etesync__app_timeout }};
 etesync__nginx__dependent_servers[0].location_list[4].pattern = {{ (("/" + etesync__http_psk_subpath)
                       if (etesync__http_psk_subpath_enabled | bool)
                       else "") + "/admin" }}
-
 etesync__nginx__dependent_servers[0].location_list[4].options = proxy_pass http://etesync;
 proxy_set_header X-Forwarded-Host $server_name;
 proxy_set_header X-Real-IP $remote_addr;

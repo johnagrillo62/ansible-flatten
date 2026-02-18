@@ -4,9 +4,8 @@ radvd__dnssl = {{ ansible_dns.search | d([]) }}
 radvd__minimum_advertisement_interval = 5
 radvd__maximum_advertisement_interval = 15
 radvd__default_interfaces = {{ lookup("template",
-                               "lookup/radvd__default_interfaces.j2") }} 
+                               "lookup/radvd__default_interfaces.j2") }}
 radvd__combined_interfaces = {{ radvd__default_interfaces
                                 + radvd__interfaces
                                 + radvd__group_interfaces
                                 + radvd__host_interfaces }}
-

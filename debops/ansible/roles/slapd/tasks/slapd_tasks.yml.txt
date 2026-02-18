@@ -1,20 +1,28 @@
-~d0.name = '{{ item.name }}'  # noqa name[casing]
-~d1.community.general.ldap_entry = 
-~d2.dn = '{{ item.dn if (item.dn is string) else item.dn | join(",") }}'
-~d2.objectClass = '{{ item.objectClass | d(omit) }}'
-~d2.attributes = '{{ item.attributes | d(omit) }}'
-~d2.state = '{{ item.entry_state | d(item.state) }}'
-~d1.run_once = '{{ item.run_once | d(False) }}'
-~d1.when = (item.objectClass | d() or item.entry_state | d()) and item.state not in ['init', 'ignore']
-~d1.tags = [ 'role::slapd:tasks', 'role::slapd:slapacl' ]
-~d1.no_log = '{{ debops__no_log | d(item.no_log)
-~d0.name = '{{ item.name }}'  # noqa name[casing]
-~d1.community.general.ldap_attrs = 
-~d2.dn = '{{ item.dn if (item.dn is string) else item.dn | join(",") }}'
-~d2.attributes = '{{ item.attributes | d({}) }}'
-~d2.ordered = '{{ item.ordered | d(False) }}'
-~d2.state = '{{ item.state }}'
-~d1.run_once = '{{ item.run_once | d(False) }}'
-~d1.when = not item.objectClass | d() and not item.entry_state | d() and item.state not in ['init', 'ignore']
-~d1.tags = [ 'role::slapd:tasks', 'role::slapd:slapacl' ]
-~d1.no_log = '{{ debops__no_log | d(item.no_log)
+[0].name = {{ item.name }}
+[0]["community.general.ldap_entry"].dn = {{ item.dn if (item.dn is string) else item.dn | join(",") }}
+[0]["community.general.ldap_entry"].objectClass = {{ item.objectClass | d(omit) }}
+[0]["community.general.ldap_entry"].attributes = {{ item.attributes | d(omit) }}
+[0]["community.general.ldap_entry"].state = {{ item.entry_state | d(item.state) }}
+[0].run_once = {{ item.run_once | d(False) }}
+[0].when = (item.objectClass | d() or item.entry_state | d()) and item.state not in ['init', 'ignore']
+[0].tags[0] = role::slapd:tasks
+[0].tags[1] = role::slapd:slapacl
+[0].no_log = {{ debops__no_log | d(item.no_log)
+              | d(True
+                  if ("userPassword" in (item.attributes | d({})).keys() or
+                      "olcRootPW" in (item.attributes | d({})).keys())
+                  else False) }}
+[1].name = {{ item.name }}
+[1]["community.general.ldap_attrs"].dn = {{ item.dn if (item.dn is string) else item.dn | join(",") }}
+[1]["community.general.ldap_attrs"].attributes = {{ item.attributes | d({}) }}
+[1]["community.general.ldap_attrs"].ordered = {{ item.ordered | d(False) }}
+[1]["community.general.ldap_attrs"].state = {{ item.state }}
+[1].run_once = {{ item.run_once | d(False) }}
+[1].when = not item.objectClass | d() and not item.entry_state | d() and item.state not in ['init', 'ignore']
+[1].tags[0] = role::slapd:tasks
+[1].tags[1] = role::slapd:slapacl
+[1].no_log = {{ debops__no_log | d(item.no_log)
+              | d(True
+                  if ("userPassword" in (item.attributes | d({})).keys() or
+                      "olcRootPW" in (item.attributes | d({})).keys())
+                  else False) }}

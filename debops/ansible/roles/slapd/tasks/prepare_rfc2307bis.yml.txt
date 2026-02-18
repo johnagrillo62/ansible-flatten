@@ -16,7 +16,7 @@
 [3]["ansible.builtin.file"].state = link
 [3]["ansible.builtin.file"].path = /etc/ldap/schema/{{ item | replace("rfc2307bis", "nis") }}
 [3]["ansible.builtin.file"].src = {{ (("fusiondirectory-schema" in slapd__rfc2307bis_packages)
-              | ternary("fusiondirectory", "gosa")) + "/" + item }} 
+              | ternary("fusiondirectory", "gosa")) + "/" + item }}
 [3]["ansible.builtin.file"].mode = 0644
 [3].loop[0] = rfc2307bis.schema
 [3].loop[1] = rfc2307bis.ldif

@@ -1,8 +1,6 @@
-~d0.name = Download simple web site
-~d1.hosts = all
-~d1.gather_facts = false
-~d1.tasks = 
-~d2.name = Download simple web site to 'C:\inetpub\wwwroot\ansible.html'
-~d3.win_get_url = 
-~d4.url = 'https://raw.githubusercontent.com/thisdavejohnson/mywebapp/master/index.html'
-~d4.dest = 'C:\inetpub\wwwroot\ansible.html'
+[0].name = Download simple web site
+[0].hosts = all
+[0].gather_facts = false
+[0].tasks[0].name = Download simple web site to 'C:\inetpub\wwwroot\ansible.html'
+[0].tasks[0].win_get_url.url = https://raw.githubusercontent.com/thisdavejohnson/mywebapp/master/index.html
+[0].tasks[0].win_get_url.dest = C:\inetpub\wwwroot\ansible.html

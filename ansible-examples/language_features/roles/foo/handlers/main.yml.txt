@@ -1,3 +1,2 @@
-doc[0][0].name = blippy
-doc[0][0].shell = echo notifier called, and the value of x is '{{ x }}'
-doc[1] = 
+[0].name = blippy
+[0].shell = echo notifier called, and the value of x is '{{ x }}'

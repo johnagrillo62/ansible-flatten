@@ -20,7 +20,6 @@
 [3].loop = {{ q("flattened", apt__keys
                            + apt__group_keys
                            + apt__host_keys) }}
-
 [3].register = apt__register_apt_key
 [3].until = apt__register_apt_key is succeeded
 [3].when = apt__enabled | bool and (item.url | d() or item.data | d() or item.id | d() or item.file | d())
@@ -30,7 +29,6 @@
 [4]["debops.debops.dpkg_divert"].state = {{ "present"
                if (item.state | d("present") == "divert")
                else "absent" }}
-
 [4]["debops.debops.dpkg_divert"].delete = True
 [4].loop = {{ apt__combined_repositories | debops.debops.parse_kv_items }}
 [4].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
@@ -105,7 +103,6 @@
 [11].loop = {{ q("flattened", apt__extra_architectures
                            + apt__group_extra_architectures
                            + apt__host_extra_architectures) }}
-
 [11].register = apt__register_add_architecture
 [11].changed_when = apt__register_add_architecture.changed | bool
 [11].when = apt__enabled | bool and item not in ansible_facts.ansible_local.apt.foreign_architectures | d()
@@ -115,7 +112,6 @@
 [12]["debops.debops.dpkg_divert"].state = {{ "present"
                if (item.state | d("present") == "divert")
                else "absent" }}
-
 [12]["debops.debops.dpkg_divert"].delete = True
 [12].loop = {{ apt__combined_configuration | debops.debops.parse_kv_items }}
 [12].loop_control.label = {{ {"name": item.name, "state": item.state | d("present")} }}
@@ -165,7 +161,6 @@
                              apt__register_sources_diversion is changed or
                              apt__register_apt_repositories is changed)
                          else apt__cache_valid_time }}
-
 [20].register = apt__register_apt_update
 [20].until = apt__register_apt_update is succeeded
 [20].when = apt__enabled | bool
@@ -173,7 +168,6 @@
 [21]["ansible.builtin.apt"].name = {{ (apt__purge_packages
                + apt__purge_group_packages
                + apt__purge_host_packages) | flatten }}
-
 [21]["ansible.builtin.apt"].state = absent
 [21]["ansible.builtin.apt"].purge = True
 [21]["ansible.builtin.apt"].autoremove = True

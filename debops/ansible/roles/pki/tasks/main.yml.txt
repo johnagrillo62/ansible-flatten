@@ -13,13 +13,12 @@
 [4].run_once = True
 [5].name = Expose host FQDN and library path in temporary variables
 [5]["ansible.builtin.set_fact"].pki_fact_lib_path = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                           + "/pki" }} 
+                           + "/pki" }}
 [6].name = Install PKI packages
 [6]["ansible.builtin.apt"].name = {{ (pki_base_packages
              + (pki_acme_packages if (pki_acme | bool or pki_acme_install | bool) else [])
              + pki_packages)
              | flatten }}
-
 [6]["ansible.builtin.apt"].state = present
 [6]["ansible.builtin.apt"].install_recommends = False
 [6]["ansible.builtin.apt"].cache_valid_time = {{ ansible_local.core.cache_valid_time | d("86400") }}
@@ -136,7 +135,6 @@ openssl version | awk '{print $2}'
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [18].when = (pki_enabled | bool and item.name is defined and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [19].name = Configure PKI realm environment
 [19]["ansible.builtin.template"].src = etc/pki/realms/realm/config/environment.j2
@@ -147,7 +145,6 @@ openssl version | awk '{print $2}'
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [19].when = (pki_enabled | bool and item.name is defined and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [20].name = Download private files to remove hosts
 [20].when = pki_download_extra | bool
@@ -164,7 +161,6 @@ openssl version | awk '{print $2}'
 [20].block[0].loop = {{ q("flattened", pki_private_files
                                + pki_group_private_files
                                + pki_host_private_files) }}
-
 [20].block[0].when = (pki_enabled | bool and (item.src is defined or item.content is defined) and item.dest is defined)
 [20].block[1].name = Download private realm contents by host
 [20].block[1]["ansible.builtin.copy"].src = {{ secret + "/pki/realms/by-host/" + inventory_hostname + "/" + item.name + "/private/" }}
@@ -213,7 +209,6 @@ openssl version | awk '{print $2}'
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [21].when = (pki_enabled | bool and item.name is defined and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [22].name = Execute PKI realm commands
 [22].environment.PKI_SESSION_TOKEN = {{ pki_fact_session_token }}
@@ -223,26 +218,24 @@ openssl version | awk '{print $2}'
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [22].changed_when = False
 [22].when = (pki_enabled | bool and item.name is defined and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [23].name = Upload internal certificate requests
 [23]["ansible.builtin.fetch"].src = /etc/pki/realms/{{ item.name }}/internal/request.pem
 [23]["ansible.builtin.fetch"].dest = {{ secret + "/pki/requests/" + (item.authority | d(pki_default_authority)) +
-              "/" + inventory_hostname + "/" + item.name + "/request.pem" }} 
+              "/" + inventory_hostname + "/" + item.name + "/request.pem" }}
 [23]["ansible.builtin.fetch"].flat = True
 [23].loop = {{ q("flattened", pki_realms
                            + pki_group_realms
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [23].when = (pki_enabled | bool and item.name is defined and ((item.internal | d(True) | bool) and pki_internal | bool) and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [24].name = Initialize PKI authorities
 [24].environment.PKI_ROOT = {{ secret + "/pki" }}
 [24].environment.PKI_LIBRARY = {{ item.pki_ca_library | d(pki_ca_library) }}
 [24].environment.PKI_CA_CERTIFICATES = {{ secret + "/pki/ca-certificates/"
-                             + (item.ca_certificates_path | d(pki_ca_certificates_path)) }} 
+                             + (item.ca_certificates_path | d(pki_ca_certificates_path)) }}
 [24]["ansible.builtin.command"] = ./lib/pki-authority init --name "{{ item.name }}" --default-sign-base "{{ pki_default_sign_base }}" --root-sign-multiplier "{{ pki_default_root_sign_multiplier }}" --ca-sign-multiplier "{{ pki_default_ca_sign_multiplier }}" --cert-sign-multiplier "{{ pki_default_cert_sign_multiplier }}"
 [24].args.chdir = {{ secret + "/pki" }}
 [24].args.creates = {{ secret + "/pki/authorities/" + item.name + "/config/authority.conf" }}
@@ -256,7 +249,7 @@ openssl version | awk '{print $2}'
 [25].environment.PKI_ROOT = {{ secret + "/pki" }}
 [25].environment.PKI_LIBRARY = {{ item.pki_ca_library | d(pki_ca_library) }}
 [25].environment.PKI_CA_CERTIFICATES = {{ secret + "/pki/ca-certificates/"
-                             + (item.ca_certificates_path | d(pki_ca_certificates_path)) }} 
+                             + (item.ca_certificates_path | d(pki_ca_certificates_path)) }}
 [25]["ansible.builtin.command"] = ./lib/pki-authority new-ca --name "{{ item.name }}" --type "{{ item.type | d('') }}" --domain "{{ item.domain | d(pki_ca_domain) }}" --subdomain "{{ item.subdomain }}" --subject "{{ item.subject | join('/') }}" --issuer-name "{{ item.issuer_name | d('') }}" --root-sign-days "{{ item.root_sign_days | d('') }}" --ca-sign-days "{{ item.ca_sign_days | d('') }}" --cert-sign-days "{{ item.cert_sign_days | d('') }}" --system-ca "{{ (item.system_ca | d(True)) | bool | lower }}" --alt-authority "{{ item.alt_authority | d('') }}" --key-size "{{ item.key_size | d('') }}" --crl "{{ item.crl | d(True) }}" --ocsp "{{ item.ocsp | d(True) }}" --name-constraints "{{ item.name_constraints | d(pki_ca_name_constraints) }}" --name-constraints-critical "{{ item.name_constraints_critical | d(pki_ca_name_constraints_critical) }}"
 [25].args.chdir = {{ secret + "/pki" }}
 [25].args.creates = {{ secret + "/pki/authorities/" + item.name + "/subject/cert.pem" }}
@@ -300,7 +293,6 @@ openssl version | awk '{print $2}'
 [27].block[1].loop = {{ q("flattened", pki_public_files
                                + pki_group_public_files
                                + pki_host_public_files) }}
-
 [27].block[1].when = (pki_enabled | bool and (item.src is defined or item.content is defined) and item.dest is defined)
 [27].block[2].name = Download external realm contents by group
 [27].block[2]["ansible.builtin.copy"].src = {{ secret + "/pki/realms/by-group/" + item.1 + "/" + item.0.name + "/external/" }}
@@ -356,7 +348,6 @@ openssl version | awk '{print $2}'
                            + pki_host_realms
                            + pki_default_realms
                            + pki_dependent_realms) }}
-
 [28].changed_when = False
 [28].when = (pki_enabled | bool and item.name is defined and (item.enabled | d(True) | bool) and (item.when | d(True) | bool))
 [29].name = Manage PKI scheduler

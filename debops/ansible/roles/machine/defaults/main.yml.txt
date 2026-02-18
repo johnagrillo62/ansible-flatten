@@ -1,7 +1,7 @@
 machine__enabled = True
 machine__organization = {{ ansible_domain.split(".")[0] | capitalize }}
 machine__contact = {{ ansible_local.core.admin_public_email[0]
-                      | d("root@" + ansible_domain) }} 
+                      | d("root@" + ansible_domain) }}
 machine__pretty_hostname = 
 machine__icon_name = 
 machine__chassis = 
@@ -39,4 +39,3 @@ machine__motd_combined_scripts = {{ machine__motd_default_scripts
                                     + machine__motd_scripts
                                     + machine__motd_group_scripts
                                     + machine__motd_host_scripts }}
-

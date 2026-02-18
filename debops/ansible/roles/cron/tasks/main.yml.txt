@@ -4,7 +4,7 @@
 [1]["ansible.builtin.import_role"].name = global_handlers
 [2].name = Install cron packages
 [2]["ansible.builtin.package"].name = {{ q("flattened", (cron__base_packages
-                              + cron__packages)) }} 
+                              + cron__packages)) }}
 [2]["ansible.builtin.package"].state = present
 [2].register = cron__register_packages
 [2].until = cron__register_packages is succeeded

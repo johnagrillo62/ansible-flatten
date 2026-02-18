@@ -1,4 +1,3 @@
-~d0.name = Restart influxdb2 service
-~d1.ansible.builtin.systemd = 
-~d2.name = 'influxdb.service'
-~d2.state = 'restarted'
+[0].name = Restart influxdb2 service
+[0]["ansible.builtin.systemd"].name = influxdb.service
+[0]["ansible.builtin.systemd"].state = restarted

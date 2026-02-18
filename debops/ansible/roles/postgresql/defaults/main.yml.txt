@@ -8,17 +8,14 @@ postgresql__server = {{ ansible_local.postgresql.server
                         if (ansible_local.postgresql.server | d() and
                             ansible_local.postgresql.server != "localhost")
                         else "" }}
-
 postgresql__port = 5432
 postgresql__delegate_to = {{ postgresql__server
                              if (postgresql__server | d() and
                                  postgresql__server != "localhost")
                              else inventory_hostname }}
-
 postgresql__password_hostname = {{ postgresql__delegate_to
                                    if (postgresql__delegate_to != omit)
                                    else inventory_hostname }}
-
 postgresql__password_length = 64
 postgresql__password_characters = ascii_letters,digits,.-_~&()*=
 postgresql__default_database = *
@@ -27,7 +24,6 @@ postgresql__default_user_clusters[0].group = *
 postgresql__default_user_clusters[0].cluster = {{ (postgresql__server + ":" + postgresql__port)
                   if (postgresql__server | d() and postgresql__server)
                   else "main" }}
-
 postgresql__default_user_clusters[0].database = {{ postgresql__default_database }}
 postgresql__keyring__dependent_apt_keys[0].id = {{ postgresql__upstream_key_id }}
 postgresql__keyring__dependent_apt_keys[0].repo = {{ postgresql__upstream_apt_repo }}

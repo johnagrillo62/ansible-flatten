@@ -1,3 +1,6 @@
-~d0.cert_files = 
-~d1.master = 
-~d1.node = 
+cert_files.master[0] = {{ etcd_cert_dir }}/member-{{ inventory_hostname }}.pem
+cert_files.master[1] = {{ etcd_cert_dir }}/member-{{ inventory_hostname }}-key.pem
+cert_files.master[2] = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}.pem
+cert_files.master[3] = {{ etcd_cert_dir }}/admin-{{ inventory_hostname }}-key.pem
+cert_files.node[0] = {{ etcd_cert_dir }}/node-{{ inventory_hostname }}.pem
+cert_files.node[1] = {{ etcd_cert_dir }}/node-{{ inventory_hostname }}-key.pem

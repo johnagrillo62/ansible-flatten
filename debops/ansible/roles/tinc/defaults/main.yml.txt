@@ -2,7 +2,6 @@ tinc__default_networks.mesh0.port = 655
 tinc__combined_networks = {{ lookup("template",
                              "lookup/tinc__combined_networks.j2",
                              convert_data=False) | from_yaml }}
-
 tinc__base_packages[0] = tinc
 tinc__inventory_hosts = {{ groups.debops_service_tinc | d([]) }}
 tinc__inventory_self[0] = {{ tinc__hostname }}
@@ -18,13 +17,12 @@ tinc__extra_options =
 tinc__systemd = {{ True
                    if (ansible_service_mgr | d("unknown") == "systemd")
                    else False }}
-
 tinc__vcs_ignore_patterns[0] = rsa_key.priv
 tinc__rsa_key_length = 8192
 tinc__hwaddr_prefix = de
 tinc__metric = 100
 tinc__host_addresses = {{ tinc__host_addresses_fqdn +
-                          tinc__host_addresses_ip_public }} 
+                          tinc__host_addresses_ip_public }}
 tinc__host_addresses_fqdn = {{ [ansible_fqdn]
                                if ((ansible_all_ipv4_addresses | d([])
                                     + (ansible_all_ipv6_addresses | d([])
@@ -32,37 +30,30 @@ tinc__host_addresses_fqdn = {{ [ansible_fqdn]
                                                     | ansible.utils.ipaddr("link-local"))))
                                    | ansible.utils.ipaddr("public"))
                                else [] }}
-
 tinc__host_addresses_ip_public = {{ (ansible_all_ipv4_addresses | d([])
                                      + (ansible_all_ipv6_addresses | d([])
                                         | difference(ansible_all_ipv6_addresses | d([])
                                                      | ansible.utils.ipaddr("link-local"))))
                                     | ansible.utils.ipaddr("public") }}
-
 tinc__host_addresses_ip_private = {{ (ansible_all_ipv4_addresses | d([])
                                       + (ansible_all_ipv6_addresses | d([])
                                          | difference(ansible_all_ipv6_addresses | d([])
                                                       | ansible.utils.ipaddr("link-local"))))
                                      | ansible.utils.ipaddr("private") }}
-
 tinc__exclude_addresses = {{ lookup("template",
                              "lookup/tinc__exclude_addresses.j2",
                              convert_data=False) | from_yaml }}
-
 tinc__modprobe = True
 tinc__modprobe_modules[0] = tun
 tinc__secret__directories = {{ lookup("template",
                                "lookup/tinc__secret_directories.j2",
                                convert_data=False) | from_yaml }}
-
 tinc__etc_services__dependent_list = {{ lookup("template",
                                         "lookup/tinc__etc_services__dependent_list.j2",
                                         convert_data=False) | from_yaml }}
-
 tinc__ferm__dependent_rules = {{ lookup("template",
                                  "lookup/tinc__ferm__dependent_rules.j2",
                                  convert_data=False) | from_yaml }}
-
 tinc__persistent_paths__dependent_paths.50_debops_tinc.by_role = debops.tinc
 tinc__persistent_paths__dependent_paths.50_debops_tinc.paths = {{ [
   '/etc/tinc',

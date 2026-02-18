@@ -6,7 +6,7 @@
 [2]["ansible.builtin.import_role"].name = secret
 [3].name = Install required packages
 [3]["ansible.builtin.package"].name = {{ q("flattened", (sysfs__base_packages
-                              + sysfs__packages)) }} 
+                              + sysfs__packages)) }}
 [3]["ansible.builtin.package"].state = present
 [3].register = sysfs__register_packages
 [3].until = sysfs__register_packages is succeeded

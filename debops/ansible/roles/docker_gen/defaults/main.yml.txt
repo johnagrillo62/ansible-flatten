@@ -3,9 +3,9 @@ docker_gen__os_arch = linux-amd64
 docker_gen__version = 0.7.4
 docker_gen__release = {{ docker_gen__repo }}/releases/download/{{ docker_gen__version }}/docker-gen-{{ docker_gen__os_arch }}-{{ docker_gen__version }}.tar.gz
 docker_gen__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                     + "/docker-gen" }} 
+                     + "/docker-gen" }}
 docker_gen__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                     + "/docker-gen" }} 
+                     + "/docker-gen" }}
 docker_gen__templates = {{ docker_gen__lib + "/templates" }}
 docker_gen__config = 
 docker_gen__remote = False

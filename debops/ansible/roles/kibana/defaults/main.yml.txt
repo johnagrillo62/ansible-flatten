@@ -5,11 +5,9 @@ kibana__group = kibana
 kibana__additional_groups = {{ ["ssl-cert"]
                                if kibana__pki_enabled | bool
                                else [] }}
-
 kibana__keystore_path = {{ "/var/lib/kibana/kibana.keystore"
                            if (kibana__version is version("7.0.0", "<"))
                            else "/etc/kibana/kibana.keystore" }}
-
 kibana__fqdn = kibana.{{ kibana__domain }}
 kibana__domain = {{ ansible_domain }}
 kibana__webserver_access_policy = 
@@ -26,29 +24,25 @@ kibana__elasticsearch_username = {{ ""
                                     else ("kibana"
                                           if (kibana__version is version("7.0.0", "<"))
                                           else "kibana_system") }}
-
 kibana__elasticsearch_secret_path = {{ "elasticsearch/credentials/"
                                        + kibana__elasticsearch_cluster_name
                                        + "/built-in" }}
-
 kibana__elasticsearch_password = {{ ""
                                     if (kibana__elasticsearch_hosts[0].startswith("http://"))
                                     else (lookup("password", secret + "/"
                                           + kibana__elasticsearch_secret_path + "/"
                                           + kibana__elasticsearch_username
                                           + "/password")) }}
-
 kibana__index = .kibana
 kibana__default_app_id = discover
 kibana__security_encryption_key = {{ lookup("password", secret
-                                            + "/kibana/security_encryption_key length=32") }} 
+                                            + "/kibana/security_encryption_key length=32") }}
 kibana__reporting_encryption_key = {{ lookup("password", secret
-                                             + "/kibana/reporting_encryption_key length=32") }} 
+                                             + "/kibana/reporting_encryption_key length=32") }}
 kibana__secure_connection = {{ True
                                if (kibana__elasticsearch_username | d() and
                                    kibana__elasticsearch_password | d())
                                else False }}
-
 kibana__pki_enabled = {{ (ansible_local.pki.enabled | d()) | bool }}
 kibana__pki_base_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
 kibana__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
@@ -58,15 +52,12 @@ kibana__pki_crt_file = public/cert_intermediate.pem
 kibana__tls_ca_certificate = {{ kibana__pki_base_path + "/"
                                 + kibana__pki_realm + "/"
                                 + kibana__pki_ca_file }}
-
 kibana__tls_private_key = {{ kibana__pki_base_path + "/"
                              + kibana__pki_realm + "/"
                              + kibana__pki_key_file }}
-
 kibana__tls_certificate = {{ kibana__pki_base_path + "/"
                              + kibana__pki_realm + "/"
                              + kibana__pki_crt_file }}
-
 kibana__default_configuration[0].name = server.port
 kibana__default_configuration[0].value = {{ kibana__server_port }}
 kibana__default_configuration[0].comment = Kibana is served by a back end server. This setting specifies the port to use
@@ -94,7 +85,6 @@ kibana__default_configuration[4].comment = Specifies the public URL at which Kib
 kibana__default_configuration[4].state = {{ "present"
                if (kibana__version is version("7.0.0", ">="))
                else "absent" }}
-
 kibana__default_configuration[5].name = server.maxPayloadBytes
 kibana__default_configuration[5].value = 1048576
 kibana__default_configuration[5].state = comment
@@ -107,28 +97,24 @@ dashboards. Kibana creates a new index if the index doesn't already exist.
 kibana__default_configuration[6].state = {{ "present"
                if (kibana__version is version("7.11.0", "<"))
                else "absent" }}
-
 kibana__default_configuration[7].name = kibana.defaultAppId
 kibana__default_configuration[7].value = {{ kibana__default_app_id }}
 kibana__default_configuration[7].comment = The default application to load
 kibana__default_configuration[7].state = {{ "present"
                if (kibana__version is version("7.9.0", "<"))
                else "absent" }}
-
 kibana__default_configuration[8].name = elasticsearch.url
 kibana__default_configuration[8].value = {{ kibana__elasticsearch_url }}
 kibana__default_configuration[8].comment = The URL of the Elasticsearch instance to use for all your queries
 kibana__default_configuration[8].state = {{ "present"
                if (kibana__version is version("7.0.0", "<"))
                else "absent" }}
-
 kibana__default_configuration[9].name = elasticsearch.hosts
 kibana__default_configuration[9].value = {{ kibana__elasticsearch_hosts }}
 kibana__default_configuration[9].comment = The URLs of the Elasticsearch instances to use for all your queries
 kibana__default_configuration[9].state = {{ "absent"
                if (kibana__version is version("7.0.0", "<"))
                else "present" }}
-
 kibana__default_configuration[10].name = elasticsearch.preserveHost
 kibana__default_configuration[10].value = True
 kibana__default_configuration[10].state = comment
@@ -142,7 +128,6 @@ kibana__default_configuration[11].state = {{ "present"
                if (kibana__elasticsearch_username | d() and
                    kibana__elasticsearch_password | d())
                else "comment" }}
-
 kibana__default_configuration[11].comment = If your Elasticsearch is protected with basic authentication, these settings provide
 the username and password that the Kibana server uses to perform maintenance on the Kibana
 index at startup. Your Kibana users still need to authenticate with Elasticsearch, which
@@ -154,7 +139,6 @@ kibana__default_configuration[12].state = {{ "present"
                if (kibana__elasticsearch_username | d() and
                    kibana__elasticsearch_password | d())
                else "comment" }}
-
 kibana__default_configuration[13].name = server.ssl.enabled
 kibana__default_configuration[13].value = False
 kibana__default_configuration[13].state = comment
@@ -187,25 +171,21 @@ kibana__default_configuration[19].value =
 kibana__default_configuration[19].state = {{ "present" if (kibana__secure_connection | bool and
                              kibana__pki_enabled | bool)
                          else "ignore" }}
-
 kibana__default_configuration[20].name = elasticsearch.ssl.certificateAuthorities
 kibana__default_configuration[20].value[0] = {{ kibana__tls_ca_certificate }}
 kibana__default_configuration[20].state = {{ "present" if (kibana__secure_connection | bool and
                              kibana__pki_enabled | bool)
                          else "ignore" }}
-
 kibana__default_configuration[21].name = elasticsearch.ssl.certificate
 kibana__default_configuration[21].value = {{ kibana__tls_certificate }}
 kibana__default_configuration[21].state = {{ "present" if (kibana__secure_connection | bool and
                              kibana__pki_enabled | bool)
                          else "ignore" }}
-
 kibana__default_configuration[22].name = elasticsearch.ssl.key
 kibana__default_configuration[22].value = {{ kibana__tls_private_key }}
 kibana__default_configuration[22].state = {{ "present" if (kibana__secure_connection | bool and
                              kibana__pki_enabled | bool)
                          else "ignore" }}
-
 kibana__default_configuration[23].name = elasticsearch.ssl.verificationMode
 kibana__default_configuration[23].value = full
 kibana__default_configuration[23].state = comment
@@ -286,20 +266,17 @@ kibana__default_configuration[38].value = {{ kibana__reporting_encryption_key }}
 kibana__plugin_configuration = {{ lookup("template",
                                   "lookup/kibana__plugin_configuration.j2")
                                   | from_yaml }}
-
 kibana__dependent_role = 
 kibana__dependent_state = present
 kibana__dependent_configuration_filter = {{ lookup("template",
                                             "lookup/kibana__dependent_configuration_filter.j2")
                                             | from_yaml }}
-
 kibana__combined_configuration = {{ lookup("flattened", (kibana__default_configuration
                                     + kibana__plugin_configuration
                                     + kibana__dependent_configuration_filter
                                     + kibana__configuration
                                     + kibana__group_configuration
                                     + kibana__host_configuration)) }}
-
 kibana__configuration_sections[0].name = Server
 kibana__configuration_sections[0].part[0] = server
 kibana__configuration_sections[0].part[1] = kibana
@@ -316,11 +293,9 @@ kibana__configuration_sections[5].part = searchguard
 kibana__combined_plugins = {{ lookup("flattened", (kibana__plugins
                               + kibana__group_plugins
                               + kibana__host_plugins)) }}
-
 kibana__combined_keys = {{ kibana__keys
                            + kibana__group_keys
                            + kibana__host_keys }}
-
 kibana__etc_services__dependent_list[0].name = kibana
 kibana__etc_services__dependent_list[0].port = {{ kibana__server_port }}
 kibana__extrepo__dependent_sources[0] = elastic

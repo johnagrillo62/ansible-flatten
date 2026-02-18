@@ -13,7 +13,6 @@ netbox__base_packages[7] = libssl-dev
 netbox__base_packages[8] = {{ ["libldap2-dev", "libsasl2-dev"]
         if netbox__ldap_enabled | bool
         else [] }}
-
 netbox__user = netbox
 netbox__group = netbox
 netbox__gecos = NetBox
@@ -21,13 +20,13 @@ netbox__shell = /usr/sbin/nologin
 netbox__napalm_ssh_generate = False
 netbox__napalm_ssh_generate_bits = 2048
 netbox__home = {{ (ansible_local.fhs.home | d("/var/local"))
-                  + "/" + netbox__user }} 
+                  + "/" + netbox__user }}
 netbox__src = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                 + "/" + netbox__user }} 
+                 + "/" + netbox__user }}
 netbox__lib = {{ (ansible_local.fhs.lib | d("/usr/local/lib"))
-                 + "/" + netbox__user }} 
+                 + "/" + netbox__user }}
 netbox__data = {{ (ansible_local.fhs.data | d("/srv"))
-                  + "/" + netbox__user }} 
+                  + "/" + netbox__user }}
 netbox__bin = {{ ansible_local.fhs.bin | d("/usr/local/bin") }}
 netbox__git_gpg_key_id = 5DE3 E050 9C47 EA3C F04A  42D3 4AEE 18F8 3AFD EB23
 netbox__git_repo = https://github.com/netbox-community/netbox.git
@@ -38,7 +37,6 @@ netbox__virtualenv_version = {{ ""
                                 if (netbox__git_version | regex_search("^v?[0-9\.]+")
                                   and netbox__git_version | replace("v", "") is version("2.5", "<"))
                                 else "3" }}
-
 netbox__virtualenv = {{ netbox__lib + "/virtualenv" }}
 netbox__virtualenv_env_path = {{ netbox__virtualenv }}/bin:/usr/local/bin:/usr/bin:/bin
 netbox__virtualenv_pip_packages[0].name = gunicorn
@@ -54,7 +52,6 @@ netbox__database_password = {{ lookup("password", secret + "/postgresql/" +
                                (ansible_local.postgresql.delegate_to | d("localhost")) + "/" +
                                (ansible_local.postgresql.port | d("5432")) + "/credentials/" +
                                netbox__database_user + "/password") }}
-
 netbox__load_initial_data = True
 netbox__redis_host = {{ ansible_local.redis_server.host | d("localhost") }}
 netbox__redis_port = {{ ansible_local.redis_server.port | d("6379") }}
@@ -66,7 +63,6 @@ netbox__ldap_enabled = {{ True
                           if (ansible_local | d() and ansible_local.ldap | d() and
                               (ansible_local.ldap.enabled | d()) | bool)
                           else False }}
-
 netbox__ldap_base_dn = {{ ansible_local.ldap.base_dn | d([]) }}
 netbox__ldap_device_dn = {{ ansible_local.ldap.device_dn | d([]) }}
 netbox__ldap_self_rdn = uid=netbox
@@ -81,7 +77,6 @@ netbox__ldap_bindpw = {{ (lookup("password", secret + "/ldap/credentials/"
                                  + netbox__ldap_binddn | to_uuid + ".password length=32"))
                          if netbox__ldap_enabled | bool
                          else "" }}
-
 netbox__ldap_people_rdn = {{ ansible_local.ldap.people_rdn | d("ou=People") }}
 netbox__ldap_people_dn = {{ [netbox__ldap_people_rdn] + netbox__ldap_base_dn }}
 netbox__ldap_group_authentication_enabled = True
@@ -91,33 +86,31 @@ netbox__ldap_groups_dn = {{ ([netbox__ldap_groups_rdn, netbox__ldap_self_rdn]
                              + netbox__ldap_device_dn)
                             if netbox__ldap_private_groups | bool
                             else ([netbox__ldap_groups_rdn] + netbox__ldap_base_dn) }}
-
 netbox__ldap_user_group_rdn = cn=NetBox Users
 netbox__ldap_user_group_dn = {{ [netbox__ldap_user_group_rdn]
-                                + netbox__ldap_groups_dn }} 
+                                + netbox__ldap_groups_dn }}
 netbox__ldap_user_active_group_rdn = cn=NetBox Active Users
 netbox__ldap_user_active_group_dn = {{ [netbox__ldap_user_active_group_rdn]
-                                       + netbox__ldap_groups_dn }} 
+                                       + netbox__ldap_groups_dn }}
 netbox__ldap_user_staff_group_rdn = cn=NetBox Staff
 netbox__ldap_user_staff_group_dn = {{ [netbox__ldap_user_staff_group_rdn]
-                                      + netbox__ldap_groups_dn }} 
+                                      + netbox__ldap_groups_dn }}
 netbox__ldap_user_admin_group_rdn = cn=NetBox Administrators
 netbox__ldap_user_admin_group_dn = {{ [netbox__ldap_user_admin_group_rdn]
-                                      + netbox__ldap_groups_dn }} 
+                                      + netbox__ldap_groups_dn }}
 netbox__ldap_object_owner_rdn = uid={{ lookup("env", "USER") }}
 netbox__ldap_object_ownerdn = {{ ([netbox__ldap_object_owner_rdn, netbox__ldap_people_rdn]
-                                  + netbox__ldap_base_dn) | join(",") }} 
+                                  + netbox__ldap_base_dn) | join(",") }}
 netbox__ldap_server_uri = {{ ansible_local.ldap.uri | d([""]) | first }}
 netbox__ldap_server_port = {{ ansible_local.ldap.port | d("389" if netbox__ldap_start_tls | bool else "636") }}
 netbox__ldap_start_tls = {{ ansible_local.ldap.start_tls
                             if (ansible_local | d() and ansible_local.ldap | d() and
                                 (ansible_local.ldap.start_tls | d()) | bool)
                             else True }}
-
 netbox__ldap_user_filter = (uid=%(user)s)
 netbox__config_allowed_hosts = {{ netbox__fqdn }}
 netbox__config_secret_key = {{ lookup("password", secret + "/netbox/" +
-                               netbox__domain + "/config/secret_key length=64") }} 
+                               netbox__domain + "/config/secret_key length=64") }}
 netbox__config_admins = {{ lookup("template", "lookup/netbox__config_admins.j2") | from_yaml }}
 netbox__config_changelog_retention = 90
 netbox__config_cors_origin_allow_all = False
@@ -131,7 +124,6 @@ netbox__config_email_timeout = 10
 netbox__config_email_from = {{ netbox__user }}@{{ netbox__fqdn
                                                   if netbox__fqdn is string
                                                   else netbox__fqdn[0] }}
-
 netbox__config_login_required = True
 netbox__config_login_timeout = {{ (60 * 60 * 24 * 14) }}
 netbox__config_base_path = 
@@ -160,19 +152,17 @@ netbox__config_scripts_root = {{ netbox__data + "/scripts" }}
 netbox__config_custom = 
 netbox__superuser_name = {{ ansible_local.core.admin_users[0] | d("admin") }}
 netbox__superuser_email = {{ ansible_local.core.admin_private_email[0]
-                              | d("root@" + netbox__domain) }} 
+                              | d("root@" + netbox__domain) }}
 netbox__superuser_password = {{ lookup("password", secret + "/netbox/" +
                                 netbox__domain + "/superuser/" +
                                 netbox__superuser_name + "/password") }}
-
 netbox__app_internal_appserver = {{ ansible_local.gunicorn.installed
-                                     | d(ansible_service_mgr == "systemd") | bool }} 
+                                     | d(ansible_service_mgr == "systemd") | bool }}
 netbox__app_name = {{ netbox__user }}
 netbox__app_runtime_dir = {{ "gunicorn"
                              if (ansible_distribution_release in
                                  ["trusty", "xenial"])
                              else "gunicorn-netbox" }}
-
 netbox__app_bind = unix:/run/{{ netbox__app_runtime_dir }}/netbox.sock
 netbox__app_workers = {{ ansible_processor_vcpus | int + 1 }}
 netbox__app_timeout = 900
@@ -202,7 +192,6 @@ netbox__ldap__dependent_tasks[1].state = {{ "present"
                if (netbox__ldap_device_dn | d() and
                    netbox__ldap_private_groups | bool)
                else "ignore" }}
-
 netbox__ldap__dependent_tasks[2].name = Create NetBox user group for {{ netbox__ldap_device_dn | join(",") }}
 netbox__ldap__dependent_tasks[2].dn = {{ netbox__ldap_user_group_dn }}
 netbox__ldap__dependent_tasks[2].objectClass = groupOfNames

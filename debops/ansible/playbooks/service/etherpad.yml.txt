@@ -1,46 +1,75 @@
-~d0.name = Manage Etherpad service
-~d1.collections = [ 'debops.debops', 'debops.roles01',
-~d1.hosts = [ 'debops_service_etherpad' ]
-~d1.become = True
-~d1.environment = '{{ inventory__environment | d({})
-~d1.roles = 
-~d2.role = keyring
-~d3.tags = [ 'role::keyring', 'skip::keyring',
-~d7.'role = :nodejs', 'role::mariadb', 'role::postgresql', 'role::nginx' ]
-~d3.keyring__dependent_apt_keys = 
-~d2.role = etc_services
-~d3.tags = [ 'role::etc_services', 'skip::etc_services' ]
-~d3.etc_services__dependent_list = 
-~d2.role = cron
-~d3.tags = [ 'role::cron', 'skip::cron' ]
-~d2.role = logrotate
-~d3.tags = [ 'role::logrotate', 'skip::logrotate' ]
-~d3.logrotate__dependent_config = 
-~d2.role = apt_preferences
-~d3.tags = [ 'role::apt_preferences', 'skip::apt_preferences' ]
-~d3.apt_preferences__dependent_list = 
-~d2.role = nodejs
-~d3.tags = [ 'role::nodejs', 'skip::nodejs' ]
-~d2.role = ferm
-~d3.tags = [ 'role::ferm', 'skip::ferm' ]
-~d3.ferm__dependent_rules = 
-~d2.role = python
-~d3.tags = [ 'role::python', 'skip::python', 'role::mariadb', 'role::postgresql' ]
-~d3.python__dependent_packages3 = 
-~d3.python__dependent_packages2 = 
-~d2.role = mariadb
-~d3.tags = [ 'role::mariadb', 'skip::mariadb' ]
-~d3.mariadb__dependent_users = 
-~d3.mariadb__dependent_databases = 
-~d3.when = etherpad__database == 'mysql'
-~d2.role = postgresql
-~d3.tags = [ 'role::postgresql', 'skip::postgresql' ]
-~d3.postgresql__dependent_roles = 
-~d3.postgresql__dependent_databases = 
-~d3.when = etherpad__database == 'postgres'
-~d2.role = nginx
-~d3.tags = [ 'role::nginx', 'skip::nginx' ]
-~d3.nginx__dependent_servers = 
-~d3.nginx__dependent_upstreams = 
-~d2.role = etherpad
-~d3.tags = [ 'role::etherpad', 'skip::etherpad' ]
+[0].name = Manage Etherpad service
+[0].collections[0] = debops.debops
+[0].collections[1] = debops.roles01
+[0].collections[2] = debops.roles02
+[0].collections[3] = debops.roles03
+[0].hosts[0] = debops_service_etherpad
+[0].become = True
+[0].environment = {{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}
+[0].roles[0].role = keyring
+[0].roles[0].tags[0] = role::keyring
+[0].roles[0].tags[1] = skip::keyring
+[0].roles[0].tags[2] = role::nodejs
+[0].roles[0].tags[3] = role::mariadb
+[0].roles[0].tags[4] = role::postgresql
+[0].roles[0].tags[5] = role::nginx
+[0].roles[0].keyring__dependent_apt_keys[0] = {{ nodejs__keyring__dependent_apt_keys }}
+[0].roles[0].keyring__dependent_apt_keys[1] = {{ mariadb__keyring__dependent_apt_keys if (etherpad__database == "mysql") else [] }}
+[0].roles[0].keyring__dependent_apt_keys[2] = {{ postgresql__keyring__dependent_apt_keys if (etherpad__database == "postgresql") else [] }}
+[0].roles[0].keyring__dependent_apt_keys[3] = {{ nginx__keyring__dependent_apt_keys }}
+[0].roles[1].role = etc_services
+[0].roles[1].tags[0] = role::etc_services
+[0].roles[1].tags[1] = skip::etc_services
+[0].roles[1].etc_services__dependent_list[0] = {{ etherpad__etc_services__dependent_list }}
+[0].roles[2].role = cron
+[0].roles[2].tags[0] = role::cron
+[0].roles[2].tags[1] = skip::cron
+[0].roles[3].role = logrotate
+[0].roles[3].tags[0] = role::logrotate
+[0].roles[3].tags[1] = skip::logrotate
+[0].roles[3].logrotate__dependent_config[0] = {{ etherpad__logrotate__dependent_config }}
+[0].roles[4].role = apt_preferences
+[0].roles[4].tags[0] = role::apt_preferences
+[0].roles[4].tags[1] = skip::apt_preferences
+[0].roles[4].apt_preferences__dependent_list[0] = {{ nginx__apt_preferences__dependent_list }}
+[0].roles[4].apt_preferences__dependent_list[1] = {{ nodejs__apt_preferences__dependent_list }}
+[0].roles[5].role = nodejs
+[0].roles[5].tags[0] = role::nodejs
+[0].roles[5].tags[1] = skip::nodejs
+[0].roles[6].role = ferm
+[0].roles[6].tags[0] = role::ferm
+[0].roles[6].tags[1] = skip::ferm
+[0].roles[6].ferm__dependent_rules[0] = {{ nginx__ferm__dependent_rules }}
+[0].roles[7].role = python
+[0].roles[7].tags[0] = role::python
+[0].roles[7].tags[1] = skip::python
+[0].roles[7].tags[2] = role::mariadb
+[0].roles[7].tags[3] = role::postgresql
+[0].roles[7].python__dependent_packages3[0] = {{ postgresql__python__dependent_packages3 if etherpad__database == "postgres" else [] }}
+[0].roles[7].python__dependent_packages3[1] = {{ mariadb__python__dependent_packages3 if etherpad__database == "mysql" else [] }}
+[0].roles[7].python__dependent_packages3[2] = {{ nginx__python__dependent_packages3 }}
+[0].roles[7].python__dependent_packages2[0] = {{ postgresql__python__dependent_packages2 if etherpad__database == "postgres" else [] }}
+[0].roles[7].python__dependent_packages2[1] = {{ mariadb__python__dependent_packages2 if etherpad__database == "mysql" else [] }}
+[0].roles[7].python__dependent_packages2[2] = {{ nginx__python__dependent_packages2 }}
+[0].roles[8].role = mariadb
+[0].roles[8].tags[0] = role::mariadb
+[0].roles[8].tags[1] = skip::mariadb
+[0].roles[8].mariadb__dependent_users[0] = {{ etherpad__mariadb__dependent_users }}
+[0].roles[8].mariadb__dependent_databases[0] = {{ etherpad__mariadb__dependent_databases }}
+[0].roles[8].when = etherpad__database == 'mysql'
+[0].roles[9].role = postgresql
+[0].roles[9].tags[0] = role::postgresql
+[0].roles[9].tags[1] = skip::postgresql
+[0].roles[9].postgresql__dependent_roles[0] = {{ etherpad__postgresql__dependent_roles }}
+[0].roles[9].postgresql__dependent_databases[0] = {{ etherpad__postgresql__dependent_databases }}
+[0].roles[9].when = etherpad__database == 'postgres'
+[0].roles[10].role = nginx
+[0].roles[10].tags[0] = role::nginx
+[0].roles[10].tags[1] = skip::nginx
+[0].roles[10].nginx__dependent_servers[0] = {{ etherpad__nginx__dependent_servers }}
+[0].roles[10].nginx__dependent_upstreams[0] = {{ etherpad__nginx__dependent_upstreams }}
+[0].roles[11].role = etherpad
+[0].roles[11].tags[0] = role::etherpad
+[0].roles[11].tags[1] = skip::etherpad

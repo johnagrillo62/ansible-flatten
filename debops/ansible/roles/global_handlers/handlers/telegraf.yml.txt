@@ -1,9 +1,8 @@
-~d0.name = Check telegraf and restart
-~d1.ansible.builtin.command = '/usr/bin/telegraf --test --config /etc/telegraf/telegraf.conf --config-directory /etc/telegraf/telegraf.d'
-~d1.register = global_handlers__telegraf_register_config_test
-~d1.changed_when = global_handlers__telegraf_register_config_test.changed | bool
-~d1.notify = [ 'Restart telegraf' ]
-~d0.name = Restart telegraf
-~d1.ansible.builtin.service = 
-~d2.name = "telegraf"
-~d2.state = "restarted"
+[0].name = Check telegraf and restart
+[0]["ansible.builtin.command"] = /usr/bin/telegraf --test --config /etc/telegraf/telegraf.conf --config-directory /etc/telegraf/telegraf.d
+[0].register = global_handlers__telegraf_register_config_test
+[0].changed_when = global_handlers__telegraf_register_config_test.changed | bool
+[0].notify[0] = Restart telegraf
+[1].name = Restart telegraf
+[1]["ansible.builtin.service"].name = telegraf
+[1]["ansible.builtin.service"].state = restarted

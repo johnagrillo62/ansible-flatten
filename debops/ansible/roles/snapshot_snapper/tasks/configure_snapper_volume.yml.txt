@@ -1,7 +1,7 @@
-~d0.name = Configure snapper volume
-~d1.ansible.builtin.lineinfile = 
-~d2.dest = '/etc/snapper/configs/{{ snapshot_snapper__volume.name }}'
-~d2.regexp = '^{{ item.key }}='
-~d2.line = '{{ item.key }}="{{ item.value }}"'
-~d2.mode = '0644'
-~d1.with_dict = '{{ (snapshot_snapper__templates_combined[snapshot_snapper__volume.template | d("default")] | d({}))
+[0].name = Configure snapper volume
+[0]["ansible.builtin.lineinfile"].dest = /etc/snapper/configs/{{ snapshot_snapper__volume.name }}
+[0]["ansible.builtin.lineinfile"].regexp = ^{{ item.key }}=
+[0]["ansible.builtin.lineinfile"].line = {{ item.key }}="{{ item.value }}"
+[0]["ansible.builtin.lineinfile"].mode = 0644
+[0].with_dict = {{ (snapshot_snapper__templates_combined[snapshot_snapper__volume.template | d("default")] | d({}))
+                 | combine(snapshot_snapper__volume.config | d({})) }}

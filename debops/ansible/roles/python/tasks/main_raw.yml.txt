@@ -1,20 +1,30 @@
-~d0.name = Inject host entries into /etc/hosts
-~d1.ansible.builtin.raw = |
-~d1.register = python__register_etc_hosts
-~d1.changed_when = python__register_etc_hosts.stdout == ''
-~d1.when = python__enabled | bool and python__raw_etc_hosts | d()
-~d0.name = Detect the OS release manually, no Ansible facts available
-~d1.ansible.builtin.raw = grep -E '^VERSION=' /etc/os-release | tr -d '(")' | cut -d" " -f2
-~d1.register = python__register_raw_release
-~d1.changed_when = False
-~d1.check_mode = False
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Update APT repositories, install core Python packages
-~d1.ansible.builtin.raw = |
-~d1.register = python__register_raw
-~d1.when = python__enabled | bool
-~d1.changed_when = (not python__register_raw.stdout
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Reset connection to the host
-~d1.ansible.builtin.meta = 'reset_connection'
-~d1.tags = [ 'meta::facts' ]
+[0].name = Inject host entries into /etc/hosts
+[0]["ansible.builtin.raw"] = if ! grep "{{ python__raw_etc_hosts.split() | first }}" /etc/hosts ; then
+  printf "%s\n" "{{ python__raw_etc_hosts | regex_replace('\n$', '') }}" >> /etc/hosts
+fi
+
+[0].register = python__register_etc_hosts
+[0].changed_when = python__register_etc_hosts.stdout == ''
+[0].when = python__enabled | bool and python__raw_etc_hosts | d()
+[1].name = Detect the OS release manually, no Ansible facts available
+[1]["ansible.builtin.raw"] = grep -E '^VERSION=' /etc/os-release | tr -d '(")' | cut -d" " -f2
+[1].register = python__register_raw_release
+[1].changed_when = False
+[1].check_mode = False
+[1].tags[0] = meta::facts
+[2].name = Update APT repositories, install core Python packages
+[2]["ansible.builtin.raw"] = if [ -z "$(find /var/cache/apt/pkgcache.bin -mmin {{ python__raw_apt_cache_valid_time }})" ]; then
+    apt-get -q update
+fi
+if [ "{{ python__raw_purge_v2 | bool | lower }}" = "true" ] && [ ! -f "/etc/ansible/facts.d/python.fact" ] ; then
+    LANG=C apt-get --purge -yq remove {{ python__raw_purge_packages2 | join(" ") }}
+fi
+LANG=C apt-get --no-install-recommends -yq install {{ python__core_packages | join(" ") }}
+
+[2].register = python__register_raw
+[2].when = python__enabled | bool
+[2].changed_when = (not python__register_raw.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and \d+ not upgraded\.') or python__register_raw.stdout | regex_search('.+ set to manually installed\.'))
+[2].tags[0] = meta::facts
+[3].name = Reset connection to the host
+[3]["ansible.builtin.meta"] = reset_connection
+[3].tags[0] = meta::facts

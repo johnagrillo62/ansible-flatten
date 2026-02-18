@@ -7,6 +7,5 @@ influxdb__root_password = {{ lookup("password",
                              secret + "/influxdb/" + influxdb__server +
                              "/credentials/root/password " +
                              "length=" + influxdb__password_length) }}
-
 influxdb__python__dependent_packages3[0] = python3-influxdb
 influxdb__python__dependent_packages2[0] = python-influxdb

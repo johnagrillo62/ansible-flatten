@@ -54,7 +54,6 @@
                                  (owncloud__register_occ_check is not skipped) and
                                  (("is not installed" in owncloud__register_occ_check.stdout) or
                                   ("is not installed" in owncloud__register_occ_check.stderr))) }}
-
 [10].name = Automatically finish setup via the occ tool
 [10]["ansible.builtin.command"] = {{ owncloud__occ_bin_file_path | quote }} maintenance:install
 '--data-dir={{ owncloud__data_path }}'
@@ -97,7 +96,6 @@
                            + owncloud__group_occ_cmd_list
                            + owncloud__host_occ_cmd_list
                            + owncloud__dependent_occ_cmd_list) }}
-
 [15].name = Setup cron service (nextcloud)
 [15]["ansible.builtin.cron"].name = ownCloud Background Jobs
 [15]["ansible.builtin.cron"].minute = {{ owncloud__cron_minute }}

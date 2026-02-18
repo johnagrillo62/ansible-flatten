@@ -1,83 +1,81 @@
-~d0.name = Import custom Ansible plugins
-~d1.ansible.builtin.import_role = 
-~d2.name = 'ansible_plugins'
-~d0.name = Import DebOps global handlers
-~d1.ansible.builtin.import_role = 
-~d2.name = 'global_handlers'
-~d0.name = Import DebOps secret role
-~d1.ansible.builtin.import_role = 
-~d2.name = 'secret'
-~d0.name = Ensure that SSH identity datastore exists
-~d1.ansible.builtin.file = 
-~d2.path = '{{ authorized_keys__path }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.when = authorized_keys__enabled | bool
-~d0.name = Ensure the required groups exist
-~d1.ansible.builtin.group = 
-~d2.name = '{{ item.group }}'
-~d2.gid = '{{ item.gid | d(omit) }}'
-~d2.system = '{{ item.system | bool }}'
-~d2.state = 'present'
-~d1.loop = '{{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}'
-~d1.loop_control = 
-~d2.label = '{{ {"identity": item.identity, "group": item.group} }}'
-~d1.when = authorized_keys__enabled | bool and item.group | d() and
-~d0.name = Get list of all groups
-~d1.ansible.builtin.getent = 
-~d2.database = 'group'
-~d2.split = ':'
-~d1.when = authorized_keys__enabled | bool
-~d0.name = Get list of all users
-~d1.ansible.builtin.getent = 
-~d2.database = 'passwd'
-~d2.split = ':'
-~d1.when = authorized_keys__enabled | bool
-~d0.name = Configure authorized keys for users
-~d1.ansible.posix.authorized_key = 
-~d2.key = '{{ item.key }}'
-~d2.user = '{{ item.user if (item.home | d()) | bool else "root" }}'
-~d2.manage_dir = '{{ item.manage_dir }}'
-~d2.state = '{{ item.state | d("present") }}'
-~d2.key_options = '{{ item.key_options | d(omit) }}'
-~d2.comment = '{{ item.comment | d(omit) }}'
-~d2.path = '{{ item.path | d(omit) }}'
-~d2.exclusive = '{{ item.exclusive | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d1.loop = '{{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}'
-~d1.loop_control = 
-~d2.label = '{{ {"identity": item.identity,
-~d8."state" = (item.state | d("present")
-~d8."user" = item.user,
-~d8."path" = item.path | d("~" + item.user + "/.ssh/authorized_keys")} }}'
-~d1.when = (authorized_keys__enabled | bool and
-~d0.name = Enforce state of authorized_keys user files
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.path }}'
-~d2.owner = '{{ item.owner if (item.owner | d() and item.owner in getent_passwd.keys()) else "root" }}'
-~d2.group = '{{ (item.group
-~d2.mode = '{{ item.mode }}'
-~d2.state = '{{ "absent" if (item.file_state | d("present") == "absent") else omit }}'
-~d1.loop = '{{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}'
-~d1.loop_control = 
-~d2.label = '{{ {"identity": item.identity,
-~d8."state" = item.file_state | d("present"),
-~d8."group" = (item.group
-~d8."path" = item.path} }}'
-~d1.when = authorized_keys__enabled | bool and item.path | d() and not item.manage_dir | bool and
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.mode = '0755'
-~d0.name = Save authorized_keys local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/authorized_keys.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/authorized_keys.fact'
-~d2.mode = '0755'
-~d1.notify = [ 'Refresh host facts' ]
-~d1.tags = [ 'meta::facts' ]
-~d0.name = Re-read local facts if they have been modified
-~d1.ansible.builtin.meta = 'flush_handlers'
+[0].name = Import custom Ansible plugins
+[0]["ansible.builtin.import_role"].name = ansible_plugins
+[1].name = Import DebOps global handlers
+[1]["ansible.builtin.import_role"].name = global_handlers
+[2].name = Import DebOps secret role
+[2]["ansible.builtin.import_role"].name = secret
+[3].name = Ensure that SSH identity datastore exists
+[3]["ansible.builtin.file"].path = {{ authorized_keys__path }}
+[3]["ansible.builtin.file"].state = directory
+[3]["ansible.builtin.file"].owner = root
+[3]["ansible.builtin.file"].group = root
+[3]["ansible.builtin.file"].mode = 0755
+[3].when = authorized_keys__enabled | bool
+[4].name = Ensure the required groups exist
+[4]["ansible.builtin.group"].name = {{ item.group }}
+[4]["ansible.builtin.group"].gid = {{ item.gid | d(omit) }}
+[4]["ansible.builtin.group"].system = {{ item.system | bool }}
+[4]["ansible.builtin.group"].state = present
+[4].loop = {{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}
+[4].loop_control.label = {{ {"identity": item.identity, "group": item.group} }}
+[4].when = authorized_keys__enabled | bool and item.group | d() and item.state | d('present') not in ['absent', 'ignore', 'init'] and item.file_state | d('present') not in ['absent', 'ignore', 'init']
+[5].name = Get list of all groups
+[5]["ansible.builtin.getent"].database = group
+[5]["ansible.builtin.getent"].split = :
+[5].when = authorized_keys__enabled | bool
+[6].name = Get list of all users
+[6]["ansible.builtin.getent"].database = passwd
+[6]["ansible.builtin.getent"].split = :
+[6].when = authorized_keys__enabled | bool
+[7].name = Configure authorized keys for users
+[7]["ansible.posix.authorized_key"].key = {{ item.key }}
+[7]["ansible.posix.authorized_key"].user = {{ item.user if (item.home | d()) | bool else "root" }}
+[7]["ansible.posix.authorized_key"].manage_dir = {{ item.manage_dir }}
+[7]["ansible.posix.authorized_key"].state = {{ item.state | d("present") }}
+[7]["ansible.posix.authorized_key"].key_options = {{ item.key_options | d(omit) }}
+[7]["ansible.posix.authorized_key"].comment = {{ item.comment | d(omit) }}
+[7]["ansible.posix.authorized_key"].path = {{ item.path | d(omit) }}
+[7]["ansible.posix.authorized_key"].exclusive = {{ item.exclusive | d(omit) }}
+[7]["ansible.posix.authorized_key"].follow = {{ item.follow | d(omit) }}
+[7].loop = {{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}
+[7].loop_control.label = {{ {"identity": item.identity,
+                "state": (item.state | d("present")
+                          if (item.user in getent_passwd.keys() and (item.home | d()) | bool)
+                          else ("no user"
+                                if (item.user not in getent_passwd.keys() and (item.home | d()) | bool)
+                                else item.state | d("present"))),
+                "user": item.user,
+                "path": item.path | d("~" + item.user + "/.ssh/authorized_keys")} }}
+[7].when = (authorized_keys__enabled | bool and item.file_state | d('present') != 'absent' and ((item.home | d()) | bool and item.user in getent_passwd.keys()) or not (item.home | d()) | bool)
+[8].name = Enforce state of authorized_keys user files
+[8]["ansible.builtin.file"].path = {{ item.path }}
+[8]["ansible.builtin.file"].owner = {{ item.owner if (item.owner | d() and item.owner in getent_passwd.keys()) else "root" }}
+[8]["ansible.builtin.file"].group = {{ (item.group
+                if (item.group | d() and item.group in (getent_group | d({})).keys())
+                else (getent_passwd[item.owner][2] | d({})
+                      if (item.owner in getent_passwd | d({}))
+                      else omit)) }}
+[8]["ansible.builtin.file"].mode = {{ item.mode }}
+[8]["ansible.builtin.file"].state = {{ "absent" if (item.file_state | d("present") == "absent") else omit }}
+[8].loop = {{ lookup("template", "lookup/authorized_keys__identities.j2") | from_yaml }}
+[8].loop_control.label = {{ {"identity": item.identity,
+                "state": item.file_state | d("present"),
+                "group": (item.group
+                          if (item.group | d() and item.group in (getent_group | d({})).keys())
+                          else (getent_passwd[item.owner | d("root")][2] | d({})
+                                if (item.owner | d("root") in getent_passwd | d({}))
+                                else "root")),
+                "path": item.path} }}
+[8].when = authorized_keys__enabled | bool and item.path | d() and not item.manage_dir | bool and item.state | d('present') not in ['absent', 'ignore', 'init'] and not ansible_check_mode
+[9].name = Make sure that Ansible local facts directory exists
+[9]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[9]["ansible.builtin.file"].state = directory
+[9]["ansible.builtin.file"].mode = 0755
+[10].name = Save authorized_keys local facts
+[10]["ansible.builtin.template"].src = etc/ansible/facts.d/authorized_keys.fact.j2
+[10]["ansible.builtin.template"].dest = /etc/ansible/facts.d/authorized_keys.fact
+[10]["ansible.builtin.template"].mode = 0755
+[10].notify[0] = Refresh host facts
+[10].tags[0] = meta::facts
+[11].name = Re-read local facts if they have been modified
+[11]["ansible.builtin.meta"] = flush_handlers

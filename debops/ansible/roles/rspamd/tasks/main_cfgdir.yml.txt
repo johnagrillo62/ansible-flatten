@@ -1,33 +1,35 @@
-~d0.name = Create directory {{ cfgdir.path }}
-~d1.ansible.builtin.file = 
-~d2.path = '{{ cfgdir.path }}'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Create configuration snippets in {{ cfgdir.path }}
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/rspamd/snippet.j2'
-~d2.dest = '{{ cfgdir.path + "/" + item.file }}'
-~d2.owner = '{{ item.owner | d("root") }}'
-~d2.group = '{{ item.group | d("_rspamd") }}'
-~d2.mode = '{{ item.mode | d("0640") }}'
-~d1.loop = '{{ cfgdir.config
-~d1.loop_control = 
-~d2.label = '{{ item.file }}'
-~d1.notify = [ 'Restart rspamd' ]
-~d0.name = Generate a list of created configuration snippets in {{ cfgdir.path }}
-~d1.ansible.builtin.set_fact = 
-~d2.rspamd__created_snippets = '{{
-~d0.name = Find all configuration snippets in {{ cfgdir.path }}
-~d1.ansible.builtin.find = 
-~d2.paths = '{{ cfgdir.path }}'
-~d2.recurse = no
-~d2.file_type = 'file'
-~d1.register = rspamd__found_snippets
-~d0.name = Remove superfluous configuration snippets from {{ cfgdir.path }}
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item }}'
-~d2.state = 'absent'
-~d1.loop = '{{ rspamd__found_snippets.files
-~d1.notify = [ 'Restart rspamd' ]
+[0].name = Create directory {{ cfgdir.path }}
+[0]["ansible.builtin.file"].path = {{ cfgdir.path }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].owner = root
+[0]["ansible.builtin.file"].group = root
+[0]["ansible.builtin.file"].mode = 0755
+[1].name = Create configuration snippets in {{ cfgdir.path }}
+[1]["ansible.builtin.template"].src = etc/rspamd/snippet.j2
+[1]["ansible.builtin.template"].dest = {{ cfgdir.path + "/" + item.file }}
+[1]["ansible.builtin.template"].owner = {{ item.owner | d("root") }}
+[1]["ansible.builtin.template"].group = {{ item.group | d("_rspamd") }}
+[1]["ansible.builtin.template"].mode = {{ item.mode | d("0640") }}
+[1].loop = {{ cfgdir.config
+             | rejectattr("state", "in", ["absent", "init", "ignore"]) }}
+[1].loop_control.label = {{ item.file }}
+[1].notify[0] = Restart rspamd
+[2].name = Generate a list of created configuration snippets in {{ cfgdir.path }}
+[2]["ansible.builtin.set_fact"].rspamd__created_snippets = {{
+      cfgdir.config
+       | rejectattr("state", "in", ["absent", "init"])
+       | map(attribute="file")
+       | map("regex_replace", "^", cfgdir.path + "/") }}
+[3].name = Find all configuration snippets in {{ cfgdir.path }}
+[3]["ansible.builtin.find"].paths = {{ cfgdir.path }}
+[3]["ansible.builtin.find"].recurse = no
+[3]["ansible.builtin.find"].file_type = file
+[3].register = rspamd__found_snippets
+[4].name = Remove superfluous configuration snippets from {{ cfgdir.path }}
+[4]["ansible.builtin.file"].path = {{ item }}
+[4]["ansible.builtin.file"].state = absent
+[4].loop = {{ rspamd__found_snippets.files
+             | map(attribute="path")
+             | list
+             | difference(rspamd__created_snippets) }}
+[4].notify[0] = Restart rspamd

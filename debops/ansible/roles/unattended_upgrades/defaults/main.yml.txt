@@ -4,7 +4,6 @@ unattended_upgrades__base_packages[0] = unattended-upgrades
 unattended_upgrades__periodic = {{ False
                                    if (ansible_local.apt.suite | d() == "archive")
                                    else unattended_upgrades__enabled }}
-
 unattended_upgrades__periodic_download = {{ unattended_upgrades__periodic }}
 unattended_upgrades__periodic_autoclean = 7
 unattended_upgrades__periodic_verbosity = 0
@@ -34,12 +33,11 @@ unattended_upgrades__minimal_steps = True
 unattended_upgrades__install_on_shutdown = False
 unattended_upgrades__mail_from = 
 unattended_upgrades__mail_to = {{ ansible_local.core.admin_private_email
-                                  | d(["root@" + ansible_domain]) }} 
+                                  | d(["root@" + ansible_domain]) }}
 unattended_upgrades__mail_only_on_error = True
 unattended_upgrades__remove_unused = False
 unattended_upgrades__auto_reboot = False
 unattended_upgrades__auto_reboot_time = {{ "02:30"
                                             if (ansible_virtualization_role in ["host", "NA"])
                                             else ("02:%02d" | format(55 | random(seed=inventory_hostname, start=40))) }}
-
 unattended_upgrades__bandwidth_limit = 

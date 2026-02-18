@@ -2,7 +2,6 @@ icinga_db__icinga_installed = {{ ansible_local.icinga.installed | d(False) | boo
 icinga_db__type = {{ ansible_local.icinga_db.type
                      | d("postgresql" if ansible_local.postgresql is defined else "", true)
                      | d("mariadb" if ansible_local.mariadb is defined else "", true) }}
-
 icinga_db__database_map.postgresql.ido = pgsql
 icinga_db__database_map.postgresql.db_name = icinga2
 icinga_db__database_map.postgresql.db_user = icinga2
@@ -13,7 +12,6 @@ icinga_db__database_map.postgresql.pw_path = {{ secret + "/postgresql/"
                    + ansible_local.postgresql.delegate_to | d(inventory_hostname)
                    + "/" + ansible_local.postgresql.port | d("5432")
                    + "/credentials/icinga2/password" }}
-
 icinga_db__database_map.mariadb.ido = mysql
 icinga_db__database_map.mariadb.db_name = icinga2
 icinga_db__database_map.mariadb.db_user = icinga2
@@ -23,17 +21,16 @@ icinga_db__database_map.mariadb.db_schema = /usr/share/icinga2-ido-mysql/schema/
 icinga_db__database_map.mariadb.pw_path = {{ secret + "/mariadb/"
                    + ansible_local.mariadb.delegate_to | d(inventory_hostname)
                    + "/credentials/icinga2/password" }}
-
 icinga_db__ido = {{ icinga_db__database_map[icinga_db__type].ido }}
 icinga_db__host = {{ icinga_db__database_map[icinga_db__type].db_host }}
 icinga_db__port = {{ icinga_db__database_map[icinga_db__type].db_port }}
 icinga_db__ssl = {{ False if icinga_db__host == "localhost"
-                    else ansible_local.pki.enabled | d(False) | bool }} 
+                    else ansible_local.pki.enabled | d(False) | bool }}
 icinga_db__user = {{ icinga_db__database_map[icinga_db__type].db_user }}
 icinga_db__database = {{ icinga_db__database_map[icinga_db__type].db_name }}
 icinga_db__password_path = {{ icinga_db__database_map[icinga_db__type].pw_path }}
 icinga_db__password = {{ lookup('password', icinga_db__password_path
-                                   + ' length=48 chars=ascii_letters,digits,.-_') }} 
+                                   + ' length=48 chars=ascii_letters,digits,.-_') }}
 icinga_db__init = {{ not (ansible_local.icinga_db.configured | d(False) | bool) }}
 icinga_db__schema = {{ icinga_db__database_map[icinga_db__type].db_schema }}
 icinga_db__default_configuration[0].name = library
@@ -60,14 +57,13 @@ icinga_db__default_configuration[1].options[6].state = {{ "present" if icinga_db
 icinga_db__default_configuration[1].options[7].name = ssl_ca
 icinga_db__default_configuration[1].options[7].value = {{ icinga_db__ssl_ca_certificate }}
 icinga_db__combined_configuration = {{ icinga_db__default_configuration
-                                       + icinga_db__configuration }} 
+                                       + icinga_db__configuration }}
 icinga_db__pki_path = {{ ansible_local.pki.base_path | d("/etc/pki/realms") }}
 icinga_db__pki_realm = {{ ansible_local.pki.realm | d("domain") }}
 icinga_db__pki_ca = CA.crt
 icinga_db__ssl_ca_certificate = {{ icinga_db__pki_path + "/"
                                    + icinga_db__pki_realm + "/"
                                    + icinga_db__pki_ca }}
-
 icinga_db__base_packages[0] = dbconfig-no-thanks
 icinga_db__base_packages[1] = {{ "icinga2-ido-" + icinga_db__ido }}
 icinga_db__postgresql__dependent_roles[0].name = {{ icinga_db__user }}

@@ -1,120 +1,129 @@
-~d0.name = Install required packages
-~d1.ansible.builtin.package = 
-~d2.name = '{{ (mount__base_packages + mount__packages) | flatten }}'
-~d2.state = 'present'
-~d1.register = mount__register_packages
-~d1.until = mount__register_packages is succeeded
-~d1.when = mount__enabled | bool
-~d0.name = Ensure that the mount points exist
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.path | d(item.dest | d(item.name)) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(item.owner | d(omit)) }}'
-~d2.mode = '{{ item.mode | d("0755") }}'
-~d2.state = 'directory'
-~d1.loop = '{{ (mount__devices
-~d1.when = (mount__enabled | bool and item.state | d('mounted') in ['mounted', 'present', 'unmounted'] and
-~d0.name = Stop devices automounted by systemd if requested
-~d1.ansible.builtin.systemd = 
-~d2.name = '{{ item.name | regex_replace("^/", "") | regex_replace("/", "-") + ".automount" }}'
-~d2.state = 'stopped'
-~d1.loop = '{{ (mount__devices
-~d1.when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and
-~d0.name = Copy files to remote hosts
-~d1.ansible.builtin.copy = 
-~d2.dest = '{{ item.dest | d(item.path | d(item.name)) }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.content = '{{ item.content | d(omit) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(omit) }}'
-~d2.mode = '{{ item.mode | d(omit) }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.backup = '{{ item.backup | d(omit) }}'
-~d2.validate = '{{ item.validate | d(omit) }}'
-~d2.remote_src = '{{ item.remote_src | d(omit) }}'
-~d2.directory_mode = '{{ item.directory_mode | d(omit) }}'
-~d1.loop = '{{ q("flattened", mount__files
-~d1.when = (mount__enabled | bool and
-~d0.name = Manage device mounts
-~d1.ansible.posix.mount = 
-~d2.src = '{{ item.src }}'
-~d2.path = '{{ item.path | d(item.dest | d(item.name)) }}'
-~d2.fstype = '{{ item.fstype | d("auto") }}'
-~d2.opts = '{{ ((item.opts if (item.opts is string) else (item.opts | join(",")))
-~d2.dump = '{{ item.dump | d(omit) }}'
-~d2.passno = '{{ item.passno | d(omit) }}'
-~d2.state = '{{ item.state | d("mounted") }}'
-~d2.fstab = '{{ item.fstab | d(omit) }}'
-~d1.loop = '{{ (mount__devices
-~d1.register = mount__register_devices
-~d1.when = (mount__enabled | bool and
-~d0.name = Restart 'local-fs.target' systemd unit
-~d1.ansible.builtin.systemd = # noqa no-handler
-~d2.name = 'local-fs.target'
-~d2.state = 'restarted'
-~d2.daemon_reload = True
-~d1.loop = '{{ mount__register_devices.results }}'
-~d1.when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and item is changed and
-~d0.name = Restart 'remote-fs.target' systemd unit
-~d1.ansible.builtin.systemd = # noqa no-handler
-~d2.name = 'remote-fs.target'
-~d2.state = 'restarted'
-~d2.daemon_reload = True
-~d1.loop = '{{ mount__register_devices.results }}'
-~d1.when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and item is changed and
-~d0.name = Manage directories
-~d1.ansible.builtin.file = 
-~d2.path = '{{ item.path | d(item.dest | d(item.name)) }}'
-~d2.owner = '{{ item.owner | d(omit) }}'
-~d2.group = '{{ item.group | d(item.owner | d(omit)) }}'
-~d2.mode = '{{ item.mode | d("0755") }}'
-~d2.recurse = '{{ item.recurse | d(omit) }}'
-~d2.state = '{{ item.state | d("directory") }}'
-~d1.loop = '{{ (mount__directories
-~d1.when = mount__enabled | bool and (item.path | d() or item.dest | d() or item.name | d()) and
-~d0.name = Manage directory ACLs
-~d1.ansible.posix.acl = 
-~d2.path = '{{ item.0.path | d(item.0.dest | d(item.0.name)) }}'
-~d2.default = '{{ item.1.default | d(omit) }}'
-~d2.entity = '{{ item.1.entity | d(omit) }}'
-~d2.etype = '{{ item.1.etype | d(omit) }}'
-~d2.permissions = '{{ item.1.permissions | d(omit) }}'
-~d2.follow = '{{ item.1.follow | d(omit) }}'
-~d2.recursive = '{{ item.1.recursive | d(omit) }}'
-~d2.state = '{{ item.1.state | d("present") }}'
-~d1.loop = '{{ ((mount__directories
-~d1.loop_control = 
-~d2.label = '{{ {"name": item.0.name, "acl": item.1} }}'
-~d1.when = mount__enabled | bool and (item.0.path | d() or item.0.dest | d() or item.0.name | d()) and
-~d0.name = Manage bind mounts
-~d1.ansible.posix.mount = 
-~d2.src = '{{ item.src }}'
-~d2.path = '{{ item.path | d(item.dest | d(item.name)) }}'
-~d2.fstype = '{{ item.fstype | d("none") }}'
-~d2.opts = '{{ ((item.opts if (item.opts is string) else (item.opts | join(","))) if item.opts | d() else "bind") }}'
-~d2.dump = '{{ item.dump | d(omit) }}'
-~d2.passno = '{{ item.passno | d(omit) }}'
-~d2.state = '{{ item.state | d("mounted") }}'
-~d2.fstab = '{{ item.fstab | d(omit) }}'
-~d1.loop = '{{ (mount__binds
-~d1.when = (mount__enabled | bool and
-~d0.name = Make sure that Ansible local facts directory exists
-~d1.ansible.builtin.file = 
-~d2.path = '/etc/ansible/facts.d'
-~d2.state = 'directory'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d0.name = Save mount local facts
-~d1.ansible.builtin.template = 
-~d2.src = 'etc/ansible/facts.d/mount.fact.j2'
-~d2.dest = '/etc/ansible/facts.d/mount.fact'
-~d2.owner = 'root'
-~d2.group = 'root'
-~d2.mode = '0755'
-~d1.tags = [ 'meta::facts' ]
+[0].name = Install required packages
+[0]["ansible.builtin.package"].name = {{ (mount__base_packages + mount__packages) | flatten }}
+[0]["ansible.builtin.package"].state = present
+[0].register = mount__register_packages
+[0].until = mount__register_packages is succeeded
+[0].when = mount__enabled | bool
+[1].name = Ensure that the mount points exist
+[1]["ansible.builtin.file"].path = {{ item.path | d(item.dest | d(item.name)) }}
+[1]["ansible.builtin.file"].owner = {{ item.owner | d(omit) }}
+[1]["ansible.builtin.file"].group = {{ item.group | d(item.owner | d(omit)) }}
+[1]["ansible.builtin.file"].mode = {{ item.mode | d("0755") }}
+[1]["ansible.builtin.file"].state = directory
+[1].loop = {{ (mount__devices
+             + mount__group_devices
+             + mount__host_devices)
+            | flatten }}
+[1].when = (mount__enabled | bool and item.state | d('mounted') in ['mounted', 'present', 'unmounted'] and (item.device | d(item.src)) not in (ansible_mounts | map(attribute='device') | list))
+[2].name = Stop devices automounted by systemd if requested
+[2]["ansible.builtin.systemd"].name = {{ item.name | regex_replace("^/", "") | regex_replace("/", "-") + ".automount" }}
+[2]["ansible.builtin.systemd"].state = stopped
+[2].loop = {{ (mount__devices
+             + mount__group_devices
+             + mount__host_devices)
+            | flatten }}
+[2].when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and item.state | d('mounted') in ['unmounted', 'absent'] and (((item.opts if (item.opts is string) else item.opts | join(',')) if item.opts | d() else 'defaults') is match(".*x-systemd.automount.*")))
+[3].name = Copy files to remote hosts
+[3]["ansible.builtin.copy"].dest = {{ item.dest | d(item.path | d(item.name)) }}
+[3]["ansible.builtin.copy"].src = {{ item.src | d(omit) }}
+[3]["ansible.builtin.copy"].content = {{ item.content | d(omit) }}
+[3]["ansible.builtin.copy"].owner = {{ item.owner | d(omit) }}
+[3]["ansible.builtin.copy"].group = {{ item.group | d(omit) }}
+[3]["ansible.builtin.copy"].mode = {{ item.mode | d(omit) }}
+[3]["ansible.builtin.copy"].selevel = {{ item.selevel | d(omit) }}
+[3]["ansible.builtin.copy"].serole = {{ item.serole | d(omit) }}
+[3]["ansible.builtin.copy"].setype = {{ item.setype | d(omit) }}
+[3]["ansible.builtin.copy"].seuser = {{ item.seuser | d(omit) }}
+[3]["ansible.builtin.copy"].follow = {{ item.follow | d(omit) }}
+[3]["ansible.builtin.copy"].force = {{ item.force | d(omit) }}
+[3]["ansible.builtin.copy"].backup = {{ item.backup | d(omit) }}
+[3]["ansible.builtin.copy"].validate = {{ item.validate | d(omit) }}
+[3]["ansible.builtin.copy"].remote_src = {{ item.remote_src | d(omit) }}
+[3]["ansible.builtin.copy"].directory_mode = {{ item.directory_mode | d(omit) }}
+[3].loop = {{ q("flattened", mount__files
+                           + mount__group_files
+                           + mount__host_files) }}
+[3].when = (mount__enabled | bool and (item.src | d() or item.content is defined) and (item.dest | d() or item.path | d() or item.name | d()) and (item.state | d('present') != 'absent'))
+[4].name = Manage device mounts
+[4]["ansible.posix.mount"].src = {{ item.src }}
+[4]["ansible.posix.mount"].path = {{ item.path | d(item.dest | d(item.name)) }}
+[4]["ansible.posix.mount"].fstype = {{ item.fstype | d("auto") }}
+[4]["ansible.posix.mount"].opts = {{ ((item.opts if (item.opts is string) else (item.opts | join(",")))
+                 if item.opts | d() else "defaults") }}
+[4]["ansible.posix.mount"].dump = {{ item.dump | d(omit) }}
+[4]["ansible.posix.mount"].passno = {{ item.passno | d(omit) }}
+[4]["ansible.posix.mount"].state = {{ item.state | d("mounted") }}
+[4]["ansible.posix.mount"].fstab = {{ item.fstab | d(omit) }}
+[4].loop = {{ (mount__devices
+             + mount__group_devices
+             + mount__host_devices)
+            | flatten }}
+[4].register = mount__register_devices
+[4].when = (mount__enabled | bool and (item.name | d() or item.dest | d() or item.path | d()) and item.src)
+[5].name = Restart 'local-fs.target' systemd unit
+[5]["ansible.builtin.systemd"].name = local-fs.target
+[5]["ansible.builtin.systemd"].state = restarted
+[5]["ansible.builtin.systemd"].daemon_reload = True
+[5].loop = {{ mount__register_devices.results }}
+[5].when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and item is changed and (((item.opts if (item.opts is string) else item.opts | join(',')) if item.opts | d() else 'defaults') is match(".*x-systemd.automount.*")))
+[6].name = Restart 'remote-fs.target' systemd unit
+[6]["ansible.builtin.systemd"].name = remote-fs.target
+[6]["ansible.builtin.systemd"].state = restarted
+[6]["ansible.builtin.systemd"].daemon_reload = True
+[6].loop = {{ mount__register_devices.results }}
+[6].when = (mount__enabled | bool and ansible_service_mgr == 'systemd' and item is changed and (((item.opts if (item.opts is string) else item.opts | join(',')) if item.opts | d() else 'defaults') is match(".*x-systemd.automount.*")))
+[7].name = Manage directories
+[7]["ansible.builtin.file"].path = {{ item.path | d(item.dest | d(item.name)) }}
+[7]["ansible.builtin.file"].owner = {{ item.owner | d(omit) }}
+[7]["ansible.builtin.file"].group = {{ item.group | d(item.owner | d(omit)) }}
+[7]["ansible.builtin.file"].mode = {{ item.mode | d("0755") }}
+[7]["ansible.builtin.file"].recurse = {{ item.recurse | d(omit) }}
+[7]["ansible.builtin.file"].state = {{ item.state | d("directory") }}
+[7].loop = {{ (mount__directories
+             + mount__group_directories
+             + mount__host_directories)
+            | flatten }}
+[7].when = mount__enabled | bool and (item.path | d() or item.dest | d() or item.name | d()) and item.state | d('directory') in ['directory', 'absent']
+[8].name = Manage directory ACLs
+[8]["ansible.posix.acl"].path = {{ item.0.path | d(item.0.dest | d(item.0.name)) }}
+[8]["ansible.posix.acl"].default = {{ item.1.default | d(omit) }}
+[8]["ansible.posix.acl"].entity = {{ item.1.entity | d(omit) }}
+[8]["ansible.posix.acl"].etype = {{ item.1.etype | d(omit) }}
+[8]["ansible.posix.acl"].permissions = {{ item.1.permissions | d(omit) }}
+[8]["ansible.posix.acl"].follow = {{ item.1.follow | d(omit) }}
+[8]["ansible.posix.acl"].recursive = {{ item.1.recursive | d(omit) }}
+[8]["ansible.posix.acl"].state = {{ item.1.state | d("present") }}
+[8].loop = {{ ((mount__directories
+             + mount__group_directories
+             + mount__host_directories)
+             | flatten) | selectattr("acl", "defined") | list
+             | subelements("acl") }}
+[8].loop_control.label = {{ {"name": item.0.name, "acl": item.1} }}
+[8].when = mount__enabled | bool and (item.0.path | d() or item.0.dest | d() or item.0.name | d()) and item.0.state | d('directory') == 'directory' and item.0.acl | d()
+[9].name = Manage bind mounts
+[9]["ansible.posix.mount"].src = {{ item.src }}
+[9]["ansible.posix.mount"].path = {{ item.path | d(item.dest | d(item.name)) }}
+[9]["ansible.posix.mount"].fstype = {{ item.fstype | d("none") }}
+[9]["ansible.posix.mount"].opts = {{ ((item.opts if (item.opts is string) else (item.opts | join(","))) if item.opts | d() else "bind") }}
+[9]["ansible.posix.mount"].dump = {{ item.dump | d(omit) }}
+[9]["ansible.posix.mount"].passno = {{ item.passno | d(omit) }}
+[9]["ansible.posix.mount"].state = {{ item.state | d("mounted") }}
+[9]["ansible.posix.mount"].fstab = {{ item.fstab | d(omit) }}
+[9].loop = {{ (mount__binds
+             + mount__group_binds
+             + mount__host_binds)
+            | flatten }}
+[9].when = (mount__enabled | bool and (item.name | d() or item.dest | d() or item.path | d()) and item.src | d())
+[10].name = Make sure that Ansible local facts directory exists
+[10]["ansible.builtin.file"].path = /etc/ansible/facts.d
+[10]["ansible.builtin.file"].state = directory
+[10]["ansible.builtin.file"].owner = root
+[10]["ansible.builtin.file"].group = root
+[10]["ansible.builtin.file"].mode = 0755
+[11].name = Save mount local facts
+[11]["ansible.builtin.template"].src = etc/ansible/facts.d/mount.fact.j2
+[11]["ansible.builtin.template"].dest = /etc/ansible/facts.d/mount.fact
+[11]["ansible.builtin.template"].owner = root
+[11]["ansible.builtin.template"].group = root
+[11]["ansible.builtin.template"].mode = 0755
+[11].tags[0] = meta::facts

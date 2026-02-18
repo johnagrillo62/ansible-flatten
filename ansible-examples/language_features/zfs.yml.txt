@@ -1,18 +1,17 @@
-doc[0][0].hosts = webservers
-doc[0][0].gather_facts = no
-doc[0][0].become = yes
-doc[0][0].become_method = sudo
-doc[0][0].vars.pool = rpool
-doc[0][0].tasks[0].name = Create a zfs file system
-doc[0][0].tasks[0].zfs = name={{pool}}/var/log/httpd state=present
-doc[0][0].tasks[1].name = Create a zfs file system with quota of 10GiB and visible snapdir
-doc[0][0].tasks[1].zfs = name={{pool}}/ansible quota='10G' snapdir=visible state=present
-doc[0][0].tasks[2].name = Create zfs snapshot of the above file system
-doc[0][0].tasks[2].zfs = name={{pool}}/ansible@mysnapshot state=present
-doc[0][0].tasks[3].name = Create zfs volume named smallvol with a size of 10MiB
-doc[0][0].tasks[3].zfs = name={{pool}}/smallvol volsize=10M state=present
-doc[0][0].tasks[4].name = Removes snapshot of rpool/oldfs
-doc[0][0].tasks[4].zfs = name={{pool}}/oldfs@oldsnapshot state=absent
-doc[0][0].tasks[5].name = Removes file system rpool/oldfs
-doc[0][0].tasks[5].zfs = name={{pool}}/oldfs state=absent
-doc[1] = 
+[0].hosts = webservers
+[0].gather_facts = no
+[0].become = yes
+[0].become_method = sudo
+[0].vars.pool = rpool
+[0].tasks[0].name = Create a zfs file system
+[0].tasks[0].zfs = name={{pool}}/var/log/httpd state=present
+[0].tasks[1].name = Create a zfs file system with quota of 10GiB and visible snapdir
+[0].tasks[1].zfs = name={{pool}}/ansible quota='10G' snapdir=visible state=present
+[0].tasks[2].name = Create zfs snapshot of the above file system
+[0].tasks[2].zfs = name={{pool}}/ansible@mysnapshot state=present
+[0].tasks[3].name = Create zfs volume named smallvol with a size of 10MiB
+[0].tasks[3].zfs = name={{pool}}/smallvol volsize=10M state=present
+[0].tasks[4].name = Removes snapshot of rpool/oldfs
+[0].tasks[4].zfs = name={{pool}}/oldfs@oldsnapshot state=absent
+[0].tasks[5].name = Removes file system rpool/oldfs
+[0].tasks[5].zfs = name={{pool}}/oldfs state=absent

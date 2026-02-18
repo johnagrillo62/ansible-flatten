@@ -1,44 +1,50 @@
-~d0.name = Ensure that parent directories exist
-~d1.ansible.builtin.file = 
-~d2.path = '{{ (owncloud__data_path + "/" + item.dest) | dirname }}'
-~d2.state = 'directory'
-~d2.recurse = '{{ item.parent_dirs_recurse | d(True) }}'
-~d2.owner = '{{ item.parent_dirs_owner | d(owncloud__app_user) }}'
-~d2.group = '{{ item.parent_dirs_group | d(owncloud__app_group) }}'
-~d2.mode = '{{ item.parent_dirs_mode | d("0755") }}'
-~d1.when = ((item.parent_dirs_create | d(True) | bool) and item.dest | d() and item.state | d("present") != 'absent')
-~d1.loop = '{{ q("flattened", owncloud__user_files
-~d0.name = Copy files to ownCloud user profiles
-~d1.ansible.builtin.copy = 
-~d2.dest = '{{ owncloud__data_path + "/" + item.dest }}'
-~d2.src = '{{ item.src | d(omit) }}'
-~d2.content = '{{ item.content | d(omit) }}'
-~d2.owner = '{{ item.owner | d(owncloud__app_user) }}'
-~d2.group = '{{ item.group | d(owncloud__app_group) }}'
-~d2.mode = '{{ item.mode | d("u=rwX,g=rX,o=rX") }}'
-~d2.selevel = '{{ item.selevel | d(omit) }}'
-~d2.serole = '{{ item.serole | d(omit) }}'
-~d2.setype = '{{ item.setype | d(omit) }}'
-~d2.seuser = '{{ item.seuser | d(omit) }}'
-~d2.follow = '{{ item.follow | d(omit) }}'
-~d2.force = '{{ item.force | d(omit) }}'
-~d2.backup = '{{ item.backup | d(omit) }}'
-~d2.validate = '{{ item.validate | d(omit) }}'
-~d2.remote_src = '{{ item.remote_src | d(omit) }}'
-~d2.directory_mode = '{{ item.directory_mode | d(omit) }}'
-~d1.register = owncloud__register_create_user_files
-~d1.loop = '{{ q("flattened", owncloud__user_files
-~d1.when = ((item.src | d() or item.content | d()) and item.dest | d() and
-~d0.name = Delete files on remote hosts
-~d1.ansible.builtin.file = 
-~d2.path = '{{ owncloud__data_path + "/" + item.dest }}'
-~d2.state = 'absent'
-~d1.register = owncloud__register_delete_user_files
-~d1.loop = '{{ q("flattened", owncloud__user_files
-~d1.when = (item.dest | d() and (item.state | d('present') == 'absent'))
-~d0.name = Run occ commands as specified in the inventory
-~d1.ansible.builtin.include_tasks = 'run_occ.yml'  # noqa no-handler
-~d1.loop_control = 
-~d2.loop_var = 'owncloud__files_scan_item'
-~d1.when = owncloud__files_scan_item is changed
-~d1.with_items = '{{ (owncloud__register_create_user_files.results | d([])
+[0].name = Ensure that parent directories exist
+[0]["ansible.builtin.file"].path = {{ (owncloud__data_path + "/" + item.dest) | dirname }}
+[0]["ansible.builtin.file"].state = directory
+[0]["ansible.builtin.file"].recurse = {{ item.parent_dirs_recurse | d(True) }}
+[0]["ansible.builtin.file"].owner = {{ item.parent_dirs_owner | d(owncloud__app_user) }}
+[0]["ansible.builtin.file"].group = {{ item.parent_dirs_group | d(owncloud__app_group) }}
+[0]["ansible.builtin.file"].mode = {{ item.parent_dirs_mode | d("0755") }}
+[0].when = ((item.parent_dirs_create | d(True) | bool) and item.dest | d() and item.state | d("present") != 'absent')
+[0].loop = {{ q("flattened", owncloud__user_files
+                           + owncloud__user_files_group
+                           + owncloud__user_files_host) }}
+[1].name = Copy files to ownCloud user profiles
+[1]["ansible.builtin.copy"].dest = {{ owncloud__data_path + "/" + item.dest }}
+[1]["ansible.builtin.copy"].src = {{ item.src | d(omit) }}
+[1]["ansible.builtin.copy"].content = {{ item.content | d(omit) }}
+[1]["ansible.builtin.copy"].owner = {{ item.owner | d(owncloud__app_user) }}
+[1]["ansible.builtin.copy"].group = {{ item.group | d(owncloud__app_group) }}
+[1]["ansible.builtin.copy"].mode = {{ item.mode | d("u=rwX,g=rX,o=rX") }}
+[1]["ansible.builtin.copy"].selevel = {{ item.selevel | d(omit) }}
+[1]["ansible.builtin.copy"].serole = {{ item.serole | d(omit) }}
+[1]["ansible.builtin.copy"].setype = {{ item.setype | d(omit) }}
+[1]["ansible.builtin.copy"].seuser = {{ item.seuser | d(omit) }}
+[1]["ansible.builtin.copy"].follow = {{ item.follow | d(omit) }}
+[1]["ansible.builtin.copy"].force = {{ item.force | d(omit) }}
+[1]["ansible.builtin.copy"].backup = {{ item.backup | d(omit) }}
+[1]["ansible.builtin.copy"].validate = {{ item.validate | d(omit) }}
+[1]["ansible.builtin.copy"].remote_src = {{ item.remote_src | d(omit) }}
+[1]["ansible.builtin.copy"].directory_mode = {{ item.directory_mode | d(omit) }}
+[1].register = owncloud__register_create_user_files
+[1].loop = {{ q("flattened", owncloud__user_files
+                           + owncloud__user_files_group
+                           + owncloud__user_files_host) }}
+[1].when = ((item.src | d() or item.content | d()) and item.dest | d() and (item.state | d('present') != 'absent'))
+[2].name = Delete files on remote hosts
+[2]["ansible.builtin.file"].path = {{ owncloud__data_path + "/" + item.dest }}
+[2]["ansible.builtin.file"].state = absent
+[2].register = owncloud__register_delete_user_files
+[2].loop = {{ q("flattened", owncloud__user_files
+                           + owncloud__user_files_group
+                           + owncloud__user_files_host) }}
+[2].when = (item.dest | d() and (item.state | d('present') == 'absent'))
+[3].name = Run occ commands as specified in the inventory
+[3]["ansible.builtin.include_tasks"] = run_occ.yml
+[3].loop_control.loop_var = owncloud__files_scan_item
+[3].when = owncloud__files_scan_item is changed
+[3].with_items = {{ (owncloud__register_create_user_files.results | d([])
+                   + owncloud__register_delete_user_files.results | d([]))
+                  if (owncloud__register_create_user_files is defined and
+                      owncloud__register_create_user_files is not skipped)
+                  else [] }}

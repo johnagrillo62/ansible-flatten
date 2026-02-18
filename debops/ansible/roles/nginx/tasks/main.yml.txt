@@ -20,7 +20,6 @@
                            + nginx_default_servers | d([])
                            + nginx_internal_servers | d([])
                            + nginx_dependent_servers | d([])) }}
-
 [5].name = Check if nginx is installed
 [5]["ansible.builtin.stat"].path = /usr/sbin/nginx
 [5].register = nginx_register_installed

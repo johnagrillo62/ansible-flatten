@@ -9,17 +9,16 @@ etherpad_system_name = etherpad-lite
 etherpad_user = {{ etherpad_system_name }}
 etherpad_group = {{ etherpad_system_name }}
 etherpad_home = {{ (ansible_local.fhs.app | d("/var/local"))
-                   + "/" + etherpad_user }} 
+                   + "/" + etherpad_user }}
 etherpad__shell = /usr/sbin/nologin
 etherpad_src_dir = {{ (ansible_local.fhs.src | d("/usr/local/src"))
-                      + "/" + etherpad_system_name }} 
+                      + "/" + etherpad_system_name }}
 etherpad_log_dir = {{ (ansible_local.fhs.log | d("/var/log"))
-                      + "/" + etherpad_system_name }} 
+                      + "/" + etherpad_system_name }}
 etherpad_log_to_file = False
 etherpad_version = {{ "1.7.0"
                       if (ansible_local.nodejs.npm_version | d() is version("6.4.0", "<"))
                       else "1.7.5" }}
-
 etherpad_source_address = https://github.com/ether
 etherpad_repository = etherpad-lite
 etherpad_dependencies = True
@@ -52,13 +51,11 @@ etherpad_database_password = {{ lookup('password', secret + '/'
                                          if ansible_local.postgresql.port | d()
                                          else ''))
                                 + '/credentials/' + etherpad_database_user + '/password length=48') }}
-
 etherpad__database = {{ "mysql"
                         if (ansible_local | d() and ansible_local.mariadb is defined)
                         else ("postgres"
                               if (ansible_local | d() and ansible_local.postgresql is defined)
                               else "sqlite") }}
-
 etherpad_database_connection = socket
 etherpad_database_config.dirty.filename = var/dirty.db
 etherpad_database_config.sqlite.filename = var/sqlite.db
@@ -89,12 +86,10 @@ etherpad__default_plugins[0].name = pg
 etherpad__default_plugins[0].state = {{ "present"
                if (etherpad__database == "postgres")
                else "absent" }}
-
 etherpad__default_plugins[1].name = sqlite3
 etherpad__default_plugins[1].state = {{ "present"
                if (etherpad__database == "sqlite")
                else "absent" }}
-
 etherpad__default_plugins[2] = gyp
 etherpad__default_plugins[3] = bcrypt
 etherpad__default_plugins[4] = ep_adminpads

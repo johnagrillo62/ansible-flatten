@@ -24,7 +24,6 @@ metricbeat__combined_configuration = {{ metricbeat__original_configuration
                                         + metricbeat__configuration
                                         + metricbeat__group_configuration
                                         + metricbeat__host_configuration }}
-
 metricbeat__default_snippets[0].name = modules.d/system.yml
 metricbeat__default_snippets[0].divert = True
 metricbeat__default_snippets[0].config[0].module = system
@@ -50,9 +49,7 @@ metricbeat__combined_snippets = {{ metricbeat__default_snippets
                                    + metricbeat__snippets
                                    + metricbeat__group_snippets
                                    + metricbeat__host_snippets }}
-
 metricbeat__combined_keys = {{ metricbeat__keys
                                + metricbeat__group_keys
                                + metricbeat__host_keys }}
-
 metricbeat__extrepo__dependent_sources[0] = elastic

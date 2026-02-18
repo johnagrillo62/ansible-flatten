@@ -37,11 +37,9 @@ fhs__default_directories[15].path = /var/log
 fhs__default_directories[15].mode = {{ "u=rwX,g=rwX,o=rX"
               if (ansible_distribution in ["Ubuntu", "Linux Mint"])
               else omit }}
-
 fhs__default_directories[16].name = spool
 fhs__default_directories[16].path = /var/spool
 fhs__combined_directories = {{ fhs__default_directories
                                + fhs__directories
                                + fhs__group_directories
                                + fhs__host_directories }}
-

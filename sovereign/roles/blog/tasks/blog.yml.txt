@@ -1,12 +1,11 @@
-doc[0][0].name = Create directory for blog HTML
-doc[0][0].file = state=directory path=/var/www/{{ domain }} group=www-data owner={{ main_user_name }}
-doc[0][1].name = Rename existing Apache blog virtualhost
-doc[0][1].command = mv /etc/apache2/sites-available/{{ domain }} /etc/apache2/sites-available/{{ domain }}.conf removes=/etc/apache2/sites-available/{{ domain }}
-doc[0][2].name = Remove old sites-enabled/{{ domain }} symlink (new one will be created by a2ensite)
-doc[0][2].file = path=/etc/apache2/sites-enabled/{{ domain }} state=absent
-doc[0][3].name = Configure the Apache HTTP server for the blog
-doc[0][3].template = src=etc_apache2_sites-available_blog.j2 dest=/etc/apache2/sites-available/{{ domain }}.conf group=root owner=root
-doc[0][4].name = Enable blog site
-doc[0][4].command = a2ensite {{ domain }}.conf creates=/etc/apache2/sites-enabled/{{ domain }}.conf
-doc[0][4].notify = restart apache
-doc[1] = 
+[0].name = Create directory for blog HTML
+[0].file = state=directory path=/var/www/{{ domain }} group=www-data owner={{ main_user_name }}
+[1].name = Rename existing Apache blog virtualhost
+[1].command = mv /etc/apache2/sites-available/{{ domain }} /etc/apache2/sites-available/{{ domain }}.conf removes=/etc/apache2/sites-available/{{ domain }}
+[2].name = Remove old sites-enabled/{{ domain }} symlink (new one will be created by a2ensite)
+[2].file = path=/etc/apache2/sites-enabled/{{ domain }} state=absent
+[3].name = Configure the Apache HTTP server for the blog
+[3].template = src=etc_apache2_sites-available_blog.j2 dest=/etc/apache2/sites-available/{{ domain }}.conf group=root owner=root
+[4].name = Enable blog site
+[4].command = a2ensite {{ domain }}.conf creates=/etc/apache2/sites-enabled/{{ domain }}.conf
+[4].notify = restart apache
