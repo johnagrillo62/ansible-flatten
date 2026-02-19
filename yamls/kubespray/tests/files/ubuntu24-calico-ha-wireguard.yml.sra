@@ -1,0 +1,7 @@
+(playbook "kubespray/tests/files/ubuntu24-calico-ha-wireguard.yml"
+  (cloud_image "ubuntu-2404")
+  (mode "ha")
+  (calico_wireguard_enabled "true")
+  (auto_renew_certificates "true")
+  (kube_proxy_mode "iptables")
+  (enable_nodelocaldns "false"))

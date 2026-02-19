@@ -1,0 +1,33 @@
+(playbook "ansible-tuto/step-10/haproxy.yml"
+    (play
+    (hosts "web")
+    (gather_facts "true"))
+    (play
+    (hosts "haproxy")
+    (tasks
+      (task "Installs haproxy load balancer"
+        (apt 
+          (pkg "haproxy")
+          (state "present")
+          (update_cache "true")))
+      (task "Pushes configuration"
+        (template 
+          (src "templates/haproxy.cfg.j2")
+          (dest "/etc/haproxy/haproxy.cfg")
+          (mode "0640")
+          (owner "root")
+          (group "root"))
+        (notify (list
+            "restart haproxy")))
+      (task "Sets default starting flag to 1"
+        (lineinfile 
+          (dest "/etc/default/haproxy")
+          (regexp "^ENABLED")
+          (line "ENABLED=1"))
+        (notify (list
+            "restart haproxy"))))
+    (handlers
+      (task "restart haproxy"
+        (service 
+          (name "haproxy")
+          (state "restarted"))))))

@@ -1,0 +1,81 @@
+(playbook "debops/ansible/roles/influxdb/tasks/manage_contents.yml"
+  (tasks
+    (task "Drop databases if requested"
+      (community.general.influxdb_database 
+        (database_name (jinja "{{ item.database | d(item.name) }}"))
+        (state "absent")
+        (hostname (jinja "{{ influxdb__server }}"))
+        (port (jinja "{{ influxdb__port }}"))
+        (ssl (jinja "{{ influxdb__pki }}"))
+        (password (jinja "{{ influxdb__root_password }}"))
+        (proxies (jinja "{{ item.proxies | d(influxdb__proxies | d(omit)) }}"))
+        (validate_certs (jinja "{{ item.validate_certs | d(influxdb__validate_certs | d(True)) }}")))
+      (loop (jinja "{{ q(\"flattened\", influxdb__databases + influxdb__dependent_databases | d([])) }}"))
+      (delegate_to (jinja "{{ influxdb__delegate_to }}"))
+      (when "((item.database | d(False) or item.name | d(False)) and (item.state is defined and item.state == 'absent'))")
+      (no_log (jinja "{{ debops__no_log | d(True) }}")))
+    (task "Create databases"
+      (community.general.influxdb_database 
+        (database_name (jinja "{{ item.database | d(item.name) }}"))
+        (state "present")
+        (hostname (jinja "{{ influxdb__server }}"))
+        (port (jinja "{{ influxdb__port }}"))
+        (ssl (jinja "{{ influxdb__pki }}"))
+        (password (jinja "{{ influxdb__root_password }}"))
+        (proxies (jinja "{{ item.proxies | d(influxdb__proxies | d(omit)) }}"))
+        (validate_certs (jinja "{{ item.validate_certs | d(influxdb__validate_certs | d(True)) }}")))
+      (loop (jinja "{{ q(\"flattened\", influxdb__databases + influxdb__dependent_databases | d([])) }}"))
+      (delegate_to (jinja "{{ influxdb__delegate_to }}"))
+      (when "((item.database | d(False) or item.name | d(False)) and (item.state is undefined or item.state != 'absent'))")
+      (no_log (jinja "{{ debops__no_log | d(True) }}")))
+    (task "Create retention policies"
+      (community.general.influxdb_retention_policy 
+        (policy_name (jinja "{{ item.policy | d(item.name) }}"))
+        (database_name (jinja "{{ item.database }}"))
+        (duration (jinja "{{ item.duration }}"))
+        (replication (jinja "{{ item.replication }}"))
+        (default (jinja "{{ item.default | d(False) }}"))
+        (hostname (jinja "{{ influxdb__server }}"))
+        (port (jinja "{{ influxdb__port }}"))
+        (ssl (jinja "{{ influxdb__pki }}"))
+        (password (jinja "{{ influxdb__root_password }}"))
+        (proxies (jinja "{{ item.proxies | d(influxdb__proxies | d(omit)) }}"))
+        (validate_certs (jinja "{{ item.validate_certs | d(influxdb__validate_certs | d(True)) }}")))
+      (loop (jinja "{{ q(\"flattened\", influxdb__retention_policies + influxdb__dependent_retention_policies | d([])) }}"))
+      (delegate_to (jinja "{{ influxdb__delegate_to }}"))
+      (when "item.policy | d(False) or item.name | d(False)")
+      (no_log (jinja "{{ debops__no_log | d(True) }}")))
+    (task "Drop user accounts if requested"
+      (community.general.influxdb_user 
+        (user_name (jinja "{{ item.user | d(item.name) }}"))
+        (state "absent")
+        (hostname (jinja "{{ influxdb__server }}"))
+        (port (jinja "{{ influxdb__port }}"))
+        (ssl (jinja "{{ influxdb__pki }}"))
+        (password (jinja "{{ influxdb__root_password }}"))
+        (proxies (jinja "{{ item.proxies | d(influxdb__proxies | d(omit)) }}"))
+        (validate_certs (jinja "{{ item.validate_certs | d(influxdb__validate_certs | d(True)) }}")))
+      (loop (jinja "{{ q(\"flattened\", influxdb__users + influxdb__dependent_users) }}"))
+      (delegate_to (jinja "{{ influxdb__delegate_to }}"))
+      (when "((item.user | d(False) or item.name | d(False)) and (item.state is defined and item.state == \"absent\"))")
+      (no_log (jinja "{{ debops__no_log | d(True) }}")))
+    (task "Create user accounts"
+      (community.general.influxdb_user 
+        (user_name (jinja "{{ item.user | d(item.name) }}"))
+        (user_password (jinja "{{ item.password | d(lookup(\"password\",
+                       secret + \"/influxdb/\" + influxdb__server +
+                       \"/credentials/\" + item.user | d(item.name) + \"/password \" +
+                       \"length=\" + influxdb__password_length)) }}"))
+        (grants (jinja "{{ item.grants | d(omit) }}"))
+        (admin (jinja "{{ item.admin | d(False) }}"))
+        (state "present")
+        (hostname (jinja "{{ influxdb__server }}"))
+        (port (jinja "{{ influxdb__port }}"))
+        (ssl (jinja "{{ influxdb__pki }}"))
+        (password (jinja "{{ influxdb__root_password }}"))
+        (proxies (jinja "{{ item.proxies | d(influxdb__proxies | d(omit)) }}"))
+        (validate_certs (jinja "{{ item.validate_certs | d(influxdb__validate_certs | d(True)) }}")))
+      (loop (jinja "{{ q(\"flattened\", influxdb__users + influxdb__dependent_users) }}"))
+      (delegate_to (jinja "{{ influxdb__delegate_to }}"))
+      (when "((item.user | d(False) or item.name | d(False)) and (item.state is undefined or item.state != \"absent\"))")
+      (no_log (jinja "{{ debops__no_log | d(True) }}")))))

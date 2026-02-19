@@ -1,0 +1,5 @@
+(playbook "ansible-for-devops/docker-hubot/roles/hubot-slack/defaults/main.yml"
+  (hubot_home "/home/hubot")
+  (hubot_owner "Ansible for DevOps")
+  (hubot_name "a4dbot")
+  (hubot_description "Ansible for DevOps test bot."))

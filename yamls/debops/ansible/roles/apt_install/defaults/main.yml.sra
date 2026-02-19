@@ -1,0 +1,211 @@
+(playbook "debops/ansible/roles/apt_install/defaults/main.yml"
+  (apt_install__enabled "True")
+  (apt_install__distribution (jinja "{{ ansible_local.core.distribution
+                                | d(ansible_lsb.id | d(ansible_distribution)) }}"))
+  (apt_install__distribution_release (jinja "{{ ansible_local.core.distribution_release
+                                        | d(ansible_lsb.codename | d(ansible_distribution_release)) }}"))
+  (apt_install__archive_areas_map 
+    (Debian (list
+        "main"
+        "contrib"
+        "non-free"))
+    (Ubuntu (list
+        "main"
+        "restricted"
+        "universe"
+        "multiverse")))
+  (apt_install__archive_areas (jinja "{{ ansible_local.apt.components
+                                 | d(apt_install__archive_areas_map[apt_install__distribution] | d([])) }}"))
+  (apt_install__condition_map 
+    (distribution (jinja "{{ apt_install__distribution }}"))
+    (release (jinja "{{ apt_install__distribution_release }}"))
+    (areas (jinja "{{ apt_install__archive_areas }}")))
+  (apt_install__state (jinja "{{ \"present\"
+                        if (ansible_local | d() and ansible_local.apt_install | d() and
+                            (ansible_local.apt_install.configured | d(True)) | bool)
+                        else \"latest\" }}"))
+  (apt_install__no_kernel_hints (jinja "{{ True
+                                  if (\"needrestart\" in apt_install__conditional_whitelist_packages)
+                                  else False }}"))
+  (apt_install__recommends "False")
+  (apt_install__update_cache "True")
+  (apt_install__cache_valid_time (jinja "{{ ansible_local.core.cache_valid_time | d(60 * 60 * 24 * 7) }}"))
+  (apt_install__debconf (list))
+  (apt_install__group_debconf (list))
+  (apt_install__host_debconf (list))
+  (apt_install__base_packages (list
+      "ed"
+      "lsb-release"
+      "make"
+      "git"
+      "curl"
+      "rsync"
+      "bsdutils"
+      "acl"))
+  (apt_install__shell_packages (list
+      "ncurses-term"
+      "tmux"
+      "less"
+      "file"
+      "psmisc"
+      "lsof"
+      "tree"
+      "htop"
+      "iftop"
+      "nload"
+      "nmon"
+      "mtr-tiny"
+      "mc"))
+  (apt_install__editor_packages (list
+      "vim"))
+  (apt_install__packages (list))
+  (apt_install__group_packages (list))
+  (apt_install__host_packages (list))
+  (apt_install__dependent_packages (list))
+  (apt_install__conditional_whitelist_packages (list
+      "irqbalance"
+      "uptimed"
+      "libpam-systemd"
+      "haveged"
+      "gnupg-curl"
+      "needrestart"
+      "open-vm-tools"))
+  (apt_install__conditional_packages (list
+      
+      (name "irqbalance")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\"
+               if (ansible_processor_cores >= 2 and
+                   (ansible_virtualization_role is undefined or
+                    ansible_virtualization_role not in [\"guest\"]))
+               else \"absent\" }}"))
+      
+      (name "uptimed")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\"
+               if (ansible_virtualization_role is undefined or
+                   ansible_virtualization_role not in [\"guest\"])
+               else \"absent\" }}"))
+      
+      (name "libpam-systemd")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\" if (ansible_service_mgr == \"systemd\") else \"absent\" }}"))
+      
+      (name "haveged")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\"
+               if (ansible_virtualization_role | d(\"guest\") in [\"guest\"] and
+                   ansible_virtualization_type | d(\"unknown\") not in [\"lxc\", \"openvz\"] and
+                   not (ansible_local | d() and ansible_local.apt_install | d() and
+                        ansible_local.apt_install.have_virtual_rng | d(False) | bool))
+               else \"absent\" }}"))
+      
+      (name "gnupg-curl")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\"
+               if ansible_distribution_release in
+                  [\"trusty\", \"xenial\"]
+               else \"absent\" }}"))
+      
+      (name "needrestart")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state "present")
+      
+      (name "open-vm-tools")
+      (whitelist (jinja "{{ apt_install__conditional_whitelist_packages }}"))
+      (state (jinja "{{ \"present\"
+               if (ansible_virtualization_role | d(\"guest\") in [\"guest\"] and
+                   ansible_virtualization_type | d(\"unknown\") in [\"VMware\"])
+               else \"absent\" }}"))))
+  (apt_install__firmware_packages (list
+      
+      (name "amd64-microcode")
+      (distribution (list
+          "Debian"
+          "Devuan"
+          "Ubuntu"))
+      (areas (jinja "{{ [\"main\"]
+               if ansible_distribution in [\"Ubuntu\"]
+               else [\"non-free\"] }}"))
+      (state (jinja "{{ \"present\"
+               if ansible_virtualization_role == \"host\" and
+                  \"AuthenticAMD\" in ansible_processor
+               else \"absent\" }}"))
+      
+      (name "firmware-linux-free")
+      (distribution (list
+          "Debian"))
+      (state (jinja "{{ \"present\" if (ansible_form_factor in [\"Rack Mount Chassis\"])
+                         and (ansible_virtualization_role is undefined or
+                              ansible_virtualization_role not in [\"guest\"])
+                         and (ansible_kernel.find(\"-pve\") == \"-1\")
+                         else \"absent\" }}"))
+      
+      (name "firmware-linux-nonfree")
+      (distribution (list
+          "Debian"))
+      (areas (list
+          "non-free"))
+      (state (jinja "{{ \"present\" if (ansible_form_factor in [\"Rack Mount Chassis\"])
+                         and (ansible_virtualization_role is undefined or
+                              ansible_virtualization_role not in [\"guest\"])
+                         and (ansible_kernel.find(\"-pve\") == \"-1\")
+                         else \"absent\" }}"))
+      
+      (name "intel-microcode")
+      (distribution (list
+          "Debian"
+          "Devuan"
+          "Ubuntu"))
+      (areas (jinja "{{ [\"main\"]
+               if ansible_distribution in [\"Ubuntu\"]
+               else [\"non-free\"] }}"))
+      (state (jinja "{{ \"present\" if ansible_virtualization_role == \"host\" and
+                            \"GenuineIntel\" in ansible_processor
+                         else \"absent\" }}"))
+      
+      (name "linux-firmware")
+      (distribution (list
+          "Ubuntu"))
+      (state (jinja "{{ \"present\" if (ansible_form_factor in [\"Rack Mount Chassis\"])
+                             and (ansible_virtualization_role is undefined or
+                              ansible_virtualization_role not in [\"guest\"])
+                         else \"absent\" }}"))
+      
+      (name "linux-firmware-nonfree")
+      (distribution (list
+          "Ubuntu"))
+      (release (list
+          "precise"
+          "trusty"
+          "wily"))
+      (areas (list
+          "multiverse"))
+      (state (jinja "{{ \"present\" if (ansible_form_factor in [\"Rack Mount Chassis\"])
+                             and (ansible_virtualization_role is undefined or
+                              ansible_virtualization_role not in [\"guest\"])
+                         else \"absent\" }}"))))
+  (apt_install__all_packages (list
+      (jinja "{{ apt_install__base_packages }}")
+      (jinja "{{ apt_install__shell_packages }}")
+      (jinja "{{ apt_install__editor_packages }}")
+      (jinja "{{ apt_install__packages }}")
+      (jinja "{{ apt_install__group_packages }}")
+      (jinja "{{ apt_install__host_packages }}")
+      (jinja "{{ apt_install__dependent_packages }}")
+      (jinja "{{ apt_install__conditional_packages }}")
+      (jinja "{{ apt_install__firmware_packages }}")))
+  (apt_install__default_alternatives (list
+      
+      (name "editor")
+      (path "/usr/bin/vim.basic")))
+  (apt_install__alternatives (list))
+  (apt_install__group_alternatives (list))
+  (apt_install__host_alternatives (list))
+  (apt_install__apt_preferences__dependent_list (list
+      
+      (package "needrestart needrestart-*")
+      (backports (list
+          "trusty"))
+      (reason "Better support for container technologies")
+      (by_role "debops.apt_install"))))

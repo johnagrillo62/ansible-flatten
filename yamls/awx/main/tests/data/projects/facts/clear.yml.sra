@@ -1,0 +1,8 @@
+(playbook "awx/main/tests/data/projects/facts/clear.yml"
+    (play
+    (hosts "all")
+    (gather_facts "false")
+    (connection "local")
+    (tasks
+      
+      (meta "clear_facts"))))

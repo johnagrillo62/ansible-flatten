@@ -1,0 +1,25 @@
+(playbook "debops/ansible/roles/minio/tasks/main_env.yml"
+  (tasks
+    (task "Prepare minio environment"
+      (ansible.builtin.set_fact 
+        (minio__env_upstream_url_release (jinja "{{ ansible_local.minio.release_tag
+                                         if (ansible_local.minio.release_tag | d() and
+                                             ansible_local.minio.release_tag.startswith(\"RELEASE.\") and
+                                             not minio__upstream_upgrade | bool)
+                                         else (lookup(\"url\",
+                                                      (minio__upstream_url_mirror + minio__upstream_platform
+                                                       + \"/minio.sha256sum\"))
+                                               | regex_search(\"minio\\.RELEASE\\..+$\")
+                                               | regex_replace(\"^minio\\.\", \"\")) }}"))
+        (minio__env_etc_services_dependent_list (jinja "{{ lookup(\"template\",
+                                                \"lookup/minio__env_etc_services_dependent_list.j2\",
+                                                convert_data=False) | from_yaml }}"))
+        (minio__env_ferm_dependent_rules (jinja "{{ lookup(\"template\",
+                                                \"lookup/minio__env_ferm_dependent_rules.j2\",
+                                                convert_data=False) | from_yaml }}"))
+        (minio__env_nginx_dependent_upstreams (jinja "{{ lookup(\"template\",
+                                                \"lookup/minio__env_nginx_dependent_upstreams.j2\",
+                                                convert_data=False) | from_yaml }}"))
+        (minio__env_nginx_dependent_servers (jinja "{{ lookup(\"template\",
+                                                \"lookup/minio__env_nginx_dependent_servers.j2\",
+                                                convert_data=False) | from_yaml }}"))))))

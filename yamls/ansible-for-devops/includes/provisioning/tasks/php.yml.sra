@@ -1,0 +1,9 @@
+(playbook "ansible-for-devops/includes/provisioning/tasks/php.yml"
+  (tasks
+    (task "Adjust OpCache memory setting."
+      (lineinfile 
+        (dest "/etc/php/7.4/apache2/conf.d/10-opcache.ini")
+        (regexp "^opcache.memory_consumption")
+        (line "opcache.memory_consumption = 96")
+        (state "present"))
+      (notify "restart apache"))))

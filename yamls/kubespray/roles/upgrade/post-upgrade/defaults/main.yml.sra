@@ -1,0 +1,4 @@
+(playbook "kubespray/roles/upgrade/post-upgrade/defaults/main.yml"
+  (upgrade_post_cilium_wait_timeout "120s")
+  (upgrade_node_post_upgrade_confirm "false")
+  (upgrade_node_post_upgrade_pause_seconds "0"))

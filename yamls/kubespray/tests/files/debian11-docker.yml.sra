@@ -1,0 +1,5 @@
+(playbook "kubespray/tests/files/debian11-docker.yml"
+  (cloud_image "debian-11")
+  (container_manager "docker")
+  (etcd_deployment_type "docker")
+  (resolvconf_mode "docker_dns"))

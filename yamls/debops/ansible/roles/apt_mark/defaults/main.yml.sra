@@ -1,0 +1,24 @@
+(playbook "debops/ansible/roles/apt_mark/defaults/main.yml"
+  (apt_mark__enabled "True")
+  (apt_mark__autoremove_recommends_important (jinja "{{ False
+                                               if (apt_mark__default_packages | d()
+                                                   or apt_mark__packages | d()
+                                                   or apt_mark__group_packages | d()
+                                                   or apt_mark__host_packages | d())
+                                               else True }}"))
+  (apt_mark__autoremove_suggests_important (jinja "{{ False
+                                             if (apt_mark__default_packages | d()
+                                                 or apt_mark__packages | d()
+                                                 or apt_mark__group_packages | d()
+                                                 or apt_mark__host_packages | d())
+                                             else True }}"))
+  (apt_mark__default_packages (list))
+  (apt_mark__packages (list))
+  (apt_mark__group_packages (list))
+  (apt_mark__host_packages (list))
+  (apt_mark__dependent_packages (list))
+  (apt_mark__combined_packages (jinja "{{ apt_mark__default_packages
+                                 + apt_mark__dependent_packages
+                                 + apt_mark__packages
+                                 + apt_mark__group_packages
+                                 + apt_mark__host_packages }}")))

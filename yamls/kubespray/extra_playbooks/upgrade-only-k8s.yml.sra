@@ -1,0 +1,82 @@
+(playbook "kubespray/extra_playbooks/upgrade-only-k8s.yml"
+    (play
+    (name "Setup ssh config to use the bastion")
+    (hosts "localhost")
+    (gather_facts "false")
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "bastion-ssh-config")
+        (tags (list
+            "localhost"
+            "bastion"))))
+    (play
+    (name "Bootstrap hosts OS for Ansible")
+    (hosts "k8s_cluster:etcd:calico_rr")
+    (any_errors_fatal (jinja "{{ any_errors_fatal | default(true) }}"))
+    (gather_facts "false")
+    (vars
+      (ansible_ssh_pipelining "false"))
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "bootstrap_os")
+        (tags "bootstrap_os")))
+    (play
+    (name "Preinstall")
+    (hosts "k8s_cluster:etcd:calico_rr")
+    (any_errors_fatal (jinja "{{ any_errors_fatal | default(true) }}"))
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "kubernetes/preinstall")
+        (tags "preinstall")))
+    (play
+    (name "Handle upgrades to control plane components first to maintain backwards compat.")
+    (hosts "kube_control_plane")
+    (any_errors_fatal (jinja "{{ any_errors_fatal | default(true) }}"))
+    (serial "1")
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "upgrade/pre-upgrade")
+        (tags "pre-upgrade")
+      
+        (role "kubernetes/node")
+        (tags "node")
+      
+        (role "kubernetes/control-plane")
+        (tags "master")
+        (upgrade_cluster_setup "true")
+      
+        (role "kubernetes/client")
+        (tags "client")
+      
+        (role "kubernetes-apps/cluster_roles")
+        (tags "cluster-roles")
+      
+        (role "upgrade/post-upgrade")
+        (tags "post-upgrade")))
+    (play
+    (name "Finally handle worker upgrades, based on given batch size")
+    (hosts "kube_node:!kube_control_plane")
+    (any_errors_fatal (jinja "{{ any_errors_fatal | default(true) }}"))
+    (serial (jinja "{{ serial | default('20%') }}"))
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "upgrade/pre-upgrade")
+        (tags "pre-upgrade")
+      
+        (role "kubernetes/node")
+        (tags "node")
+      
+        (role "upgrade/post-upgrade")
+        (tags "post-upgrade")
+      
+        (role "kubespray_defaults"))))

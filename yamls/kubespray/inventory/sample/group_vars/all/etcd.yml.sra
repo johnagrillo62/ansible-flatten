@@ -1,0 +1,3 @@
+(playbook "kubespray/inventory/sample/group_vars/all/etcd.yml"
+  (etcd_data_dir "/var/lib/etcd")
+  (etcd_deployment_type "host"))

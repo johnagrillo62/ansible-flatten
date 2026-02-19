@@ -1,0 +1,6 @@
+(playbook "yaml/roles/mailserver/tasks/checkrbl.yml"
+  (tasks
+    (task "Download check-rbl"
+      (get_url "url=https://raw.githubusercontent.com/lukecyca/check-rbl/479c1d5aa57543ba4c495ef06028fd9092ffdf43/check-rbl.pl dest=/opt/check-rbl.pl sha256sum=0968ea1991b500a2bb39b4aefb05c6bf42a62994774f2c46de5d426d5094508b"))
+    (task "Install nightly check-rbl cronjob"
+      (cron "name=\"check-rbl\" hour=\"2\" minute=\"0\" job=\"perl /opt/check-rbl.pl -i " (jinja "{{ ansible_default_ipv4.address }}") "\""))))

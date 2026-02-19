@@ -1,0 +1,47 @@
+(playbook "sensu-ansible/molecule/shared/base.yml"
+  (dependency 
+    (name "galaxy"))
+  (driver 
+    (name "docker"))
+  (lint 
+    (name "yamllint"))
+  (provisioner 
+    (name "ansible")
+    (config_options 
+      (defaults 
+        (interpreter_python "auto")
+        (callback_whitelist "timer,profile_tasks")
+        (fact_caching "jsonfile")
+        (fact_caching_connection "./cache")
+        (poll_interval "3")
+        (forks "100"))
+      (connection 
+        (pipelining "true")))
+    (playbooks 
+      (prepare "../shared/prepare.yml")
+      (create "../shared/create.yml")
+      (destroy "../shared/destroy.yml")
+      (converge "../shared/playbook.yml")
+      (verify "../shared/verify.yml"))
+    (lint 
+      (name "ansible-lint"))
+    (inventory 
+      (group_vars 
+        (all 
+          (sensu_master "true")
+          (sensu_include_dashboard "true")
+          (sensu_rabbitmq_server "true")
+          (sensu_redis_server "true")
+          (sensu_rabbitmq_host (jinja "{{ ansible_hostname }}"))
+          (sensu_redis_host (jinja "{{ ansible_hostname }}"))
+          (sensu_api_host (jinja "{{ ansible_hostname }}"))
+          (ansible_default_ipv4 
+            (address "127.0.0.1"))
+          (sensu_remote_plugins (list
+              "sensu-plugins-disk-checks"))
+          (sensu_check_interval "60")))))
+  (verifier 
+    (name "inspec")
+    (directory "../shared/tests/")
+    (lint 
+      (name "rubocop"))))

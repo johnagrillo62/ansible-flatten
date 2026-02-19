@@ -1,0 +1,6 @@
+(playbook "kubespray/tests/files/debian12-cilium.yml"
+  (cloud_image "debian-12")
+  (kube_network_plugin "cilium")
+  (ntp_enabled "true")
+  (ntp_package "ntp")
+  (kube_owner "root"))

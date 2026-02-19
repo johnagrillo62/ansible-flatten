@@ -1,0 +1,20 @@
+(playbook "debops/ansible/roles/etc_services/defaults/main.yml"
+  (etc_services__enabled "True")
+  (etc_services__diversion "/etc/services.d/10_debian_etc_services")
+  (etc_services__base_packages (list
+      "netbase"))
+  (etc_services__packages (list))
+  (etc_services__list (list))
+  (etc_services__group_list (list))
+  (etc_services__host_list (list))
+  (etc_services__dependent_list (list))
+  (etc_services__combined_list (list
+      (jinja "{{ etc_services__list }}")
+      (jinja "{{ etc_services__group_list }}")
+      (jinja "{{ etc_services__host_list }}")
+      (jinja "{{ etc_services__dependent_list }}")
+      (jinja "{{ etc_services_list | d([]) }}")
+      (jinja "{{ etc_services_group_list | d([]) }}")
+      (jinja "{{ etc_services_host_list | d([]) }}")
+      (jinja "{{ etc_services_dependent_list | d([]) }}")
+      (jinja "{{ etc_services_dependency_list | d([]) }}"))))

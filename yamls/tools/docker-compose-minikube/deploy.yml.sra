@@ -1,0 +1,8 @@
+(playbook "tools/docker-compose-minikube/deploy.yml"
+    (play
+    (name "Deploy Minikube and connect with AWX")
+    (hosts "localhost")
+    (gather_facts "true")
+    (roles
+      
+        (role "minikube"))))

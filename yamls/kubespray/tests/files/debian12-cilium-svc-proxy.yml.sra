@@ -1,0 +1,7 @@
+(playbook "kubespray/tests/files/debian12-cilium-svc-proxy.yml"
+  (cloud_image "debian-12")
+  (mode "ha")
+  (kube_network_plugin "cilium")
+  (enable_network_policy "true")
+  (cilium_kube_proxy_replacement "true")
+  (kube_owner "root"))

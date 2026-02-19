@@ -1,0 +1,13 @@
+(playbook "ansible-galaxy/vars/layout-root-dir.yml"
+  (__galaxy_server_dir (jinja "{{ galaxy_root }}") "/server")
+  (__galaxy_venv_dir (jinja "{{ galaxy_root }}") "/venv")
+  (__galaxy_config_dir (jinja "{{ galaxy_root }}") "/config")
+  (__galaxy_mutable_data_dir (jinja "{{ galaxy_root }}") "/var")
+  (__galaxy_mutable_config_dir (jinja "{{ galaxy_mutable_data_dir }}") "/config")
+  (__galaxy_cache_dir (jinja "{{ galaxy_mutable_data_dir }}") "/cache")
+  (__galaxy_local_tools_dir (jinja "{{ galaxy_root }}") "/local_tools")
+  (__galaxy_shed_tools_dir (jinja "{{ galaxy_mutable_data_dir }}") "/shed_tools")
+  (__galaxy_tool_dependency_dir (jinja "{{ galaxy_mutable_data_dir }}") "/dependencies")
+  (__galaxy_file_path (jinja "{{ galaxy_root }}") "/datasets")
+  (__galaxy_job_working_directory (jinja "{{ galaxy_root }}") "/jobs")
+  (__galaxy_tool_data_path (jinja "{{ galaxy_mutable_data_dir }}") "/tool_data"))

@@ -1,0 +1,13 @@
+(playbook "yaml/roles/news/defaults/main.yml"
+  (secret_root (jinja "{{ inventory_dir | realpath }}"))
+  (secret_name "secret")
+  (secret (jinja "{{ secret_root + \"/\" + secret_name }}"))
+  (selfoss_domain "news." (jinja "{{ domain }}"))
+  (selfoss_db_username "selfoss")
+  (selfoss_db_password (jinja "{{ lookup('password', secret + '/' + 'selfoss_db_password', length=32) }}"))
+  (selfoss_db_database "selfoss")
+  (selfoss_version "2.16")
+  (selfoss_username (jinja "{{ main_user_name }}"))
+  (selfoss_password_hash (jinja "{{ lookup('password', secret + '/' + 'selfoss_password_hash', length=32, crypt='sha512')|hash('sha512') }}"))
+  (db_admin_username "postgres")
+  (db_admin_password (jinja "{{ lookup('password', secret + '/' + 'db_admin_password', length=32) }}")))

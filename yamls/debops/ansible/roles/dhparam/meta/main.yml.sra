@@ -1,0 +1,27 @@
+(playbook "debops/ansible/roles/dhparam/meta/main.yml"
+  (collections (list
+      "debops.debops"))
+  (dependencies (list))
+  (galaxy_info 
+    (author "Maciej Delmanowski, Robin Schneider")
+    (description "Manage one or multiple sets of Diffie-Hellman Ephemeral parameters")
+    (company "DebOps")
+    (license "GPL-3.0-only")
+    (min_ansible_version "2.2.0")
+    (platforms (list
+        
+        (name "Ubuntu")
+        (versions (list
+            "all"))
+        
+        (name "Debian")
+        (versions (list
+            "all"))))
+    (galaxy_tags (list
+        "encryption"
+        "security"
+        "tls"
+        "ssl"
+        "pki"
+        "weakdh"
+        "logjam"))))

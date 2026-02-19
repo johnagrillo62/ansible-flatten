@@ -1,0 +1,2 @@
+(playbook "kubespray/meta/runtime.yml"
+  (requires_ansible ">=2.18.0,<2.19.0"))

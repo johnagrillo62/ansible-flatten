@@ -1,0 +1,5 @@
+(playbook "yaml/roles/monitoring/defaults/main.yml"
+  (collectd_version "5.4.1")
+  (collectd_librato_version "0.0.10")
+  (collectd_librato_email "")
+  (collectd_librato_api_token ""))

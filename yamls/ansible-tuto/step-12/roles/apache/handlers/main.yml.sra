@@ -1,0 +1,6 @@
+(playbook "ansible-tuto/step-12/roles/apache/handlers/main.yml"
+  (tasks
+    (task "restart apache"
+      (service 
+        (name "apache2")
+        (state "restarted")))))

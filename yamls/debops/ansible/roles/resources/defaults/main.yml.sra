@@ -1,0 +1,53 @@
+(playbook "debops/ansible/roles/resources/defaults/main.yml"
+  (resources__enabled "True")
+  (resources__src (jinja "{{ inventory_dir | realpath + \"/../resources/\" }}"))
+  (resources__time_format "%Y-%m-%dT%H:%M:%S")
+  (resources__parent_dirs_create "True")
+  (resources__parent_dirs_recurse "True")
+  (resources__parent_dirs_owner (jinja "{{ omit }}"))
+  (resources__parent_dirs_group (jinja "{{ omit }}"))
+  (resources__parent_dirs_mode (jinja "{{ omit }}"))
+  (resources__templates (list
+      (jinja "{{ resources__src + \"templates/by-group/all\" }}")))
+  (resources__group_templates (jinja "{{ group_names | map(\"regex_replace\", \"^(.*)$\", resources__src + \"templates/by-group/\\1\") | list }}"))
+  (resources__host_templates (list
+      (jinja "{{ resources__src + \"templates/by-host/\" + inventory_hostname }}")))
+  (resources__paths (list))
+  (resources__group_paths (list))
+  (resources__host_paths (list))
+  (resources__repositories (list))
+  (resources__group_repositories (list))
+  (resources__host_repositories (list))
+  (resources__urls (list))
+  (resources__group_urls (list))
+  (resources__host_urls (list))
+  (resources__archives (list))
+  (resources__group_archives (list))
+  (resources__host_archives (list))
+  (resources__files (list))
+  (resources__group_files (list))
+  (resources__host_files (list))
+  (resources__pip (list))
+  (resources__group_pip (list))
+  (resources__host_pip (list))
+  (resources__file_capabilities (list))
+  (resources__group_file_capabilities (list))
+  (resources__host_file_capabilities (list))
+  (resources__combined_file_capabilities (jinja "{{ resources__file_capabilities
+                                           + resources__group_file_capabilities
+                                           + resources__host_file_capabilities }}"))
+  (resources__delayed_paths (list))
+  (resources__group_delayed_paths (list))
+  (resources__host_delayed_paths (list))
+  (resources__commands (list))
+  (resources__group_commands (list))
+  (resources__host_commands (list))
+  (resources__combined_commands (jinja "{{ resources__commands
+                                  + resources__group_commands
+                                  + resources__host_commands }}"))
+  (resources__replacements (list))
+  (resources__group_replacements (list))
+  (resources__host_replacements (list))
+  (resources__combined_replacements (jinja "{{ resources__replacements
+                                      + resources__group_replacements
+                                      + resources__host_replacements }}")))

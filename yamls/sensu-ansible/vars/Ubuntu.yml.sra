@@ -1,0 +1,9 @@
+(playbook "sensu-ansible/vars/Ubuntu.yml"
+  (sensu_redis_pkg_name "redis-server")
+  (sensu_redis_service_name "redis-server")
+  (sensu_erlang_pin_package "esl-erlang erlang*")
+  (sensu_erlang_pin_version "1:21.3*")
+  (sensu_rabbitmq_signing_key "https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc")
+  (sensu_rabbitmq_repo "deb https://dl.bintray.com/rabbitmq/debian " (jinja "{{ ansible_distribution_release }}") " main")
+  (sensu_rabbitmq_erlang_signing_key "https://packages.erlang-solutions.com/debian/erlang_solutions.asc")
+  (sensu_rabbitmq_erlang_repo "deb https://packages.erlang-solutions.com/ubuntu " (jinja "{{ ansible_distribution_release }}") " contrib"))

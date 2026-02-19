@@ -1,0 +1,6 @@
+(playbook "kubespray/roles/remove_node/pre_remove/defaults/main.yml"
+  (allow_ungraceful_removal "false")
+  (drain_grace_period "300")
+  (drain_timeout "360s")
+  (drain_retries "3")
+  (drain_retry_delay_seconds "10"))

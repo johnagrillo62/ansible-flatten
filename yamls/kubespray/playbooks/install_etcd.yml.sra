@@ -1,0 +1,28 @@
+(playbook "kubespray/playbooks/install_etcd.yml"
+    (play
+    (name "Add worker nodes to the etcd play if needed")
+    (hosts "kube_node")
+    (roles
+      
+        (role "kubespray_defaults"))
+    (tasks
+      (task "Check if nodes needs etcd client certs (depends on network_plugin)"
+        (group_by 
+          (key "_kubespray_needs_etcd"))
+        (when (list
+            "kube_network_plugin in [\"flannel\", \"canal\", \"cilium\"] or (cilium_deploy_additionally | default(false)) or (kube_network_plugin == \"calico\" and calico_datastore == \"etcd\")"
+            "etcd_deployment_type != \"kubeadm\""))
+        (tags "etcd"))))
+    (play
+    (name "Install etcd")
+    (hosts "etcd:kube_control_plane:_kubespray_needs_etcd")
+    (gather_facts "false")
+    (any_errors_fatal (jinja "{{ any_errors_fatal | default(true) }}"))
+    (environment (jinja "{{ proxy_disable_env }}"))
+    (roles
+      
+        (role "kubespray_defaults")
+      
+        (role "etcd")
+        (tags "etcd")
+        (when "etcd_deployment_type != \"kubeadm\""))))

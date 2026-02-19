@@ -1,0 +1,5 @@
+(playbook "kubespray/tests/files/rockylinux10-calico.yml"
+  (cloud_image "rockylinux-10-extra")
+  (vm_memory "3072")
+  (metrics_server_enabled "true")
+  (loadbalancer_apiserver_type "haproxy"))

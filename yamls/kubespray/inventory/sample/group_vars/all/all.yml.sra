@@ -1,0 +1,16 @@
+(playbook "kubespray/inventory/sample/group_vars/all/all.yml"
+  (bin_dir "/usr/local/bin")
+  (loadbalancer_apiserver_port "6443")
+  (loadbalancer_apiserver_healthcheck_port "8081")
+  (no_proxy_exclude_workers "false")
+  (kube_webhook_token_auth "false")
+  (kube_webhook_token_auth_url_skip_tls_verify "false")
+  (ntp_enabled "false")
+  (ntp_manage_config "false")
+  (ntp_servers (list
+      "0.pool.ntp.org iburst"
+      "1.pool.ntp.org iburst"
+      "2.pool.ntp.org iburst"
+      "3.pool.ntp.org iburst"))
+  (unsafe_show_logs "false")
+  (allow_unsupported_distribution_setup "false"))

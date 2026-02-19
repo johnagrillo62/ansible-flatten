@@ -1,0 +1,5 @@
+(playbook "kubespray/tests/files/debian13-cilium.yml"
+  (cloud_image "debian-13")
+  (kube_network_plugin "cilium")
+  (kube_owner "root")
+  (prometheus_operator_crds_enabled "true"))

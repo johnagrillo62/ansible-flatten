@@ -1,0 +1,10 @@
+(playbook "kubespray/roles/kubernetes-apps/external_cloud_controller/huaweicloud/defaults/main.yml"
+  (external_huaweicloud_auth_url (jinja "{{ lookup('env', 'OS_AUTH_URL') }}"))
+  (external_huaweicloud_access_key (jinja "{{ lookup('env', 'OS_ACCESS_KEY') }}"))
+  (external_huaweicloud_secret_key (jinja "{{ lookup('env', 'OS_SECRET_KEY') }}"))
+  (external_huaweicloud_region (jinja "{{ lookup('env', 'OS_REGION_NAME') }}"))
+  (external_huaweicloud_project_id (jinja "{{ lookup('env', 'OS_TENANT_ID') | default(lookup('env', 'OS_PROJECT_ID'), true) }}"))
+  (external_huaweicloud_cloud (jinja "{{ lookup('env', 'OS_CLOUD') }}"))
+  (external_huawei_cloud_controller_extra_args )
+  (external_huawei_cloud_controller_image_repo "swr.ap-southeast-1.myhuaweicloud.com")
+  (external_huawei_cloud_controller_image_tag "v0.26.8"))

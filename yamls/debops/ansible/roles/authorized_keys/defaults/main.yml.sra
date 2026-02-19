@@ -1,0 +1,12 @@
+(playbook "debops/ansible/roles/authorized_keys/defaults/main.yml"
+  (authorized_keys__enabled "True")
+  (authorized_keys__path "/etc/ssh/authorized_keys")
+  (authorized_keys__system "True")
+  (authorized_keys__identities (list))
+  (authorized_keys__group_identities (list))
+  (authorized_keys__host_identities (list))
+  (authorized_keys__dependent_identities (list))
+  (authorized_keys__combined_identities (jinja "{{ authorized_keys__identities
+                                          + authorized_keys__group_identities
+                                          + authorized_keys__host_identities
+                                          + authorized_keys__dependent_identities }}")))

@@ -1,0 +1,10 @@
+(playbook "yaml/roles/readlater/defaults/main.yml"
+  (secret_root (jinja "{{ inventory_dir | realpath }}"))
+  (secret_name "secret")
+  (secret (jinja "{{ secret_root + \"/\" + secret_name }}"))
+  (wallabag_version "1.9.1")
+  (wallabag_domain "read." (jinja "{{ domain }}"))
+  (wallabag_salt (jinja "{{ lookup('password', secret + '/' + 'wallabag_salt', length=32) }}"))
+  (wallabag_db_username "wallabag")
+  (wallabag_db_password (jinja "{{ lookup('password', secret + '/' + 'wallabag_db_password', length=32) }}"))
+  (wallabag_db_database "wallabag"))

@@ -1,0 +1,10 @@
+(playbook "debops/ansible/roles/smstools/vars/main.yml"
+  (smstools_service_user "sms")
+  (smstools_service_group "sms")
+  (smstools_service_home "/srv/users/" (jinja "{{ smstools_service_user }}"))
+  (smstools_service_name "sms")
+  (smstools_service_port "9898")
+  (smstools_mail_transport_sendsms "/usr/local/bin/sendsms")
+  (smstools_mail_transport_senders "/etc/sms-senders")
+  (smstools_mail_transport_msgdel "/etc/sms-msgdel")
+  (smstools_mail_transport_maxchars "158"))

@@ -1,0 +1,8 @@
+(playbook "kubespray/roles/kubernetes-apps/policy_controller/calico/defaults/main.yml"
+  (calico_policy_controller_cpu_limit "1000m")
+  (calico_policy_controller_memory_limit "256M")
+  (calico_policy_controller_cpu_requests "30m")
+  (calico_policy_controller_memory_requests "64M")
+  (calico_policy_controller_deployment_nodeselector "kubernetes.io/os: linux")
+  (calico_policy_controller_log_level "info")
+  (calico_cert_dir "/etc/calico/certs"))

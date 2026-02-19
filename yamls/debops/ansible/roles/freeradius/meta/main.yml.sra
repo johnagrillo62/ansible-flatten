@@ -1,0 +1,25 @@
+(playbook "debops/ansible/roles/freeradius/meta/main.yml"
+  (collections (list
+      "debops.debops"))
+  (dependencies (list))
+  (galaxy_info 
+    (author "Maciej Delmanowski")
+    (description "Install and configure FreeRADIUS")
+    (company "DebOps")
+    (license "GPL-3.0-only")
+    (min_ansible_version "2.6.0")
+    (platforms (list
+        
+        (name "Ubuntu")
+        (versions (list
+            "bionic"))
+        
+        (name "Debian")
+        (versions (list
+            "stretch"
+            "buster"))))
+    (galaxy_tags (list
+        "radius"
+        "authentication"
+        "authorization"
+        "networking"))))

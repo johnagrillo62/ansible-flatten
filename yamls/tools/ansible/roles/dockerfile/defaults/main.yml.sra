@@ -1,0 +1,9 @@
+(playbook "tools/ansible/roles/dockerfile/defaults/main.yml"
+  (build_dev "false")
+  (kube_dev "false")
+  (headless "no")
+  (dockerfile_dest "../..")
+  (dockerfile_name "Dockerfile")
+  (template_dest "_build")
+  (receptor_image "quay.io/ansible/receptor:devel")
+  (image_architecture (jinja "{{ { \"x86_64\": \"amd64\", \"aarch64\": \"arm64\", \"armv7\": \"arm\", \"arm64\": \"arm64\", \"ppc64le\": \"ppc64le\" }[ansible_facts.architecture] }}")))

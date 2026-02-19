@@ -1,0 +1,12 @@
+(playbook "ansible-for-devops/tests/https-self-signed.yml"
+  (list
+    
+    (hosts "all")
+    (tasks (list
+        
+        (name "Ensure apt cache is updated.")
+        (apt "update_cache=true cache_valid_time=600")))
+    
+    (import_playbook "../https-self-signed/provisioning/main.yml")
+    (vars 
+      (firewall_enable_ipv6 "false"))))

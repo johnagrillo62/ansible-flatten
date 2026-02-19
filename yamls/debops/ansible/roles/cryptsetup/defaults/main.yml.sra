@@ -1,0 +1,52 @@
+(playbook "debops/ansible/roles/cryptsetup/defaults/main.yml"
+  (cryptsetup__base_packages (list
+      "cryptsetup"))
+  (cryptsetup__devices (list))
+  (cryptsetup__group_devices (list))
+  (cryptsetup__host_devices (list))
+  (cryptsetup__combined_devices (jinja "{{ (cryptsetup__devices | list) +
+                                  (cryptsetup__group_devices | list) +
+                                  (cryptsetup__host_devices | list) }}"))
+  (cryptsetup__devices_execution_strategy "parallel")
+  (cryptsetup__secret_path (jinja "{{ secret + \"/cryptsetup/\" + ansible_fqdn }}"))
+  (cryptsetup__secret_owner (jinja "{{ omit }}"))
+  (cryptsetup__secret_group (jinja "{{ omit }}"))
+  (cryptsetup__secret_mode "u=rwX,g=,o=")
+  (cryptsetup__keyfile_remote_location (jinja "{{ (ansible_local.fhs.var | d(\"/var/local\"))
+                                         + \"/keyfiles\" }}"))
+  (cryptsetup__keyfile_owner "root")
+  (cryptsetup__keyfile_group "root")
+  (cryptsetup__keyfile_mode "0600")
+  (cryptsetup__keyfile_source_dev "/dev/random")
+  (cryptsetup__keyfile_gen_type "binary")
+  (cryptsetup__keyfile_gen_command "pwgen --secure 123 1")
+  (cryptsetup__keyfile_shred_command "shred --remove --zero --iterations=42")
+  (cryptsetup__header_backup_remote_location (jinja "{{ (ansible_local.fhs.backup | d(\"/var/backups\"))
+                                               + \"/luks_header_backup\" }}"))
+  (cryptsetup__header_backup "True")
+  (cryptsetup__header_backup_shred_command "shred --remove --zero --iterations=2")
+  (cryptsetup__use_uuid "True")
+  (cryptsetup__swap_priority "-1")
+  (cryptsetup__fstype "ext4")
+  (cryptsetup__fstab_file "/etc/fstab")
+  (cryptsetup__mount_options (list
+      "noatime"
+      "nodiratime"))
+  (cryptsetup__state "mounted")
+  (cryptsetup__mountpoint_parent_directory "/media")
+  (cryptsetup__crypttab_options (list))
+  (cryptsetup__crypttab_file "/etc/crypttab")
+  (cryptsetup__hash "sha512")
+  (cryptsetup__cipher "aes-xts-plain64")
+  (cryptsetup__key_size "512")
+  (cryptsetup__use_dev_random "True")
+  (cryptsetup__iter_time "default")
+  (cryptsetup__persistent_paths__dependent_paths 
+    (50_debops_cryptsetup 
+      (by_role "debops.cryptsetup")
+      (paths (list
+          (jinja "{{ cryptsetup__fstab_file }}")
+          (jinja "{{ cryptsetup__crypttab_file }}")
+          (jinja "{{ cryptsetup__keyfile_remote_location }}")
+          (jinja "{{ cryptsetup__header_backup_remote_location }}")
+          (jinja "{{ cryptsetup__mountpoint_parent_directory }}"))))))

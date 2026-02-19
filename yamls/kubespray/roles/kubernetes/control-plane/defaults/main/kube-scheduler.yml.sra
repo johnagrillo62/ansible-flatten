@@ -1,0 +1,11 @@
+(playbook "kubespray/roles/kubernetes/control-plane/defaults/main/kube-scheduler.yml"
+  (kube_kubeadm_scheduler_extra_args )
+  (kube_scheduler_bind_address "::")
+  (kube_scheduler_client_conn_extra_opts )
+  (kube_scheduler_config_extra_opts )
+  (kube_scheduler_extenders (list))
+  (kube_scheduler_leader_elect_extra_opts )
+  (kube_scheduler_leader_elect_lease_duration "15s")
+  (kube_scheduler_leader_elect_renew_deadline "10s")
+  (kube_scheduler_profiles (list))
+  (scheduler_extra_volumes ))

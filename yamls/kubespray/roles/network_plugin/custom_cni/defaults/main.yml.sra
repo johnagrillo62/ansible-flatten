@@ -1,0 +1,9 @@
+(playbook "kubespray/roles/network_plugin/custom_cni/defaults/main.yml"
+  (custom_cni_manifests (list))
+  (custom_cni_chart_namespace "kube-system")
+  (custom_cni_chart_release_name "")
+  (custom_cni_chart_repository_name "")
+  (custom_cni_chart_repository_url "")
+  (custom_cni_chart_ref "")
+  (custom_cni_chart_version "")
+  (custom_cni_chart_values ))

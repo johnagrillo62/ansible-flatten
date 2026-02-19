@@ -1,0 +1,13 @@
+(playbook "ansible-examples/windows/install-msi.yml"
+    (play
+    (name "Install Apache from an MSI")
+    (hosts "all")
+    (tasks
+      (task "Download the Apache installer"
+        (win_get_url 
+          (url "http://mirror.cc.columbia.edu/pub/software/apache//httpd/binaries/win32/httpd-2.2.25-win32-x86-no_ssl.msi")
+          (dest "C:\\Users\\Administrator\\Downloads\\httpd-2.2.25-win32-x86-no_ssl.msi")))
+      (task "Install MSI"
+        (win_package 
+          (path "C:\\Users\\Administrator\\Downloads\\httpd-2.2.25-win32-x86-no_ssl.msi")
+          (state "present"))))))

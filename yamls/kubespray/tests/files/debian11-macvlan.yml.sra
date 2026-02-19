@@ -1,0 +1,8 @@
+(playbook "kubespray/tests/files/debian11-macvlan.yml"
+  (cloud_image "debian-11")
+  (kube_network_plugin "macvlan")
+  (enable_nodelocaldns "false")
+  (kube_proxy_masquerade_all "true")
+  (macvlan_interface "eth0")
+  (auto_renew_certificates "true")
+  (containerd_static_binary "true"))

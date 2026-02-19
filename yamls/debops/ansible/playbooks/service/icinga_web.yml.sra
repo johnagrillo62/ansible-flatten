@@ -1,0 +1,145 @@
+(playbook "debops/ansible/playbooks/service/icinga_web.yml"
+    (play
+    (name "Configure Icinga Web service")
+    (collections (list
+        "debops.debops"
+        "debops.roles01"
+        "debops.roles02"
+        "debops.roles03"))
+    (hosts (list
+        "debops_service_icinga_web"))
+    (become "True")
+    (environment (jinja "{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}"))
+    (pre_tasks
+      (task "Apply keyring configuration for php environment"
+        (ansible.builtin.import_role 
+          (name "keyring"))
+        (vars 
+          (keyring__dependent_apt_keys (list
+              (jinja "{{ php__keyring__dependent_apt_keys }}")
+              (jinja "{{ nginx__keyring__dependent_apt_keys }}")
+              (jinja "{{ postgresql__keyring__dependent_apt_keys if (icinga_web__database_type == \"postgresql\") else [] }}")
+              (jinja "{{ mariadb__keyring__dependent_apt_keys
+                if (icinga_web__database_type == \"mariadb\" or icinga_web__x509_enabled)
+                else [] }}"))))
+        (tags (list
+            "role::keyring"
+            "skip::keyring"
+            "role::php"
+            "role::nginx"
+            "role::postgresql"
+            "role::mariadb")))
+      (task "Prepare php environment"
+        (ansible.builtin.import_role 
+          (name "php")
+          (tasks_from "main_env"))
+        (tags (list
+            "role::php"
+            "role::php:env"
+            "role::logrotate"))))
+    (roles
+      
+        (role "apt_preferences")
+        (tags (list
+            "role::apt_preferences"
+            "skip::apt_preferences"))
+        (apt_preferences__dependent_list (list
+            (jinja "{{ icinga_web__apt_preferences__dependent_list }}")
+            (jinja "{{ php__apt_preferences__dependent_list }}")
+            (jinja "{{ nginx__apt_preferences__dependent_list }}")))
+      
+        (role "cron")
+        (tags (list
+            "role::cron"
+            "skip::cron"))
+      
+        (role "logrotate")
+        (tags (list
+            "role::logrotate"
+            "skip::logrotate"))
+        (logrotate__dependent_config (list
+            (jinja "{{ php__logrotate__dependent_config }}")))
+      
+        (role "ferm")
+        (tags (list
+            "role::ferm"
+            "skip::ferm"))
+        (ferm__dependent_rules (list
+            (jinja "{{ nginx__ferm__dependent_rules }}")))
+      
+        (role "python")
+        (tags (list
+            "role::python"
+            "skip::python"
+            "role::mariadb"
+            "role::postgresql"))
+        (python__dependent_packages3 (list
+            (jinja "{{ postgresql__python__dependent_packages3 if icinga_web__database_type == \"postgresql\" else [] }}")
+            (jinja "{{ mariadb__python__dependent_packages3
+              if (icinga_web__database_type == \"mariadb\" or icinga_web__x509_enabled)
+              else [] }}")
+            (jinja "{{ nginx__python__dependent_packages3 }}")))
+        (python__dependent_packages2 (list
+            (jinja "{{ postgresql__python__dependent_packages2 if icinga_web__database_type == \"postgresql\" else [] }}")
+            (jinja "{{ mariadb__python__dependent_packages2
+              if (icinga_web__database_type == \"mariadb\" or icinga_web__x509_enabled)
+              else [] }}")
+            (jinja "{{ nginx__python__dependent_packages2 }}")))
+      
+        (role "php")
+        (tags (list
+            "role::php"
+            "skip::php"))
+        (php__dependent_packages (list
+            (jinja "{{ icinga_web__php__dependent_packages }}")))
+        (php__dependent_pools (list
+            (jinja "{{ icinga_web__php__dependent_pools }}")))
+      
+        (role "nginx")
+        (tags (list
+            "role::nginx"
+            "skip::nginx"))
+        (nginx__dependent_servers (list
+            (jinja "{{ icinga_web__nginx__dependent_servers }}")))
+        (nginx__dependent_upstreams (list
+            (jinja "{{ icinga_web__nginx__dependent_upstreams }}")))
+      
+        (role "ldap")
+        (tags (list
+            "role::ldap"
+            "skip::ldap"))
+        (ldap__dependent_tasks (list
+            (jinja "{{ icinga_web__ldap__dependent_tasks }}")))
+      
+        (role "postgresql")
+        (tags (list
+            "role::postgresql"
+            "skip::postgresql"))
+        (postgresql__dependent_roles (list
+            (jinja "{{ icinga_web__postgresql__dependent_roles }}")))
+        (postgresql__dependent_groups (list
+            (jinja "{{ icinga_web__postgresql__dependent_groups }}")))
+        (postgresql__dependent_databases (list
+            (jinja "{{ icinga_web__postgresql__dependent_databases }}")))
+        (postgresql__dependent_privileges (list
+            (jinja "{{ icinga_web__postgresql__dependent_privileges }}")))
+        (postgresql__dependent_extensions (list
+            (jinja "{{ icinga_web__postgresql__dependent_extensions }}")))
+        (when "icinga_web__database_type == 'postgresql'")
+      
+        (role "mariadb")
+        (tags (list
+            "role::mariadb"
+            "skip::mariadb"))
+        (mariadb__dependent_databases (list
+            (jinja "{{ icinga_web__mariadb__dependent_databases }}")))
+        (mariadb__dependent_users (list
+            (jinja "{{ icinga_web__mariadb__dependent_users }}")))
+        (when "icinga_web__database_type == 'mariadb' or icinga_web__x509_enabled | bool")
+      
+        (role "icinga_web")
+        (tags (list
+            "role::icinga_web"
+            "skip::icinga_web")))))

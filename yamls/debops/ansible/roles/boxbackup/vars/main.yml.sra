@@ -1,0 +1,12 @@
+(playbook "debops/ansible/roles/boxbackup/vars/main.yml"
+  (boxbackup_mode "lazy")
+  (boxbackup_encrypt_bits "2048")
+  (boxbackup_housekeeping "15")
+  (boxbackup_discnum "0")
+  (boxbackup_interval "60")
+  (boxbackup_minimumfileage "4")
+  (boxbackup_maxuploadwait "24")
+  (boxbackup_filetrackingsizethreshold "65535")
+  (boxbackup_diffinguploadsizethreshold "8192")
+  (boxbackup_maximumdiffingtime "120")
+  (boxbackup_syncallowscript "False"))

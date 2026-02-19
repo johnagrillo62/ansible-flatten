@@ -1,0 +1,13 @@
+(playbook "kubespray/roles/kubernetes-apps/ingress_controller/cert_manager/defaults/main.yml"
+  (cert_manager_namespace "cert-manager")
+  (cert_manager_user "1001")
+  (cert_manager_tolerations (list))
+  (cert_manager_affinity )
+  (cert_manager_nodeselector )
+  (cert_manager_dns_policy "ClusterFirst")
+  (cert_manager_dns_config )
+  (cert_manager_controller_extra_args (list))
+  (cert_manager_http_proxy (jinja "{{ http_proxy | default('') }}"))
+  (cert_manager_https_proxy (jinja "{{ https_proxy | default('') }}"))
+  (cert_manager_no_proxy (jinja "{{ no_proxy | default('') }}"))
+  (cert_manager_leader_election_namespace "kube-system"))

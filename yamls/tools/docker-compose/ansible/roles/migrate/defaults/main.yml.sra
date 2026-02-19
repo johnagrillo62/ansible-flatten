@@ -1,0 +1,5 @@
+(playbook "tools/docker-compose/ansible/roles/migrate/defaults/main.yml"
+  (postgres_data_dir "~/.awx/pgdocker")
+  (migrate_local_docker "false")
+  (old_docker_compose_dir "~/.awx/awxcompose")
+  (pg_volume_name "postgres_data"))

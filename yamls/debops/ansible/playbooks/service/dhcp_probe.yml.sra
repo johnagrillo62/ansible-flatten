@@ -1,0 +1,20 @@
+(playbook "debops/ansible/playbooks/service/dhcp_probe.yml"
+    (play
+    (name "Manage dhcp_probe service")
+    (collections (list
+        "debops.debops"
+        "debops.roles01"
+        "debops.roles02"
+        "debops.roles03"))
+    (hosts (list
+        "debops_service_dhcp_probe"))
+    (become "True")
+    (environment (jinja "{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}"))
+    (roles
+      
+        (role "dhcp_probe")
+        (tags (list
+            "role::dhcp_probe"
+            "skip::dhcp_probe")))))

@@ -1,0 +1,6 @@
+(playbook "debops/docs/ansible/roles/rails_deploy/examples/rails/config/sidekiq.yml"
+  (:pidfile "<%= ENV['RUN_STATE_PATH'] %>/sidekiq.pid")
+  (:logfile "<%= ENV['LOG_FILE'] %>")
+  (:concurrency "<%= ENV['BACKGROUND_THREADS'].to_i %>")
+  (:queues (list
+      "default")))

@@ -1,0 +1,10 @@
+(playbook "tools/docker-compose/ansible/migrate.yml"
+    (play
+    (name "Migrate data for upgrades and from Local Docker installs")
+    (hosts "localhost")
+    (gather_facts "true")
+    (roles
+      
+        (role "sources")
+      
+        (role "migrate"))))

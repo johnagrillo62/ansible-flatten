@@ -1,0 +1,9 @@
+(playbook "kubespray/tests/files/rockylinux9-cilium.yml"
+  (cloud_image "rockylinux-9")
+  (vm_memory "3072")
+  (kube_network_plugin "cilium")
+  (cilium_kube_proxy_replacement "true")
+  (kube_owner "root")
+  (node_feature_discovery_enabled "true")
+  (kube_asymmetric_encryption_algorithm "ECDSA-P256")
+  (loadbalancer_apiserver_localhost "false"))

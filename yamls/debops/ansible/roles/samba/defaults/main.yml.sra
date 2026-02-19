@@ -1,0 +1,98 @@
+(playbook "debops/ansible/roles/samba/defaults/main.yml"
+  (samba__base_packages (list
+      "samba"
+      "samba-common"
+      "samba-common-bin"))
+  (samba__allow (list))
+  (samba__kernel_modules_load "True")
+  (samba__kernel_modules (list
+      "nf_conntrack_netbios_ns"))
+  (samba__workgroup "WORKGROUP")
+  (samba__security "user")
+  (samba__netbios_name (jinja "{{ ansible_hostname }}"))
+  (samba__server_string "%h file server")
+  (samba__service_name "samba")
+  (samba__name_resolve_order "lmhosts host wins bcast")
+  (samba__path "/srv/samba")
+  (samba__default_global 
+    (workgroup (jinja "{{ samba__workgroup }}"))
+    (netbios_name (jinja "{{ samba__netbios_name }}"))
+    (server_string (jinja "{{ samba__server_string }}"))
+    (log_file "/var/log/samba/log.%m")
+    (max_log_size "1000")
+    (syslog "0")
+    (security (jinja "{{ samba__security }}"))
+    (encrypt_passwords "yes")
+    (passdb_backend "tdbsam")
+    (unix_password_sync "no")
+    (obey_pam_restrictions "yes")
+    (invalid_users "root bin daemon adm sync shutdown halt mail news uucp proxy www-data backup sshd")
+    (map_to_guest "never")
+    (guest_account "nobody")
+    (unix_charset "UTF8")
+    (locking "yes")
+    (wide_links "no")
+    (browsable "yes")
+    (create_mask "0660")
+    (directory_mask "0770")
+    (dont_descend "./lost+found")
+    (use_sendfile "yes")
+    (hide_unreadable "yes")
+    (hide_files "/.*/lost+found/")
+    (socket_options "TCP_NODELAY")
+    (deadtime "10")
+    (wins_support "no")
+    (dns_proxy "no")
+    (name_resolve_order (jinja "{{ samba__name_resolve_order }}"))
+    (printing "bsd")
+    (load_printers "no")
+    (printcap_name "/dev/null")
+    (show_add_printer_wizard "no")
+    (disable_spoolss "yes"))
+  (samba__global (jinja "{{ samba__default_global }}"))
+  (samba__global_custom )
+  (samba__homes_path (jinja "{{ samba__path }}") "/home")
+  (samba__homes (jinja "{{ samba__default_homes }}"))
+  (samba__default_homes 
+    (path (jinja "{{ samba__homes_path }}") "/%S")
+    (comment "Home Directory")
+    (browsable "no")
+    (read_only "no")
+    (create_mask "0600")
+    (directory_mask "0700")
+    (valid_users "%S")
+    (guest_ok "no")
+    (root_preexec "/usr/local/sbin/samba-homedir.sh %S"))
+  (samba__shares_path (jinja "{{ samba__path }}") "/shares")
+  (samba__shares (jinja "{{ samba__default_shares }}"))
+  (samba__default_shares 
+    (Public Files 
+      (path (jinja "{{ samba__shares_path }}") "/public")
+      (comment "Public Files")
+      (read_only "yes")
+      (guest_ok "yes")))
+  (samba__ferm__dependent_rules (list
+      
+      (type "accept")
+      (protocol (list
+          "udp"))
+      (dport (list
+          "netbios-ns"
+          "netbios-dgm"))
+      (saddr (jinja "{{ samba__allow }}"))
+      (accept_any "True")
+      (filename "samba__dependency_accept_udp")
+      (delete (jinja "{{ \"samba\" not in samba__base_packages }}"))
+      (weight "50")
+      
+      (type "accept")
+      (protocol (list
+          "tcp"))
+      (dport (list
+          "netbios-ssn"
+          "microsoft-ds"))
+      (saddr (jinja "{{ samba__allow }}"))
+      (accept_any "True")
+      (filename "samba__dependency_accept_tcp")
+      (delete (jinja "{{ \"samba\" not in samba__base_packages }}"))
+      (weight "50"))))

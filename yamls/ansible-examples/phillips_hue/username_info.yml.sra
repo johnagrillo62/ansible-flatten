@@ -1,0 +1,5 @@
+(playbook "ansible-examples/phillips_hue/username_info.yml"
+  (username "elY1xx9p5twUBYDjELgMUuQT99kLaVqGT1p0eDrl")
+  (ip_address "192.168.86.30")
+  (body_info 
+    (devicetype "Ansible!")))

@@ -1,0 +1,7 @@
+(playbook "kubespray/tests/files/debian11-kubelet-csr-approver.yml"
+  (cloud_image "debian-11")
+  (kubelet_rotate_server_certificates "true")
+  (kubelet_csr_approver_enabled "true")
+  (kubelet_csr_approver_values 
+    (bypassDnsResolution "true"))
+  (containerd_static_binary "true"))

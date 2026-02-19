@@ -1,0 +1,10 @@
+(playbook "kubespray/roles/network_plugin/multus/defaults/main.yml"
+  (multus_conf_file "auto")
+  (multus_cni_conf_dir_host "/etc/cni/net.d")
+  (multus_cni_bin_dir_host "/opt/cni/bin")
+  (multus_cni_run_dir_host "/run")
+  (multus_cni_conf_dir (jinja "{{ ('/host', multus_cni_conf_dir_host) | join }}"))
+  (multus_cni_bin_dir (jinja "{{ ('/host', multus_cni_bin_dir_host) | join }}"))
+  (multus_cni_run_dir (jinja "{{ ('/host', multus_cni_run_dir_host) | join }}"))
+  (multus_kubeconfig_file_host (jinja "{{ (multus_cni_conf_dir_host, '/multus.d/multus.kubeconfig') | join }}"))
+  (multus_namespace_isolation "false"))

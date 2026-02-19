@@ -1,0 +1,394 @@
+(playbook "debops/ansible/roles/kibana/defaults/main.yml"
+  (kibana__base_packages (list
+      "kibana"))
+  (kibana__packages (list))
+  (kibana__version (jinja "{{ ansible_local.kibana.version | d(\"0.0.0\") }}"))
+  (kibana__user "kibana")
+  (kibana__group "kibana")
+  (kibana__additional_groups (jinja "{{ [\"ssl-cert\"]
+                               if kibana__pki_enabled | bool
+                               else [] }}"))
+  (kibana__keystore_path (jinja "{{ \"/var/lib/kibana/kibana.keystore\"
+                           if (kibana__version is version(\"7.0.0\", \"<\"))
+                           else \"/etc/kibana/kibana.keystore\" }}"))
+  (kibana__fqdn "kibana." (jinja "{{ kibana__domain }}"))
+  (kibana__domain (jinja "{{ ansible_domain }}"))
+  (kibana__webserver_access_policy "")
+  (kibana__webserver_allow (list))
+  (kibana__webserver_auth_basic_realm "Access to Kibana is restricted")
+  (kibana__webserver_auth_basic_filename "")
+  (kibana__server_host "localhost")
+  (kibana__server_port "5601")
+  (kibana__server_name (jinja "{{ kibana__fqdn }}"))
+  (kibana__elasticsearch_url "http://localhost:9200")
+  (kibana__elasticsearch_hosts (list
+      "http://localhost:9200"))
+  (kibana__elasticsearch_cluster_name (jinja "{{ kibana__domain | replace(\".\", \"-\") }}"))
+  (kibana__elasticsearch_username (jinja "{{ \"\"
+                                    if (kibana__elasticsearch_hosts[0].startswith(\"http://\"))
+                                    else (\"kibana\"
+                                          if (kibana__version is version(\"7.0.0\", \"<\"))
+                                          else \"kibana_system\") }}"))
+  (kibana__elasticsearch_secret_path (jinja "{{ \"elasticsearch/credentials/\"
+                                       + kibana__elasticsearch_cluster_name
+                                       + \"/built-in\" }}"))
+  (kibana__elasticsearch_password (jinja "{{ \"\"
+                                    if (kibana__elasticsearch_hosts[0].startswith(\"http://\"))
+                                    else (lookup(\"password\", secret + \"/\"
+                                          + kibana__elasticsearch_secret_path + \"/\"
+                                          + kibana__elasticsearch_username
+                                          + \"/password\")) }}"))
+  (kibana__index ".kibana")
+  (kibana__default_app_id "discover")
+  (kibana__security_encryption_key (jinja "{{ lookup(\"password\", secret
+                                            + \"/kibana/security_encryption_key length=32\") }}"))
+  (kibana__reporting_encryption_key (jinja "{{ lookup(\"password\", secret
+                                             + \"/kibana/reporting_encryption_key length=32\") }}"))
+  (kibana__secure_connection (jinja "{{ True
+                               if (kibana__elasticsearch_username | d() and
+                                   kibana__elasticsearch_password | d())
+                               else False }}"))
+  (kibana__pki_enabled (jinja "{{ (ansible_local.pki.enabled | d()) | bool }}"))
+  (kibana__pki_base_path (jinja "{{ ansible_local.pki.base_path | d(\"/etc/pki/realms\") }}"))
+  (kibana__pki_realm (jinja "{{ ansible_local.pki.realm | d(\"domain\") }}"))
+  (kibana__pki_ca_file (jinja "{{ ansible_local.pki.ca | d(\"CA.crt\") }}"))
+  (kibana__pki_key_file (jinja "{{ ansible_local.pki.key | d(\"default.key\") }}"))
+  (kibana__pki_crt_file "public/cert_intermediate.pem")
+  (kibana__tls_ca_certificate (jinja "{{ kibana__pki_base_path + \"/\"
+                                + kibana__pki_realm + \"/\"
+                                + kibana__pki_ca_file }}"))
+  (kibana__tls_private_key (jinja "{{ kibana__pki_base_path + \"/\"
+                             + kibana__pki_realm + \"/\"
+                             + kibana__pki_key_file }}"))
+  (kibana__tls_certificate (jinja "{{ kibana__pki_base_path + \"/\"
+                             + kibana__pki_realm + \"/\"
+                             + kibana__pki_crt_file }}"))
+  (kibana__default_configuration (list
+      
+      (name "server.port")
+      (value (jinja "{{ kibana__server_port }}"))
+      (comment "Kibana is served by a back end server. This setting specifies the port to use")
+      
+      (name "server.host")
+      (value (jinja "{{ kibana__server_host }}"))
+      (comment "Specifies the address to which the Kibana server will bind. IP addresses and host names are both valid values.
+The default is 'localhost', which usually means remote machines will not be able to connect.
+To allow connections from remote users, set this parameter to a non-loopback address.
+")
+      
+      (name "server.name")
+      (value (jinja "{{ kibana__server_name }}"))
+      (comment "The Kibana server's name. This is used for display purposes")
+      
+      (name "server.basePath")
+      (value "")
+      (state "comment")
+      (comment "Enables you to specify a path to mount Kibana at if you are running behind a proxy. This only affects
+the URLs generated by Kibana, your proxy is expected to remove the basePath value before forwarding requests
+to Kibana. This setting cannot end in a slash.
+")
+      
+      (name "server.publicBaseUrl")
+      (value (jinja "{{ \"https://\" + ansible_fqdn }}"))
+      (comment "Specifies the public URL at which Kibana is available for end users. If
+`server.basePath` is configured this URL should end with the same basePath.
+")
+      (state (jinja "{{ \"present\"
+               if (kibana__version is version(\"7.0.0\", \">=\"))
+               else \"absent\" }}"))
+      
+      (name "server.maxPayloadBytes")
+      (value "1048576")
+      (state "comment")
+      (comment "The maximum payload size in bytes for incoming server requests")
+      
+      (name "kibana.index")
+      (value (jinja "{{ kibana__index }}"))
+      (comment "Kibana uses an index in Elasticsearch to store saved searches, visualizations and
+dashboards. Kibana creates a new index if the index doesn't already exist.
+")
+      (state (jinja "{{ \"present\"
+               if (kibana__version is version(\"7.11.0\", \"<\"))
+               else \"absent\" }}"))
+      
+      (name "kibana.defaultAppId")
+      (value (jinja "{{ kibana__default_app_id }}"))
+      (comment "The default application to load")
+      (state (jinja "{{ \"present\"
+               if (kibana__version is version(\"7.9.0\", \"<\"))
+               else \"absent\" }}"))
+      
+      (name "elasticsearch.url")
+      (value (jinja "{{ kibana__elasticsearch_url }}"))
+      (comment "The URL of the Elasticsearch instance to use for all your queries")
+      (state (jinja "{{ \"present\"
+               if (kibana__version is version(\"7.0.0\", \"<\"))
+               else \"absent\" }}"))
+      
+      (name "elasticsearch.hosts")
+      (value (jinja "{{ kibana__elasticsearch_hosts }}"))
+      (comment "The URLs of the Elasticsearch instances to use for all your queries")
+      (state (jinja "{{ \"absent\"
+               if (kibana__version is version(\"7.0.0\", \"<\"))
+               else \"present\" }}"))
+      
+      (name "elasticsearch.preserveHost")
+      (value "True")
+      (state "comment")
+      (comment "When value of this option is true Kibana uses the hostname specified in the server.host
+setting. When the value of this setting is false, Kibana uses the hostname of the host
+that connects to this Kibana instance.
+")
+      
+      (name "elasticsearch.username")
+      (value (jinja "{{ kibana__elasticsearch_username }}"))
+      (state (jinja "{{ \"present\"
+               if (kibana__elasticsearch_username | d() and
+                   kibana__elasticsearch_password | d())
+               else \"comment\" }}"))
+      (comment "If your Elasticsearch is protected with basic authentication, these settings provide
+the username and password that the Kibana server uses to perform maintenance on the Kibana
+index at startup. Your Kibana users still need to authenticate with Elasticsearch, which
+is proxied through the Kibana server.
+")
+      
+      (name "elasticsearch.password")
+      (value (jinja "{{ kibana__elasticsearch_password }}"))
+      (state (jinja "{{ \"present\"
+               if (kibana__elasticsearch_username | d() and
+                   kibana__elasticsearch_password | d())
+               else \"comment\" }}"))
+      
+      (name "server.ssl.enabled")
+      (value "False")
+      (state "comment")
+      (comment "Enables SSL and paths to the PEM-format SSL certificate and SSL key files, respectively.
+These settings enable SSL for outgoing requests from the Kibana server to the browser.
+")
+      
+      (name "server.ssl.certificate")
+      (value "/path/to/your/server.crt")
+      (state "comment")
+      
+      (name "server.ssl.key")
+      (value "/path/to/your/server.key")
+      (state "comment")
+      
+      (name "elasticsearch.ssl.certificate")
+      (value "/path/to/your/client.crt")
+      (state "comment")
+      (comment "Optional settings that provide the paths to the PEM-format SSL certificate and key files.
+These files validate that your Elasticsearch backend uses the same key files.
+")
+      
+      (name "elasticsearch.ssl.key")
+      (value "/path/to/your/client.key")
+      (state "comment")
+      
+      (name "elasticsearch.ssl.certificateAuthorities")
+      (value (list
+          "/path/to/your/CA.pem"))
+      (state "comment")
+      (comment "Optional setting that enables you to specify a path to the PEM file for the certificate
+authority for your Elasticsearch instance.
+")
+      
+      (name "elasticsearch.ssl.certificateAuthorities")
+      (value "")
+      (state (jinja "{{ \"present\" if (kibana__secure_connection | bool and
+                             kibana__pki_enabled | bool)
+                         else \"ignore\" }}"))
+      
+      (name "elasticsearch.ssl.certificateAuthorities")
+      (value (list
+          (jinja "{{ kibana__tls_ca_certificate }}")))
+      (state (jinja "{{ \"present\" if (kibana__secure_connection | bool and
+                             kibana__pki_enabled | bool)
+                         else \"ignore\" }}"))
+      
+      (name "elasticsearch.ssl.certificate")
+      (value (jinja "{{ kibana__tls_certificate }}"))
+      (state (jinja "{{ \"present\" if (kibana__secure_connection | bool and
+                             kibana__pki_enabled | bool)
+                         else \"ignore\" }}"))
+      
+      (name "elasticsearch.ssl.key")
+      (value (jinja "{{ kibana__tls_private_key }}"))
+      (state (jinja "{{ \"present\" if (kibana__secure_connection | bool and
+                             kibana__pki_enabled | bool)
+                         else \"ignore\" }}"))
+      
+      (name "elasticsearch.ssl.verificationMode")
+      (value "full")
+      (state "comment")
+      (comment "To disregard the validity of SSL certificates, change this setting's value to 'none'")
+      
+      (name "elasticsearch.pingTimeout")
+      (value "1500")
+      (state "comment")
+      (comment "Time in milliseconds to wait for Elasticsearch to respond to pings. Defaults to the value of
+the elasticsearch.requestTimeout setting.
+")
+      
+      (name "elasticsearch.requestTimeout")
+      (value "30000")
+      (state "comment")
+      (comment "Time in milliseconds to wait for responses from the back end or Elasticsearch. This value
+must be a positive integer.
+")
+      
+      (name "elasticsearch.requestHeadersWhitelist")
+      (value (list
+          "authorization"))
+      (state "comment")
+      (comment "List of Kibana client-side headers to send to Elasticsearch. To send *no* client-side
+headers, set this value to [] (an empty list).
+")
+      
+      (name "elasticsearch.customHeaders")
+      (empty )
+      (state "comment")
+      (comment "Header names and values that are sent to Elasticsearch. Any custom headers cannot be overwritten
+by client-side headers, regardless of the elasticsearch.requestHeadersWhitelist configuration.
+")
+      
+      (name "elasticsearch.shardTimeout")
+      (value "0")
+      (state "comment")
+      (comment "Time in milliseconds for Elasticsearch to wait for responses from shards. Set to 0 to disable")
+      
+      (name "elasticsearch.startupTimeout")
+      (value "5000")
+      (state "comment")
+      (comment "Time in milliseconds to wait for Elasticsearch at Kibana startup before retrying")
+      
+      (name "pid.file")
+      (value "/var/run/kibana.pid")
+      (state "comment")
+      (comment "Specifies the path where Kibana creates the process ID file")
+      
+      (name "logging.dest")
+      (value "stdout")
+      (state "comment")
+      (comment "Enables you specify a file where Kibana stores log output")
+      
+      (name "logging.silent")
+      (value "False")
+      (state "comment")
+      (comment "Set the value of this setting to true to suppress all logging output")
+      
+      (name "logging.quiet")
+      (value "False")
+      (state "comment")
+      (comment "Set the value of this setting to true to suppress all logging output other than error messages")
+      
+      (name "logging.verbose")
+      (value "False")
+      (state "comment")
+      (comment "Set the value of this setting to true to log all events, including system usage information
+and all requests.
+")
+      
+      (name "ops.interval")
+      (value "5000")
+      (state "comment")
+      (comment "Set the interval in milliseconds to sample system and process performance
+metrics. Minimum is 100ms. Defaults to 5000.
+")
+      
+      (name "i18n.defaultLocale")
+      (state "comment")
+      (comment "The default locale. This locale can be used in certain circumstances to substitute any missing
+translations.
+")
+      (value "en")
+      
+      (name "xpack.security.encryptionKey")
+      (comment "An arbitrary string of 32 characters or more that is used to encrypt session information.
+")
+      (value (jinja "{{ kibana__security_encryption_key }}"))
+      
+      (name "xpack.reporting.encryptionKey")
+      (comment "The static encryption key for reporting. Use an alphanumeric text string that is at least 32 characters.
+")
+      (value (jinja "{{ kibana__reporting_encryption_key }}"))))
+  (kibana__configuration (list))
+  (kibana__group_configuration (list))
+  (kibana__host_configuration (list))
+  (kibana__plugin_configuration (jinja "{{ lookup(\"template\",
+                                  \"lookup/kibana__plugin_configuration.j2\")
+                                  | from_yaml }}"))
+  (kibana__dependent_role "")
+  (kibana__dependent_state "present")
+  (kibana__dependent_configuration (list))
+  (kibana__dependent_configuration_filter (jinja "{{ lookup(\"template\",
+                                            \"lookup/kibana__dependent_configuration_filter.j2\")
+                                            | from_yaml }}"))
+  (kibana__combined_configuration (jinja "{{ lookup(\"flattened\", (kibana__default_configuration
+                                    + kibana__plugin_configuration
+                                    + kibana__dependent_configuration_filter
+                                    + kibana__configuration
+                                    + kibana__group_configuration
+                                    + kibana__host_configuration)) }}"))
+  (kibana__configuration_sections (list
+      
+      (name "Server")
+      (part (list
+          "server"
+          "kibana"))
+      
+      (name "Elasticsearch")
+      (part "elasticsearch")
+      
+      (name "Map tiles")
+      (part "tilemap")
+      
+      (name "Logging")
+      (part "logging")
+      
+      (name "X-Pack")
+      (part "xpack")
+      
+      (name "Search Guard")
+      (part "searchguard")))
+  (kibana__plugins (list))
+  (kibana__group_plugins (list))
+  (kibana__host_plugins (list))
+  (kibana__combined_plugins (jinja "{{ lookup(\"flattened\", (kibana__plugins
+                              + kibana__group_plugins
+                              + kibana__host_plugins)) }}"))
+  (kibana__keys (list))
+  (kibana__group_keys (list))
+  (kibana__host_keys (list))
+  (kibana__combined_keys (jinja "{{ kibana__keys
+                           + kibana__group_keys
+                           + kibana__host_keys }}"))
+  (kibana__etc_services__dependent_list (list
+      
+      (name "kibana")
+      (port (jinja "{{ kibana__server_port }}"))))
+  (kibana__extrepo__dependent_sources (list
+      "elastic"))
+  (kibana__nginx__dependent_servers (list
+      
+      (name (jinja "{{ kibana__fqdn }}"))
+      (by_role "debops.kibana")
+      (filename "debops.kibana")
+      (deny_hidden "False")
+      (type "proxy")
+      (proxy_options "proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection \"upgrade\";
+proxy_cache_bypass $http_upgrade;
+")
+      (proxy_pass "http://kibana")
+      (proxy_redirect "default")
+      (allow (jinja "{{ kibana__webserver_allow }}"))
+      (access_policy (jinja "{{ kibana__webserver_access_policy }}"))
+      (auth_basic (jinja "{{ True if kibana__webserver_auth_basic_filename | d() else False }}"))
+      (auth_basic_realm (jinja "{{ kibana__webserver_auth_basic_realm }}"))
+      (auth_basic_filename (jinja "{{ kibana__webserver_auth_basic_filename }}"))))
+  (kibana__nginx__dependent_upstreams (list
+      
+      (name "kibana")
+      (server (jinja "{{ kibana__server_host + \":\" + kibana__server_port }}")))))

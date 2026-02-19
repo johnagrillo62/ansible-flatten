@@ -1,0 +1,29 @@
+(playbook "ansible-for-devops/https-letsencrypt/main.yml"
+    (play
+    (hosts "letsencrypt")
+    (become "true")
+    (vars_files (list
+        "vars/main.yml"))
+    (pre_tasks
+      (task "Ensure apt cache is updated."
+        (apt "update_cache=true cache_valid_time=600")))
+    (roles
+      "geerlingguy.firewall"
+      "geerlingguy.nginx"
+      "geerlingguy.certbot")
+    (tasks
+      (task "Ensure docroot exists."
+        (file 
+          (path (jinja "{{ nginx_docroot }}"))
+          (state "directory")))
+      (task "Copy example index.html file in place."
+        (copy 
+          (src "files/index.html")
+          (dest (jinja "{{ nginx_docroot }}") "/index.html")
+          (mode "0755")))
+      (task "Copy Nginx server configuration in place."
+        (template 
+          (src "templates/https-letsencrypt.conf.j2")
+          (dest "/etc/nginx/sites-enabled/https-letsencrypt.conf")
+          (mode "0644"))
+        (notify "restart nginx")))))

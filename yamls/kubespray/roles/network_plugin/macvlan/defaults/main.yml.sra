@@ -1,0 +1,4 @@
+(playbook "kubespray/roles/network_plugin/macvlan/defaults/main.yml"
+  (macvlan_interface "eth0")
+  (enable_nat_default_gateway "true")
+  (sysctl_file_path "/etc/sysctl.d/99-sysctl.conf"))

@@ -1,0 +1,6 @@
+(playbook "kubespray/tests/files/flatcar4081-calico.yml"
+  (cloud_image "flatcar-4081")
+  (mode "default")
+  (vm_memory "3072")
+  (metrics_server_enabled "true")
+  (loadbalancer_apiserver_type "haproxy"))

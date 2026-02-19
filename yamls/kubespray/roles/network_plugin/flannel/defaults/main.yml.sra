@@ -1,0 +1,9 @@
+(playbook "kubespray/roles/network_plugin/flannel/defaults/main.yml"
+  (flannel_backend_type "vxlan")
+  (flannel_vxlan_vni "1")
+  (flannel_vxlan_port "8472")
+  (flannel_vxlan_direct_routing "false")
+  (flannel_memory_limit "500M")
+  (flannel_cpu_limit "300m")
+  (flannel_memory_requests "64M")
+  (flannel_cpu_requests "150m"))

@@ -1,0 +1,16 @@
+(playbook "kubespray/roles/bootstrap_os/tasks/amzn.yml"
+  (tasks
+    (task "Enable selinux-ng repo for Amazon Linux for container-selinux"
+      (command "amazon-linux-extras enable selinux-ng"))
+    (task "Enable EPEL repo for Amazon Linux"
+      (yum_repository 
+        (name "epel")
+        (file "epel")
+        (description "Extra Packages for Enterprise Linux 7 - $basearch")
+        (baseurl "http://download.fedoraproject.org/pub/epel/7/$basearch")
+        (gpgcheck "true")
+        (gpgkey "http://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7")
+        (skip_if_unavailable "true")
+        (enabled "true")
+        (repo_gpgcheck "false"))
+      (when "epel_enabled"))))

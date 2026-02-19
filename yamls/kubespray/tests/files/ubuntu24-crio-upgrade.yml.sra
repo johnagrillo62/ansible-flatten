@@ -1,0 +1,9 @@
+(playbook "kubespray/tests/files/ubuntu24-crio-upgrade.yml"
+  (cloud_image "ubuntu-2404")
+  (mode "all-in-one")
+  (vm_memory "1800")
+  (container_manager "crio")
+  (auto_renew_certificates "true")
+  (kube_proxy_mode "iptables")
+  (enable_nodelocaldns "false")
+  (enable_dns_autoscaler "false"))

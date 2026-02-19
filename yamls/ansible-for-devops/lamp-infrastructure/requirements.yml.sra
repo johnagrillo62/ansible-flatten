@@ -1,0 +1,21 @@
+(playbook "ansible-for-devops/lamp-infrastructure/requirements.yml"
+    (play
+    (roles
+      
+        (name "geerlingguy.firewall")
+      
+        (name "geerlingguy.repo-epel")
+      
+        (name "geerlingguy.varnish")
+      
+        (name "geerlingguy.apache")
+      
+        (name "geerlingguy.php")
+      
+        (name "geerlingguy.php-mysql")
+      
+        (name "geerlingguy.php-memcached")
+      
+        (name "geerlingguy.mysql")
+      
+        (name "geerlingguy.memcached"))))

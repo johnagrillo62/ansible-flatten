@@ -1,0 +1,14 @@
+(playbook "yaml/roles/mailserver/tasks/autoconfig.yml"
+  (tasks
+    (task "Create directory for mail autoconfiguration virtualhost"
+      (file "state=directory path=/var/www/autoconfig group=www-data owner=root"))
+    (task "Create directory holding the autoconfig XML file"
+      (file "state=directory path=/var/www/autoconfig/mail group=www-data owner=root"))
+    (task "Create the autoconfig XML file"
+      (template "src=var_www_autoconfig_mail_config-v1.1.j2 dest=/var/www/autoconfig/mail/config-v1.1.xml group=www-data owner=root"))
+    (task "Configure the mail autoconfiguration virtualhost"
+      (template "src=etc_apache2_sites-available_autoconfig.j2 dest=/etc/apache2/sites-available/autoconfig.conf group=root owner=root")
+      (notify "restart apache"))
+    (task "Enable the mail autoconfiguration virtualhost"
+      (command "a2ensite autoconfig.conf creates=/etc/apache2/sites-enabled/autoconfig.conf")
+      (notify "restart apache"))))

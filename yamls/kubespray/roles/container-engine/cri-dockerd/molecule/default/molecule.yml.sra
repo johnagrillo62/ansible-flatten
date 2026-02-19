@@ -1,0 +1,36 @@
+(playbook "kubespray/roles/container-engine/cri-dockerd/molecule/default/molecule.yml"
+  (role_name_check "1")
+  (platforms (list
+      
+      (name "almalinux9")
+      (cloud_image "almalinux-9")
+      (vm_cpu_cores "1")
+      (vm_memory "1024")
+      (node_groups (list
+          "kube_control_plane"))
+      
+      (name "ubuntu22")
+      (cloud_image "ubuntu-2204")
+      (vm_cpu_cores "1")
+      (vm_memory "1024")
+      (node_groups (list
+          "kube_control_plane"))))
+  (provisioner 
+    (name "ansible")
+    (env 
+      (ANSIBLE_ROLES_PATH "../../../../"))
+    (config_options 
+      (defaults 
+        (callbacks_enabled "profile_tasks")
+        (timeout "120")))
+    (inventory 
+      (group_vars 
+        (all 
+          (become "true"))
+        (k8s_cluster 
+          (container_manager "docker"))))
+    (playbooks 
+      (create "../../../../../tests/cloud_playbooks/create-kubevirt.yml")
+      (prepare "../../../molecule/prepare.yml")))
+  (verifier 
+    (name "ansible")))

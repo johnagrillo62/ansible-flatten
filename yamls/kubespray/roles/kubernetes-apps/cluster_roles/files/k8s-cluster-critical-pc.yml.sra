@@ -1,0 +1,8 @@
+(playbook "kubespray/roles/kubernetes-apps/cluster_roles/files/k8s-cluster-critical-pc.yml"
+  (apiVersion "scheduling.k8s.io/v1")
+  (kind "PriorityClass")
+  (metadata 
+    (name "k8s-cluster-critical"))
+  (value "1000000000")
+  (globalDefault "false")
+  (description "This priority class should only be used by the pods installed using kubespray."))

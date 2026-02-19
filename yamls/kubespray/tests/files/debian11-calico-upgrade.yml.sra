@@ -1,0 +1,9 @@
+(playbook "kubespray/tests/files/debian11-calico-upgrade.yml"
+  (cloud_image "debian-11")
+  (ipip "false")
+  (calico_pool_blocksize "26")
+  (calico_vxlan_mode "Always")
+  (calico_network_backend "bird")
+  (ignore_assert_errors "true")
+  (remove_anonymous_access "true")
+  (containerd_static_binary "true"))
